@@ -5,37 +5,42 @@ import axios from 'axios';
 
 const app = express();
 
+const PTV_BASE = 'https://timetableapi.ptv.vic.gov.au';
+
 /**
- * Root health check
- * Used by Render and for uptime confidence
+ * Health check
  */
 app.get('/', (req, res) => {
-  res.status(200).send('✅ PTV‑TRMNL service running');
+  res.send('✅ PTV‑TRMNL service running');
 });
 
 /**
- * TRMNL‑ready JSON endpoint
- * (Safe placeholder structure – no PTV calls yet)
+ * Live PTV departures (safe, minimal)
+ * NOTE: Requires PTV_API_KEY + PTV_DEVID env vars
  */
-app.get('/trmnl.json', async (req, res) => {
+app.get('/ptv/departures', async (req, res) => {
   try {
-    const now = new Date();
+    if (!process.env.PTV_API_KEY || !process.env.PTV_DEVID) {
+      return res.status(500).json({ error: 'PTV credentials missing' });
+    }
+
+    // Example: Flinders Street Station (stop_id 1071)
+    const stopId = 1071;
+
+    const url =
+      `${PTV_BASE}/v3/departures/route_type/0/stop/${stopId}` +
+      `?devid=${process.env.PTV_DEVID}`;
+
+    const response = await axios.get(url, {
+      headers: {
+        'authorization': process.env.PTV_API_KEY
+      },
+      timeout: 5000
+    });
 
     res.json({
-      title: 'Melbourne Public Transport',
-      subtitle: 'System status',
-      updated: now.toISOString(),
-      timezone: 'Australia/Melbourne',
-      items: [
-        {
-          label: 'Status',
-          value: 'Service online'
-        },
-        {
-          label: 'Time',
-          value: now.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })
-        }
-      ]
+      station: 'Flinders Street',
+      departures: response.data.departures.slice(0, 6)
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -43,48 +48,10 @@ app.get('/trmnl.json', async (req, res) => {
 });
 
 /**
- * Browser preview of the same data
- * (what TRMNL will see, but readable)
- */
-app.get('/preview', async (req, res) => {
-  const now = new Date();
-
-  res.send(`
-    <html>
-      <head>
-        <title>PTV‑TRMNL Preview</title>
-        <style>
-          body {
-            font-family: system-ui, sans-serif;
-            margin: 40px;
-            background: #fff;
-            color: #000;
-          }
-          h1 { margin-bottom: 0; }
-          p { color: #555; }
-          .card {
-            border: 1px solid #000;
-            padding: 16px;
-            max-width: 400px;
-          }
-        </style>
-      </head>
-      <body>
-        <h1>Melbourne Public Transport</h1>
-        <p>Preview output for TRMNL</p>
-        <div class="card">
-          <strong>Status:</strong> Service online<br/>
-          <strong>Time:</strong> ${now.toLocaleTimeString('en-AU')}
-        </div>
-      </body>
-    </html>
-  `);
-});
-
-/**
- * Render‑required port binding
+ * Port binding
  */
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server listening on ${PORT}`);
 });
+``
