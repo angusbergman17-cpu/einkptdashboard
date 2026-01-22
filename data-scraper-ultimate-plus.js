@@ -1,327 +1,208 @@
+
+// data-scraper.js
+// Combines Open Data GTFS‑R (trains + trams) with static GTFS (platforms),
+// includes ANY city‑bound train, prioritises South Yarra Platform 5, and returns a snapshot.
+
+import dayjs from "dayjs";
+import config from "./config.js";
+import {
+  getMetroTripUpdates,
+  getMetroServiceAlerts,
+  getTramTripUpdates,
+  getTramServiceAlerts
+} from "./opendata.js";
+import { tryLoadStops, resolveSouthYarraIds, buildTargetStopIdSet } from "./gtfs-static.js";
+
+// In‑memory cache to reduce upstream calls (and honour provider caching)
+const mem = {
+  cacheUntil: 0,
+  snapshot: null,
+  gtfs: null,
+  ids: null,
+  targetStopIdSet: null
+};
+
+function nowMs() { return Date.now(); }
+
 /**
- * ULTIMATE++ Data Scraper
- * Fetches live data from multiple sources with intelligent fallbacks
- * 
- * Data Sources (in priority order):
- * 1. TramTracker API (no auth required)
- * 2. PTV Timetable API (requires PTV_DEV_ID and PTV_KEY)
- * 3. Static schedule fallback
+ * Extract a numeric epoch (ms) for a stop_time_update (arrival or departure).
  */
-
-const axios = require('axios');
-const crypto = require('crypto');
-const RssParser = require('rss-parser');
-
-class DataScraper {
-  constructor() {
-    this.userAgents = ['Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'];
-    this.parser = new RssParser({ headers: { 'User-Agent': this.userAgents[0] } });
-    
-    // API Keys from environment variables
-    this.keys = {
-      ptvDevId: process.env.PTV_DEV_ID || null,
-      ptvKey: process.env.PTV_KEY || null,
-      weather: process.env.WEATHER_KEY || null
-    };
-
-    // STATIC BACKUP SCHEDULE (Minutes past the hour)
-    // Based on typical Melbourne Metro/Tram frequencies
-    this.staticSchedule = {
-        tram58: [2, 12, 22, 32, 42, 52],  // Every 10 mins
-        trainLoop: [4, 11, 19, 26, 34, 41, 49, 56]  // Every 7-8 mins
-    };
-
-    // Cache for API data
-    this.cache = { 
-      lastApiCall: 0, 
-      rawTrains: [], 
-      rawTrams: [], 
-      weather: null, 
-      news: '' 
-    };
-    
-    // Stop IDs
-    this.ids = { 
-      trainStop: 1120,  // South Yarra Platform 3
-      tramStop: 2189    // Tivoli Road
-    };
-  }
-
-  /**
-   * Main method - fetches all data from APIs or static schedules
-   */
-  async fetchAllData() {
-    const now = Date.now();
-    
-    // 60s Cache Strategy - only fetch fresh data every 60 seconds
-    if ((now - this.cache.lastApiCall) > 60000) {
-        console.log("⚡ Fetching fresh data...");
-        try {
-            // Timeout Wrapper: If fetch takes > 5s, throw error to trigger fallback
-            const timeout = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error("API_TIMEOUT")), 5000)
-            );
-            await Promise.race([this.refreshExternalData(), timeout]);
-        } catch (e) {
-            console.log("⚠️ API Timeout or Error. Forcing Static Fallback.");
-            this.forceStaticFallback();
-        }
-    }
-
-    return {
-        trains: this.formatResults(this.cache.rawTrains),
-        trams: this.formatResults(this.cache.rawTrams),
-        weather: this.cache.weather || { temp: '--', condition: '', icon: '?' },
-        news: this.cache.news || 'Operating Normally'
-    };
-  }
-
-  /**
-   * Force static fallback when all APIs fail
-   */
-  forceStaticFallback() {
-      this.cache.rawTrains = this.getStaticDepartures(this.staticSchedule.trainLoop, "Parliament (Sched)");
-      this.cache.rawTrams = this.getStaticDepartures(this.staticSchedule.tram58, "West Coburg (Sched)");
-      this.cache.news = "Data Offline - Using Schedule";
-  }
-
-  /**
-   * Format departure results - convert to minutes from now
-   */
-  formatResults(items) {
-      if (!items || items.length === 0) return [];
-      
-      const now = new Date();
-      return items.map(item => {
-          const msDiff = new Date(item.exactTime) - now;
-          const minutes = Math.round(msDiff / 60000);
-          return { ...item, minutes }; 
-      })
-      .filter(i => i.minutes >= -2) // Include departures up to 2 mins in past
-      .sort((a, b) => a.minutes - b.minutes)
-      .slice(0, 3); // Top 3 departures
-  }
-
-  /**
-   * Main data refresh - tries all APIs in sequence
-   */
-  async refreshExternalData() {
-    // 1. TRAINS - Try PTV API, fallback to static
-    let trains = await this.fetchPtvDepartures(0, this.ids.trainStop, [3]);
-    if (trains.length === 0) {
-      console.log("  Trains: Using static schedule");
-      trains = this.getStaticDepartures(this.staticSchedule.trainLoop, "Parliament (Sched)");
-    } else {
-      console.log(`  Trains: Fetched ${trains.length} from PTV API`);
-    }
-
-    // 2. TRAMS - Try TramTracker API, fallback to static
-    let trams = await this.fetchTramTracker();
-    if (trams.length === 0) {
-      console.log("  Trams: Using static schedule");
-      trams = this.getStaticDepartures(this.staticSchedule.tram58, "West Coburg (Sched)");
-    } else {
-      console.log(`  Trams: Fetched ${trams.length} from TramTracker`);
-    }
-
-    // 3. WEATHER - Optional
-    let weather = await this.getRealWeather().catch(e => {
-      console.log("  Weather: API failed, using default");
-      return null;
-    });
-
-    // 4. SERVICE ALERTS - Optional
-    let news = await this.getServiceAlerts().catch(e => {
-      console.log("  News: RSS failed, using default");
-      return "Good Service";
-    });
-
-    // Update cache
-    this.cache.rawTrains = trains;
-    this.cache.rawTrams = trams;
-    if (weather) this.cache.weather = weather;
-    this.cache.news = news;
-    this.cache.lastApiCall = Date.now();
-  }
-
-  /**
-   * Generate static departures based on schedule pattern
-   */
-  getStaticDepartures(minutesArray, destination) {
-      const now = new Date();
-      const melTime = new Date(now.getTime() + (11 * 60 * 60 * 1000)); // UTC+11 for Melbourne
-      const currentMin = melTime.getUTCMinutes();
-      const departures = [];
-
-      // Current hour departures
-      for (let m of minutesArray) {
-          if (m > currentMin) {
-              const departureTime = new Date(now.getTime() + (m - currentMin) * 60000);
-              departures.push({ 
-                destination, 
-                exactTime: departureTime.getTime(), 
-                isScheduled: true 
-              });
-          }
-      }
-      
-      // Next hour departures (overflow)
-      for (let m of minutesArray) {
-          const minutesUntil = (60 - currentMin) + m;
-          const departureTime = new Date(now.getTime() + minutesUntil * 60000);
-          departures.push({ 
-            destination, 
-            exactTime: departureTime.getTime(), 
-            isScheduled: true 
-          });
-      }
-      
-      return departures.slice(0, 3);
-  }
-
-  /**
-   * Fetch train departures from PTV API
-   * Requires PTV_DEV_ID and PTV_KEY environment variables
-   */
-  async fetchPtvDepartures(routeType, stopId, platforms) {
-    if (!this.keys.ptvDevId || !this.keys.ptvKey) {
-      console.log("  PTV: No API keys configured");
-      return [];
-    }
-    
-    try {
-      // Build URL with platforms filter
-      let urlStr = `/v3/departures/route_type/${routeType}/stop/${stopId}?max_results=6&expand=run&expand=route`;
-      if (platforms) {
-        platforms.forEach(p => urlStr += `&platform_numbers=${p}`);
-      }
-      
-      const url = this.getPtvUrl(urlStr);
-      const response = await axios.get(url, { timeout: 4000 });
-      
-      const rawData = [];
-      if (response.data?.departures) {
-          for (const dep of response.data.departures) {
-            const run = response.data.runs[dep.run_ref];
-            
-            // Filter out direct Flinders St trains (we want City Loop)
-            if (routeType === 0 && run?.destination_name.includes('Flinders St')) {
-              continue;
-            }
-            
-            let departureTime = new Date(dep.estimated_departure_utc || dep.scheduled_departure_utc);
-            rawData.push({ 
-              destination: 'Parliament', 
-              exactTime: departureTime.getTime(), 
-              isScheduled: !dep.estimated_departure_utc 
-            });
-          }
-      }
-      return rawData;
-    } catch (e) { 
-      console.log("  PTV API Error:", e.message);
-      return []; 
-    }
-  }
-
-  /**
-   * Fetch tram predictions from TramTracker API
-   * No authentication required!
-   */
-  async fetchTramTracker() {
-     try {
-        const response = await axios.get('https://www.tramtracker.com.au/Controllers/GetNextPredictionsForStop.ashx', {
-            params: { 
-              stopNo: this.ids.tramStop, 
-              routeNo: 58, 
-              isLowFloor: false 
-            },
-            headers: { 'User-Agent': this.userAgents[0] },
-            timeout: 4000
-        });
-        
-        const rawData = [];
-        const predictions = Array.isArray(response.data.predictions) 
-          ? response.data.predictions 
-          : [response.data.predictions];
-        
-        const now = Date.now();
-        for (const pred of predictions) {
-            if (pred && pred.minutes) {
-                rawData.push({ 
-                  destination: pred.destination || 'West Coburg', 
-                  exactTime: now + (parseFloat(pred.minutes) * 60000), 
-                  isScheduled: false 
-                });
-            }
-        }
-        return rawData;
-     } catch (e) { 
-       console.log("  TramTracker Error:", e.message);
-       return []; 
-     }
-  }
-
-  /**
-   * Fetch service alerts from PTV RSS feed
-   */
-  async getServiceAlerts() {
-    try {
-      const feed = await this.parser.parseURL('https://www.ptv.vic.gov.au/feeds/rss/lines/2');
-      
-      // Look for alerts affecting Pakenham/Cranbourne/Frankston/Sandringham lines
-      const relevant = feed.items.find(item => 
-        item.title && 
-        ['Cranbourne', 'Pakenham', 'Frankston', 'Sandringham'].some(line => 
-          item.title.includes(line)
-        )
-      );
-      
-      if (relevant) {
-        return `⚠️ ${relevant.title.split(':')[0]}`;
-      }
-      return "Good Service";
-    } catch (e) { 
-      return "Good Service"; 
-    }
-  }
-
-  /**
-   * Fetch weather from OpenWeatherMap
-   * Requires WEATHER_KEY environment variable
-   */
-  async getRealWeather() {
-    if (!this.keys.weather) return null;
-    
-    const url = `https://api.openweathermap.org/data/2.5/weather?lat=-37.84&lon=144.99&appid=${this.keys.weather}&units=metric`;
-    const response = await axios.get(url, { timeout: 4000 });
-    
-    return {
-      temp: Math.round(response.data.main.temp),
-      condition: response.data.weather[0].main,
-      icon: (response.data.weather[0].id >= 800) 
-        ? (response.data.weather[0].id === 800 ? '☀️' : '☁️') 
-        : '🌧️'
-    };
-  }
-
-  /**
-   * Generate signed URL for PTV API
-   * PTV requires HMAC-SHA1 signature of the URL
-   */
-  getPtvUrl(requestPath) {
-    const ptvBaseUrl = 'https://timetableapi.ptv.vic.gov.au'; 
-    const urlObj = new URL(`${ptvBaseUrl}${requestPath}`);
-    urlObj.searchParams.append('devid', this.keys.ptvDevId);
-    
-    const signature = crypto.createHmac('sha1', this.keys.ptvKey)
-      .update(urlObj.pathname + urlObj.search)
-      .digest('hex')
-      .toUpperCase();
-    
-    urlObj.searchParams.append('signature', signature);
-    return urlObj.toString();
-  }
+function timeFromStu(stu) {
+  const sec = Number(stu?.departure?.time || stu?.arrival?.time || 0);
+  return sec ? sec * 1000 : 0;
 }
 
-module.exports = DataScraper;
+/**
+ * Return true if the trip update will call at any of the target stop_ids
+ * after the current South Yarra call (city‑bound heuristic).
+ */
+function isCityBoundTrip(tripUpdate, targetStopIds, southYarraStopId, southYarraSeq) {
+  if (!tripUpdate?.stop_time_update?.length) return false;
+
+  // Identify sequence of current South Yarra call (if not provided, we still allow any future match)
+  const currentSeq = southYarraSeq ?? (() => {
+    const idx = tripUpdate.stop_time_update.findIndex(s => s.stop_id === southYarraStopId);
+    return idx >= 0 ? Number(tripUpdate.stop_time_update[idx].stop_sequence ?? idx) : 0;
+  })();
+
+  // Any downstream stop matching our CBD targets?
+  return tripUpdate.stop_time_update.some(su => {
+    const seq = Number(su.stop_sequence ?? 0);
+    const isDownstream = !Number.isNaN(seq) ? seq > currentSeq : true;
+    return isDownstream && targetStopIds.has(su.stop_id);
+  });
+}
+
+/**
+ * Sort departures: earliest first, but if within 2 minutes, prefer Platform 5.
+ */
+function sortWithPlatformPreference(list, preferredStopId) {
+  const WINDOW_MS = 2 * 60 * 1000; // 2 minutes
+  return list.sort((a, b) => {
+    const dt = a.when - b.when;
+    if (Math.abs(dt) <= WINDOW_MS && (a.stopId === preferredStopId || b.stopId === preferredStopId)) {
+      return a.stopId === preferredStopId ? -1 : 1;
+    }
+    return dt;
+  });
+}
+
+/**
+ * Pluck header timestamp (ms) safely from a GTFS‑R feed.
+ */
+function headerTs(feed) {
+  return (feed?.header?.timestamp ? Number(feed.header.timestamp) * 1000 : 0);
+}
+
+/**
+ * Main snapshot builder
+ */
+export async function getSnapshot(apiKey) {
+  const now = nowMs();
+  if (mem.snapshot && now < mem.cacheUntil) return mem.snapshot;
+
+  // Load static GTFS (for platforms + station name->stop_id mapping)
+  if (!mem.gtfs) mem.gtfs = tryLoadStops();
+
+  // Resolve South Yarra ids + platform 5 stop_id
+  if (!mem.ids) mem.ids = resolveSouthYarraIds(config, mem.gtfs);
+
+  // Build a set of stop_ids for city‑bound targets (Parliament, State Library, etc.)
+  if (!mem.targetStopIdSet) {
+    mem.targetStopIdSet = buildTargetStopIdSet(mem.gtfs, config.cityBoundTargetStopNames || []);
+  }
+
+  const snapshotBase = {
+    meta: { generatedAt: new Date().toISOString(), sources: {} },
+    trains: [],
+    trams: [],
+    alerts: { metro: 0, tram: 0 },
+    notes: {
+      platformResolution: {
+        usedStaticGtfs: !!(mem.gtfs?.stops?.length),
+        southYarra: {
+          parentStopId: mem.ids?.parentStopId || null,
+          platform5StopId: mem.ids?.platform5StopId || null,
+          platformCount: mem.ids?.allPlatformStopIds?.length || 0
+        }
+      }
+    }
+  };
+
+  // If API key missing, return minimal snapshot (endpoints still work)
+  if (!apiKey) {
+    mem.snapshot = snapshotBase;
+    mem.cacheUntil = now + (config.cacheSeconds ? config.cacheSeconds * 1000 : 60000);
+    return mem.snapshot;
+  }
+
+  // Pull GTFS‑R feeds in parallel (Trip Updates + Service Alerts)
+  const mBase = config.feeds.metro.base;
+  const tBase = config.feeds.tram.base;
+
+  const [metroTU, metroSA, tramTU, tramSA] = await Promise.all([
+    getMetroTripUpdates(apiKey, mBase).catch(e => (console.warn("Metro TU error:", e.message), null)),
+    getMetroServiceAlerts(apiKey, mBase).catch(e => (console.warn("Metro SA error:", e.message), null)),
+    getTramTripUpdates(apiKey, tBase).catch(e => (console.warn("Tram TU error:", e.message), null)),
+    getTramServiceAlerts(apiKey, tBase).catch(e => (console.warn("Tram SA error:", e.message), null))
+  ]);
+
+  // Record feed timestamps
+  snapshotBase.meta.sources = {
+    metroTripUpdatesTs: headerTs(metroTU),
+    metroServiceAlertsTs: headerTs(metroSA),
+    tramTripUpdatesTs: headerTs(tramTU),
+    tramServiceAlertsTs: headerTs(tramSA)
+  };
+
+  // ==== TRAINS (Metro) — include ANY city‑bound, prioritise South Yarra Platform 5 ====
+  const southYarraPlatformIds = new Set(mem.ids?.allPlatformStopIds || []);
+  const platform5StopId = mem.ids?.platform5StopId || null;
+
+  if (metroTU?.entity?.length) {
+    const trainDeps = [];
+
+    for (const ent of metroTU.entity) {
+      const tu = ent.trip_update;
+      if (!tu?.stop_time_update?.length) continue;
+
+      // Must call at South Yarra (any platform)
+      const syStu = tu.stop_time_update.find(s => southYarraPlatformIds.has(s.stop_id));
+      if (!syStu) continue;
+
+      const when = timeFromStu(syStu);
+      if (!when) continue;
+
+      // City‑bound filter: true if downstream contains any of the target CBD stops
+      const cityBound = isCityBoundTrip(
+        tu,
+        mem.targetStopIdSet,
+        syStu.stop_id,
+        Number(syStu.stop_sequence ?? 0)
+      );
+      if (!cityBound) continue;
+
+      trainDeps.push({
+        tripId: tu.trip?.trip_id || ent.id,
+        routeId: tu.trip?.route_id || null,
+        stopId: syStu.stop_id,
+        when,
+        delaySec: Number(syStu.departure?.delay || syStu.arrival?.delay || 0),
+        platformPreferred: platform5StopId && syStu.stop_id === platform5StopId
+      });
+    }
+
+    snapshotBase.trains = sortWithPlatformPreference(trainDeps, platform5StopId).slice(0, 12);
+  }
+
+  // Alerts (count only — you can surface text in your renderer if you like)
+  snapshotBase.alerts.metro = metroSA?.entity?.length || 0;
+
+  // ==== TRAMS (Yarra Trams) — minimal: earliest system-wide (you can filter Route 58/Tivoli) ====
+  if (tramTU?.entity?.length) {
+    const tramDeps = [];
+    for (const ent of tramTU.entity) {
+      const tu = ent.trip_update;
+      if (!tu?.stop_time_update?.length) continue;
+      const stu = tu.stop_time_update[0];
+      const when = timeFromStu(stu);
+      if (!when) continue;
+
+      tramDeps.push({
+        tripId: tu.trip?.trip_id || ent.id,
+        routeId: tu.trip?.route_id || null,
+        stopId: stu.stop_id,
+        when,
+        delaySec: Number(stu.departure?.delay || stu.arrival?.delay || 0)
+      });
+    }
+    snapshotBase.trams = tramDeps.sort((a, b) => a.when - b.when).slice(0, 12);
+  }
+
+  snapshotBase.alerts.tram = tramSA?.entity?.length || 0;
+
+  // Cache snapshot
+  mem.snapshot = snapshotBase;
+  mem.cacheUntil = now + (config.cacheSeconds ? config.cacheSeconds * 1000 : 60000);
+  return mem.snapshot;
+}
