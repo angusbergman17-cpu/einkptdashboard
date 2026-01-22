@@ -1,39 +1,35 @@
-/**
- * TRMNL Melbourne PT - Configuration
- * 
- * Edit these values to customize your display
- */
 
-module.exports = {
-  // Display settings
-  display: {
-    width: 800,
-    height: 480,
-  },
-
-  // Stop configuration
-  stops: {
-    train: {
-      name: 'South Yarra',
-      stopId: 1120,
-      platform: 3,
-    },
-    
-    tram: {
-      name: 'Tivoli Road',
-      stopId: 2189,
-      route: 58,
-      direction: 'West Coburg'
-    },
-    
-    destination: {
-      name: '80 Collins St',
-      walkTime: 10
-    }
-  },
-
-  // Refresh intervals
-  behavior: {
-    refreshInterval: 60000, // 60 seconds
-  }
-};
+ export default {
+-  // Stop IDs and platform numbers
+-  train: { stationName: "South Yarra", platform: "3" },
+-  tram: { stopName: "Tivoli Road", route: "58" },
+-  refreshSeconds: 60
++  // South Yarra with Platform 5 preference
++  stations: {
++    southYarra: {
++      name: "South Yarra",
++      preferredPlatformCode: "5"   // <-- Prioritise Platform 5
++    }
++  },
++  // “City-bound” targets (you asked to include any city-bound, prioritise Platform 5).
++  // Keep Parliament if you prefer; Metro Tunnel CBD pair added too.
++  cityBoundTargetStopNames: ["Parliament", "State Library", "Town Hall", "Melbourne Central", "Flagstaff"],
++
++  // Open Data GTFS-R feed bases (single key ODATA_KEY)
++  feeds: {
++    metro: {
++      base: "https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1/metro",
++      tripUpdates: "/trip-updates",
++      vehiclePositions: "/vehicle-positions",
++      serviceAlerts: "/service-alerts"
++    },
++    tram: {
++      base: "https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1/tram",
++      tripUpdates: "/trip-updates",
++      vehiclePositions: "/vehicle-positions",
++      serviceAlerts: "/service-alerts"
++    }
++  },
++
++  refreshSeconds: 60
+ }
