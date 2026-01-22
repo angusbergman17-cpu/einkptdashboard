@@ -1,181 +1,269 @@
-
 import 'dotenv/config';
 import express from 'express';
-import axios from 'axios';
-import fs from 'fs';
-import path from 'path';
-import sharp from 'sharp';
+import config from './config.js';
+import { getSnapshot } from './data-scraper.js';
+import PidsRenderer from './pids-renderer.js';
+import CoffeeDecision from './coffee-decision.js';
 
 const app = express();
+const PORT = process.env.PORT || 3000;
 
-/* =========================================================
-   GTFS LOADING (ONCE AT STARTUP)
-   ========================================================= */
+// Initialize renderer and coffee decision engine
+const renderer = new PidsRenderer();
+const coffeeEngine = new CoffeeDecision();
 
-const GTFS_PATHS = [
-  path.join(process.cwd(), 'gtfs', 'stops.txt'),
-  path.join(process.cwd(), 'stops.txt')
-];
-
-let stationsByName = {};
-let platformsByParent = {};
-
-function loadGTFS() {
-  const filePath = GTFS_PATHS.find(p => fs.existsSync(p));
-  if (!filePath) {
-    console.warn('⚠️ GTFS stops.txt not found');
-    return;
-  }
-
-  const raw = fs.readFileSync(filePath, 'utf8').trim().split('\n');
-  const headers = raw[0].split(',');
-  const h = Object.fromEntries(headers.map((v, i) => [v, i]));
-
-  for (let i = 1; i < raw.length; i++) {
-    const row = raw[i].split(',');
-
-    const stopId = row[h.stop_id];
-    const name = row[h.stop_name];
-    const parent = row[h.parent_station] || null;
-
-    if (!stopId || !name) continue;
-
-    if (!parent) {
-      stationsByName[name.toLowerCase()] = { id: stopId, name };
-    } else {
-      platformsByParent[parent] ??= [];
-      platformsByParent[parent].push({ id: stopId, name });
-    }
-  }
-
-  console.log(`✅ GTFS loaded (${Object.keys(stationsByName).length} stations)`);
-}
-loadGTFS();
-
-/* =========================================================
-   BASIC ROUTES
-   ========================================================= */
-
-app.get('/', (req, res) => {
-  res.send('✅ PTV‑TRMNL service running (Stage 4)');
-});
-
-app.get('/gtfs/station/:name', (req, res) => {
-  const station = stationsByName[req.params.name.toLowerCase()];
-  if (!station) return res.status(404).json({ error: 'Station not found' });
-
-  res.json({
-    station,
-    platforms: platformsByParent[station.id] || []
-  });
-});
-
-/* =========================================================
-   IMAGE CACHE (VERY IMPORTANT FOR RENDER)
-   ========================================================= */
-
+// Cache for image and data
 let cachedImage = null;
-let cachedAt = 0;
+let cachedData = null;
+let lastUpdate = 0;
 const CACHE_MS = 30 * 1000; // 30 seconds
 
-/* =========================================================
-   TRMNL IMAGE ENDPOINT
-   ========================================================= */
-
-app.get('/trmnl.png', async (req, res) => {
+/**
+ * Fetch fresh data from all sources
+ */
+async function fetchData() {
   try {
-    const now = Date.now();
-    if (cachedImage && now - cachedAt < CACHE_MS) {
-      res.set('Content-Type', 'image/png');
-      return res.send(cachedImage);
-    }
+    const apiKey = process.env.ODATA_KEY || process.env.PTV_KEY;
+    const snapshot = await getSnapshot(apiKey);
 
-    const stationName = (req.query.station || 'Flinders Street').toLowerCase();
-    const station = stationsByName[stationName];
-    if (!station) throw new Error('Unknown station');
+    // Transform snapshot into format for renderer
+    const now = new Date();
 
-    if (!process.env.PTV_API_KEY || !process.env.PTV_DEVID) {
-      throw new Error('PTV credentials missing');
-    }
-
-    const url =
-      `https://timetableapi.ptv.vic.gov.au/v3/departures/route_type/0/stop/${station.id}` +
-      `?devid=${process.env.PTV_DEVID}`;
-
-    const ptv = await axios.get(url, {
-      headers: { authorization: process.env.PTV_API_KEY },
-      timeout: 5000
+    // Process trains
+    const trains = (snapshot.trains || []).slice(0, 5).map(train => {
+      const departureTime = new Date(train.when);
+      const minutes = Math.max(0, Math.round((departureTime - now) / 60000));
+      return {
+        minutes,
+        destination: 'Flinders Street',
+        isScheduled: false
+      };
     });
 
-    const departures = ptv.data.departures.slice(0, 5);
+    // Process trams
+    const trams = (snapshot.trams || []).slice(0, 5).map(tram => {
+      const departureTime = new Date(tram.when);
+      const minutes = Math.max(0, Math.round((departureTime - now) / 60000));
+      return {
+        minutes,
+        destination: 'West Coburg',
+        isScheduled: false
+      };
+    });
 
-    /* ================= IMAGE ================= */
+    // Coffee decision
+    const nextTrain = trains[0] ? trains[0].minutes : 15;
+    const coffee = coffeeEngine.calculate(nextTrain, trams, null);
 
-    const width = 480;
-    const height = 800;
+    // Weather placeholder
+    const weather = {
+      temp: process.env.WEATHER_KEY ? '--' : '--',
+      condition: 'Partly Cloudy',
+      icon: '☁️'
+    };
 
-    let svg = `
-      <svg width="${width}" height="${height}">
-        <style>
-          text { font-family: Arial, Helvetica, sans-serif; fill: #000 }
-        </style>
-        <rect width="100%" height="100%" fill="#fff"/>
-        <text x="24" y="60" font-size="32">${station.name}</text>
-        <line x1="24" y1="75" x2="456" y2="75" stroke="#000"/>
-    `;
+    // Service alerts
+    const news = snapshot.alerts.metro > 0
+      ? `⚠️ ${snapshot.alerts.metro} Metro alert(s)`
+      : null;
 
-    let y = 120;
-    for (const dep of departures) {
-      const time = dep.scheduled_departure_utc
-        ? new Date(dep.scheduled_departure_utc).toLocaleTimeString('en-AU', {
-            hour: '2-digit',
-            minute: '2-digit'
-          })
-        : '--:--';
+    return {
+      trains,
+      trams,
+      weather,
+      news,
+      coffee,
+      meta: snapshot.meta
+    };
+  } catch (error) {
+    console.error('Error fetching data:', error.message);
 
-      svg += `
-        <text x="24" y="${y}" font-size="28">${time}</text>
-      `;
-      y += 56;
-    }
+    // Return fallback data
+    return {
+      trains: [],
+      trams: [],
+      weather: { temp: '--', condition: 'Data Unavailable', icon: '⚠️' },
+      news: 'Service data temporarily unavailable',
+      coffee: { canGet: false, decision: 'NO DATA', subtext: 'API unavailable', urgent: false },
+      meta: { generatedAt: new Date().toISOString(), error: error.message }
+    };
+  }
+}
 
-    svg += `
-        <text x="24" y="${height - 32}" font-size="18">
-          Updated ${new Date().toLocaleTimeString('en-AU')}
-        </text>
-      </svg>
-    `;
+/**
+ * Get cached or fresh data
+ */
+async function getData() {
+  const now = Date.now();
+  if (cachedData && (now - lastUpdate) < CACHE_MS) {
+    return cachedData;
+  }
 
-    const image = await sharp(Buffer.from(svg))
-      .png({ compressionLevel: 9 })
-      .toBuffer();
+  cachedData = await fetchData();
+  lastUpdate = now;
+  return cachedData;
+}
 
-    cachedImage = image;
-    cachedAt = now;
+/**
+ * Get cached or fresh image
+ */
+async function getImage() {
+  const now = Date.now();
+  if (cachedImage && (now - lastUpdate) < CACHE_MS) {
+    return cachedImage;
+  }
 
-    res.set('Content-Type', 'image/png');
-    res.send(image);
-  } catch (err) {
-    res.status(500).send(err.message);
+  const data = await getData();
+  cachedImage = await renderer.render(data, data.coffee);
+  return cachedImage;
+}
+
+/* =========================================================
+   ROUTES
+   ========================================================= */
+
+// Health check
+app.get('/', (req, res) => {
+  res.send('✅ PTV-TRMNL service running');
+});
+
+// Status endpoint
+app.get('/api/status', async (req, res) => {
+  try {
+    const data = await getData();
+    res.json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      cache: {
+        age: Math.round((Date.now() - lastUpdate) / 1000),
+        maxAge: Math.round(CACHE_MS / 1000)
+      },
+      data: {
+        trains: data.trains.length,
+        trams: data.trams.length,
+        alerts: data.news ? 1 : 0
+      },
+      meta: data.meta
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      error: error.message
+    });
   }
 });
 
-/* =========================================================
-   PREVIEW (HTML)
-   ========================================================= */
+// TRMNL screen endpoint (JSON markup)
+app.get('/api/screen', async (req, res) => {
+  try {
+    const data = await getData();
 
+    // Build TRMNL markup
+    const markup = [
+      `**${new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: false })}** | ${data.weather.icon} ${data.weather.temp}°C`,
+      '',
+      data.coffee.canGet ? '☕ **YOU HAVE TIME FOR COFFEE!**' : '⚡ **NO COFFEE - GO DIRECT**',
+      '',
+      '**METRO TRAINS - SOUTH YARRA**',
+      data.trains.length > 0 ? data.trains.slice(0, 3).map(t => `→ ${t.minutes} min`).join('\n') : '→ No departures',
+      '',
+      '**YARRA TRAMS - ROUTE 58**',
+      data.trams.length > 0 ? data.trams.slice(0, 3).map(t => `→ ${t.minutes} min`).join('\n') : '→ No departures',
+      '',
+      data.news ? `⚠️ ${data.news}` : '✓ Good service on all lines'
+    ];
+
+    res.json({
+      merge_variables: {
+        screen_text: markup.join('\n')
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      merge_variables: {
+        screen_text: `⚠️ Error: ${error.message}`
+      }
+    });
+  }
+});
+
+// Live PNG image endpoint
+app.get('/api/live-image.png', async (req, res) => {
+  try {
+    const image = await getImage();
+    res.set('Content-Type', 'image/png');
+    res.set('Cache-Control', `public, max-age=${Math.round(CACHE_MS / 1000)}`);
+    res.send(image);
+  } catch (error) {
+    console.error('Error generating image:', error);
+    res.status(500).send('Error generating image');
+  }
+});
+
+// Legacy endpoint for compatibility
+app.get('/trmnl.png', async (req, res) => {
+  res.redirect(301, '/api/live-image.png');
+});
+
+// Preview HTML page
 app.get('/preview', (req, res) => {
   res.send(`
-    <h1>PTV‑TRMNL Preview</h1>
-    /trmnl.png
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>PTV-TRMNL Preview</title>
+      <style>
+        body { font-family: Arial, sans-serif; max-width: 1200px; margin: 50px auto; padding: 20px; }
+        h1 { color: #333; }
+        .info { background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        .endpoints { list-style: none; padding: 0; }
+        .endpoints li { margin: 10px 0; }
+        .endpoints a { color: #0066cc; text-decoration: none; }
+        .endpoints a:hover { text-decoration: underline; }
+        img { max-width: 100%; border: 1px solid #ddd; margin-top: 20px; }
+      </style>
+      <script>
+        setInterval(() => {
+          document.getElementById('live-image').src = '/api/live-image.png?t=' + Date.now();
+        }, 30000);
+      </script>
+    </head>
+    <body>
+      <h1>🚊 PTV-TRMNL Preview</h1>
+      <div class="info">
+        <h2>Available Endpoints:</h2>
+        <ul class="endpoints">
+          <li><a href="/api/status">/api/status</a> - Server status and data summary</li>
+          <li><a href="/api/screen">/api/screen</a> - TRMNL JSON markup</li>
+          <li><a href="/api/live-image.png">/api/live-image.png</a> - Live PNG image</li>
+        </ul>
+      </div>
+      <h2>Live Display:</h2>
+      <img id="live-image" src="/api/live-image.png" alt="Live TRMNL Display">
+      <p style="color: #666; font-size: 14px;">Image refreshes every 30 seconds</p>
+    </body>
+    </html>
   `);
 });
 
 /* =========================================================
-   PORT
+   START SERVER
    ========================================================= */
 
-const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server listening on ${PORT}`);
+  console.log(`🚀 PTV-TRMNL server listening on port ${PORT}`);
+  console.log(`📍 Preview: http://localhost:${PORT}/preview`);
+  console.log(`🔗 TRMNL endpoint: http://localhost:${PORT}/api/screen`);
+
+  // Pre-warm cache
+  getData().then(() => {
+    console.log('✅ Initial data loaded');
+  }).catch(err => {
+    console.warn('⚠️  Initial data load failed:', err.message);
+  });
+
+  // Set up refresh cycle
+  setInterval(() => {
+    getData().catch(err => console.warn('Background refresh failed:', err.message));
+  }, config.refreshSeconds * 1000);
 });

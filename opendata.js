@@ -53,4 +53,3 @@ export const getMetroServiceAlerts   = (key, base) => fetchGtfsR({ base, path: "
 export const getTramTripUpdates      = (key, base) => fetchGtfsR({ base, path: "/trip-updates",     key });
 export const getTramVehiclePositions = (key, base) => fetchGtfsR({ base, path: "/vehicle-positions", key });
 export const getTramServiceAlerts    = (key, base) => fetchGtfsR({ base, path: "/service-alerts",    key });
-``

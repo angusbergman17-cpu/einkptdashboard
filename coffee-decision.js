@@ -150,4 +150,4 @@ class CoffeeDecision {
   }
 }
 
-module.exports = CoffeeDecision;
+export default CoffeeDecision;

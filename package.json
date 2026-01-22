@@ -13,9 +13,14 @@
     "test": "node test-preview.js"
   },
   "dependencies": {
+    "adm-zip": "^0.5.10",
     "axios": "1.6.0",
+    "csv-parse": "^5.5.3",
+    "dayjs": "^1.11.10",
     "dotenv": "^16.4.5",
     "express": "4.18.2",
+    "gtfs-realtime-bindings": "^1.1.1",
+    "node-fetch": "^3.3.2",
     "rss-parser": "3.13.0",
     "sharp": "0.33.0"
   },

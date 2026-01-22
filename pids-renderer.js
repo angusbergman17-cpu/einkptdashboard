@@ -4,7 +4,7 @@
  * Design matches Melbourne Metro/TramTracker PIDS styling
  */
 
-const sharp = require('sharp');
+import sharp from 'sharp';
 
 class PidsRenderer {
   constructor() {
@@ -260,4 +260,4 @@ class PidsRenderer {
   }
 }
 
-module.exports = PidsRenderer;
+export default PidsRenderer;
