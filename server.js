@@ -2,45 +2,40 @@
 import 'dotenv/config';
 import express from 'express';
 import axios from 'axios';
-import Parser from 'rss-parser';
-import sharp from 'sharp';
 
 const app = express();
-const parser = new Parser();
 
 /**
- * Basic middleware
+ * Root health check
+ * Used by Render and for uptime confidence
  */
-app.use(express.json());
-
-/**
- * Health / root endpoint
- * REQUIRED so Render sees an open, responding service.
- */
-app.get('/', async (req, res) => {
-  res.status(200).send('✅ TRMNL Melbourne PT service is running');
+app.get('/', (req, res) => {
+  res.status(200).send('✅ PTV‑TRMNL service running');
 });
 
 /**
- * Optional sanity endpoint — proves key libs load correctly.
- * Safe to remove later.
+ * TRMNL‑ready JSON endpoint
+ * (Safe placeholder structure – no PTV calls yet)
  */
-app.get('/_sanity', async (req, res) => {
+app.get('/trmnl.json', async (req, res) => {
   try {
-    // axios check
-    const axiosOk = typeof axios.get === 'function';
-
-    // rss-parser check
-    const parserOk = typeof parser.parseURL === 'function';
-
-    // sharp check
-    const sharpOk = typeof sharp === 'function';
+    const now = new Date();
 
     res.json({
-      status: 'ok',
-      axios: axiosOk,
-      rssParser: parserOk,
-      sharp: sharpOk
+      title: 'Melbourne Public Transport',
+      subtitle: 'System status',
+      updated: now.toISOString(),
+      timezone: 'Australia/Melbourne',
+      items: [
+        {
+          label: 'Status',
+          value: 'Service online'
+        },
+        {
+          label: 'Time',
+          value: now.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })
+        }
+      ]
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -48,12 +43,48 @@ app.get('/_sanity', async (req, res) => {
 });
 
 /**
- * IMPORTANT:
- * Render provides PORT at runtime.
- * Hardcoding WILL break deployment.
+ * Browser preview of the same data
+ * (what TRMNL will see, but readable)
+ */
+app.get('/preview', async (req, res) => {
+  const now = new Date();
+
+  res.send(`
+    <html>
+      <head>
+        <title>PTV‑TRMNL Preview</title>
+        <style>
+          body {
+            font-family: system-ui, sans-serif;
+            margin: 40px;
+            background: #fff;
+            color: #000;
+          }
+          h1 { margin-bottom: 0; }
+          p { color: #555; }
+          .card {
+            border: 1px solid #000;
+            padding: 16px;
+            max-width: 400px;
+          }
+        </style>
+      </head>
+      <body>
+        <h1>Melbourne Public Transport</h1>
+        <p>Preview output for TRMNL</p>
+        <div class="card">
+          <strong>Status:</strong> Service online<br/>
+          <strong>Time:</strong> ${now.toLocaleTimeString('en-AU')}
+        </div>
+      </body>
+    </html>
+  `);
+});
+
+/**
+ * Render‑required port binding
  */
 const PORT = process.env.PORT || 3000;
-
 app.listen(PORT, () => {
-  console.log(`🚀 Server listening on port ${PORT}`);
+  console.log(`🚀 Server listening on ${PORT}`);
 });
