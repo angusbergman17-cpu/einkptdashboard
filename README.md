@@ -1,122 +1,196 @@
-# TRMNL Melbourne PT Display
+# PTV-TRMNL - Melbourne PT Display
 
 Custom e-ink display for Melbourne public transport showing live train and tram departures with intelligent coffee timing.
 
-## 🚀 Features
+## Features
 
-- **Live departures** from South Yarra Platform 3 (trains) and Tivoli Road (Route 58 trams)
-- **Coffee decision logic** - calculates if you have time to get coffee and still arrive at 80 Collins St by 9am
+- **Live departures** from South Yarra (trains) and Tivoli Road (Route 58 trams)
+- **Coffee decision logic** - calculates if you have time for coffee before 9am arrival
 - **Route+ planning** - shows your complete journey with arrival times
 - **Service alerts** - displays Metro/Tram service disruptions
-- **Weather** - current conditions in Melbourne
-- **Multiple fallbacks** - TramTracker API → PTV API → Static schedules
+- **Partial refresh support** - 1-minute updates for departure times (custom firmware)
 
-## 📋 Requirements
+## Two Setup Options
 
-- TRMNL e-ink display device (800x480px)
-- Render.com account (free tier works)
-- PTV API credentials (optional but recommended)
-- OpenWeather API key (optional)
+| Option | Refresh Rate | Battery Life | Complexity |
+|--------|--------------|--------------|------------|
+| **Standard TRMNL** | 15-20 minutes | 120+ days | Easy |
+| **Custom Firmware** | 1 min partial / 5 min full | 2-3 days | Medium |
 
-## 🔧 Setup
+---
+
+## Option A: Standard TRMNL Setup (Easy)
+
+Uses the standard TRMNL device with their cloud service.
 
 ### 1. Get API Keys
 
-**PTV Timetable API** (Optional but recommended for real-time train data):
-- Email: APIKeyRequest@ptv.vic.gov.au
-- Subject: "PTV Timetable API – request for key"
-- Response time: 1-2 business days
-- Store your `PTV_DEV_ID` and `PTV_KEY`
+**Open Data API Key** (Required):
+- Visit: https://opendata.transport.vic.gov.au/
+- Register for an account
+- Get your API key from the dashboard
 
-**OpenWeather API** (Optional for weather data):
+**OpenWeather API** (Optional):
 - Visit: https://openweathermap.org/api
 - Sign up for free tier
-- Get your API key
 
 ### 2. Deploy to Render
 
-1. **Fork or upload this code** to GitHub
-2. **Go to Render.com** and create new Web Service
-3. **Connect your GitHub repository**
-4. Render will auto-detect `render.yaml` configuration
-5. **Add environment variables** in Render dashboard:
-   - `PTV_DEV_ID` - Your PTV developer ID (optional)
-   - `PTV_KEY` - Your PTV API key (optional)
+1. Fork this repository to your GitHub
+2. Go to [Render.com](https://render.com) and create new Web Service
+3. Connect your GitHub repository
+4. Render will auto-detect the `render.yaml` configuration
+5. Add environment variables:
+   - `ODATA_KEY` - Your Open Data API key
    - `WEATHER_KEY` - Your OpenWeather API key (optional)
-6. **Deploy** - should complete in ~90 seconds
+6. Deploy (takes ~90 seconds)
 
 Your server will be live at: `https://your-service-name.onrender.com`
 
 ### 3. Configure TRMNL Device
 
-1. **Log into TRMNL** at https://usetrmnl.com
-2. **Add Webhook plugin** to your playlist
-3. **Set URL** to: `https://your-service-name.onrender.com/api/screen`
-4. **Set refresh rate** to 20 seconds
-5. **Save and sync** your device
+1. Log into TRMNL at https://usetrmnl.com
+2. Add **Webhook plugin** to your playlist
+3. Set URL to: `https://your-service-name.onrender.com/api/screen`
+4. Set refresh rate to desired interval
+5. Save and sync your device
 
-## 📊 Endpoints
+---
 
-- `/` - Server status page
-- `/api/screen` - JSON markup for TRMNL (use this in webhook)
-- `/api/live-image.png` - Direct PNG image
-- `/api/status` - Server health check
+## Option B: Custom Firmware (Fast Refresh)
 
-## 🎨 Customization
+Flash custom firmware to your TRMNL for 1-minute partial refresh updates.
+
+### Prerequisites
+
+- TRMNL device
+- USB-C cable (with data support)
+- PlatformIO installed (`pip install platformio`)
+
+### 1. Deploy Server First
+
+Follow steps 1-2 from Option A above.
+
+### 2. Configure Firmware
+
+Edit `firmware/include/config.h`:
+
+```cpp
+#define SERVER_URL "https://your-app.onrender.com"
+```
+
+### 3. Build and Flash
+
+```bash
+cd firmware
+
+# Install dependencies and build
+pio run
+
+# Put TRMNL in bootloader mode:
+# 1. Hold BOOT button
+# 2. Press and release RESET
+# 3. Release BOOT button
+
+# Flash firmware
+pio run --target upload
+
+# Monitor output (optional)
+pio device monitor
+```
+
+### 4. WiFi Setup
+
+1. Device creates hotspot: **PTV-TRMNL-Setup**
+2. Connect with password: **transport123**
+3. Select your WiFi network in the captive portal
+4. Device reboots and connects
+
+### Adjusting Refresh Timing
+
+Edit `firmware/include/config.h`:
+
+```cpp
+#define PARTIAL_REFRESH_INTERVAL 60000   // 1 minute (default)
+#define FULL_REFRESH_INTERVAL 300000     // 5 minutes
+```
+
+For longer battery life, increase to 120000 (2 minutes).
+
+---
+
+## API Endpoints
+
+| Endpoint | Purpose |
+|----------|---------|
+| `/` | Server status page |
+| `/api/screen` | JSON markup for standard TRMNL |
+| `/api/live-image.png` | Full PNG image (800x480) |
+| `/api/partial` | JSON for partial refresh (custom firmware) |
+| `/api/config` | Firmware configuration |
+| `/api/status` | Server health check |
+| `/preview` | Live preview in browser |
+
+## File Structure
+
+```
+PTV-TRMNL-NEW/
+├── server.js           # Express server
+├── data-scraper.js     # GTFS-R data fetching
+├── pids-renderer.js    # SVG to PNG rendering
+├── coffee-decision.js  # Coffee timing logic
+├── config.js           # Configuration
+├── opendata.js         # Open Data API client
+├── gtfs-static.js      # Static GTFS parsing
+├── package.json        # Dependencies
+├── render.yaml         # Render deployment config
+├── data/gtfs/          # Static GTFS data
+└── firmware/           # Custom firmware (PlatformIO)
+    ├── src/main.cpp    # Firmware source
+    ├── include/config.h # Firmware config
+    └── platformio.ini  # Build configuration
+```
+
+## Customization
 
 Edit `config.js` to customize:
-- Stop IDs and platform numbers
-- Display timing
-- Route configuration
-- Commute timing constants
+- Station and stop IDs
+- Platform preferences
+- City-bound targets
+- Cache timing
 
-## 📁 File Structure
+Edit `coffee-decision.js` to adjust:
+- Walking times
+- Coffee stop duration
+- Target arrival time
 
-```
-trmnl-ultimate-plusplus/
-├── server.js                    # Express server, refresh cycle
-├── data-scraper-ultimate-plus.js # API fetching with fallbacks
-├── pids-renderer.js             # SVG to PNG rendering
-├── coffee-decision.js           # Coffee timing logic
-├── config.js                    # Configuration
-├── package.json                 # Dependencies
-├── render.yaml                  # Deployment config
-├── .npmrc                       # NPM optimization
-└── .env.example                 # Environment variables template
-```
+## Troubleshooting
 
-## 🔄 Data Sources
+**No departures showing:**
+- Verify `ODATA_KEY` is set in Render environment
+- Check `/api/status` endpoint for errors
+- Static fallback should still show placeholder data
 
-**Priority order:**
-1. **TramTracker API** - Live tram predictions (no auth required)
-2. **PTV Timetable API** - Live train times (requires API key)
-3. **Static schedules** - Fallback based on typical frequencies
-
-## 🐛 Troubleshooting
-
-**"No departures showing":**
-- Check if PTV API keys are set correctly
-- TramTracker API works without authentication
-- Static fallback should always show data
-
-**"Image not updating":**
+**Image not updating:**
 - Check Render logs for errors
 - Verify TRMNL webhook URL is correct
-- Ensure refresh rate is set to 20 seconds
+- Try `/preview` endpoint in browser
 
-**"Build failing on Render":**
-- Make sure all files are committed to GitHub
-- Check that package.json has correct dependencies
-- Clear Render build cache and redeploy
+**Custom firmware not flashing:**
+- Use a data-capable USB cable
+- Ensure device is in bootloader mode
+- Install USB drivers (CP210x or CH340)
 
-## 📝 Notes
+**Display ghosting with partial refresh:**
+- Reduce `partialRefreshCount` threshold in firmware
+- Increase full refresh frequency
 
-- Server refreshes data every 60 seconds
-- TRMNL polls every 20 seconds (uses cached image)
-- Static schedules used when APIs are unavailable
-- Asterisk (*) indicates scheduled vs real-time data
-- Coffee logic accounts for 9am arrival at 80 Collins St
+## Data Sources
 
-## 📄 License
+1. **Open Data GTFS-Realtime** - Live train/tram times
+2. **Static GTFS** - Platform information, fallback schedules
+3. **Service Alerts** - Disruption information
 
-MIT - Feel free to customize for your own commute!
+## License
+
+MIT - Customize for your own commute!

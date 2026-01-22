@@ -205,6 +205,45 @@ app.get('/trmnl.png', async (req, res) => {
   res.redirect(301, '/api/live-image.png');
 });
 
+// ========== PARTIAL REFRESH ENDPOINTS ==========
+// These endpoints support the custom firmware's partial refresh capability
+
+// Partial data endpoint - returns just the dynamic data for quick updates
+app.get('/api/partial', async (req, res) => {
+  try {
+    const data = await getData();
+    const now = new Date();
+    const timeFormatter = new Intl.DateTimeFormat('en-AU', {
+      timeZone: 'Australia/Melbourne',
+      hour: '2-digit', minute: '2-digit', hour12: false
+    });
+
+    // Return minimal JSON for partial screen update
+    res.json({
+      time: timeFormatter.format(now),
+      trains: data.trains.slice(0, 3).map(t => t.minutes),
+      trams: data.trams.slice(0, 3).map(t => t.minutes),
+      coffee: data.coffee.canGet,
+      coffeeText: data.coffee.canGet ? 'COFFEE TIME' : 'NO COFFEE',
+      alert: data.news ? true : false,
+      ts: Date.now()
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Firmware config endpoint - tells device refresh intervals
+app.get('/api/config', (req, res) => {
+  res.json({
+    partialRefreshMs: 60000,    // 1 minute partial refresh
+    fullRefreshMs: 300000,      // 5 minute full refresh
+    sleepBetweenMs: 55000,      // Sleep time between polls
+    timezone: 'Australia/Melbourne',
+    version: '1.0.0'
+  });
+});
+
 // Preview HTML page
 app.get('/preview', (req, res) => {
   res.send(`

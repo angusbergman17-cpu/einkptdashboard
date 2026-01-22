@@ -1,0 +1,68 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+
+// ============================================
+// PTV-TRMNL Custom Firmware Configuration
+// ============================================
+
+// Server Configuration
+// Replace with your Render deployment URL
+#define SERVER_URL "https://ptv-trmnl-new.onrender.com"
+#define API_PARTIAL "/api/partial"
+#define API_IMAGE "/api/live-image.png"
+#define API_CONFIG "/api/config"
+
+// WiFi Configuration (will use WiFiManager for setup)
+#define WIFI_AP_NAME "PTV-TRMNL-Setup"
+#define WIFI_AP_PASSWORD "transport123"
+
+// Refresh Timing (milliseconds)
+#define PARTIAL_REFRESH_INTERVAL 60000    // 1 minute for partial updates
+#define FULL_REFRESH_INTERVAL 300000      // 5 minutes for full refresh
+#define WIFI_TIMEOUT 30000                // 30 seconds WiFi connection timeout
+
+// Display Configuration (TRMNL 7.5" Waveshare)
+#define DISPLAY_WIDTH 800
+#define DISPLAY_HEIGHT 480
+
+// E-ink SPI Pins (TRMNL ESP32-C3)
+#define EPD_BUSY 4
+#define EPD_RST 2
+#define EPD_DC 3
+#define EPD_CS 7
+#define EPD_CLK 6
+#define EPD_DIN 5
+
+// Partial Refresh Regions (where dynamic content is)
+// Time display region
+#define TIME_X 20
+#define TIME_Y 10
+#define TIME_W 135
+#define TIME_H 50
+
+// Train departures region
+#define TRAIN_X 15
+#define TRAIN_Y 105
+#define TRAIN_W 200
+#define TRAIN_H 60
+
+// Tram departures region
+#define TRAM_X 15
+#define TRAM_Y 215
+#define TRAM_W 200
+#define TRAM_H 60
+
+// Coffee decision region
+#define COFFEE_X 480
+#define COFFEE_Y 10
+#define COFFEE_W 310
+#define COFFEE_H 30
+
+// Battery monitoring
+#define BATTERY_PIN 1
+#define LOW_BATTERY_MV 3300
+
+// Sleep configuration
+#define SLEEP_BETWEEN_PARTIALS_MS 55000  // Light sleep between partial updates
+
+#endif // CONFIG_H
