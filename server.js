@@ -1253,14 +1253,41 @@ app.post('/admin/route/calculate', async (req, res) => {
       console.log('Using manual walking times:', manualWalkingTimes);
     }
 
-    // Calculate the route with manual walking times if provided
+    // Extract journey configuration from preferences
+    const journeyConfig = {
+      coffeeEnabled: savedJourney.coffeeEnabled !== false,
+      cafeLocation: savedJourney.cafeLocation || 'before-transit-1',
+      transitRoute: savedJourney.transitRoute || {
+        numberOfModes: 1,
+        mode1: {
+          type: 0,
+          originStation: {
+            name: 'South Yarra',
+            lat: -37.8408,
+            lon: 145.0002
+          },
+          destinationStation: {
+            name: 'Flinders Street',
+            lat: -37.8530,
+            lon: 144.9560
+          },
+          estimatedDuration: 20
+        },
+        mode2: null
+      }
+    };
+
+    console.log('Journey config:', JSON.stringify(journeyConfig, null, 2));
+
+    // Calculate the route with manual walking times and journey config
     const route = await routePlanner.calculateRoute(
       homeAddress,
       coffeeAddress || 'No coffee stop',
       workAddress,
       arrivalTime,
       manualWalkingTimes,
-      addressFlags
+      addressFlags,
+      journeyConfig
     );
 
     // Update address validation flags after successful calculation

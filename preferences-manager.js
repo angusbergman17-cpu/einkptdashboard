@@ -43,7 +43,47 @@ class PreferencesManager {
         preferredTransitModes: [0, 1, 2, 3], // Train, Tram, Bus, V/Line (route type IDs)
         maxWalkingDistance: 1000, // meters
         coffeeEnabled: true,
-        defaultCafeTime: 3          // minutes, used if cafe busy-ness unavailable
+        defaultCafeTime: 3,          // minutes, used if cafe busy-ness unavailable
+
+        // Cafe location in journey (NEW)
+        cafeLocation: 'before-transit-1',  // Options: 'before-transit-1', 'between-transits', 'after-last-transit'
+
+        // Transit route configuration (NEW)
+        transitRoute: {
+          numberOfModes: 1,              // 1 or 2 transit modes
+          mode1: {
+            type: 0,                     // Route type ID (0=Train, 1=Tram, 2=Bus, 3=V/Line)
+            originStation: {
+              name: 'South Yarra',
+              id: null,                  // PTV station ID
+              lat: -37.8408,
+              lon: 145.0002
+            },
+            destinationStation: {
+              name: 'Flinders Street',
+              id: null,
+              lat: -37.8530,
+              lon: 144.9560
+            },
+            estimatedDuration: 20        // minutes
+          },
+          mode2: {                       // Only used if numberOfModes === 2
+            type: null,
+            originStation: {
+              name: '',
+              id: null,
+              lat: null,
+              lon: null
+            },
+            destinationStation: {
+              name: '',
+              id: null,
+              lat: null,
+              lon: null
+            },
+            estimatedDuration: null
+          }
+        }
       },
 
       // PTV API credentials

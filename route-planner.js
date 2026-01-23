@@ -30,6 +30,187 @@ class RoutePlanner {
   }
 
   /**
+   * Build route segments based on journey configuration
+   * Supports flexible cafe placement and 1-2 transit modes
+   * @private
+   */
+  buildFlexibleRouteSegments(journeyConfig, locations, times, coffeePurchaseTime, busyData, busyDesc) {
+    const segments = [];
+    const { cafeLocation, transitRoute, coffeeEnabled } = journeyConfig;
+    const numberOfModes = transitRoute?.numberOfModes || 1;
+
+    let currentTime = times.mustLeaveHome;
+    const addSegment = (segment) => {
+      segments.push({
+        ...segment,
+        departure: this.formatTime(currentTime),
+        arrival: this.formatTime(currentTime + segment.duration)
+      });
+      currentTime += segment.duration;
+    };
+
+    // Segment 1: Home → [First Point]
+    if (coffeeEnabled && cafeLocation === 'before-transit-1') {
+      // Home → Cafe
+      addSegment({
+        type: 'walk',
+        from: 'Home',
+        to: 'Cafe',
+        duration: times.homeToCafe,
+        distance: locations.homeToCafe?.distance || 0
+      });
+      addSegment({
+        type: 'coffee',
+        location: 'Cafe',
+        duration: coffeePurchaseTime,
+        busyLevel: busyData.level,
+        busyIcon: busyDesc.icon,
+        busyText: busyDesc.text
+      });
+      addSegment({
+        type: 'walk',
+        from: 'Cafe',
+        to: transitRoute.mode1.originStation.name,
+        duration: times.cafeToTransit1,
+        distance: locations.cafeToTransit1?.distance || 0
+      });
+    } else {
+      // Home → Transit 1 Origin
+      addSegment({
+        type: 'walk',
+        from: 'Home',
+        to: transitRoute.mode1.originStation.name,
+        duration: times.homeToTransit1,
+        distance: locations.homeToTransit1?.distance || 0
+      });
+    }
+
+    // Safety buffer at first station
+    addSegment({
+      type: 'wait',
+      location: transitRoute.mode1.originStation.name,
+      duration: this.SAFETY_BUFFER
+    });
+
+    // Segment 2: Transit Mode 1
+    addSegment({
+      type: this.getTransitTypeName(transitRoute.mode1.type),
+      from: transitRoute.mode1.originStation.name,
+      to: transitRoute.mode1.destinationStation.name,
+      duration: transitRoute.mode1.estimatedDuration || 20,
+      mode: transitRoute.mode1.type
+    });
+
+    // Segment 3: Between transits or after last transit
+    if (numberOfModes === 2) {
+      // Connection between transit modes
+      if (coffeeEnabled && cafeLocation === 'between-transits') {
+        addSegment({
+          type: 'walk',
+          from: transitRoute.mode1.destinationStation.name,
+          to: 'Cafe',
+          duration: times.transit1ToCafe,
+          distance: locations.transit1ToCafe?.distance || 0
+        });
+        addSegment({
+          type: 'coffee',
+          location: 'Cafe',
+          duration: coffeePurchaseTime,
+          busyLevel: busyData.level,
+          busyIcon: busyDesc.icon,
+          busyText: busyDesc.text
+        });
+        addSegment({
+          type: 'walk',
+          from: 'Cafe',
+          to: transitRoute.mode2.originStation.name,
+          duration: times.cafeToTransit2,
+          distance: locations.cafeToTransit2?.distance || 0
+        });
+      } else {
+        addSegment({
+          type: 'walk',
+          from: transitRoute.mode1.destinationStation.name,
+          to: transitRoute.mode2.originStation.name,
+          duration: times.transit1ToTransit2,
+          distance: locations.transit1ToTransit2?.distance || 0,
+          isConnection: true
+        });
+      }
+
+      // Safety buffer at connection
+      addSegment({
+        type: 'wait',
+        location: transitRoute.mode2.originStation.name,
+        duration: this.SAFETY_BUFFER
+      });
+
+      // Transit Mode 2
+      addSegment({
+        type: this.getTransitTypeName(transitRoute.mode2.type),
+        from: transitRoute.mode2.originStation.name,
+        to: transitRoute.mode2.destinationStation.name,
+        duration: transitRoute.mode2.estimatedDuration || 15,
+        mode: transitRoute.mode2.type
+      });
+    }
+
+    // Segment 4: [Last Transit] → Work
+    const lastTransitStation = numberOfModes === 2
+      ? transitRoute.mode2.destinationStation.name
+      : transitRoute.mode1.destinationStation.name;
+
+    if (coffeeEnabled && cafeLocation === 'after-last-transit') {
+      addSegment({
+        type: 'walk',
+        from: lastTransitStation,
+        to: 'Cafe',
+        duration: times.lastTransitToCafe,
+        distance: locations.lastTransitToCafe?.distance || 0
+      });
+      addSegment({
+        type: 'coffee',
+        location: 'Cafe',
+        duration: coffeePurchaseTime,
+        busyLevel: busyData.level,
+        busyIcon: busyDesc.icon,
+        busyText: busyDesc.text
+      });
+      addSegment({
+        type: 'walk',
+        from: 'Cafe',
+        to: 'Work',
+        duration: times.cafeToWork,
+        distance: locations.cafeToWork?.distance || 0
+      });
+    } else {
+      addSegment({
+        type: 'walk',
+        from: lastTransitStation,
+        to: 'Work',
+        duration: times.lastTransitToWork,
+        distance: locations.lastTransitToWork?.distance || 0
+      });
+    }
+
+    return segments;
+  }
+
+  /**
+   * Get transit type display name
+   * @private
+   */
+  getTransitTypeName(typeId) {
+    const types = {
+      0: 'train',
+      1: 'tram',
+      2: 'bus',
+      3: 'vline'
+    };
+    return types[typeId] || 'transit';
+  }
+
+  /**
    * Geocode an address to coordinates
    * Uses OpenStreetMap Nominatim (free, no API key needed)
    */

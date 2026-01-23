@@ -529,13 +529,101 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label">
-                            <input type="checkbox" class="form-checkbox" id="prefCoffeeEnabled" checked>
+                            <input type="checkbox" class="form-checkbox" id="prefCoffeeEnabled" checked onchange="toggleCafeLocation()">
                             Enable Coffee Stop
                         </label>
                     </div>
                 </div>
+
+                <!-- Cafe Location (shown only if coffee enabled) -->
+                <div id="cafeLocationSection" style="margin-top: 15px; display: none;">
+                    <div class="form-group">
+                        <label class="form-label">Cafe Location in Journey</label>
+                        <select class="form-input" id="prefCafeLocation">
+                            <option value="before-transit-1">Before First Transit (Home → Cafe → Transit)</option>
+                            <option value="between-transits">Between Transits (Transit 1 → Cafe → Transit 2)</option>
+                            <option value="after-last-transit">After Last Transit (Transit → Cafe → Work)</option>
+                        </select>
+                        <small style="color: #718096; font-size: 11px;">Choose where to stop for coffee during your commute</small>
+                    </div>
+                </div>
+
+                <!-- Transit Route Configuration -->
+                <div style="margin-top: 15px; padding: 15px; background: #edf2f7; border-radius: 6px;">
+                    <h4 style="color: #2d3748; font-size: 14px; margin-bottom: 10px;">🚉 Transit Route Configuration</h4>
+
+                    <div class="form-group">
+                        <label class="form-label">Number of Transit Modes</label>
+                        <select class="form-input" id="prefNumberOfModes" onchange="toggleTransitMode2()">
+                            <option value="1">Single Mode (e.g., Train only)</option>
+                            <option value="2">Two Modes (e.g., Train + Tram)</option>
+                        </select>
+                        <small style="color: #718096; font-size: 11px;">Do you take one or two different transit modes?</small>
+                    </div>
+
+                    <!-- Transit Mode 1 -->
+                    <div style="margin-top: 10px;">
+                        <div style="font-weight: 600; color: #2d3748; margin-bottom: 8px;">Transit Mode 1:</div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                            <div class="form-group">
+                                <label class="form-label">Mode Type</label>
+                                <select class="form-input" id="prefMode1Type">
+                                    <option value="0">🚆 Train</option>
+                                    <option value="1">🚊 Tram</option>
+                                    <option value="2">🚌 Bus</option>
+                                    <option value="3">🚄 V/Line</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Origin Station</label>
+                                <input type="text" class="form-input" id="prefMode1Origin" placeholder="e.g., South Yarra">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Destination Station</label>
+                                <input type="text" class="form-input" id="prefMode1Destination" placeholder="e.g., Flinders Street">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Duration (minutes)</label>
+                                <input type="number" class="form-input" id="prefMode1Duration" value="20" min="1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Transit Mode 2 (hidden by default) -->
+                    <div id="transitMode2Section" style="margin-top: 15px; display: none;">
+                        <div style="font-weight: 600; color: #2d3748; margin-bottom: 8px;">Transit Mode 2:</div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                            <div class="form-group">
+                                <label class="form-label">Mode Type</label>
+                                <select class="form-input" id="prefMode2Type">
+                                    <option value="0">🚆 Train</option>
+                                    <option value="1">🚊 Tram</option>
+                                    <option value="2">🚌 Bus</option>
+                                    <option value="3">🚄 V/Line</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Origin Station</label>
+                                <input type="text" class="form-input" id="prefMode2Origin" placeholder="e.g., Flinders Street">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Destination Station</label>
+                                <input type="text" class="form-input" id="prefMode2Destination" placeholder="e.g., Richmond">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Duration (minutes)</label>
+                                <input type="number" class="form-input" id="prefMode2Duration" value="15" min="1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 10px; padding: 10px; background: #e6fffa; border-radius: 6px; font-size: 12px; color: #234e52;">
+                        <strong>💡 Tip:</strong> Route planning uses these stations to calculate walking times and connections. For accurate results, enter actual stations you use.
+                    </div>
+                </div>
+
                 <div style="margin-top: 10px;">
-                    <label class="form-label">Preferred Transit Modes</label>
+                    <label class="form-label">Preferred Transit Modes (for search)</label>
                     <div style="display: flex; gap: 15px; flex-wrap: wrap;">
                         <label style="display: flex; align-items: center; gap: 5px;">
                             <input type="checkbox" class="form-checkbox" id="prefModeTrains" checked>
@@ -1142,6 +1230,31 @@
             inputsDiv.style.display = useManual ? 'block' : 'none';
         }
 
+        function toggleCafeLocation() {
+            const coffeeEnabled = document.getElementById('prefCoffeeEnabled').checked;
+            const cafeLocationSection = document.getElementById('cafeLocationSection');
+            cafeLocationSection.style.display = coffeeEnabled ? 'block' : 'none';
+        }
+
+        function toggleTransitMode2() {
+            const numberOfModes = document.getElementById('prefNumberOfModes').value;
+            const mode2Section = document.getElementById('transitMode2Section');
+            mode2Section.style.display = numberOfModes === '2' ? 'block' : 'none';
+
+            // Update cafe location options based on number of modes
+            const cafeLocationSelect = document.getElementById('prefCafeLocation');
+            const betweenTransitsOption = cafeLocationSelect.querySelector('option[value="between-transits"]');
+
+            if (numberOfModes === '1') {
+                betweenTransitsOption.disabled = true;
+                if (cafeLocationSelect.value === 'between-transits') {
+                    cafeLocationSelect.value = 'before-transit-1';
+                }
+            } else {
+                betweenTransitsOption.disabled = false;
+            }
+        }
+
         function updateAddressValidationStatus(homeFound, cafeFound, workFound) {
             // Update home status
             const homeStatus = document.getElementById('homeFoundStatus');
@@ -1247,6 +1360,32 @@
                     // Show/hide manual time inputs based on toggle
                     toggleManualTimesInputs();
 
+                    // Load cafe location and transit route configuration (NEW)
+                    document.getElementById('prefCafeLocation').value = prefs.journey?.cafeLocation || 'before-transit-1';
+
+                    const transitRoute = prefs.journey?.transitRoute || {};
+                    document.getElementById('prefNumberOfModes').value = transitRoute.numberOfModes || '1';
+
+                    // Transit Mode 1
+                    if (transitRoute.mode1) {
+                        document.getElementById('prefMode1Type').value = transitRoute.mode1.type || 0;
+                        document.getElementById('prefMode1Origin').value = transitRoute.mode1.originStation?.name || '';
+                        document.getElementById('prefMode1Destination').value = transitRoute.mode1.destinationStation?.name || '';
+                        document.getElementById('prefMode1Duration').value = transitRoute.mode1.estimatedDuration || 20;
+                    }
+
+                    // Transit Mode 2 (if exists)
+                    if (transitRoute.mode2 && transitRoute.mode2.type !== null) {
+                        document.getElementById('prefMode2Type').value = transitRoute.mode2.type || 0;
+                        document.getElementById('prefMode2Origin').value = transitRoute.mode2.originStation?.name || '';
+                        document.getElementById('prefMode2Destination').value = transitRoute.mode2.destinationStation?.name || '';
+                        document.getElementById('prefMode2Duration').value = transitRoute.mode2.estimatedDuration || 15;
+                    }
+
+                    // Show/hide sections based on settings
+                    toggleCafeLocation();
+                    toggleTransitMode2();
+
                     // Load and display address validation flags
                     const addressFlags = prefs.addressFlags || {};
                     updateAddressValidationStatus(
@@ -1317,7 +1456,43 @@
                     journey: {
                         arrivalTime: document.getElementById('prefArrivalTime').value,
                         coffeeEnabled: document.getElementById('prefCoffeeEnabled').checked,
-                        preferredTransitModes
+                        preferredTransitModes,
+                        cafeLocation: document.getElementById('prefCafeLocation').value,
+                        transitRoute: {
+                            numberOfModes: parseInt(document.getElementById('prefNumberOfModes').value),
+                            mode1: {
+                                type: parseInt(document.getElementById('prefMode1Type').value),
+                                originStation: {
+                                    name: document.getElementById('prefMode1Origin').value,
+                                    id: null,
+                                    lat: null,
+                                    lon: null
+                                },
+                                destinationStation: {
+                                    name: document.getElementById('prefMode1Destination').value,
+                                    id: null,
+                                    lat: null,
+                                    lon: null
+                                },
+                                estimatedDuration: parseInt(document.getElementById('prefMode1Duration').value)
+                            },
+                            mode2: parseInt(document.getElementById('prefNumberOfModes').value) === 2 ? {
+                                type: parseInt(document.getElementById('prefMode2Type').value),
+                                originStation: {
+                                    name: document.getElementById('prefMode2Origin').value,
+                                    id: null,
+                                    lat: null,
+                                    lon: null
+                                },
+                                destinationStation: {
+                                    name: document.getElementById('prefMode2Destination').value,
+                                    id: null,
+                                    lat: null,
+                                    lon: null
+                                },
+                                estimatedDuration: parseInt(document.getElementById('prefMode2Duration').value)
+                            } : null
+                        }
                     },
                     manualWalkingTimes: {
                         useManualTimes: document.getElementById('useManualTimes').checked,
