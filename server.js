@@ -21,7 +21,7 @@ const coffeeEngine = new CoffeeDecision();
 let cachedImage = null;
 let cachedData = null;
 let lastUpdate = 0;
-const CACHE_MS = 30 * 1000; // 30 seconds
+const CACHE_MS = 25 * 1000; // 25 seconds (device refreshes every 30s)
 
 // Persistent storage paths
 const DEVICES_FILE = path.join(process.cwd(), 'devices.json');

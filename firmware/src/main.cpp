@@ -9,6 +9,7 @@
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
 #include <WiFiManager.h>
+#include <Preferences.h>
 #include <bb_epaper.h>
 #include <PNGdec.h>
 #include "../include/config.h"
@@ -19,8 +20,13 @@ BBEPAPER bbep(EP75_800x480);
 // PNG decoder
 PNG png;
 
-// Refresh rate
-int refreshRate = 900;  // seconds (15 minutes default)
+// Preferences for persistent storage
+Preferences preferences;
+
+// Refresh rate and counters
+int refreshRate = 30;  // seconds (30 second updates for real-time data)
+int refreshCounter = 0;  // Track refresh cycles for full refresh
+const int FULL_REFRESH_CYCLES = 10;  // Full refresh every 10 cycles (5 minutes)
 
 // Function declarations
 void initDisplay();
@@ -32,11 +38,18 @@ int getWiFiRSSI();
 void showMessage(const char* line1, const char* line2 = "", const char* line3 = "");
 
 void setup() {
+    // Initialize preferences
+    preferences.begin("trmnl", false);
+    refreshCounter = preferences.getInt("refresh_count", 0);
+
     // Initialize display
     initDisplay();
 
     // Show startup message
-    showMessage("PTV-TRMNL", "Connecting to WiFi...");
+    char msg[50];
+    sprintf(msg, "Update %d/10", refreshCounter + 1);
+    showMessage("PTV-TRMNL", msg, "Connecting to WiFi...");
+    delay(1000);
 
     // Connect to WiFi
     if (!connectWiFi()) {
@@ -287,9 +300,24 @@ bool fetchAndDisplayImage() {
         delay(2000);
 
         if (rc == PNG_SUCCESS) {
-            // Refresh display
-            showMessage("Displaying...");
-            bbep.refresh(REFRESH_FULL, true);
+            // Determine refresh type
+            refreshCounter++;
+            bool useFullRefresh = (refreshCounter >= FULL_REFRESH_CYCLES);
+
+            if (useFullRefresh) {
+                showMessage("Full refresh...", "(clearing ghosting)");
+                bbep.refresh(REFRESH_FULL, true);
+                refreshCounter = 0;  // Reset counter
+            } else {
+                char msg[50];
+                sprintf(msg, "Partial %d/10", refreshCounter);
+                showMessage("Fast update...", msg);
+                bbep.refresh(REFRESH_PARTIAL, false);
+            }
+
+            // Save refresh counter for next cycle
+            preferences.putInt("refresh_count", refreshCounter);
+
             free(imgBuffer);
             http.end();
             client->stop();
