@@ -498,6 +498,13 @@
 
             <!-- Status Display -->
             <div id="preferencesStatus" style="margin-top: 15px; display: none;"></div>
+
+            <!-- Back to Top Button -->
+            <div style="margin-top: 20px; text-align: right;">
+                <button class="btn btn-small" onclick="scrollToTop()" style="background: #718096;">
+                    ⬆️ Back to Top
+                </button>
+            </div>
         </div>
 
         <div class="grid">
@@ -510,6 +517,9 @@
                 <button class="btn" onclick="addNewApi()" style="margin-top: 10px;">
                     + Add Custom API
                 </button>
+                <div style="margin-top: 15px; text-align: right;">
+                    <button class="btn btn-small" onclick="scrollToTop()" style="background: #718096;">⬆️ Back to Top</button>
+                </div>
             </div>
 
             <!-- Data Sources Card -->
@@ -517,6 +527,9 @@
                 <h2>Data Sources</h2>
                 <div class="data-sources" id="dataSources">
                     <!-- Data sources will be loaded here -->
+                </div>
+                <div style="margin-top: 15px; text-align: right;">
+                    <button class="btn btn-small" onclick="scrollToTop()" style="background: #718096;">⬆️ Back to Top</button>
                 </div>
             </div>
 
@@ -534,6 +547,9 @@
                     </label>
                 </div>
                 <button class="btn" onclick="saveSystemConfig()">Save Configuration</button>
+                <div style="margin-top: 15px; text-align: right;">
+                    <button class="btn btn-small" onclick="scrollToTop()" style="background: #718096;">⬆️ Back to Top</button>
+                </div>
             </div>
 
             <!-- Device Monitoring Card -->
@@ -541,6 +557,9 @@
                 <h2>Connected Devices</h2>
                 <div id="deviceList">
                     <!-- Devices will be loaded here -->
+                </div>
+                <div style="margin-top: 15px; text-align: right;">
+                    <button class="btn btn-small" onclick="scrollToTop()" style="background: #718096;">⬆️ Back to Top</button>
                 </div>
             </div>
 
@@ -555,6 +574,9 @@
                 <div style="margin-top: 15px; padding: 12px; background: #fff3cd; border-radius: 6px; font-size: 13px; color: #856404;">
                     <strong>Note:</strong> Clearing caches will force the server to regenerate all data and images on next request.
                 </div>
+                <div style="margin-top: 15px; text-align: right;">
+                    <button class="btn btn-small" onclick="scrollToTop()" style="background: #718096;">⬆️ Back to Top</button>
+                </div>
             </div>
 
             <!-- Weather Status Card -->
@@ -564,6 +586,9 @@
                     <div style="text-align: center; color: #718096;">Loading weather...</div>
                 </div>
                 <button class="btn" onclick="refreshWeather()" style="margin-top: 10px;">🔄 Refresh Weather</button>
+                <div style="margin-top: 15px; text-align: right;">
+                    <button class="btn btn-small" onclick="scrollToTop()" style="background: #718096;">⬆️ Back to Top</button>
+                </div>
             </div>
 
             <!-- Smart Route Planner Card -->
@@ -606,6 +631,9 @@
                 <div id="ptvConnections" style="margin-top: 15px; display: none;">
                     <!-- PTV connections will be displayed here -->
                 </div>
+                <div style="margin-top: 20px; text-align: right;">
+                    <button class="btn btn-small" onclick="scrollToTop()" style="background: #718096;">⬆️ Back to Top</button>
+                </div>
             </div>
 
             <!-- Dashboard Preview Card -->
@@ -615,8 +643,171 @@
                 <a href="/admin/dashboard-preview" target="_blank" class="btn" style="display: inline-block; text-decoration: none;">
                     👁️ Open Preview
                 </a>
+                <div style="margin-top: 15px; text-align: right;">
+                    <button class="btn btn-small" onclick="scrollToTop()" style="background: #718096;">⬆️ Back to Top</button>
+                </div>
             </div>
         </div>
+
+        <!-- Backend Data Operations Section -->
+        <div style="background: white; border-radius: 12px; padding: 25px; margin-top: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+            <h2 style="color: #2d3748; font-size: 20px; margin-bottom: 20px;">🔧 Backend Data Operations</h2>
+            <p style="color: #718096; margin-bottom: 20px;">
+                Understanding how the system processes your data and makes intelligent routing decisions.
+            </p>
+
+            <div style="display: grid; gap: 15px;">
+                <!-- Single-Entry Fields Explanation -->
+                <div style="background: #f7fafc; border-radius: 8px; padding: 15px; border-left: 4px solid #667eea;">
+                    <h3 style="color: #2d3748; font-size: 16px; margin-bottom: 10px;">📝 Single-Entry Configuration</h3>
+                    <p style="color: #4a5568; font-size: 14px; line-height: 1.6; margin-bottom: 10px;">
+                        <strong>Enter Once, Use Everywhere:</strong> All configuration fields (addresses, API credentials, journey settings) are stored in <code style="background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 3px;">user-preferences.json</code> on the server. Once saved, these values automatically populate across all modules.
+                    </p>
+                    <div style="font-size: 13px; color: #718096; line-height: 1.5;">
+                        <strong>Data Flow:</strong><br>
+                        1. You configure addresses in <strong>User Preferences</strong> (top section)<br>
+                        2. System saves to persistent JSON file<br>
+                        3. <strong>Route Planner</strong> auto-loads these addresses (readonly fields)<br>
+                        4. <strong>Multi-Modal Router</strong> uses saved PTV API credentials<br>
+                        5. <strong>Cafe Detector</strong> uses saved cafe address<br>
+                        6. All modules stay in sync automatically
+                    </div>
+                </div>
+
+                <!-- Route Planning Calculations -->
+                <div style="background: #f7fafc; border-radius: 8px; padding: 15px; border-left: 4px solid #48bb78;">
+                    <h3 style="color: #2d3748; font-size: 16px; margin-bottom: 10px;">🗺️ Route Planning Algorithm</h3>
+                    <div style="font-size: 13px; color: #4a5568; line-height: 1.6;">
+                        <strong>Module:</strong> <code>route-planner.js</code><br><br>
+                        <strong>Calculation Process:</strong><br>
+                        1. <strong>Geocoding</strong> - Converts your addresses to GPS coordinates (OpenStreetMap Nominatim API)<br>
+                        2. <strong>Walking Distance</strong> - Calculates walking time using Haversine formula (80m/min = 4.8km/h)<br>
+                        3. <strong>Cafe Busy-ness</strong> - Checks current time against peak periods, adjusts coffee wait time (2-8 min)<br>
+                        4. <strong>Backward Calculation</strong> - Works backwards from your arrival time:<br>
+                        <div style="margin-left: 20px; margin-top: 5px; font-family: monospace; font-size: 12px;">
+                            Arrival 09:00<br>
+                            - Walk to work (5 min) = 08:55 arrive station<br>
+                            - Train (20 min) = 08:35 depart origin<br>
+                            - Walk to station (3 min) = 08:32 leave cafe<br>
+                            - Coffee (3 min) = 08:29 arrive cafe<br>
+                            - Walk to cafe (4 min) = 08:25 leave station<br>
+                            - Walk to station (8 min) = <strong>08:17 LEAVE HOME</strong>
+                        </div>
+                        <br>
+                        <strong>Considered Variables:</strong> Walking speed (configurable), coffee purchase time (dynamic based on busy-ness), safety buffers (2 min per connection), transit journey duration
+                    </div>
+                </div>
+
+                <!-- Multi-Modal Transit Search -->
+                <div style="background: #f7fafc; border-radius: 8px; padding: 15px; border-left: 4px solid #ed8936;">
+                    <h3 style="color: #2d3748; font-size: 16px; margin-bottom: 10px;">🚆 Multi-Modal Transit Search</h3>
+                    <div style="font-size: 13px; color: #4a5568; line-height: 1.6;">
+                        <strong>Module:</strong> <code>multi-modal-router.js</code><br><br>
+                        <strong>Search Process:</strong><br>
+                        1. <strong>Query All Modes</strong> - Searches PTV API for: Trains (type 0), Trams (1), Buses (2), V/Line (3)<br>
+                        2. <strong>Fetch Departures</strong> - Gets next 10 departures for each enabled mode<br>
+                        3. <strong>Filter by Time</strong> - Only keeps departures within ±10 min of required departure time<br>
+                        4. <strong>Sort by Proximity</strong> - Orders by closest match to ideal departure time<br>
+                        5. <strong>Return Best 2</strong> - Shows the 2 best options across all transit modes<br><br>
+                        <strong>Authentication:</strong> Uses your saved PTV API credentials with HMAC-SHA1 signature<br>
+                        <strong>Cache:</strong> Results cached for 30 seconds to reduce API calls<br>
+                        <strong>Coffee Feasibility:</strong> Each option marked if you have time for coffee before departure
+                    </div>
+                </div>
+
+                <!-- Cafe Busy-ness Detection -->
+                <div style="background: #f7fafc; border-radius: 8px; padding: 15px; border-left: 4px solid #f56565;">
+                    <h3 style="color: #2d3748; font-size: 16px; margin-bottom: 10px;">☕ Cafe Busy-ness Detection</h3>
+                    <div style="font-size: 13px; color: #4a5568; line-height: 1.6;">
+                        <strong>Module:</strong> <code>cafe-busy-detector.js</code><br><br>
+                        <strong>Detection Methods:</strong><br>
+                        1. <strong>Google Places API</strong> (if configured) - Real-time "popular times" data from Google<br>
+                        2. <strong>Time-Based Fallback</strong> (always available) - Estimates based on peak periods<br><br>
+                        <strong>Peak Time Multipliers:</strong><br>
+                        - Morning Rush (7-9am): 2.0× wait time<br>
+                        - Lunch Rush (12-2pm): 1.8× wait time<br>
+                        - Afternoon Peak (4-5pm): 1.5× wait time<br>
+                        - Off-peak: 1.0× wait time<br><br>
+                        <strong>Coffee Time Calculation:</strong><br>
+                        Base time (3 min) × Peak multiplier = Final time (2-8 min range)<br><br>
+                        <strong>Busy Levels:</strong><br>
+                        - Low (0-30%): 2-3 min, green indicator<br>
+                        - Medium (30-70%): 3-5 min, orange indicator<br>
+                        - High (70-100%): 5-8 min, red indicator
+                    </div>
+                </div>
+
+                <!-- Live Transit Data -->
+                <div style="background: #f7fafc; border-radius: 8px; padding: 15px; border-left: 4px solid #805ad5;">
+                    <h3 style="color: #2d3748; font-size: 16px; margin-bottom: 10px;">📡 Live Transit Data Processing</h3>
+                    <div style="font-size: 13px; color: #4a5568; line-height: 1.6;">
+                        <strong>Module:</strong> <code>data-scraper.js</code><br><br>
+                        <strong>Data Sources:</strong><br>
+                        - PTV GTFS-Realtime feeds (trains, trams, buses, V/Line)<br>
+                        - Protobuf format parsed to JSON<br><br>
+                        <strong>Update Cycle:</strong><br>
+                        1. TRMNL device requests data every 30 seconds<br>
+                        2. Server checks cache (25-second TTL)<br>
+                        3. If stale: fetch fresh GTFS-RT data from PTV<br>
+                        4. Parse departure times, platforms, delays<br>
+                        5. Cache results and return to device<br><br>
+                        <strong>Data Freshness:</strong> Live data max 30 seconds old<br>
+                        <strong>Stale Threshold:</strong> Shows warning if data > 60 seconds old
+                    </div>
+                </div>
+
+                <!-- Address Geocoding -->
+                <div style="background: #f7fafc; border-radius: 8px; padding: 15px; border-left: 4px solid #38b2ac;">
+                    <h3 style="color: #2d3748; font-size: 16px; margin-bottom: 10px;">📍 Address Autocomplete & Geocoding</h3>
+                    <div style="font-size: 13px; color: #4a5568; line-height: 1.6;">
+                        <strong>Search Hierarchy:</strong><br>
+                        1. <strong>Google Places Autocomplete</strong> (if API key configured):<br>
+                        &nbsp;&nbsp;&nbsp;- Excellent for cafe/business names<br>
+                        &nbsp;&nbsp;&nbsp;- Returns place_id → fetch full details<br>
+                        &nbsp;&nbsp;&nbsp;- Gets exact coordinates, formatted address<br>
+                        2. <strong>OpenStreetMap Nominatim</strong> (fallback, always available):<br>
+                        &nbsp;&nbsp;&nbsp;- Good for street addresses<br>
+                        &nbsp;&nbsp;&nbsp;- Free, no API key needed<br>
+                        &nbsp;&nbsp;&nbsp;- Melbourne bounding box for relevance<br><br>
+                        <strong>Validation:</strong> Selected addresses stored with lat/lon coordinates<br>
+                        <strong>Cache:</strong> Geocoding results cached in-memory (permanent during session)
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px; text-align: center;">
+                <button class="btn" onclick="scrollToTop()" style="background: #4a5568;">
+                    ⬆️ Back to Top
+                </button>
+            </div>
+        </div>
+
+        <!-- Footer with Copyright -->
+        <footer style="background: #2d3748; color: white; padding: 30px 20px; margin-top: 40px; border-radius: 12px 12px 0 0;">
+            <div style="max-width: 1200px; margin: 0 auto; text-align: center;">
+                <div style="margin-bottom: 20px;">
+                    <h3 style="font-size: 18px; margin-bottom: 10px;">🚆 PTV-TRMNL</h3>
+                    <p style="font-size: 14px; color: #cbd5e0;">Smart Melbourne Transit System</p>
+                </div>
+
+                <div style="border-top: 1px solid #4a5568; padding-top: 20px; margin-top: 20px;">
+                    <p style="font-size: 12px; color: #a0aec0; line-height: 1.6;">
+                        © 2026 Angus Bergman. All rights reserved.<br>
+                        Built with Claude Code (Anthropic). Powered by PTV Open Data API.<br>
+                        Data sources: PTV GTFS-Realtime, OpenStreetMap Nominatim, Bureau of Meteorology.<br>
+                        <span style="opacity: 0.7;">This system is for educational and personal use only.</span>
+                    </p>
+                </div>
+
+                <div style="margin-top: 15px; font-size: 11px; color: #718096;">
+                    <a href="https://github.com/angusbergman17-cpu/PTV-TRMNL-NEW" target="_blank" style="color: #667eea; text-decoration: none; margin: 0 10px;">📦 GitHub</a>
+                    <span style="opacity: 0.5;">|</span>
+                    <a href="/admin/dashboard-preview" target="_blank" style="color: #667eea; text-decoration: none; margin: 0 10px;">👁️ Dashboard Preview</a>
+                    <span style="opacity: 0.5;">|</span>
+                    <span style="opacity: 0.7; margin: 0 10px;">Version 2.0.0</span>
+                </div>
+            </div>
+        </footer>
     </div>
 
     <!-- API Edit Modal -->
@@ -813,6 +1004,14 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        // Smooth scroll to top
+        function scrollToTop() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
         }
 
         // ========== PREFERENCES MANAGEMENT ==========
