@@ -357,38 +357,69 @@ bool fetchAndDisplayImage() {
         delay(2000);
 
         if (rc == PNG_SUCCESS) {
-            // Now copy decoded buffer to display
-            showMessage("Drawing to display...");
+            // Draw decoded image in chunks to prevent watchdog timeout
+            showMessage("Drawing image...", "This takes ~30s");
             delay(500);
 
             bbep.fillScreen(BBEP_WHITE);
 
-            // Draw the decoded image
+            // Draw the decoded image in chunks with yield() to prevent WDT
             if (bpp == 1) {
-                // 1-bit monochrome
-                for (int y = 0; y < imageHeight; y++) {
-                    int bytesPerLine = (imageWidth + 7) / 8;
-                    uint8_t *line = imageBuffer + (y * bytesPerLine);
+                // 1-bit monochrome - draw in 10-line chunks
+                int bytesPerLine = (imageWidth + 7) / 8;
 
-                    for (int x = 0; x < imageWidth; x++) {
-                        int byteIndex = x / 8;
-                        int bitIndex = 7 - (x % 8);
-                        uint8_t bit = (line[byteIndex] >> bitIndex) & 1;
-                        uint8_t color = bit ? BBEP_WHITE : BBEP_BLACK;
-                        bbep.drawPixel(x, y, color);
+                for (int chunkStart = 0; chunkStart < imageHeight; chunkStart += 10) {
+                    int chunkEnd = min(chunkStart + 10, imageHeight);
+
+                    // Draw this chunk
+                    for (int y = chunkStart; y < chunkEnd; y++) {
+                        uint8_t *line = imageBuffer + (y * bytesPerLine);
+
+                        for (int x = 0; x < imageWidth; x++) {
+                            int byteIndex = x / 8;
+                            int bitIndex = 7 - (x % 8);
+                            uint8_t bit = (line[byteIndex] >> bitIndex) & 1;
+                            uint8_t color = bit ? BBEP_WHITE : BBEP_BLACK;
+                            bbep.drawPixel(x, y, color);
+                        }
+                    }
+
+                    // Yield to watchdog every chunk
+                    yield();
+
+                    // Show progress every 100 lines
+                    if (chunkStart % 100 == 0) {
+                        char progress[50];
+                        sprintf(progress, "Drawing: %d%%", (chunkStart * 100) / imageHeight);
+                        showMessage(progress);
                     }
                 }
             } else {
-                // 8-bit grayscale
-                for (int y = 0; y < imageHeight; y++) {
-                    uint8_t *line = imageBuffer + (y * imageWidth);
-                    for (int x = 0; x < imageWidth; x++) {
-                        uint8_t gray = line[x];
-                        uint8_t color = gray >> 4;  // Convert to 4-bit
-                        bbep.drawPixel(x, y, color);
+                // 8-bit grayscale - draw in 10-line chunks
+                for (int chunkStart = 0; chunkStart < imageHeight; chunkStart += 10) {
+                    int chunkEnd = min(chunkStart + 10, imageHeight);
+
+                    for (int y = chunkStart; y < chunkEnd; y++) {
+                        uint8_t *line = imageBuffer + (y * imageWidth);
+                        for (int x = 0; x < imageWidth; x++) {
+                            uint8_t gray = line[x];
+                            uint8_t color = gray >> 4;
+                            bbep.drawPixel(x, y, color);
+                        }
+                    }
+
+                    yield();
+
+                    if (chunkStart % 100 == 0) {
+                        char progress[50];
+                        sprintf(progress, "Drawing: %d%%", (chunkStart * 100) / imageHeight);
+                        showMessage(progress);
                     }
                 }
             }
+
+            showMessage("Drawing complete!");
+            delay(500);
 
             free(imageBuffer);
             imageBuffer = NULL;
