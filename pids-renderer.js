@@ -68,15 +68,13 @@ class PidsRenderer {
     </svg>
     `;
 
-    // Generate 1-bit black and white PNG for e-ink (much smaller file size and memory usage)
+    // Generate 8-bit grayscale PNG for e-ink (PNGdec compatible)
     // Rotate 270 degrees (-90) to fix display orientation on OG TRMNL hardware
     return await sharp(Buffer.from(svg))
       .rotate(270)  // Rotate counter-clockwise to fix right-rotated display
+      .grayscale()  // Convert to grayscale (8-bit)
       .png({
-        compressionLevel: 9,  // Maximum compression
-        palette: true,        // Use indexed color
-        colors: 2,            // 1-bit: black and white only
-        dither: 1.0          // Floyd-Steinberg dithering for better quality
+        compressionLevel: 9  // Maximum compression
       })
       .toBuffer();
   }
