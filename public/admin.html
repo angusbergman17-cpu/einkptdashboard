@@ -718,6 +718,57 @@
             </div>
         </div>
 
+        <!-- Support this Project Section -->
+        <div style="background: linear-gradient(135deg, #40DCA5 0%, #2ecc71 100%); border-radius: 12px; padding: 30px; margin-top: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); color: white;">
+            <h2 style="color: white; font-size: 24px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                ☕ Support this Project
+            </h2>
+            <p style="color: rgba(255,255,255,0.95); font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
+                From conception to execution, I have put many weeks, hours, and all-nighters into this project that I am so passionate about.
+                Your support helps me allocate my time to this project and make the best experience for you possible.
+            </p>
+            <div style="background: rgba(255,255,255,0.2); border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                <div style="font-size: 14px; color: rgba(255,255,255,0.9); margin-bottom: 15px;">
+                    <strong>What your support enables:</strong>
+                </div>
+                <ul style="list-style: none; padding: 0; margin: 0;">
+                    <li style="padding: 8px 0; display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 18px;">🚀</span>
+                        <span>Continued development and new features</span>
+                    </li>
+                    <li style="padding: 8px 0; display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 18px;">🐛</span>
+                        <span>Bug fixes and performance improvements</span>
+                    </li>
+                    <li style="padding: 8px 0; display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 18px;">📚</span>
+                        <span>Better documentation and guides</span>
+                    </li>
+                    <li style="padding: 8px 0; display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 18px;">💻</span>
+                        <span>Server hosting and API costs</span>
+                    </li>
+                </ul>
+            </div>
+            <div style="text-align: center;">
+                <a href="https://buymeacoffee.com/angusbergman"
+                   target="_blank"
+                   style="display: inline-block; background: white; color: #40DCA5; padding: 15px 40px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: transform 0.2s;"
+                   onmouseover="this.style.transform='translateY(-2px)'"
+                   onmouseout="this.style.transform='translateY(0)'">
+                    ☕ Buy Me a Coffee
+                </a>
+            </div>
+            <div style="text-align: center; margin-top: 15px; font-size: 13px; color: rgba(255,255,255,0.8);">
+                Every contribution, big or small, is deeply appreciated 💚
+            </div>
+            <div style="margin-top: 20px; text-align: right;">
+                <button class="btn btn-small" onclick="scrollToTop()" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);">
+                    ⬆️ Back to Top
+                </button>
+            </div>
+        </div>
+
         <!-- Backend Data Operations Section -->
         <div style="background: white; border-radius: 12px; padding: 25px; margin-top: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
             <h2 style="color: #2d3748; font-size: 20px; margin-bottom: 20px;">🔧 Backend Data Operations</h2>
@@ -1223,6 +1274,12 @@
                         showPreferencesStatus('⚠️ Preferences not fully configured. Please fill in all required fields.', 'warning');
                     } else {
                         showPreferencesStatus('✅ Preferences loaded successfully. Addresses are saved and will be used automatically.', 'success');
+
+                        // Auto-calculate route if all required fields are populated
+                        if (homeAddr && workAddr && arrivalTime) {
+                            console.log('📍 All required fields populated - auto-calculating route...');
+                            setTimeout(() => calculateRoute(), 500); // Small delay to let UI update
+                        }
                     }
                 }
             } catch (error) {

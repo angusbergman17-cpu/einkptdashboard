@@ -1,6 +1,6 @@
 # PTV-TRMNL - Smart Melbourne Transit System
 
-**Version**: 2.0
+**Version**: 2.2.0
 **Last Updated**: January 23, 2026
 **Status**: ✅ Production Ready
 **Live Server**: https://ptv-trmnl-new.onrender.com
@@ -905,13 +905,79 @@ The admin panel includes comprehensive documentation explaining how each module 
 
 **Storage Location**: `user-preferences.json` (created automatically on server)
 
+#### 🚶 Manual Walking Times (Geocoding Fallback)
+
+**Purpose**: Allows route planning when addresses can't be automatically geocoded
+
+**How It Works**:
+```
+1. If an address can't be found by Google Places or Nominatim
+   ↓
+2. Enable "Use Manual Walking Times" in User Preferences
+   ↓
+3. Enter walking times manually (in minutes):
+   - Home → Nearest Station
+   - Station → Cafe
+   - Cafe → Station
+   - Station → Work
+   ↓
+4. Route planner uses your manual times instead of geocoding
+```
+
+**When to Use**:
+- Address not recognized by autocomplete search
+- Rural or remote locations without detailed mapping
+- Prefer manual control over calculated times
+- Testing different scenarios
+
+**Address Validation Status**:
+- ✅ = Address successfully geocoded
+- ⚠️ = Geocoding failed (use manual times)
+- ⏳ = Not yet tested
+
+**Benefits**:
+- System works even without perfect address data
+- User retains full control
+- Can measure exact walking times for accuracy
+- Fallback when API geocoding is unavailable
+
+#### ⚡ Auto-Calculate Route
+
+**Smart Automation**: When preferences are fully configured, the system automatically calculates your route without manual triggering.
+
+**How It Works**:
+```
+1. Configure addresses in User Preferences
+   ↓
+2. Save preferences (click "💾 Save All Preferences")
+   ↓
+3. System auto-populates Smart Route Planner fields
+   ↓
+4. If all required fields are filled (home, work, arrival time):
+   → Route calculation triggers automatically
+   → No need to click "Calculate Route"
+   ↓
+5. Route displays immediately on page load
+```
+
+**Benefits**:
+- ✅ Zero-click operation after initial setup
+- ✅ Instant route when opening admin panel
+- ✅ Reduces repetitive actions
+- ✅ Verification happens automatically
+
+**User Experience**:
+- First time: Configure preferences → Save → Auto-calculated
+- Every visit after: Open admin panel → Route already calculated
+- Updates: Change preferences → Save → Auto-recalculates
+
 #### 🧭 Navigation
 
 **Back to Top Buttons**:
 - Every card section has a "⬆️ Back to Top" button
 - Positioned right-aligned at bottom of each card
 - Smooth scroll animation
-- Available in all 11 sections:
+- Available in all 12 sections:
   1. User Preferences
   2. API Configuration
   3. Data Sources
@@ -921,7 +987,9 @@ The admin panel includes comprehensive documentation explaining how each module 
   7. Weather Status
   8. Smart Route Planner
   9. Dashboard Preview
-  10. Backend Data Operations
+  10. Support this Project
+  11. Backend Data Operations
+  12. Footer
 
 **Why Useful**: Long scrolling page, quick return to preferences at top
 
@@ -937,16 +1005,41 @@ The admin panel includes comprehensive documentation explaining how each module 
 - Version number display
 - **Buy Me a Coffee widget** (bottom right corner)
 
-**Buy Me a Coffee Widget**:
+#### ☕ Support this Project Section
+
+**Highly Visible Support Card**: Dedicated section highlighting project support
+
+**Location**: Between Smart Route Planner and Backend Data Operations sections
+
+**Contains**:
+- Project background and development effort
+- What supporter contributions enable:
+  * 🚀 Continued development and new features
+  * 🐛 Bug fixes and performance improvements
+  * 📚 Better documentation and guides
+  * 💻 Server hosting and API costs
+- Direct "Buy Me a Coffee" button with hover animation
+- Appreciation message for supporters
+
+**Design**:
+- Eye-catching gradient background (green theme)
+- Clear call-to-action button
+- Transparent about how support helps
+- Non-intrusive but prominent
+
+**Plus: Buy Me a Coffee Widget**:
 - Floating button in bottom right corner
 - Green theme (#40DCA5)
-- Optional donation support
-- Non-intrusive design
-- Thanking message for supporters
+- Secondary support option
+- Always accessible while scrolling
 - Username: `angusbergman`
-- Helps fund continued development
 
-**Purpose**: Professional appearance, proper attribution, legal disclaimer, community support
+**Why Both**:
+- Support section: Educates users about project needs
+- Floating widget: Quick access anywhere on page
+- Increases visibility and appreciation for contributions
+
+**Purpose**: Professional appearance, proper attribution, legal disclaimer, community support, project sustainability
 
 ---
 
@@ -1302,6 +1395,6 @@ MIT License - Customize for your own commute!
 ---
 
 **Last Updated**: January 23, 2026
-**Version**: 2.1.0
+**Version**: 2.2.0
 **Status**: ✅ Production Ready
-**Commit**: 6799b89
+**Commit**: daf824d
