@@ -209,12 +209,9 @@ void setup() {
     // Check for long press reset at any time during operation
     checkLongPressReset();
 
-    // OPERATING PHASE: Fetch data and render text dashboard
-    addLog("Fetching PTV data...");
-
+    // OPERATING PHASE: Fetch data and update regions only
     WiFiClientSecure *client = new WiFiClientSecure();
     if (!client) {
-        addLog("SSL alloc FAILED");
         deepSleep(refreshRate);
         return;
     }
@@ -225,7 +222,6 @@ void setup() {
     http.setTimeout(30000);
 
     if (!http.begin(*client, url)) {
-        addLog("HTTP begin FAILED");
         delete client;
         deepSleep(refreshRate);
         return;
@@ -233,9 +229,6 @@ void setup() {
 
     int httpCode = http.GET();
     if (httpCode != 200) {
-        char errMsg[60];
-        sprintf(errMsg, "HTTP %d", httpCode);
-        addLog(errMsg);
         http.end();
         client->stop();
         delete client;
@@ -248,56 +241,40 @@ void setup() {
     client->stop();
     delete client;
 
-    addLog("Data received");
-
     // Parse JSON
     JsonDocument doc;
     DeserializationError error = deserializeJson(doc, payload);
     if (error) {
-        addLog("JSON parse FAILED");
         deepSleep(refreshRate);
         return;
     }
 
-    addLog("Rendering dashboard...");
-
-    // Render text-based dashboard
+    // Render text-based dashboard (only updates changed regions)
     renderTextBasedDashboard(doc);
 
-    // Determine refresh type
-    bool useFullRefresh = (refreshCounter >= FULL_REFRESH_CYCLES);
-
-    // Feed watchdog and refresh
+    // Always use partial refresh - just update the changed boxes
     esp_task_wdt_reset();
     esp_task_wdt_delete(NULL);
 
-    if (useFullRefresh) {
-        addLog("Full refresh");
-        bbep.refresh(REFRESH_FULL, true);
-        refreshCounter = 0;
-    } else {
-        addLog("Partial refresh");
-        bbep.refresh(REFRESH_PARTIAL, false);
-    }
+    bbep.refresh(REFRESH_PARTIAL, false);
 
     esp_task_wdt_init(30, true);
     esp_task_wdt_add(NULL);
 
-    addLog("Update complete");
-    templateDisplayed = true;
-
-    // Increment counter and save
+    // Increment counter for periodic full refresh (every 10 minutes to clear ghosting)
     refreshCounter++;
     if (refreshCounter >= FULL_REFRESH_CYCLES) {
+        // Do a full refresh to clear ghosting
+        esp_task_wdt_reset();
+        esp_task_wdt_delete(NULL);
+        bbep.refresh(REFRESH_FULL, true);
+        esp_task_wdt_init(30, true);
+        esp_task_wdt_add(NULL);
         refreshCounter = 0;
     }
     preferences.putInt("refresh_count", refreshCounter);
 
     // Sleep until next refresh
-    char sleepMsg[60];
-    sprintf(sleepMsg, "Sleep %ds (next: %d/20)", refreshRate, refreshCounter);
-    addLog(sleepMsg);
-
     deepSleep(refreshRate);
 }
 
@@ -315,133 +292,170 @@ void initDisplay() {
     pinMode(PIN_INTERRUPT, INPUT_PULLUP);
 }
 
-// Render full text-based PTV dashboard
+// Render full text-based PTV dashboard (PIDS style like IMG_8196)
 void renderTextBasedDashboard(JsonDocument& doc) {
-    // Clear screen
-    bbep.fillScreen(BBEP_WHITE);
+    // FIRST TIME: Draw static elements (only once at startup)
+    static bool staticDrawn = false;
+    if (!staticDrawn) {
+        bbep.fillScreen(BBEP_WHITE);
 
-    // Get current time
-    unsigned long currentMillis = millis();
-    unsigned long minutes = (currentMillis / 60000) % 60;
-    unsigned long hours = (currentMillis / 3600000) % 24;
+        // Station header
+        bbep.setFont(FONT_12x16);
+        bbep.setCursor(10, 15);
+        bbep.print("FLINDERS STREET STATION");
 
-    // ===== HEADER BAR =====
-    bbep.setFont(FONT_12x16);
-    bbep.setCursor(20, 20);
-    char timeStr[10];
-    sprintf(timeStr, "%02lu:%02lu", hours, minutes);
-    bbep.print(timeStr);
+        // Platform label
+        bbep.setFont(FONT_8x8);
+        bbep.setCursor(380, 15);
+        bbep.print("PLATFORM 3");
 
-    // Coffee status
-    const char* coffeeText = "CHECK COFFEE STATUS";
-    if (doc.containsKey("regions")) {
-        JsonArray regions = doc["regions"].as<JsonArray>();
-        for (JsonObject region : regions) {
-            if (strcmp(region["id"] | "", "coffee") == 0) {
-                coffeeText = region["text"] | "NO COFFEE";
-                break;
-            }
+        // Divider line
+        bbep.drawLine(0, 30, 480, 30, BBEP_BLACK);
+
+        // Train section label
+        bbep.setFont(FONT_12x16);
+        bbep.setCursor(10, 55);
+        bbep.print("TRAIN");
+
+        // Tram section label
+        bbep.setCursor(10, 245);
+        bbep.print("TRAM");
+
+        staticDrawn = true;
+    }
+
+    // Extract data from JSON
+    JsonArray regions = doc["regions"].as<JsonArray>();
+
+    // Find time
+    const char* timeText = nullptr;
+    for (JsonObject region : regions) {
+        if (strcmp(region["id"] | "", "time") == 0) {
+            timeText = region["text"] | "00:00";
+            break;
         }
     }
-    bbep.setCursor(300, 20);
+
+    // Find coffee status
+    const char* coffeeText = "NO COFFEE";
+    for (JsonObject region : regions) {
+        if (strcmp(region["id"] | "", "coffee") == 0) {
+            coffeeText = region["text"] | "NO COFFEE";
+            break;
+        }
+    }
+
+    // Find train times
+    const char* train1 = nullptr;
+    const char* train2 = nullptr;
+    const char* train3 = nullptr;
+    for (JsonObject region : regions) {
+        const char* id = region["id"] | "";
+        if (strcmp(id, "train1") == 0) train1 = region["text"] | nullptr;
+        else if (strcmp(id, "train2") == 0) train2 = region["text"] | nullptr;
+        else if (strcmp(id, "train3") == 0) train3 = region["text"] | nullptr;
+    }
+
+    // Find tram times
+    const char* tram1 = nullptr;
+    const char* tram2 = nullptr;
+    const char* tram3 = nullptr;
+    for (JsonObject region : regions) {
+        const char* id = region["id"] | "";
+        if (strcmp(id, "tram1") == 0) tram1 = region["text"] | nullptr;
+        else if (strcmp(id, "tram2") == 0) tram2 = region["text"] | nullptr;
+        else if (strcmp(id, "tram3") == 0) tram3 = region["text"] | nullptr;
+    }
+
+    // ===== UPDATE DYNAMIC REGIONS ONLY =====
+
+    // TIME (top right - large)
+    bbep.fillRect(350, 35, 120, 30, BBEP_WHITE);
+    bbep.setFont(FONT_12x16);
+    bbep.setCursor(360, 55);
+    if (timeText) bbep.print(timeText);
+
+    // COFFEE STATUS (below time)
+    bbep.fillRect(300, 70, 170, 20, BBEP_WHITE);
     bbep.setFont(FONT_8x8);
+    bbep.setCursor(305, 80);
     bbep.print(coffeeText);
 
-    // ===== METRO TRAINS SECTION =====
-    bbep.fillRect(20, 50, 440, 30, BBEP_BLACK);
-    bbep.setFont(FONT_12x16);
-    bbep.setTextColor(BBEP_WHITE, BBEP_BLACK);
-    bbep.setCursor(30, 65);
-    bbep.print("METRO TRAINS - FLINDERS ST");
-    bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
+    // TRAIN DEPARTURES (large times on left, destinations on right)
+    int trainY = 90;
+    int trainLineHeight = 55;
 
-    bbep.setFont(FONT_8x8);
-    bbep.setCursor(30, 95);
-    bbep.print("NEXT DEPARTURE:");
-    bbep.setCursor(400, 95);
-    bbep.print("PLAT 3");
-
-    // Train departures
-    bbep.setFont(FONT_12x16);
-    int trainY = 120;
-    int trainCount = 0;
-    if (doc.containsKey("regions")) {
-        JsonArray regions = doc["regions"].as<JsonArray>();
-        for (JsonObject region : regions) {
-            const char* id = region["id"] | "";
-            if (strncmp(id, "train", 5) == 0) {
-                bbep.setCursor(30, trainY);
-                bbep.print(region["text"] | "-- min");
-                bbep.setFont(FONT_8x8);
-                bbep.setCursor(150, trainY + 5);
-                bbep.print("FLINDERS STREET (CITY LOOP)");
-                bbep.setFont(FONT_12x16);
-                trainY += 30;
-                trainCount++;
-                if (trainCount >= 3) break;
-            }
-        }
-    }
-    if (trainCount == 0) {
+    // Train 1
+    bbep.fillRect(10, trainY, 460, trainLineHeight, BBEP_WHITE);
+    if (train1) {
+        bbep.setFont(FONT_12x16);
+        bbep.setCursor(20, trainY + 20);
+        bbep.print(train1);
         bbep.setFont(FONT_8x8);
-        bbep.setCursor(30, trainY);
-        bbep.print("No scheduled departures");
-    }
-
-    // ===== YARRA TRAMS SECTION =====
-    bbep.fillRect(20, 230, 440, 30, BBEP_BLACK);
-    bbep.setFont(FONT_12x16);
-    bbep.setTextColor(BBEP_WHITE, BBEP_BLACK);
-    bbep.setCursor(30, 245);
-    bbep.print("YARRA TRAMS - 58 WEST COBURG");
-    bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
-
-    bbep.setFont(FONT_8x8);
-    bbep.setCursor(30, 275);
-    bbep.print("NEXT DEPARTURE:");
-
-    // Tram departures
-    bbep.setFont(FONT_12x16);
-    int tramY = 300;
-    int tramCount = 0;
-    if (doc.containsKey("regions")) {
-        JsonArray regions = doc["regions"].as<JsonArray>();
-        for (JsonObject region : regions) {
-            const char* id = region["id"] | "";
-            if (strncmp(id, "tram", 4) == 0) {
-                bbep.setCursor(30, tramY);
-                bbep.print(region["text"] | "-- min");
-                bbep.setFont(FONT_8x8);
-                bbep.setCursor(150, tramY + 5);
-                bbep.print("TOORAK (VIA DOMAIN RD)");
-                bbep.setFont(FONT_12x16);
-                tramY += 30;
-                tramCount++;
-                if (tramCount >= 3) break;
-            }
-        }
-    }
-    if (tramCount == 0) {
+        bbep.setCursor(120, trainY + 15);
+        bbep.print("FLINDERS ST");
+        bbep.setCursor(120, trainY + 30);
+        bbep.print("(CITY LOOP)");
+    } else {
         bbep.setFont(FONT_8x8);
-        bbep.setCursor(30, tramY);
-        bbep.print("No scheduled departures");
+        bbep.setCursor(20, trainY + 20);
+        bbep.print("No departures");
     }
 
-    // ===== SERVICE STATUS =====
-    bbep.drawRect(20, 410, 440, 60, BBEP_BLACK);
-    bbep.setFont(FONT_8x8);
-    bbep.setCursor(190, 425);
-    bbep.print("SERVICE STATUS:");
-    bbep.setCursor(30, 445);
-    bbep.print("METRO TRAINS: GOOD SERVICE");
-    bbep.setCursor(30, 460);
-    bbep.print("YARRA TRAMS: GOOD SERVICE");
+    // Train 2
+    trainY += trainLineHeight;
+    bbep.fillRect(10, trainY, 460, trainLineHeight, BBEP_WHITE);
+    if (train2) {
+        bbep.setFont(FONT_12x16);
+        bbep.setCursor(20, trainY + 20);
+        bbep.print(train2);
+        bbep.setFont(FONT_8x8);
+        bbep.setCursor(120, trainY + 15);
+        bbep.print("FLINDERS ST");
+        bbep.setCursor(120, trainY + 30);
+        bbep.print("(CITY LOOP)");
+    }
 
-    // ===== FOOTER =====
-    bbep.setFont(FONT_8x8);
-    bbep.setCursor(150, 465);
-    sprintf(timeStr, "Cycle: %d/20", refreshCounter);
-    bbep.print(timeStr);
+    // TRAM DEPARTURES
+    int tramY = 280;
+    int tramLineHeight = 55;
+
+    // Tram 1
+    bbep.fillRect(10, tramY, 460, tramLineHeight, BBEP_WHITE);
+    if (tram1) {
+        bbep.setFont(FONT_12x16);
+        bbep.setCursor(20, tramY + 20);
+        bbep.print(tram1);
+        bbep.setFont(FONT_8x8);
+        bbep.setCursor(120, tramY + 15);
+        bbep.print("WEST COBURG");
+        bbep.setCursor(120, tramY + 30);
+        bbep.print("(SCHED)");
+    } else {
+        bbep.setFont(FONT_8x8);
+        bbep.setCursor(20, tramY + 20);
+        bbep.print("No departures");
+    }
+
+    // Tram 2
+    tramY += tramLineHeight;
+    bbep.fillRect(10, tramY, 460, tramLineHeight, BBEP_WHITE);
+    if (tram2) {
+        bbep.setFont(FONT_12x16);
+        bbep.setCursor(20, tramY + 20);
+        bbep.print(tram2);
+        bbep.setFont(FONT_8x8);
+        bbep.setCursor(120, tramY + 15);
+        bbep.print("WEST COBURG");
+        bbep.setCursor(120, tramY + 30);
+        bbep.print("(SCHED)");
+    }
+
+    // SERVICE STATUS (bottom - larger text)
+    bbep.fillRect(10, 420, 460, 50, BBEP_WHITE);
+    bbep.setFont(FONT_12x16);
+    bbep.setCursor(15, 440);
+    bbep.print("GOOD SERVICE");
 }
 
 // Show confirmation prompt OVERLAID on current screen (bottom section)
