@@ -315,90 +315,221 @@ class RoutePlanner {
    * @param {string} params.arrivalTime - Desired arrival time (HH:MM)
    * @param {Object} params.manualWalkingTimes - Optional manual walking times
    * @param {Object} params.addressFlags - Address validation flags
+   * @param {Object} params.journeyConfig - Journey configuration (cafe location, transit modes)
    */
-  async calculateRoute(homeAddress, coffeeAddress, workAddress, arrivalTime, manualWalkingTimes = {}, addressFlags = {}) {
-    console.log('\n=== CALCULATING SMART ROUTE ===');
+  async calculateRoute(homeAddress, coffeeAddress, workAddress, arrivalTime, manualWalkingTimes = {}, addressFlags = {}, journeyConfig = {}) {
+    console.log('\n=== CALCULATING FLEXIBLE SMART ROUTE ===');
     console.log(`Home: ${homeAddress}`);
     console.log(`Coffee: ${coffeeAddress}`);
     console.log(`Work: ${workAddress}`);
     console.log(`Desired arrival: ${arrivalTime}`);
+    console.log(`Journey Config:`, JSON.stringify(journeyConfig, null, 2));
+
+    // Extract journey configuration with defaults
+    const {
+      coffeeEnabled = true,
+      cafeLocation = 'before-transit-1',
+      transitRoute = {
+        numberOfModes: 1,
+        mode1: {
+          type: 0,
+          originStation: { name: 'South Yarra', lat: -37.8408, lon: 145.0002 },
+          destinationStation: { name: 'Flinders Street', lat: -37.8530, lon: 144.9560 },
+          estimatedDuration: 20
+        },
+        mode2: null
+      }
+    } = journeyConfig;
+
+    const numberOfModes = transitRoute.numberOfModes || 1;
+    const hasConnection = numberOfModes === 2;
 
     if (manualWalkingTimes.useManualTimes) {
       console.log('\n⚙️  Using manual walking times (override mode)');
     }
 
+    console.log(`📍 Cafe Location: ${cafeLocation}`);
+    console.log(`🚉 Transit Modes: ${numberOfModes}`);
+    if (hasConnection) {
+      console.log(`🔄 Connection contemplated in commute`);
+    }
+
     try {
-      // Step 1: Geocode all addresses (skip if using manual times)
-      let home, coffee, work;
+      // Step 1: Geocode all locations
+      console.log('\n1. Geocoding locations...');
+
+      const locations = {};
 
       if (!manualWalkingTimes.useManualTimes) {
-        console.log('\n1. Geocoding addresses...');
-        home = await this.geocodeAddress(homeAddress);
-        coffee = await this.geocodeAddress(coffeeAddress);
-        work = await this.geocodeAddress(workAddress);
+        // Geocode addresses
+        locations.home = await this.geocodeAddress(homeAddress);
+        if (coffeeEnabled && coffeeAddress) {
+          locations.cafe = await this.geocodeAddress(coffeeAddress);
+        }
+        locations.work = await this.geocodeAddress(workAddress);
+
+        // Get station coordinates (use provided or geocode)
+        locations.transit1Origin = transitRoute.mode1.originStation.lat
+          ? { lat: transitRoute.mode1.originStation.lat, lon: transitRoute.mode1.originStation.lon }
+          : await this.geocodeAddress(`${transitRoute.mode1.originStation.name} Station, Melbourne`);
+
+        locations.transit1Dest = transitRoute.mode1.destinationStation.lat
+          ? { lat: transitRoute.mode1.destinationStation.lat, lon: transitRoute.mode1.destinationStation.lon }
+          : await this.geocodeAddress(`${transitRoute.mode1.destinationStation.name} Station, Melbourne`);
+
+        if (hasConnection && transitRoute.mode2) {
+          locations.transit2Origin = transitRoute.mode2.originStation.lat
+            ? { lat: transitRoute.mode2.originStation.lat, lon: transitRoute.mode2.originStation.lon }
+            : await this.geocodeAddress(`${transitRoute.mode2.originStation.name} Station, Melbourne`);
+
+          locations.transit2Dest = transitRoute.mode2.destinationStation.lat
+            ? { lat: transitRoute.mode2.destinationStation.lat, lon: transitRoute.mode2.destinationStation.lon }
+            : await this.geocodeAddress(`${transitRoute.mode2.destinationStation.name} Station, Melbourne`);
+        }
       } else {
-        console.log('\n1. Skipping geocoding (using manual times)...');
-        // Set dummy coordinates - won't be used
-        home = { lat: 0, lon: 0 };
-        coffee = { lat: 0, lon: 0 };
-        work = { lat: 0, lon: 0 };
+        // Dummy locations for manual mode
+        locations.home = { lat: 0, lon: 0 };
+        locations.work = { lat: 0, lon: 0 };
+        locations.cafe = { lat: 0, lon: 0 };
+        locations.transit1Origin = { lat: 0, lon: 0 };
+        locations.transit1Dest = { lat: 0, lon: 0 };
+        if (hasConnection) {
+          locations.transit2Origin = { lat: 0, lon: 0 };
+          locations.transit2Dest = { lat: 0, lon: 0 };
+        }
       }
 
-      // Step 2: Calculate walking times (use manual if provided)
+      // Step 2: Calculate walking times dynamically based on cafe location
       console.log('\n2. Calculating walking times...');
 
-      let homeToStation, stationToCoffee, coffeeToStation, stationToWork;
+      const times = {};
+      const walkingDistances = {};
 
       if (manualWalkingTimes.useManualTimes && manualWalkingTimes.homeToStation) {
         // Use manual walking times
-        homeToStation = { walkingTime: manualWalkingTimes.homeToStation, distance: 0 };
-        stationToCoffee = { walkingTime: manualWalkingTimes.stationToCafe || 0, distance: 0 };
-        coffeeToStation = { walkingTime: manualWalkingTimes.cafeToStation || manualWalkingTimes.stationToCafe || 0, distance: 0 };
-        stationToWork = { walkingTime: manualWalkingTimes.stationToWork || 0, distance: 0 };
-
-        console.log('  ⚙️  Using manual times:');
+        console.log('  ⚙️  Using manual times');
+        times.homeToTransit1 = manualWalkingTimes.homeToStation;
+        times.homeToCafe = manualWalkingTimes.homeToStation || 0;
+        times.cafeToTransit1 = manualWalkingTimes.stationToCafe || 0;
+        times.transit1ToCafe = manualWalkingTimes.stationToCafe || 0;
+        times.cafeToTransit2 = manualWalkingTimes.cafeToStation || 0;
+        times.transit1ToTransit2 = manualWalkingTimes.cafeToStation || 0;
+        times.transit2ToCafe = manualWalkingTimes.stationToCafe || 0;
+        times.cafeToWork = manualWalkingTimes.stationToWork || 0;
+        times.lastTransitToCafe = manualWalkingTimes.stationToCafe || 0;
+        times.lastTransitToWork = manualWalkingTimes.stationToWork || 0;
       } else {
-        // Calculate from geocoded coordinates
-        homeToStation = this.calculateWalkingTime(
-          home.lat, home.lon,
-          -37.8408, 145.0002 // South Yarra Station (hardcoded for now)
-        );
+        // Calculate dynamically based on cafe location
+        console.log(`  📍 Cafe placement: ${cafeLocation}`);
 
-        stationToCoffee = this.calculateWalkingTime(
-          -37.8408, 145.0002, // South Yarra Station
-          coffee.lat, coffee.lon
+        // Always calculate home to first transit
+        const homeToT1 = this.calculateWalkingTime(
+          locations.home.lat, locations.home.lon,
+          locations.transit1Origin.lat, locations.transit1Origin.lon
         );
+        times.homeToTransit1 = homeToT1.walkingTime;
+        walkingDistances.homeToTransit1 = homeToT1;
 
-        coffeeToStation = this.calculateWalkingTime(
-          coffee.lat, coffee.lon,
-          -37.8408, 145.0002 // Back to station
-        );
+        // Calculate based on cafe location
+        if (coffeeEnabled && cafeLocation === 'before-transit-1') {
+          // Home → Cafe → Transit 1
+          const homeToCafe = this.calculateWalkingTime(
+            locations.home.lat, locations.home.lon,
+            locations.cafe.lat, locations.cafe.lon
+          );
+          const cafeToT1 = this.calculateWalkingTime(
+            locations.cafe.lat, locations.cafe.lon,
+            locations.transit1Origin.lat, locations.transit1Origin.lon
+          );
+          times.homeToCafe = homeToCafe.walkingTime;
+          times.cafeToTransit1 = cafeToT1.walkingTime;
+          walkingDistances.homeToCafe = homeToCafe;
+          walkingDistances.cafeToTransit1 = cafeToT1;
 
-        stationToWork = this.calculateWalkingTime(
-          -37.8530, 144.9560, // Flinders Street Station (destination)
-          work.lat, work.lon
-        );
+        } else if (coffeeEnabled && cafeLocation === 'between-transits' && hasConnection) {
+          // Transit 1 → Cafe → Transit 2
+          const t1ToCafe = this.calculateWalkingTime(
+            locations.transit1Dest.lat, locations.transit1Dest.lon,
+            locations.cafe.lat, locations.cafe.lon
+          );
+          const cafeToT2 = this.calculateWalkingTime(
+            locations.cafe.lat, locations.cafe.lon,
+            locations.transit2Origin.lat, locations.transit2Origin.lon
+          );
+          times.transit1ToCafe = t1ToCafe.walkingTime;
+          times.cafeToTransit2 = cafeToT2.walkingTime;
+          walkingDistances.transit1ToCafe = t1ToCafe;
+          walkingDistances.cafeToTransit2 = cafeToT2;
+
+        } else if (coffeeEnabled && cafeLocation === 'after-last-transit') {
+          // Last Transit → Cafe → Work
+          const lastTransitStation = hasConnection ? locations.transit2Dest : locations.transit1Dest;
+          const lastToCafe = this.calculateWalkingTime(
+            lastTransitStation.lat, lastTransitStation.lon,
+            locations.cafe.lat, locations.cafe.lon
+          );
+          const cafeToWork = this.calculateWalkingTime(
+            locations.cafe.lat, locations.cafe.lon,
+            locations.work.lat, locations.work.lon
+          );
+          times.lastTransitToCafe = lastToCafe.walkingTime;
+          times.cafeToWork = cafeToWork.walkingTime;
+          walkingDistances.lastTransitToCafe = lastToCafe;
+          walkingDistances.cafeToWork = cafeToWork;
+        }
+
+        // Connection between transits (if no cafe there)
+        if (hasConnection && cafeLocation !== 'between-transits') {
+          const t1ToT2 = this.calculateWalkingTime(
+            locations.transit1Dest.lat, locations.transit1Dest.lon,
+            locations.transit2Origin.lat, locations.transit2Origin.lon
+          );
+          times.transit1ToTransit2 = t1ToT2.walkingTime;
+          walkingDistances.transit1ToTransit2 = t1ToT2;
+        }
+
+        // Last transit to work (if no cafe after)
+        if (cafeLocation !== 'after-last-transit') {
+          const lastTransitStation = hasConnection ? locations.transit2Dest : locations.transit1Dest;
+          const lastToWork = this.calculateWalkingTime(
+            lastTransitStation.lat, lastTransitStation.lon,
+            locations.work.lat, locations.work.lon
+          );
+          times.lastTransitToWork = lastToWork.walkingTime;
+          walkingDistances.lastTransitToWork = lastToWork;
+        }
       }
 
-      console.log(`  Home → Station: ${homeToStation.walkingTime} min (${homeToStation.distance}m)`);
-      console.log(`  Station → Coffee: ${stationToCoffee.walkingTime} min (${stationToCoffee.distance}m)`);
-      console.log(`  Coffee → Station: ${coffeeToStation.walkingTime} min (${coffeeToStation.distance}m)`);
-      console.log(`  Station → Work: ${stationToWork.walkingTime} min (${stationToWork.distance}m)`);
+      // Log calculated times
+      console.log('  Walking times calculated:');
+      Object.entries(times).forEach(([key, value]) => {
+        if (value > 0) {
+          const dist = walkingDistances[key];
+          console.log(`    ${key}: ${value} min ${dist ? `(${dist.distance}m)` : ''}`);
+        }
+      });
 
       // Step 2.5: Check cafe busy-ness and get dynamic coffee time
-      console.log('\n2.5. Checking cafe busy-ness...');
-      const busyData = await this.busyDetector.getCafeBusyness(coffeeAddress, coffee.lat, coffee.lon);
-      const busyDesc = this.busyDetector.getBusyDescription(busyData);
+      let busyData, busyDesc, coffeePurchaseTime;
 
-      console.log(`  Cafe: ${coffeeAddress}`);
-      console.log(`  Busy Level: ${busyDesc.icon} ${busyDesc.text} (${busyDesc.source})`);
-      console.log(`  Coffee Time: ${busyData.coffeeTime} min (base: ${this.BASE_COFFEE_PURCHASE_TIME} min)`);
-      if (busyData.details.peakName) {
-        console.log(`  Peak Status: ${busyData.details.peakName}`);
+      if (coffeeEnabled && coffeeAddress) {
+        console.log('\n2.5. Checking cafe busy-ness...');
+        busyData = await this.busyDetector.getCafeBusyness(coffeeAddress, locations.cafe?.lat, locations.cafe?.lon);
+        busyDesc = this.busyDetector.getBusyDescription(busyData);
+
+        console.log(`  Cafe: ${coffeeAddress}`);
+        console.log(`  Busy Level: ${busyDesc.icon} ${busyDesc.text} (${busyDesc.source})`);
+        console.log(`  Coffee Time: ${busyData.coffeeTime} min (base: ${this.BASE_COFFEE_PURCHASE_TIME} min)`);
+        if (busyData.details.peakName) {
+          console.log(`  Peak Status: ${busyData.details.peakName}`);
+        }
+
+        coffeePurchaseTime = busyData.coffeeTime;
+      } else {
+        coffeePurchaseTime = 0;
+        busyData = { level: 'n/a', coffeeTime: 0, details: {} };
+        busyDesc = { icon: '', text: 'No coffee', source: 'disabled' };
       }
-
-      // Use dynamic coffee purchase time
-      const coffeePurchaseTime = busyData.coffeeTime;
 
       // Step 3: Work backwards from arrival time
       console.log('\n3. Working backwards from arrival time...');
@@ -406,126 +537,174 @@ class RoutePlanner {
       const arrivalTimeParts = arrivalTime.split(':');
       const arrivalMinutes = parseInt(arrivalTimeParts[0]) * 60 + parseInt(arrivalTimeParts[1]);
 
-      // Time needed after arriving at destination station
-      const mustArriveAtDestStation = arrivalMinutes - stationToWork.walkingTime - this.SAFETY_BUFFER;
+      let currentTime = arrivalMinutes;
 
-      // Assume 20 minute train journey (South Yarra → Flinders St)
-      const trainJourneyTime = 20;
-      const mustDepartOriginStation = mustArriveAtDestStation - trainJourneyTime;
+      // Work backwards through all segments
+      // Segment: Work arrival
+      console.log(`  Must arrive at work: ${this.formatTime(currentTime)}`);
 
-      // Time needed for coffee (using dynamic busy-ness adjusted time)
-      const mustLeaveForStation = mustDepartOriginStation - stationToCoffee.walkingTime - coffeePurchaseTime - coffeeToStation.walkingTime - this.SAFETY_BUFFER;
+      // Segment: Last transit → Work (or Cafe → Work)
+      if (coffeeEnabled && cafeLocation === 'after-last-transit') {
+        currentTime -= times.cafeToWork;
+        currentTime -= this.SAFETY_BUFFER;
+        console.log(`  Must leave cafe: ${this.formatTime(currentTime)}`);
 
-      // Total time from home
-      const mustLeaveHome = mustLeaveForStation - homeToStation.walkingTime - this.SAFETY_BUFFER;
+        currentTime -= coffeePurchaseTime;
+        console.log(`  Must arrive at cafe: ${this.formatTime(currentTime)}`);
 
-      console.log(`  Must arrive at work: ${this.formatTime(arrivalMinutes)}`);
-      console.log(`  Must arrive at Flinders St: ${this.formatTime(mustArriveAtDestStation)}`);
-      console.log(`  Must depart South Yarra: ${this.formatTime(mustDepartOriginStation)}`);
-      console.log(`  Must leave coffee shop: ${this.formatTime(mustLeaveForStation)}`);
-      console.log(`  Must leave home: ${this.formatTime(mustLeaveHome)}`);
+        currentTime -= times.lastTransitToCafe;
+        currentTime -= this.SAFETY_BUFFER;
+      } else {
+        currentTime -= times.lastTransitToWork;
+        currentTime -= this.SAFETY_BUFFER;
+      }
 
-      // Step 4: Build route segments
+      const lastTransitName = hasConnection
+        ? transitRoute.mode2.destinationStation.name
+        : transitRoute.mode1.destinationStation.name;
+      console.log(`  Must arrive at ${lastTransitName}: ${this.formatTime(currentTime)}`);
+
+      // Segment: Transit mode 2 (if exists)
+      if (hasConnection && transitRoute.mode2) {
+        const transit2Duration = transitRoute.mode2.estimatedDuration || 15;
+        currentTime -= transit2Duration;
+        console.log(`  Must depart ${transitRoute.mode2.originStation.name}: ${this.formatTime(currentTime)}`);
+
+        currentTime -= this.SAFETY_BUFFER;
+
+        // Segment: Connection (or Cafe between transits)
+        if (coffeeEnabled && cafeLocation === 'between-transits') {
+          currentTime -= times.cafeToTransit2;
+          console.log(`  Must leave cafe: ${this.formatTime(currentTime)}`);
+
+          currentTime -= coffeePurchaseTime;
+          console.log(`  Must arrive at cafe: ${this.formatTime(currentTime)}`);
+
+          currentTime -= times.transit1ToCafe;
+        } else {
+          currentTime -= times.transit1ToTransit2;
+        }
+
+        currentTime -= this.SAFETY_BUFFER;
+        console.log(`  Must arrive at ${transitRoute.mode1.destinationStation.name}: ${this.formatTime(currentTime)}`);
+      }
+
+      // Segment: Transit mode 1
+      const transit1Duration = transitRoute.mode1.estimatedDuration || 20;
+      currentTime -= transit1Duration;
+      console.log(`  Must depart ${transitRoute.mode1.originStation.name}: ${this.formatTime(currentTime)}`);
+
+      currentTime -= this.SAFETY_BUFFER;
+
+      // Segment: Home → Transit 1 (or Home → Cafe → Transit 1)
+      if (coffeeEnabled && cafeLocation === 'before-transit-1') {
+        currentTime -= times.cafeToTransit1;
+        console.log(`  Must leave cafe: ${this.formatTime(currentTime)}`);
+
+        currentTime -= coffeePurchaseTime;
+        console.log(`  Must arrive at cafe: ${this.formatTime(currentTime)}`);
+
+        currentTime -= times.homeToCafe;
+      } else {
+        currentTime -= times.homeToTransit1;
+      }
+
+      currentTime -= this.SAFETY_BUFFER;
+      const mustLeaveHome = currentTime;
+      console.log(`  🏠 Must leave home: ${this.formatTime(mustLeaveHome)}`);
+
+      // Step 4: Build flexible route segments
+      console.log('\n4. Building route segments...');
+
+      times.mustLeaveHome = mustLeaveHome;
+
+      // Use flexible segment builder
+      const segments = this.buildFlexibleRouteSegments(
+        journeyConfig,
+        walkingDistances,
+        times,
+        coffeePurchaseTime,
+        busyData,
+        busyDesc
+      );
+
+      // Calculate total walking time
+      let totalWalkingTime = 0;
+      let totalTransitTime = 0;
+      let totalBufferTime = 0;
+
+      segments.forEach(seg => {
+        if (seg.type === 'walk') totalWalkingTime += seg.duration;
+        if (['train', 'tram', 'bus', 'vline'].includes(seg.type)) totalTransitTime += seg.duration;
+        if (seg.type === 'wait') totalBufferTime += seg.duration;
+      });
+
+      // Build route description
+      let routeDescription = 'Home';
+      if (coffeeEnabled && cafeLocation === 'before-transit-1') {
+        routeDescription += ' → ☕ Cafe';
+      }
+      routeDescription += ` → ${transitRoute.mode1.originStation.name}`;
+      if (hasConnection) {
+        if (coffeeEnabled && cafeLocation === 'between-transits') {
+          routeDescription += ` → ${transitRoute.mode1.destinationStation.name} → ☕ Cafe → ${transitRoute.mode2.originStation.name}`;
+        } else {
+          routeDescription += ` → ${transitRoute.mode1.destinationStation.name} (connection) → ${transitRoute.mode2.originStation.name}`;
+        }
+        routeDescription += ` → ${transitRoute.mode2.destinationStation.name}`;
+      } else {
+        routeDescription += ` → ${transitRoute.mode1.destinationStation.name}`;
+      }
+      if (coffeeEnabled && cafeLocation === 'after-last-transit') {
+        routeDescription += ' → ☕ Cafe';
+      }
+      routeDescription += ' → Work';
+
       const route = {
         calculated_at: new Date().toISOString(),
         arrival_time: arrivalTime,
         must_leave_home: this.formatTime(mustLeaveHome),
 
-        segments: [
-          {
-            type: 'walk',
-            from: 'Home',
-            to: 'South Yarra Station',
-            duration: homeToStation.walkingTime,
-            distance: homeToStation.distance,
-            departure: this.formatTime(mustLeaveHome),
-            arrival: this.formatTime(mustLeaveHome + homeToStation.walkingTime)
-          },
-          {
-            type: 'wait',
-            location: 'South Yarra Station',
-            duration: 2, // Safety buffer
-            departure: this.formatTime(mustLeaveHome + homeToStation.walkingTime),
-            arrival: this.formatTime(mustLeaveHome + homeToStation.walkingTime + 2)
-          },
-          {
-            type: 'walk',
-            from: 'South Yarra Station',
-            to: 'Coffee Shop',
-            duration: stationToCoffee.walkingTime,
-            distance: stationToCoffee.distance,
-            departure: this.formatTime(mustLeaveHome + homeToStation.walkingTime + 2),
-            arrival: this.formatTime(mustLeaveHome + homeToStation.walkingTime + 2 + stationToCoffee.walkingTime)
-          },
-          {
-            type: 'coffee',
-            location: 'Coffee Shop',
-            duration: coffeePurchaseTime,
-            departure: this.formatTime(mustLeaveHome + homeToStation.walkingTime + 2 + stationToCoffee.walkingTime),
-            arrival: this.formatTime(mustLeaveHome + homeToStation.walkingTime + 2 + stationToCoffee.walkingTime + coffeePurchaseTime),
-            busyLevel: busyData.level,
-            busyIcon: busyDesc.icon,
-            busyText: busyDesc.text,
-            busyDetails: busyData.details
-          },
-          {
-            type: 'walk',
-            from: 'Coffee Shop',
-            to: 'South Yarra Station',
-            duration: coffeeToStation.walkingTime,
-            distance: coffeeToStation.distance,
-            departure: this.formatTime(mustLeaveHome + homeToStation.walkingTime + 2 + stationToCoffee.walkingTime + coffeePurchaseTime),
-            arrival: this.formatTime(mustDepartOriginStation - 2)
-          },
-          {
-            type: 'wait',
-            location: 'South Yarra Station',
-            duration: 2,
-            departure: this.formatTime(mustDepartOriginStation - 2),
-            arrival: this.formatTime(mustDepartOriginStation)
-          },
-          {
-            type: 'train',
-            from: 'South Yarra',
-            to: 'Flinders Street',
-            route: 'City Loop',
-            duration: trainJourneyTime,
-            departure: this.formatTime(mustDepartOriginStation),
-            arrival: this.formatTime(mustArriveAtDestStation)
-          },
-          {
-            type: 'walk',
-            from: 'Flinders Street Station',
-            to: 'Work',
-            duration: stationToWork.walkingTime,
-            distance: stationToWork.distance,
-            departure: this.formatTime(mustArriveAtDestStation + 1),
-            arrival: this.formatTime(arrivalMinutes)
-          }
-        ],
+        // Flexible segments
+        segments,
+
+        // Journey metadata
+        journey: {
+          cafe_location: cafeLocation,
+          number_of_transit_modes: numberOfModes,
+          has_connection: hasConnection,
+          connection_info: hasConnection ? {
+            from: transitRoute.mode1.destinationStation.name,
+            to: transitRoute.mode2.originStation.name,
+            coffee_during_connection: cafeLocation === 'between-transits'
+          } : null,
+          transit_modes: hasConnection
+            ? [this.getTransitTypeName(transitRoute.mode1.type), this.getTransitTypeName(transitRoute.mode2.type)]
+            : [this.getTransitTypeName(transitRoute.mode1.type)]
+        },
 
         summary: {
           total_duration: arrivalMinutes - mustLeaveHome,
-          walking_time: homeToStation.walkingTime + stationToCoffee.walkingTime + coffeeToStation.walkingTime + stationToWork.walkingTime,
+          walking_time: totalWalkingTime,
           coffee_time: coffeePurchaseTime,
           coffee_time_base: this.BASE_COFFEE_PURCHASE_TIME,
-          transit_time: trainJourneyTime,
-          buffer_time: this.SAFETY_BUFFER * 4,
-          can_get_coffee: true,
-          cafe_busy: {
+          transit_time: totalTransitTime,
+          buffer_time: totalBufferTime,
+          can_get_coffee: coffeeEnabled,
+          cafe_busy: coffeeEnabled ? {
             level: busyData.level,
             icon: busyDesc.icon,
             text: busyDesc.text,
             source: busyDesc.source,
             details: busyData.details
-          }
+          } : null
         },
 
         display: {
           departure_time: this.formatTime(mustLeaveHome),
           arrival_time: arrivalTime,
-          coffee_enabled: true,
-          route_description: `Home → South Yarra → Coffee → South Yarra → Flinders St → Work`
+          coffee_enabled: coffeeEnabled,
+          route_description: routeDescription
         }
       };
 
@@ -534,6 +713,23 @@ class RoutePlanner {
       this.routeCacheExpiry = Date.now() + this.routeCacheDuration;
 
       console.log('\n✅ Route calculated successfully');
+      console.log(`📊 Summary:`);
+      console.log(`  - Total duration: ${route.summary.total_duration} min`);
+      console.log(`  - Walking: ${route.summary.walking_time} min`);
+      console.log(`  - Transit: ${route.summary.transit_time} min`);
+      console.log(`  - Coffee: ${route.summary.coffee_time} min`);
+      console.log(`  - Buffers: ${route.summary.buffer_time} min`);
+      console.log(`  - Transit modes: ${route.journey.transit_modes.join(', ')}`);
+
+      if (route.journey.has_connection) {
+        console.log(`  🔄 Connection: ${route.journey.connection_info.from} → ${route.journey.connection_info.to}`);
+        if (route.journey.connection_info.coffee_during_connection) {
+          console.log(`  ☕ Coffee stop during connection`);
+        }
+      }
+
+      console.log(`  Route: ${route.display.route_description}`);
+
       return route;
 
     } catch (error) {

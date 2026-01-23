@@ -2003,6 +2003,43 @@
                         </div>
                     </div>
 
+                    ${route.journey ? `
+                        <div style="background: #e6fffa; border-radius: 6px; padding: 10px; margin-bottom: 10px; font-size: 12px;">
+                            <div style="font-weight: 600; color: #2d3748; margin-bottom: 6px;">
+                                🚉 Journey Configuration
+                            </div>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">
+                                <div>
+                                    <span style="color: #718096;">Transit Modes:</span>
+                                    <span style="font-weight: 600; color: #2d3748; margin-left: 4px;">
+                                        ${route.journey.transit_modes.join(' + ')} (${route.journey.number_of_transit_modes} mode${route.journey.number_of_transit_modes > 1 ? 's' : ''})
+                                    </span>
+                                </div>
+                                ${route.journey.cafe_location ? `
+                                    <div>
+                                        <span style="color: #718096;">Cafe Location:</span>
+                                        <span style="font-weight: 600; color: #2d3748; margin-left: 4px;">
+                                            ${route.journey.cafe_location === 'before-transit-1' ? 'Before first transit' :
+                                              route.journey.cafe_location === 'between-transits' ? 'During connection' :
+                                              route.journey.cafe_location === 'after-last-transit' ? 'After last transit' : 'N/A'}
+                                        </span>
+                                    </div>
+                                ` : ''}
+                                ${route.journey.has_connection ? `
+                                    <div style="grid-column: 1 / -1; padding: 8px; background: #fff3cd; border-radius: 4px; border-left: 3px solid #f59e0b;">
+                                        <span style="color: #2d3748; font-weight: 600;">🔄 Connection:</span>
+                                        <span style="color: #4a5568; margin-left: 4px;">
+                                            ${route.journey.connection_info.from} → ${route.journey.connection_info.to}
+                                        </span>
+                                        ${route.journey.connection_info.coffee_during_connection ? `
+                                            <span style="color: #48bb78; margin-left: 8px; font-weight: 600;">☕ Coffee stop included during connection</span>
+                                        ` : ''}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    ` : ''}
+
                     <div style="background: white; border-radius: 6px; padding: 12px; margin-bottom: 10px;">
                         <div style="font-size: 12px; font-weight: 600; color: #2d3748; margin-bottom: 8px;">
                             Journey Segments
@@ -2012,6 +2049,9 @@
                                 'walk': '🚶',
                                 'coffee': '☕',
                                 'train': '🚆',
+                                'tram': '🚊',
+                                'bus': '🚌',
+                                'vline': '🚄',
                                 'wait': '⏱️'
                             };
                             const icon = icons[seg.type] || '📍';
@@ -2021,10 +2061,11 @@
                                     <span style="margin-right: 8px;">${icon}</span>
                                     <div style="flex: 1;">
                                         <div style="font-size: 13px; color: #2d3748;">
-                                            ${seg.type === 'walk' ? `${seg.from} → ${seg.to}` :
+                                            ${seg.type === 'walk' ? `${seg.from} → ${seg.to}${seg.isConnection ? ' (connection)' : ''}` :
                                               seg.type === 'coffee' ? `Get Coffee ${seg.busyIcon || ''}` :
-                                              seg.type === 'train' ? `${seg.from} → ${seg.to}` :
-                                              'Wait at station'}
+                                              ['train', 'tram', 'bus', 'vline'].includes(seg.type) ? `${seg.from} → ${seg.to}` :
+                                              seg.type === 'wait' ? `Wait at ${seg.location}` :
+                                              'Travel'}
                                         </div>
                                         ${seg.type === 'coffee' && seg.busyText ? `
                                             <div style="font-size: 11px; color: ${seg.busyLevel === 'high' ? '#e53e3e' : seg.busyLevel === 'medium' ? '#ed8936' : '#48bb78'}; font-weight: 600;">
