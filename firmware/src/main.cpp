@@ -109,37 +109,38 @@ bool connectWiFi() {
     return WiFi.status() == WL_CONNECTED;
 }
 
-// PNG decoder callback - called for each line of pixels
+// Image buffer for decoded PNG (allocated dynamically)
+static uint8_t *imageBuffer = NULL;
+static int imageWidth = 0;
+static int imageHeight = 0;
 static int drawCallCount = 0;
 
+// PNG decoder callback - called for each line of pixels
 int PNGDraw(PNGDRAW *pDraw) {
     drawCallCount++;
+
+    if (!imageBuffer) return 0;  // Buffer not allocated
 
     uint8_t *s = (uint8_t *)pDraw->pPixels;
     int y = pDraw->y;
 
-    // For 8-bit grayscale, draw each pixel
-    if (pDraw->iBpp == 8) {
-        for (int x = 0; x < pDraw->iWidth; x++) {
-            uint8_t gray = s[x];
-            // Convert 8-bit grayscale (0=black, 255=white) to bb_epaper 4-bit
-            // bb_epaper: 0x0=black, 0xF=white
-            uint8_t color = gray >> 4;  // Convert 8-bit to 4-bit
+    // For 1-bit images (black and white) - simplest format
+    if (pDraw->iBpp == 1) {
+        // Calculate buffer position for this line
+        int bytesPerLine = (imageWidth + 7) / 8;
+        uint8_t *dest = imageBuffer + (y * bytesPerLine);
 
-            // Use bb_epaper's drawPixel function
-            bbep.drawPixel(x, y, color);
-        }
+        // Copy line data directly
+        memcpy(dest, s, bytesPerLine);
     }
-    // For 1-bit images (black and white)
-    else if (pDraw->iBpp == 1) {
-        for (int x = 0; x < pDraw->iWidth; x++) {
-            int byteIndex = x / 8;
-            int bitIndex = 7 - (x % 8);
-            uint8_t bit = (s[byteIndex] >> bitIndex) & 1;
-            // 1 = white, 0 = black in PNG
-            uint8_t color = bit ? 0xF : 0x0;
-            bbep.drawPixel(x, y, color);
-        }
+    // For 8-bit grayscale
+    else if (pDraw->iBpp == 8) {
+        // Calculate buffer position
+        int bytesPerLine = imageWidth;
+        uint8_t *dest = imageBuffer + (y * bytesPerLine);
+
+        // Copy line data
+        memcpy(dest, s, imageWidth);
     }
 
     return 1;  // Success
@@ -296,7 +297,7 @@ bool fetchAndDisplayImage() {
         showMessage("Opening PNG...");
         delay(500);
 
-        // Open PNG
+        // Open PNG to get dimensions
         int rc = png.openRAM(imgBuffer, totalRead, PNGDraw);
 
         if (rc != PNG_SUCCESS) {
@@ -311,25 +312,86 @@ bool fetchAndDisplayImage() {
             return false;
         }
 
-        // Get PNG info
+        // Get PNG dimensions
+        imageWidth = png.getWidth();
+        imageHeight = png.getHeight();
+        int bpp = png.getBpp();
+
         char debugMsg[80];
-        sprintf(debugMsg, "%dx%d, %dbpp", png.getWidth(), png.getHeight(), png.getBpp());
+        sprintf(debugMsg, "%dx%d, %dbpp", imageWidth, imageHeight, bpp);
         showMessage("PNG info", debugMsg);
         delay(1000);
 
-        // Decode the PNG - this is where memory issues happen
-        showMessage("Decoding...", "This may take a moment");
+        // Allocate image buffer for decoded data
+        int bufferSize;
+        if (bpp == 1) {
+            bufferSize = ((imageWidth + 7) / 8) * imageHeight;  // 1-bit packed
+        } else {
+            bufferSize = imageWidth * imageHeight;  // 8-bit
+        }
+
+        imageBuffer = (uint8_t*)malloc(bufferSize);
+        if (!imageBuffer) {
+            char errMsg[80];
+            sprintf(errMsg, "Can't alloc %d bytes", bufferSize);
+            showMessage("Memory error!", errMsg);
+            delay(2000);
+            png.close();
+            free(imgBuffer);
+            http.end();
+            client->stop();
+            delete client;
+            return false;
+        }
+
+        showMessage("Decoding...", "Please wait");
         delay(500);
 
+        // Decode PNG into our image buffer
         drawCallCount = 0;
         rc = png.decode(NULL, 0);
         png.close();
 
         sprintf(debugMsg, "Result: %d, calls: %d", rc, drawCallCount);
-        showMessage("Decode complete", debugMsg);
+        showMessage("Decode result", debugMsg);
         delay(2000);
 
         if (rc == PNG_SUCCESS) {
+            // Now copy decoded buffer to display
+            showMessage("Drawing to display...");
+            delay(500);
+
+            bbep.fillScreen(BBEP_WHITE);
+
+            // Draw the decoded image
+            if (bpp == 1) {
+                // 1-bit monochrome
+                for (int y = 0; y < imageHeight; y++) {
+                    int bytesPerLine = (imageWidth + 7) / 8;
+                    uint8_t *line = imageBuffer + (y * bytesPerLine);
+
+                    for (int x = 0; x < imageWidth; x++) {
+                        int byteIndex = x / 8;
+                        int bitIndex = 7 - (x % 8);
+                        uint8_t bit = (line[byteIndex] >> bitIndex) & 1;
+                        uint8_t color = bit ? BBEP_WHITE : BBEP_BLACK;
+                        bbep.drawPixel(x, y, color);
+                    }
+                }
+            } else {
+                // 8-bit grayscale
+                for (int y = 0; y < imageHeight; y++) {
+                    uint8_t *line = imageBuffer + (y * imageWidth);
+                    for (int x = 0; x < imageWidth; x++) {
+                        uint8_t gray = line[x];
+                        uint8_t color = gray >> 4;  // Convert to 4-bit
+                        bbep.drawPixel(x, y, color);
+                    }
+                }
+            }
+
+            free(imageBuffer);
+            imageBuffer = NULL;
             // Determine refresh type
             refreshCounter++;
             bool useFullRefresh = (refreshCounter >= FULL_REFRESH_CYCLES);
@@ -358,6 +420,12 @@ bool fetchAndDisplayImage() {
             sprintf(errMsg, "Decode error: %d", rc);
             showMessage("Failed", errMsg);
             delay(3000);
+
+            // Clean up image buffer
+            if (imageBuffer) {
+                free(imageBuffer);
+                imageBuffer = NULL;
+            }
         }
 
         free(imgBuffer);

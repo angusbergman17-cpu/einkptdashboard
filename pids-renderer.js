@@ -68,58 +68,31 @@ class PidsRenderer {
     </svg>
     `;
 
-    // Generate 8-bit grayscale PNG for e-ink (PNGdec compatible)
-    // Rotate 270 degrees (-90) to fix display orientation on OG TRMNL hardware
-    const MAX_PNG_SIZE = 80 * 1024; // 80KB hard limit for ESP32-C3
+    // Generate 1-bit monochrome PNG (simplest PNG format - pure black/white)
+    // Much simpler than 8-bit grayscale, easier to decode, smaller file
+    const MAX_IMAGE_SIZE = 80 * 1024; // 80KB hard limit for ESP32-C3
 
-    let compressionLevel = 6;
-    let pngBuffer;
-
-    // Try compression level 6 first
-    pngBuffer = await sharp(Buffer.from(svg))
-      .rotate(270)
-      .grayscale()
+    // Convert SVG to 1-bit black and white PNG
+    let imageBuffer = await sharp(Buffer.from(svg))
+      .rotate(270)  // Rotate for display orientation
+      .toColorspace('b-w')  // Convert to pure black and white
       .png({
-        compressionLevel: compressionLevel,
+        compressionLevel: 6,
         progressive: false,
-        adaptiveFiltering: false
+        adaptiveFiltering: false,
+        colors: 2  // 1-bit: only black and white
       })
       .toBuffer();
 
-    // If still too large, increase compression
-    while (pngBuffer.length > MAX_PNG_SIZE && compressionLevel < 9) {
-      compressionLevel++;
-      console.log(`⚠️  PNG too large (${pngBuffer.length} bytes), retrying with compression ${compressionLevel}`);
+    console.log(`✅ PNG generated: ${imageBuffer.length} bytes (${(imageBuffer.length / 1024).toFixed(1)}KB), 1-bit monochrome`);
 
-      pngBuffer = await sharp(Buffer.from(svg))
-        .rotate(270)
-        .grayscale()
-        .png({
-          compressionLevel: compressionLevel,
-          progressive: false,
-          adaptiveFiltering: false
-        })
-        .toBuffer();
+    // Verify size
+    if (imageBuffer.length > MAX_IMAGE_SIZE) {
+      console.error(`❌ PNG too large: ${imageBuffer.length} bytes`);
+      throw new Error(`Image too large: ${imageBuffer.length} bytes`);
     }
 
-    // Final check - if still too large, reduce image size
-    if (pngBuffer.length > MAX_PNG_SIZE) {
-      console.log(`⚠️  PNG still too large (${pngBuffer.length} bytes), reducing to 600x360`);
-
-      pngBuffer = await sharp(Buffer.from(svg))
-        .resize(600, 360)
-        .rotate(270)
-        .grayscale()
-        .png({
-          compressionLevel: 9,
-          progressive: false,
-          adaptiveFiltering: false
-        })
-        .toBuffer();
-    }
-
-    console.log(`✅ PNG generated: ${pngBuffer.length} bytes (${(pngBuffer.length / 1024).toFixed(1)}KB)`);
-    return pngBuffer;
+    return imageBuffer;
   }
 
   renderHeader(timeStr, weather, coffee) {
