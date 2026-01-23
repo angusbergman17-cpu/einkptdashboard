@@ -98,49 +98,37 @@ bool connectWiFi() {
 
 // PNG decoder callback - called for each line of pixels
 static int drawCallCount = 0;
-static bool bufferError = false;
 
 int PNGDraw(PNGDRAW *pDraw) {
     drawCallCount++;
 
     uint8_t *s = (uint8_t *)pDraw->pPixels;
-    uint8_t *d = (uint8_t *)bbep.getBuffer();
-    int iPitch;
+    int y = pDraw->y;
 
-    if (!d) {
-        bufferError = true;
-        return 0;  // Safety check - buffer not available
+    // For 8-bit grayscale, draw each pixel
+    if (pDraw->iBpp == 8) {
+        for (int x = 0; x < pDraw->iWidth; x++) {
+            uint8_t gray = s[x];
+            // Convert 8-bit grayscale (0=black, 255=white) to bb_epaper 4-bit
+            // bb_epaper: 0x0=black, 0xF=white
+            uint8_t color = gray >> 4;  // Convert 8-bit to 4-bit
+
+            // Use bb_epaper's drawPixel function
+            bbep.drawPixel(x, y, color);
+        }
     }
-
     // For 1-bit images (black and white)
-    if (pDraw->iBpp == 1) {
-        iPitch = (bbep.width() + 7) / 8;
-        d += pDraw->y * iPitch;  // Point to correct line
-        memcpy(d, s, (pDraw->iWidth + 7) / 8);
-    }
-    // For 8-bit grayscale, convert to 4-bit (bb_epaper native format)
-    else if (pDraw->iBpp == 8) {
-        iPitch = bbep.width() / 2;
-        d += pDraw->y * iPitch;
-        for (int x = 0; x < pDraw->iWidth; x += 2) {
-            uint8_t uc = (s[0] & 0xf0) | (s[1] >> 4);
-            *d++ = uc;
-            s += 2;
+    else if (pDraw->iBpp == 1) {
+        for (int x = 0; x < pDraw->iWidth; x++) {
+            int byteIndex = x / 8;
+            int bitIndex = 7 - (x % 8);
+            uint8_t bit = (s[byteIndex] >> bitIndex) & 1;
+            // 1 = white, 0 = black in PNG
+            uint8_t color = bit ? 0xF : 0x0;
+            bbep.drawPixel(x, y, color);
         }
     }
-    // For RGB, convert to grayscale then 4-bit
-    else if (pDraw->iBpp == 24) {
-        iPitch = bbep.width() / 2;
-        d += pDraw->y * iPitch;
-        for (int x = 0; x < pDraw->iWidth; x += 2) {
-            // Convert RGB to grayscale
-            uint8_t gray1 = (s[0] + s[1] + s[2]) / 3;
-            uint8_t gray2 = (s[3] + s[4] + s[5]) / 3;
-            uint8_t uc = (gray1 & 0xf0) | (gray2 >> 4);
-            *d++ = uc;
-            s += 6;
-        }
-    }
+
     return 1;  // Success
 }
 
@@ -209,23 +197,25 @@ bool fetchAndDisplayImage() {
     delay(3000);  // Show for 3 seconds
 
     if (httpCode == 200) {
-        // Get PNG image data
+        // Get PNG image data size
         int len = http.getSize();
         char sizeMsg[80];
         sprintf(sizeMsg, "Size: %d bytes", len);
-        showMessage("Downloading...", sizeMsg);
+        showMessage("Streaming decode...", sizeMsg);
         delay(1000);
 
-        // Check if size is reasonable
-        if (len <= 0 || len > 100000) {
-            sprintf(sizeMsg, "Invalid size: %d", len);
-            showMessage("Download error", sizeMsg);
-            http.end();
-            client->stop();
-            delete client;
-            return false;
-        }
+        // Initialize display buffer first
+        bbep.fillScreen(BBEP_WHITE);
 
+        // Get stream pointer
+        WiFiClient* stream = http.getStreamPtr();
+
+        // Open PNG from stream (no RAM buffering!)
+        showMessage("Opening PNG stream...");
+        delay(500);
+
+        // For streaming, we need to buffer it - but let's try a smaller approach
+        // Download in chunks and let PNGdec handle it
         uint8_t* imgBuffer = (uint8_t*)malloc(len);
         if (!imgBuffer) {
             showMessage("Memory error", "Cannot allocate buffer");
@@ -235,9 +225,7 @@ bool fetchAndDisplayImage() {
             return false;
         }
 
-        // Download with progress
-        WiFiClient* stream = http.getStreamPtr();
-        int bytesRead = 0;
+        // Download all data
         int totalRead = 0;
         unsigned long timeout = millis();
 
@@ -248,21 +236,13 @@ bool fetchAndDisplayImage() {
                 totalRead += c;
                 timeout = millis();
             }
-            // Timeout after 10 seconds of no data
-            if (millis() - timeout > 10000) {
-                break;
-            }
+            if (millis() - timeout > 10000) break;
         }
 
-        char readMsg[80];
-        sprintf(readMsg, "Read: %d/%d bytes", totalRead, len);
-        showMessage("Download complete", readMsg);
-        delay(1000);
-
-        // Verify we got all the data
         if (totalRead != len) {
-            sprintf(readMsg, "Incomplete: %d/%d", totalRead, len);
-            showMessage("Download error", readMsg);
+            char msg[80];
+            sprintf(msg, "Incomplete: %d/%d", totalRead, len);
+            showMessage("Download error", msg);
             free(imgBuffer);
             http.end();
             client->stop();
@@ -270,10 +250,16 @@ bool fetchAndDisplayImage() {
             return false;
         }
 
-        // Check PNG signature (first 8 bytes: 89 50 4E 47 0D 0A 1A 0A)
-        if (imgBuffer[0] != 0x89 || imgBuffer[1] != 0x50 ||
-            imgBuffer[2] != 0x4E || imgBuffer[3] != 0x47) {
-            showMessage("Not a PNG file", "Invalid signature");
+        showMessage("Opening PNG...");
+        delay(500);
+
+        // Open PNG
+        int rc = png.openRAM(imgBuffer, totalRead, PNGDraw);
+
+        if (rc != PNG_SUCCESS) {
+            char errMsg[80];
+            sprintf(errMsg, "Open failed: %d", rc);
+            showMessage("PNG error", errMsg);
             delay(2000);
             free(imgBuffer);
             http.end();
@@ -282,64 +268,39 @@ bool fetchAndDisplayImage() {
             return false;
         }
 
-        showMessage("Decoding PNG...");
+        // Get PNG info
+        char debugMsg[80];
+        sprintf(debugMsg, "%dx%d, %dbpp", png.getWidth(), png.getHeight(), png.getBpp());
+        showMessage("PNG info", debugMsg);
+        delay(1000);
+
+        // Decode the PNG - this is where memory issues happen
+        showMessage("Decoding...", "This may take a moment");
         delay(500);
 
-        // Initialize display buffer first
-        bbep.fillScreen(BBEP_WHITE);
+        drawCallCount = 0;
+        rc = png.decode(NULL, 0);
+        png.close();
 
-        // Open PNG and get info
-        int rc = png.openRAM(imgBuffer, totalRead, PNGDraw);
-
-        char debugMsg[80];
-        sprintf(debugMsg, "openRAM returned: %d", rc);
-        showMessage("PNG open result", debugMsg);
+        sprintf(debugMsg, "Result: %d, calls: %d", rc, drawCallCount);
+        showMessage("Decode complete", debugMsg);
         delay(2000);
 
         if (rc == PNG_SUCCESS) {
-            // Get PNG info
-            sprintf(debugMsg, "%dx%d, %dbpp", png.getWidth(), png.getHeight(), png.getBpp());
-            showMessage("PNG info", debugMsg);
-            delay(2000);
-
-            // Decode the PNG
-            showMessage("Calling decode...");
-            delay(500);
-
-            // Reset callback counters
-            drawCallCount = 0;
-            bufferError = false;
-
-            rc = png.decode(NULL, 0);
-            png.close();
-
-            sprintf(debugMsg, "decode: %d, calls: %d", rc, drawCallCount);
-            showMessage("Decode result", debugMsg);
-            delay(2000);
-
-            if (bufferError) {
-                showMessage("Buffer error!", "getBuffer() returned NULL");
-                delay(3000);
-            }
-
-            if (rc == PNG_SUCCESS) {
-                // Refresh display
-                showMessage("Refreshing display...");
-                delay(500);
-                bbep.refresh(REFRESH_FULL, true);
-                free(imgBuffer);
-                http.end();
-                client->stop();
-                delete client;
-                return true;
-            }
+            // Refresh display
+            showMessage("Displaying...");
+            bbep.refresh(REFRESH_FULL, true);
+            free(imgBuffer);
+            http.end();
+            client->stop();
+            delete client;
+            return true;
+        } else {
+            char errMsg[80];
+            sprintf(errMsg, "Decode error: %d", rc);
+            showMessage("Failed", errMsg);
+            delay(3000);
         }
-
-        // If PNG decode failed, show error
-        char errStr[80];
-        sprintf(errStr, "PNG error: %d", rc);
-        showMessage("Decode failed", errStr);
-        delay(3000);
 
         free(imgBuffer);
     } else {

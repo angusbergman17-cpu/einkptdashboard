@@ -74,7 +74,7 @@ class PidsRenderer {
       .rotate(270)  // Rotate counter-clockwise to fix right-rotated display
       .grayscale()  // Convert to grayscale (8-bit)
       .png({
-        compressionLevel: 9,  // Maximum compression
+        compressionLevel: 0,  // No compression - reduces decoder memory usage
         progressive: false,   // Disable interlacing (PNGdec doesn't support it)
         adaptiveFiltering: false  // Simpler PNG format
       })
