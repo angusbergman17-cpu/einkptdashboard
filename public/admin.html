@@ -278,6 +278,80 @@
             color: #718096;
         }
 
+        /* Address Autocomplete Styles */
+        .autocomplete-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+
+        .autocomplete-dropdown.show {
+            display: block;
+        }
+
+        .autocomplete-item {
+            padding: 12px 14px;
+            cursor: pointer;
+            border-bottom: 1px solid #f7fafc;
+            transition: background 0.2s;
+        }
+
+        .autocomplete-item:last-child {
+            border-bottom: none;
+        }
+
+        .autocomplete-item:hover {
+            background: #f7fafc;
+        }
+
+        .autocomplete-item-title {
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .autocomplete-item-subtitle {
+            font-size: 12px;
+            color: #718096;
+        }
+
+        .autocomplete-loading {
+            padding: 12px 14px;
+            text-align: center;
+            color: #718096;
+            font-size: 13px;
+        }
+
+        .autocomplete-empty {
+            padding: 12px 14px;
+            text-align: center;
+            color: #a0aec0;
+            font-size: 13px;
+        }
+
+        .address-validated {
+            color: #48bb78;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .address-error {
+            color: #f56565;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
         @media (max-width: 768px) {
             .grid {
                 grid-template-columns: 1fr;
@@ -324,18 +398,33 @@
             <div style="background: #f7fafc; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
                 <h3 style="color: #2d3748; font-size: 16px; margin-bottom: 15px;">📍 Addresses</h3>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
-                    <div class="form-group">
-                        <label class="form-label">Home Address</label>
-                        <input type="text" class="form-input" id="prefHomeAddress" placeholder="123 Main St, South Yarra">
+                    <div class="form-group" style="position: relative;">
+                        <label class="form-label">
+                            Home Address
+                            <span id="homeAddressValidation" style="margin-left: 8px; display: none;"></span>
+                        </label>
+                        <input type="text" class="form-input address-autocomplete" id="prefHomeAddress" placeholder="Start typing your address..." oninput="handleAddressInput('home', this.value)" autocomplete="off">
+                        <div id="homeAddressDropdown" class="autocomplete-dropdown"></div>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Preferred Cafe</label>
-                        <input type="text" class="form-input" id="prefCafeAddress" placeholder="Market Lane Coffee, Prahran">
+                    <div class="form-group" style="position: relative;">
+                        <label class="form-label">
+                            Preferred Cafe
+                            <span id="cafeAddressValidation" style="margin-left: 8px; display: none;"></span>
+                        </label>
+                        <input type="text" class="form-input address-autocomplete" id="prefCafeAddress" placeholder="Start typing cafe name..." oninput="handleAddressInput('cafe', this.value)" autocomplete="off">
+                        <div id="cafeAddressDropdown" class="autocomplete-dropdown"></div>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Work Address</label>
-                        <input type="text" class="form-input" id="prefWorkAddress" placeholder="456 Collins St, Melbourne">
+                    <div class="form-group" style="position: relative;">
+                        <label class="form-label">
+                            Work Address
+                            <span id="workAddressValidation" style="margin-left: 8px; display: none;"></span>
+                        </label>
+                        <input type="text" class="form-input address-autocomplete" id="prefWorkAddress" placeholder="Start typing your work address..." oninput="handleAddressInput('work', this.value)" autocomplete="off">
+                        <div id="workAddressDropdown" class="autocomplete-dropdown"></div>
                     </div>
+                </div>
+                <div style="margin-top: 10px; padding: 10px; background: #e6fffa; border-radius: 6px; font-size: 12px; color: #234e52;">
+                    <strong>✨ Tip:</strong> Start typing and select from the suggestions. Addresses are saved permanently once configured.
                 </div>
             </div>
 
@@ -480,24 +569,28 @@
                 <h2>☕ Smart Route Planner</h2>
                 <p style="color: #718096; margin-bottom: 15px;">Plan your journey: Home → Coffee → Work</p>
 
+                <div style="background: #e6fffa; border-radius: 6px; padding: 12px; margin-bottom: 15px; font-size: 13px; color: #234e52;">
+                    <strong>✨ Auto-Populated:</strong> Fields below are filled with your saved preferences. Configure once above, use anywhere!
+                </div>
+
                 <div class="form-group">
                     <label class="form-label">Home Address</label>
-                    <input type="text" class="form-input" id="homeAddress" placeholder="123 Main St, South Yarra">
+                    <input type="text" class="form-input" id="homeAddress" placeholder="Auto-populated from preferences..." readonly style="background: #f7fafc;">
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Coffee Shop Address</label>
-                    <input type="text" class="form-input" id="coffeeAddress" placeholder="Market Lane Coffee, Prahran">
+                    <input type="text" class="form-input" id="coffeeAddress" placeholder="Auto-populated from preferences..." readonly style="background: #f7fafc;">
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Work Address</label>
-                    <input type="text" class="form-input" id="workAddress" placeholder="456 Collins St, Melbourne">
+                    <input type="text" class="form-input" id="workAddress" placeholder="Auto-populated from preferences..." readonly style="background: #f7fafc;">
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Desired Arrival Time</label>
-                    <input type="time" class="form-input" id="arrivalTime" value="09:00">
+                    <input type="time" class="form-input" id="arrivalTime" value="09:00" readonly style="background: #f7fafc;">
                 </div>
 
                 <button class="btn" onclick="calculateRoute()" id="calculateRouteBtn">
@@ -578,7 +671,127 @@
                 loadDevices();
                 loadWeatherStatus();
             }, 5000);
+
+            // Close autocomplete dropdowns when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.classList.contains('address-autocomplete')) {
+                    document.querySelectorAll('.autocomplete-dropdown').forEach(dropdown => {
+                        dropdown.classList.remove('show');
+                    });
+                }
+            });
         });
+
+        // ========== ADDRESS AUTOCOMPLETE ==========
+
+        let addressSearchTimeout = null;
+        const validatedAddresses = {
+            home: null,
+            cafe: null,
+            work: null
+        };
+
+        async function handleAddressInput(type, value) {
+            // Clear previous timeout
+            if (addressSearchTimeout) {
+                clearTimeout(addressSearchTimeout);
+            }
+
+            // Clear validation status when typing
+            const validationEl = document.getElementById(`${type}AddressValidation`);
+            if (validationEl) {
+                validationEl.style.display = 'none';
+            }
+
+            // If value is empty, hide dropdown
+            if (!value || value.length < 3) {
+                hideAutocompleteDropdown(type);
+                return;
+            }
+
+            // Show loading state
+            const dropdown = document.getElementById(`${type}AddressDropdown`);
+            dropdown.innerHTML = '<div class="autocomplete-loading">🔍 Searching...</div>';
+            dropdown.classList.add('show');
+
+            // Debounce the search
+            addressSearchTimeout = setTimeout(async () => {
+                try {
+                    const response = await fetch(`/admin/address/search?query=${encodeURIComponent(value)}`);
+                    const data = await response.json();
+
+                    if (data.success && data.results.length > 0) {
+                        displayAutocompleteResults(type, data.results);
+                    } else {
+                        dropdown.innerHTML = '<div class="autocomplete-empty">No addresses found. Try being more specific.</div>';
+                    }
+                } catch (error) {
+                    console.error('Address search error:', error);
+                    dropdown.innerHTML = '<div class="autocomplete-empty">Error searching addresses</div>';
+                }
+            }, 300); // Wait 300ms after user stops typing
+        }
+
+        function displayAutocompleteResults(type, results) {
+            const dropdown = document.getElementById(`${type}AddressDropdown`);
+
+            dropdown.innerHTML = results.map((result, index) => `
+                <div class="autocomplete-item" onclick="selectAddress('${type}', ${index})">
+                    <div class="autocomplete-item-title">${escapeHtml(result.address || result.display_name)}</div>
+                    <div class="autocomplete-item-subtitle">${escapeHtml(result.full_address)}</div>
+                </div>
+            `).join('');
+
+            // Store results for selection
+            window[`${type}SearchResults`] = results;
+
+            dropdown.classList.add('show');
+        }
+
+        function selectAddress(type, index) {
+            const results = window[`${type}SearchResults`];
+            if (!results || !results[index]) return;
+
+            const selected = results[index];
+            const inputField = document.getElementById(`pref${type.charAt(0).toUpperCase() + type.slice(1)}Address`);
+
+            // Set the input value
+            inputField.value = selected.full_address;
+
+            // Store validated address data
+            validatedAddresses[type] = {
+                address: selected.full_address,
+                lat: selected.lat,
+                lon: selected.lon
+            };
+
+            // Show validation checkmark
+            const validationEl = document.getElementById(`${type}AddressValidation`);
+            if (validationEl) {
+                validationEl.innerHTML = '✅ Validated';
+                validationEl.className = 'address-validated';
+                validationEl.style.display = 'inline';
+            }
+
+            // Hide dropdown
+            hideAutocompleteDropdown(type);
+
+            console.log(`✅ Selected ${type} address:`, selected.full_address);
+        }
+
+        function hideAutocompleteDropdown(type) {
+            const dropdown = document.getElementById(`${type}AddressDropdown`);
+            if (dropdown) {
+                dropdown.classList.remove('show');
+                dropdown.innerHTML = '';
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
 
         // ========== PREFERENCES MANAGEMENT ==========
 
@@ -590,17 +803,42 @@
                 if (data.success) {
                     const prefs = data.preferences;
 
-                    // Load addresses
-                    document.getElementById('prefHomeAddress').value = prefs.addresses?.home || '';
-                    document.getElementById('prefCafeAddress').value = prefs.addresses?.cafe || '';
-                    document.getElementById('prefWorkAddress').value = prefs.addresses?.work || '';
+                    // Load addresses and show validation checkmarks if saved
+                    const homeAddr = prefs.addresses?.home || '';
+                    const cafeAddr = prefs.addresses?.cafe || '';
+                    const workAddr = prefs.addresses?.work || '';
+
+                    document.getElementById('prefHomeAddress').value = homeAddr;
+                    document.getElementById('prefCafeAddress').value = cafeAddr;
+                    document.getElementById('prefWorkAddress').value = workAddr;
+
+                    // Show validation checkmarks for saved addresses
+                    if (homeAddr) {
+                        const homeValidation = document.getElementById('homeAddressValidation');
+                        homeValidation.innerHTML = '✅ Saved';
+                        homeValidation.className = 'address-validated';
+                        homeValidation.style.display = 'inline';
+                    }
+                    if (cafeAddr) {
+                        const cafeValidation = document.getElementById('cafeAddressValidation');
+                        cafeValidation.innerHTML = '✅ Saved';
+                        cafeValidation.className = 'address-validated';
+                        cafeValidation.style.display = 'inline';
+                    }
+                    if (workAddr) {
+                        const workValidation = document.getElementById('workAddressValidation');
+                        workValidation.innerHTML = '✅ Saved';
+                        workValidation.className = 'address-validated';
+                        workValidation.style.display = 'inline';
+                    }
 
                     // Load API credentials
                     document.getElementById('prefApiKey').value = prefs.api?.key || '';
                     // Don't load token for security (it's saved, just not displayed)
 
                     // Load journey preferences
-                    document.getElementById('prefArrivalTime').value = prefs.journey?.arrivalTime || '09:00';
+                    const arrivalTime = prefs.journey?.arrivalTime || '09:00';
+                    document.getElementById('prefArrivalTime').value = arrivalTime;
                     document.getElementById('prefCoffeeEnabled').checked = prefs.journey?.coffeeEnabled !== false;
 
                     // Load transit mode preferences
@@ -610,9 +848,25 @@
                     document.getElementById('prefModeBuses').checked = modes.includes(2);
                     document.getElementById('prefModeVLine').checked = modes.includes(3);
 
+                    // Auto-populate Smart Route Planner with saved preferences
+                    if (document.getElementById('homeAddress')) {
+                        document.getElementById('homeAddress').value = homeAddr;
+                    }
+                    if (document.getElementById('coffeeAddress')) {
+                        document.getElementById('coffeeAddress').value = cafeAddr;
+                    }
+                    if (document.getElementById('workAddress')) {
+                        document.getElementById('workAddress').value = workAddr;
+                    }
+                    if (document.getElementById('arrivalTime')) {
+                        document.getElementById('arrivalTime').value = arrivalTime;
+                    }
+
                     // Show status
                     if (!data.status.configured) {
                         showPreferencesStatus('⚠️ Preferences not fully configured. Please fill in all required fields.', 'warning');
+                    } else {
+                        showPreferencesStatus('✅ Preferences loaded successfully. Addresses are saved and will be used automatically.', 'success');
                     }
                 }
             } catch (error) {

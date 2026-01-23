@@ -1100,6 +1100,55 @@ app.post('/admin/preferences/import', async (req, res) => {
   }
 });
 
+// Address autocomplete search
+app.get('/admin/address/search', async (req, res) => {
+  try {
+    const { query } = req.query;
+
+    if (!query || query.length < 3) {
+      return res.json({
+        success: true,
+        results: []
+      });
+    }
+
+    // Use Nominatim (OpenStreetMap) for address search
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}, Melbourne, Australia&limit=5&addressdetails=1`;
+
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'PTV-TRMNL/1.0 (Educational Project)'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Geocoding failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    const results = data.map(place => ({
+      display_name: place.display_name,
+      address: place.address?.road || place.address?.suburb || place.name,
+      full_address: place.display_name,
+      lat: parseFloat(place.lat),
+      lon: parseFloat(place.lon),
+      type: place.type,
+      importance: place.importance
+    }));
+
+    res.json({
+      success: true,
+      results,
+      count: results.length
+    });
+
+  } catch (error) {
+    console.error('Address search error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ========== ROUTE PLANNING ENDPOINTS ==========
 
 // Calculate smart route: Home → Coffee → Work
