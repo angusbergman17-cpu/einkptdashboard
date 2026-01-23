@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=800, height=480">
+  <title>Dashboard Template - TRMNL 800x480</title>
+  <style>
+    /* Reset and base */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+
+    h1 {
+      color: #fff;
+      margin-bottom: 20px;
+      font-size: 18px;
+    }
+
+    /* ========================================
+       TRMNL DISPLAY CONTAINER
+       Dimensions: 800w x 480h pixels
+       ======================================== */
+    .trmnl-display {
+      width: 800px;
+      height: 480px;
+      background: #fff;
+      border: 4px solid #222;
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ========================================
+       HEADER ROW - Time & Rush Button
+       Height: ~100px
+       ======================================== */
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 30px;
+      height: 100px;
+    }
+
+    .time-display {
+      font-size: 72px;
+      font-weight: bold;
+      color: #000;
+      line-height: 1;
+    }
+
+    .rush-button {
+      border: 3px solid #000;
+      border-radius: 8px;
+      padding: 12px 40px;
+      font-size: 24px;
+      font-weight: bold;
+      color: #000;
+      background: #fff;
+    }
+
+    /* ========================================
+       SECTION HEADERS
+       Black background, white text
+       Height: 32px each
+       ======================================== */
+    .section-header {
+      background: #000;
+      color: #fff;
+      font-size: 18px;
+      font-weight: bold;
+      padding: 6px 15px;
+      margin: 0 30px;
+    }
+
+    /* ========================================
+       DEPARTURE ROWS
+       Two rows per section
+       ======================================== */
+    .departures {
+      padding: 10px 30px 15px 30px;
+    }
+
+    .departure-row {
+      display: flex;
+      align-items: baseline;
+      padding: 8px 15px;
+    }
+
+    .departure-time {
+      font-size: 28px;
+      font-weight: bold;
+      color: #000;
+      min-width: 140px;
+    }
+
+    .departure-dest {
+      font-size: 22px;
+      color: #000;
+    }
+
+    /* ========================================
+       FOOTER ROW - Weather & Status
+       Height: ~60px
+       ======================================== */
+    .footer-row {
+      margin-top: auto;
+      border-top: 1px solid #000;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 30px;
+      margin: 0 30px 15px 30px;
+    }
+
+    .weather {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .weather-temp {
+      font-size: 22px;
+      font-weight: bold;
+      color: #000;
+    }
+
+    .weather-icon {
+      font-size: 18px;
+    }
+
+    .weather-condition {
+      font-size: 18px;
+      color: #000;
+    }
+
+    .status-message {
+      font-size: 16px;
+      font-style: italic;
+      color: #000;
+    }
+
+    /* ========================================
+       INFO PANEL (below display)
+       ======================================== */
+    .info-panel {
+      margin-top: 20px;
+      background: #444;
+      padding: 15px 25px;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 14px;
+      max-width: 800px;
+      width: 100%;
+    }
+
+    .info-panel h2 {
+      font-size: 16px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #666;
+      padding-bottom: 5px;
+    }
+
+    .info-panel code {
+      background: #222;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: monospace;
+    }
+
+    .info-panel ul {
+      margin-left: 20px;
+      line-height: 1.8;
+    }
+  </style>
+</head>
+<body>
+  <h1>TRMNL Dashboard Template - 800x480px</h1>
+
+  <!-- ==========================================
+       TRMNL DISPLAY - Edit this section
+       ========================================== -->
+  <div class="trmnl-display">
+
+    <!-- HEADER ROW -->
+    <div class="header-row">
+      <div class="time-display">23:20</div>
+      <div class="rush-button">RUSH IT</div>
+    </div>
+
+    <!-- TRAM SECTION -->
+    <div class="section-header">TRAM 58 (TO WEST COBURG)</div>
+    <div class="departures">
+      <div class="departure-row">
+        <span class="departure-time">2 min*</span>
+        <span class="departure-dest">West Coburg (Sched)</span>
+      </div>
+      <div class="departure-row">
+        <span class="departure-time">12 min*</span>
+        <span class="departure-dest">West Coburg (Sched)</span>
+      </div>
+    </div>
+
+    <!-- TRAIN SECTION -->
+    <div class="section-header">TRAINS (CITY LOOP)</div>
+    <div class="departures">
+      <div class="departure-row">
+        <span class="departure-time">6 min*</span>
+        <span class="departure-dest">Parliament (Sched)</span>
+      </div>
+      <div class="departure-row">
+        <span class="departure-time">14 min*</span>
+        <span class="departure-dest">Parliament (Sched)</span>
+      </div>
+    </div>
+
+    <!-- FOOTER ROW -->
+    <div class="footer-row">
+      <div class="weather">
+        <span class="weather-temp">15°</span>
+        <span class="weather-icon">☁</span>
+        <span class="weather-condition">Clouds</span>
+      </div>
+      <div class="status-message">Train is approaching</div>
+    </div>
+
+  </div>
+
+  <!-- INFO PANEL -->
+  <div class="info-panel">
+    <h2>Template Structure</h2>
+    <ul>
+      <li><strong>Dimensions:</strong> <code>800px × 480px</code> (landscape)</li>
+      <li><strong>Header Row:</strong> Time (72px bold) + Rush Button (bordered pill)</li>
+      <li><strong>Section Headers:</strong> Black background, white text, 18px bold</li>
+      <li><strong>Departure Rows:</strong> Time (28px bold) + Destination (22px)</li>
+      <li><strong>Footer Row:</strong> Weather left, Status message right (italic)</li>
+      <li><strong>Colors:</strong> Pure black (#000) on white (#fff) for e-ink</li>
+    </ul>
+  </div>
+
+  <script>
+    // Live clock update (optional)
+    function updateTime() {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('en-AU', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+        timeZone: 'Australia/Melbourne'
+      });
+      document.querySelector('.time-display').textContent = timeStr;
+    }
+
+    // Uncomment to enable live time:
+    // setInterval(updateTime, 1000);
+    // updateTime();
+  </script>
+</body>
+</html>
