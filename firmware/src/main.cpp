@@ -141,17 +141,27 @@ bool connectWiFi() {
     return WiFi.status() == WL_CONNECTED;
 }
 
-// Image buffer for decoded PNG (allocated dynamically)
-static uint8_t *imageBuffer = NULL;
+// Persistent image buffer for cached template (kept in memory between updates)
+static uint8_t *cachedImageBuffer = NULL;
 static int imageWidth = 0;
 static int imageHeight = 0;
+static int imageBpp = 0;
 static int drawCallCount = 0;
+
+// Previous region values for change detection
+static char prevTime[16] = "";
+static char prevTrain1[16] = "";
+static char prevTrain2[16] = "";
+static char prevTram1[16] = "";
+static char prevTram2[16] = "";
+static char prevCoffee[64] = "";
+static char prevWeather[32] = "";
 
 // PNG decoder callback - called for each line of pixels
 int PNGDraw(PNGDRAW *pDraw) {
     drawCallCount++;
 
-    if (!imageBuffer) return 0;  // Buffer not allocated
+    if (!cachedImageBuffer) return 0;  // Buffer not allocated
 
     uint8_t *s = (uint8_t *)pDraw->pPixels;
     int y = pDraw->y;
@@ -160,7 +170,7 @@ int PNGDraw(PNGDRAW *pDraw) {
     if (pDraw->iBpp == 1) {
         // Calculate buffer position for this line
         int bytesPerLine = (imageWidth + 7) / 8;
-        uint8_t *dest = imageBuffer + (y * bytesPerLine);
+        uint8_t *dest = cachedImageBuffer + (y * bytesPerLine);
 
         // Copy line data directly
         memcpy(dest, s, bytesPerLine);
@@ -169,7 +179,7 @@ int PNGDraw(PNGDRAW *pDraw) {
     else if (pDraw->iBpp == 8) {
         // Calculate buffer position
         int bytesPerLine = imageWidth;
-        uint8_t *dest = imageBuffer + (y * bytesPerLine);
+        uint8_t *dest = cachedImageBuffer + (y * bytesPerLine);
 
         // Copy line data
         memcpy(dest, s, imageWidth);
@@ -288,17 +298,99 @@ bool downloadBaseTemplate() {
 
     imageWidth = png.getWidth();
     imageHeight = png.getHeight();
+    imageBpp = png.getBpp();
 
     char msg[80];
-    sprintf(msg, "%dx%d, %dbpp", imageWidth, imageHeight, png.getBpp());
-    showMessage("Template OK", msg);
+    sprintf(msg, "%dx%d, %dbpp", imageWidth, imageHeight, imageBpp);
+    showMessage("Template info", msg);
     delay(1000);
 
+    // Calculate buffer size for decoded image
+    int bufferSize;
+    if (imageBpp == 1) {
+        bufferSize = ((imageWidth + 7) / 8) * imageHeight;  // 1-bit packed
+    } else {
+        bufferSize = imageWidth * imageHeight;  // 8-bit
+    }
+
+    // Allocate persistent cache buffer (only once)
+    if (!cachedImageBuffer) {
+        cachedImageBuffer = (uint8_t*)malloc(bufferSize);
+        if (!cachedImageBuffer) {
+            char errMsg[80];
+            sprintf(errMsg, "Cache alloc failed: %d", bufferSize);
+            showMessage("Memory error!", errMsg);
+            png.close();
+            free(imgBuffer);
+            http.end();
+            client->stop();
+            delete client;
+            return false;
+        }
+        sprintf(msg, "Cache: %d bytes", bufferSize);
+        showMessage("Cache allocated", msg);
+        delay(500);
+    }
+
+    // Decode PNG into cached buffer
+    showMessage("Decoding template...");
+    drawCallCount = 0;
+    int rc = png.decode(NULL, 0);
     png.close();
 
-    // For now, just show success message
-    // Full template rendering would go here (but takes too long)
-    showMessage("Template downloaded!", "Using text mode");
+    sprintf(msg, "Result: %d, lines: %d", rc, drawCallCount);
+    showMessage("Decode complete", msg);
+    delay(1000);
+
+    if (rc != PNG_SUCCESS) {
+        char errMsg[80];
+        sprintf(errMsg, "Decode failed: %d", rc);
+        showMessage("Decode error", errMsg);
+        free(imgBuffer);
+        http.end();
+        client->stop();
+        delete client;
+        return false;
+    }
+
+    // Draw cached image to display
+    showMessage("Drawing template...");
+    delay(500);
+
+    bbep.fillScreen(BBEP_WHITE);
+
+    // Draw the decoded image from cache
+    if (imageBpp == 1) {
+        int bytesPerLine = (imageWidth + 7) / 8;
+        for (int y = 0; y < imageHeight; y++) {
+            uint8_t *line = cachedImageBuffer + (y * bytesPerLine);
+            for (int x = 0; x < imageWidth; x++) {
+                int byteIndex = x / 8;
+                int bitIndex = 7 - (x % 8);
+                uint8_t bit = (line[byteIndex] >> bitIndex) & 1;
+                uint8_t color = bit ? BBEP_WHITE : BBEP_BLACK;
+                bbep.drawPixel(x, y, color);
+            }
+            // Yield every 10 lines to prevent watchdog
+            if (y % 10 == 0) yield();
+        }
+    } else {
+        for (int y = 0; y < imageHeight; y++) {
+            uint8_t *line = cachedImageBuffer + (y * imageWidth);
+            for (int x = 0; x < imageWidth; x++) {
+                uint8_t gray = line[x];
+                uint8_t color = gray >> 4;
+                bbep.drawPixel(x, y, color);
+            }
+            if (y % 10 == 0) yield();
+        }
+    }
+
+    // Full refresh to show template
+    showMessage("Refreshing display...");
+    bbep.refresh(REFRESH_FULL, true);
+
+    showMessage("Template cached!", "Ready for updates");
     delay(2000);
 
     free(imgBuffer);
@@ -309,8 +401,48 @@ bool downloadBaseTemplate() {
     return true;
 }
 
+// Helper function: Restore cached image to display instantly
+void restoreCachedImage() {
+    if (!cachedImageBuffer) return;
+
+    // Copy cached buffer to display
+    if (imageBpp == 1) {
+        int bytesPerLine = (imageWidth + 7) / 8;
+        for (int y = 0; y < imageHeight; y++) {
+            uint8_t *line = cachedImageBuffer + (y * bytesPerLine);
+            for (int x = 0; x < imageWidth; x++) {
+                int byteIndex = x / 8;
+                int bitIndex = 7 - (x % 8);
+                uint8_t bit = (line[byteIndex] >> bitIndex) & 1;
+                uint8_t color = bit ? BBEP_WHITE : BBEP_BLACK;
+                bbep.drawPixel(x, y, color);
+            }
+            if (y % 10 == 0) yield();
+        }
+    } else {
+        for (int y = 0; y < imageHeight; y++) {
+            uint8_t *line = cachedImageBuffer + (y * imageWidth);
+            for (int x = 0; x < imageWidth; x++) {
+                uint8_t gray = line[x];
+                uint8_t color = gray >> 4;
+                bbep.drawPixel(x, y, color);
+            }
+            if (y % 10 == 0) yield();
+        }
+    }
+}
+
 bool fetchAndDisplayRegionUpdates() {
-    // Download JSON region updates and draw text
+    // Step 1: Restore cached image instantly (if available)
+    if (cachedImageBuffer) {
+        showMessage("Loading cached image...");
+        restoreCachedImage();
+    } else {
+        // No cache yet, just clear screen
+        bbep.fillScreen(BBEP_WHITE);
+    }
+
+    // Step 2: Download JSON region updates
     WiFiClientSecure *client = new WiFiClientSecure();
     if (!client) {
         return false;
@@ -341,7 +473,7 @@ bool fetchAndDisplayRegionUpdates() {
     client->stop();
     delete client;
 
-    // Parse JSON
+    // Step 3: Parse JSON
     JsonDocument doc;
     DeserializationError error = deserializeJson(doc, payload);
 
@@ -350,30 +482,81 @@ bool fetchAndDisplayRegionUpdates() {
         return false;
     }
 
-    // Clear screen and draw text-based layout
-    bbep.fillScreen(BBEP_WHITE);
+    // Step 4: Process region updates and draw only changed regions
+    JsonArray regions = doc["regions"].as<JsonArray>();
+    bool hasChanges = false;
+
     bbep.setFont(FONT_12x16);
 
-    // Draw header
-    bbep.setCursor(20, 30);
-    bbep.print("PTV-TRMNL - LIVE DATA");
-
-    // Get regions array
-    JsonArray regions = doc["regions"].as<JsonArray>();
-
-    int yPos = 60;
     for (JsonObject region : regions) {
-        const char* text = region["text"];
+        const char* regionId = region["id"] | "";
+        const char* text = region["text"] | "";
+        int x = region["x"] | 0;
+        int y = region["y"] | 0;
+        int w = region["width"] | 100;
+        int h = region["height"] | 20;
+        bool clear = region["clear"] | false;
 
-        bbep.setCursor(20, yPos);
-        bbep.print(text);
+        // Compare with previous values to detect changes
+        bool changed = false;
 
-        yPos += 25;
+        if (strcmp(regionId, "time") == 0) {
+            if (strcmp(prevTime, text) != 0) {
+                strncpy(prevTime, text, sizeof(prevTime) - 1);
+                changed = true;
+            }
+        } else if (strcmp(regionId, "train1") == 0) {
+            if (strcmp(prevTrain1, text) != 0) {
+                strncpy(prevTrain1, text, sizeof(prevTrain1) - 1);
+                changed = true;
+            }
+        } else if (strcmp(regionId, "train2") == 0) {
+            if (strcmp(prevTrain2, text) != 0) {
+                strncpy(prevTrain2, text, sizeof(prevTrain2) - 1);
+                changed = true;
+            }
+        } else if (strcmp(regionId, "tram1") == 0) {
+            if (strcmp(prevTram1, text) != 0) {
+                strncpy(prevTram1, text, sizeof(prevTram1) - 1);
+                changed = true;
+            }
+        } else if (strcmp(regionId, "tram2") == 0) {
+            if (strcmp(prevTram2, text) != 0) {
+                strncpy(prevTram2, text, sizeof(prevTram2) - 1);
+                changed = true;
+            }
+        } else if (strcmp(regionId, "coffee") == 0) {
+            if (strcmp(prevCoffee, text) != 0) {
+                strncpy(prevCoffee, text, sizeof(prevCoffee) - 1);
+                changed = true;
+            }
+        } else if (strcmp(regionId, "weather") == 0) {
+            if (strcmp(prevWeather, text) != 0) {
+                strncpy(prevWeather, text, sizeof(prevWeather) - 1);
+                changed = true;
+            }
+        } else {
+            // Unknown region - always update
+            changed = true;
+        }
 
-        if (yPos > 450) break;  // Screen limit
+        // Only redraw if changed
+        if (changed) {
+            hasChanges = true;
+
+            // Clear region if requested
+            if (clear) {
+                bbep.fillRect(x, y, w, h, BBEP_WHITE);
+            }
+
+            // Draw text at specified coordinates
+            bbep.setCursor(x, y);
+            bbep.print(text);
+        }
     }
 
-    // Determine refresh type
+    // Step 5: Refresh display
+    // Use partial refresh for speed (unless it's time for full refresh)
     refreshCounter++;
     bool useFullRefresh = (refreshCounter >= FULL_REFRESH_CYCLES);
 
@@ -381,7 +564,10 @@ bool fetchAndDisplayRegionUpdates() {
         bbep.refresh(REFRESH_FULL, true);
         refreshCounter = 0;
     } else {
-        bbep.refresh(REFRESH_PARTIAL, false);
+        // Only refresh if something changed
+        if (hasChanges) {
+            bbep.refresh(REFRESH_PARTIAL, false);
+        }
     }
 
     return true;
