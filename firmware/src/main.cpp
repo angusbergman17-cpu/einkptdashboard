@@ -11,10 +11,14 @@
 #include <ArduinoJson.h>
 #include <Preferences.h>
 #include <bb_epaper.h>
+#include <PNGdec.h>
 #include "../include/config.h"
 
 // E-paper display object (using BBEPAPER class like official firmware)
 BBEPAPER bbep(EP75_800x480);
+
+// PNG decoder
+PNG png;
 
 // Preferences storage
 Preferences preferences;
@@ -86,7 +90,7 @@ void initDisplay() {
     // Initialize bb_epaper display (7.5" 800x480) - same API as official TRMNL
     bbep.initIO(EPD_DC_PIN, EPD_RST_PIN, EPD_BUSY_PIN, EPD_CS_PIN, EPD_MOSI_PIN, EPD_SCK_PIN, 8000000);
     bbep.setPanelType(EP75_800x480);
-    bbep.setRotation(90);  // Rotate 90 degrees for horizontal orientation
+    // EP75_800x480 is naturally landscape (800x480), no rotation needed
 }
 
 void showMessage(const char* line1, const char* line2, const char* line3) {
@@ -155,10 +159,53 @@ bool registerDevice() {
     return false;
 }
 
+// PNG decoder callback - called for each line of pixels
+int PNGDraw(PNGDRAW *pDraw) {
+    uint8_t *s = (uint8_t *)pDraw->pPixels;
+    uint8_t *d = (uint8_t *)bbep.getBuffer();
+    int iPitch;
+
+    if (!d) return 0;  // Safety check
+
+    // For 1-bit images (black and white)
+    if (pDraw->iBpp == 1) {
+        iPitch = (bbep.width() + 7) / 8;
+        d += pDraw->y * iPitch;  // Point to correct line
+        memcpy(d, s, (pDraw->iWidth + 7) / 8);
+    }
+    // For 8-bit grayscale, convert to 4-bit (bb_epaper native format)
+    else if (pDraw->iBpp == 8) {
+        iPitch = bbep.width() / 2;
+        d += pDraw->y * iPitch;
+        for (int x = 0; x < pDraw->iWidth; x += 2) {
+            uint8_t uc = (s[0] & 0xf0) | (s[1] >> 4);
+            *d++ = uc;
+            s += 2;
+        }
+    }
+    // For RGB, convert to grayscale then 4-bit
+    else if (pDraw->iBpp == 24) {
+        iPitch = bbep.width() / 2;
+        d += pDraw->y * iPitch;
+        for (int x = 0; x < pDraw->iWidth; x += 2) {
+            // Convert RGB to grayscale
+            uint8_t gray1 = (s[0] + s[1] + s[2]) / 3;
+            uint8_t gray2 = (s[3] + s[4] + s[5]) / 3;
+            uint8_t uc = (gray1 & 0xf0) | (gray2 >> 4);
+            *d++ = uc;
+            s += 6;
+        }
+    }
+    return 1;  // Success
+}
+
 bool fetchAndDisplayImage() {
     HTTPClient http;
 
     String url = String(SERVER_URL) + API_DISPLAY_ENDPOINT;
+
+    // Add timeout
+    http.setTimeout(15000);  // 15 seconds
     http.begin(url);
 
     // Set headers
@@ -197,24 +244,34 @@ bool fetchAndDisplayImage() {
                     WiFiClient* stream = http.getStreamPtr();
                     int bytesRead = stream->readBytes(imgBuffer, len);
 
-                    // For now, show success message
-                    // TODO: Add PNG decoding with PNGdec library
+                    // Decode and display PNG
+                    int rc = png.openRAM(imgBuffer, bytesRead, PNGDraw);
+                    if (rc == PNG_SUCCESS) {
+                        bbep.fillScreen(BBEP_WHITE);
+                        rc = png.decode(NULL, 0);
+                        png.close();
+
+                        if (rc == PNG_SUCCESS) {
+                            // Refresh display
+                            bbep.refresh(REFRESH_FULL, true);
+                            free(imgBuffer);
+                            http.end();
+                            return true;
+                        }
+                    }
+
+                    // If PNG decode failed, show error
                     bbep.fillScreen(BBEP_WHITE);
                     bbep.setFont(FONT_12x16);
                     bbep.setCursor(50, 100);
-                    bbep.print("PTV Display Retrieved!");
+                    bbep.print("PNG decode failed");
                     bbep.setCursor(50, 130);
-                    bbep.print("Image size: ");
-                    char sizeStr[20];
-                    sprintf(sizeStr, "%d bytes", bytesRead);
-                    bbep.print(sizeStr);
-                    bbep.setCursor(50, 160);
-                    bbep.print(SERVER_URL);
+                    char errStr[50];
+                    sprintf(errStr, "Error code: %d", rc);
+                    bbep.print(errStr);
                     bbep.refresh(REFRESH_FULL, true);
 
                     free(imgBuffer);
-                    http.end();
-                    return true;
                 }
             }
         }

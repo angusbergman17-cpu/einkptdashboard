@@ -243,11 +243,14 @@ app.get('/api/setup', (req, res) => {
     console.log(`📱 New device registered: ${friendlyID} (${macAddress})`);
   }
 
+  // Force HTTPS for Render deployment
+  const protocol = req.get('host').includes('render.com') ? 'https' : req.protocol;
+
   res.json({
     status: 200,
     api_key: device.apiKey,
     friendly_id: device.friendlyID,
-    image_url: `${req.protocol}://${req.get('host')}/api/live-image.png`,
+    image_url: `${protocol}://${req.get('host')}/api/live-image.png`,
     filename: 'ptv_display'
   });
 });
@@ -284,7 +287,8 @@ app.get('/api/display', (req, res) => {
   }
 
   // Return display content
-  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  const protocol = req.get('host').includes('render.com') ? 'https' : req.protocol;
+  const baseUrl = `${protocol}://${req.get('host')}`;
   res.json({
     status: 0,
     image_url: `${baseUrl}/api/live-image.png`,
