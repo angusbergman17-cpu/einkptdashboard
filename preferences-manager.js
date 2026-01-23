@@ -21,12 +21,29 @@ class PreferencesManager {
         work: ''
       },
 
+      // Manual walking times (used when address geocoding fails or user prefers manual entry)
+      manualWalkingTimes: {
+        homeToStation: null,           // minutes, null = use geocoding
+        stationToCafe: null,            // minutes, null = use geocoding
+        cafeToStation: null,            // minutes, null = use geocoding
+        stationToWork: null,            // minutes, null = use geocoding
+        useManualTimes: false           // override geocoding with manual times
+      },
+
+      // Address validation flags
+      addressFlags: {
+        homeFound: true,                // false if address couldn't be geocoded
+        cafeFound: true,
+        workFound: true
+      },
+
       // Journey preferences
       journey: {
         arrivalTime: '09:00',
-        preferredTransitModes: ['train', 'tram', 'bus', 'vline'], // All modes enabled
+        preferredTransitModes: [0, 1, 2, 3], // Train, Tram, Bus, V/Line (route type IDs)
         maxWalkingDistance: 1000, // meters
-        coffeeEnabled: true
+        coffeeEnabled: true,
+        defaultCafeTime: 3          // minutes, used if cafe busy-ness unavailable
       },
 
       // PTV API credentials

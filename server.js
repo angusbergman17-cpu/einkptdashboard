@@ -1227,6 +1227,8 @@ app.post('/admin/route/calculate', async (req, res) => {
     const savedAddresses = prefs.addresses || {};
     const savedJourney = prefs.journey || {};
     const savedApi = prefs.api || {};
+    const manualWalkingTimes = prefs.manualWalkingTimes || {};
+    const addressFlags = prefs.addressFlags || {};
 
     // Use provided values or fall back to saved preferences
     const homeAddress = req.body.homeAddress || savedAddresses.home;
@@ -1247,14 +1249,30 @@ app.post('/admin/route/calculate', async (req, res) => {
     const coffeeEnabled = savedJourney.coffeeEnabled && coffeeAddress;
 
     console.log('Calculating route:', { homeAddress, coffeeAddress, workAddress, arrivalTime });
+    if (manualWalkingTimes.useManualTimes) {
+      console.log('Using manual walking times:', manualWalkingTimes);
+    }
 
-    // Calculate the route
+    // Calculate the route with manual walking times if provided
     const route = await routePlanner.calculateRoute(
       homeAddress,
-      coffeeAddress,
+      coffeeAddress || 'No coffee stop',
       workAddress,
-      arrivalTime
+      arrivalTime,
+      manualWalkingTimes,
+      addressFlags
     );
+
+    // Update address validation flags after successful calculation
+    if (!manualWalkingTimes.useManualTimes) {
+      // If we successfully calculated without manual times, all addresses were geocoded
+      await preferences.updateSection('addressFlags', {
+        homeFound: true,
+        cafeFound: !!coffeeAddress, // true if cafe was provided
+        workFound: true
+      });
+      console.log('✅ Updated address validation flags - all addresses geocoded successfully');
+    }
 
     res.json({
       success: true,
@@ -1264,6 +1282,36 @@ app.post('/admin/route/calculate', async (req, res) => {
 
   } catch (error) {
     console.error('Route calculation error:', error);
+
+    // Check if this is a geocoding error
+    const isGeocodingError = error.message.includes('Address not found') ||
+                            error.message.includes('Geocoding failed');
+
+    if (isGeocodingError && !manualWalkingTimes.useManualTimes) {
+      // Update address flags to indicate geocoding failure
+      const addressFlagsUpdate = {};
+      if (error.message.includes(homeAddress)) {
+        addressFlagsUpdate.homeFound = false;
+      }
+      if (coffeeAddress && error.message.includes(coffeeAddress)) {
+        addressFlagsUpdate.cafeFound = false;
+      }
+      if (error.message.includes(workAddress)) {
+        addressFlagsUpdate.workFound = false;
+      }
+
+      if (Object.keys(addressFlagsUpdate).length > 0) {
+        await preferences.updateSection('addressFlags', addressFlagsUpdate);
+        console.log('⚠️  Updated address validation flags - some addresses could not be geocoded');
+      }
+
+      return res.status(400).json({
+        error: error.message,
+        message: 'Address could not be geocoded. Please enable "Use Manual Walking Times" and enter walking times manually.',
+        suggestion: 'Enable manual walking times in User Preferences section'
+      });
+    }
+
     res.status(500).json({
       error: error.message,
       message: 'Failed to calculate route'

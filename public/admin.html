@@ -430,6 +430,75 @@
                 </div>
             </div>
 
+            <!-- Manual Walking Times (Fallback for addresses that can't be geocoded) -->
+            <div style="background: #f7fafc; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                <h3 style="color: #2d3748; font-size: 16px; margin-bottom: 15px;">🚶 Manual Walking Times</h3>
+                <div style="padding: 10px; background: #fff3cd; border-radius: 6px; font-size: 12px; color: #856404; margin-bottom: 15px;">
+                    <strong>ℹ️ When to use:</strong> If your address can't be found by the autocomplete search, you can manually enter walking times. The route planner will use these instead of geocoding.
+                </div>
+
+                <!-- Override toggle -->
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" class="form-checkbox" id="useManualTimes" onchange="toggleManualTimesInputs()">
+                        <span style="font-weight: 600; color: #2d3748;">Use Manual Walking Times (Override Geocoding)</span>
+                    </label>
+                    <small style="color: #718096; font-size: 11px; margin-left: 24px;">Enable this to use manual times instead of calculating from addresses</small>
+                </div>
+
+                <!-- Manual time inputs (hidden by default) -->
+                <div id="manualTimesInputs" style="display: none;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                        <div class="form-group">
+                            <label class="form-label">Home → Nearest Station (minutes)</label>
+                            <input type="number" class="form-input" id="homeToStation" placeholder="e.g., 8" min="0" step="1">
+                            <small style="color: #718096; font-size: 11px;">Walking time from home to your nearest train/tram stop</small>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Station → Cafe (minutes)</label>
+                            <input type="number" class="form-input" id="stationToCafe" placeholder="e.g., 3" min="0" step="1">
+                            <small style="color: #718096; font-size: 11px;">Walking time from station to cafe (if coffee enabled)</small>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Cafe → Station (minutes)</label>
+                            <input type="number" class="form-input" id="cafeToStation" placeholder="e.g., 3" min="0" step="1">
+                            <small style="color: #718096; font-size: 11px;">Walking time from cafe back to station (often same as above)</small>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Station → Work (minutes)</label>
+                            <input type="number" class="form-input" id="stationToWork" placeholder="e.g., 5" min="0" step="1">
+                            <small style="color: #718096; font-size: 11px;">Walking time from destination station to work</small>
+                        </div>
+                    </div>
+
+                    <div style="padding: 10px; background: #e6fffa; border-radius: 6px; font-size: 12px; color: #234e52;">
+                        <strong>💡 How to measure:</strong> Use Google Maps walking directions, or time yourself walking at normal pace. Include time to enter/exit stations.
+                    </div>
+                </div>
+
+                <!-- Address validation flags (show which addresses couldn't be geocoded) -->
+                <div style="margin-top: 15px; padding: 12px; background: #f7fafc; border-radius: 6px; border-left: 4px solid #4299e1;">
+                    <div style="font-size: 13px; color: #2d3748; margin-bottom: 8px; font-weight: 600;">Address Validation Status</div>
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap; font-size: 12px;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span id="homeFoundStatus">⏳</span>
+                            <span style="color: #718096;">Home</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span id="cafeFoundStatus">⏳</span>
+                            <span style="color: #718096;">Cafe</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span id="workFoundStatus">⏳</span>
+                            <span style="color: #718096;">Work</span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 8px; font-size: 11px; color: #718096;">
+                        ✅ = Address found and geocoded successfully | ⚠️ = Address couldn't be geocoded (use manual times) | ⏳ = Not yet tested
+                    </div>
+                </div>
+            </div>
+
             <!-- PTV API Credentials -->
             <div style="background: #f7fafc; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
                 <h3 style="color: #2d3748; font-size: 16px; margin-bottom: 15px;">🔑 PTV API Credentials</h3>
@@ -1016,6 +1085,53 @@
 
         // ========== PREFERENCES MANAGEMENT ==========
 
+        function toggleManualTimesInputs() {
+            const useManual = document.getElementById('useManualTimes').checked;
+            const inputsDiv = document.getElementById('manualTimesInputs');
+            inputsDiv.style.display = useManual ? 'block' : 'none';
+        }
+
+        function updateAddressValidationStatus(homeFound, cafeFound, workFound) {
+            // Update home status
+            const homeStatus = document.getElementById('homeFoundStatus');
+            if (homeFound === true) {
+                homeStatus.textContent = '✅';
+                homeStatus.title = 'Home address geocoded successfully';
+            } else if (homeFound === false) {
+                homeStatus.textContent = '⚠️';
+                homeStatus.title = 'Home address could not be geocoded - use manual times';
+            } else {
+                homeStatus.textContent = '⏳';
+                homeStatus.title = 'Not yet tested';
+            }
+
+            // Update cafe status
+            const cafeStatus = document.getElementById('cafeFoundStatus');
+            if (cafeFound === true) {
+                cafeStatus.textContent = '✅';
+                cafeStatus.title = 'Cafe address geocoded successfully';
+            } else if (cafeFound === false) {
+                cafeStatus.textContent = '⚠️';
+                cafeStatus.title = 'Cafe address could not be geocoded - use manual times';
+            } else {
+                cafeStatus.textContent = '⏳';
+                cafeStatus.title = 'Not yet tested';
+            }
+
+            // Update work status
+            const workStatus = document.getElementById('workFoundStatus');
+            if (workFound === true) {
+                workStatus.textContent = '✅';
+                workStatus.title = 'Work address geocoded successfully';
+            } else if (workFound === false) {
+                workStatus.textContent = '⚠️';
+                workStatus.title = 'Work address could not be geocoded - use manual times';
+            } else {
+                workStatus.textContent = '⏳';
+                workStatus.title = 'Not yet tested';
+            }
+        }
+
         async function loadPreferences() {
             try {
                 const response = await fetch('/admin/preferences');
@@ -1069,6 +1185,25 @@
                     document.getElementById('prefModeBuses').checked = modes.includes(2);
                     document.getElementById('prefModeVLine').checked = modes.includes(3);
 
+                    // Load manual walking times
+                    const manualTimes = prefs.manualWalkingTimes || {};
+                    document.getElementById('useManualTimes').checked = manualTimes.useManualTimes || false;
+                    document.getElementById('homeToStation').value = manualTimes.homeToStation || '';
+                    document.getElementById('stationToCafe').value = manualTimes.stationToCafe || '';
+                    document.getElementById('cafeToStation').value = manualTimes.cafeToStation || '';
+                    document.getElementById('stationToWork').value = manualTimes.stationToWork || '';
+
+                    // Show/hide manual time inputs based on toggle
+                    toggleManualTimesInputs();
+
+                    // Load and display address validation flags
+                    const addressFlags = prefs.addressFlags || {};
+                    updateAddressValidationStatus(
+                        addressFlags.homeFound,
+                        addressFlags.cafeFound,
+                        addressFlags.workFound
+                    );
+
                     // Auto-populate Smart Route Planner with saved preferences
                     if (document.getElementById('homeAddress')) {
                         document.getElementById('homeAddress').value = homeAddr;
@@ -1105,6 +1240,12 @@
                 if (document.getElementById('prefModeBuses').checked) preferredTransitModes.push(2);
                 if (document.getElementById('prefModeVLine').checked) preferredTransitModes.push(3);
 
+                // Collect manual walking times
+                const homeToStation = document.getElementById('homeToStation').value;
+                const stationToCafe = document.getElementById('stationToCafe').value;
+                const cafeToStation = document.getElementById('cafeToStation').value;
+                const stationToWork = document.getElementById('stationToWork').value;
+
                 const updates = {
                     addresses: {
                         home: document.getElementById('prefHomeAddress').value,
@@ -1120,6 +1261,13 @@
                         arrivalTime: document.getElementById('prefArrivalTime').value,
                         coffeeEnabled: document.getElementById('prefCoffeeEnabled').checked,
                         preferredTransitModes
+                    },
+                    manualWalkingTimes: {
+                        useManualTimes: document.getElementById('useManualTimes').checked,
+                        homeToStation: homeToStation ? parseInt(homeToStation) : null,
+                        stationToCafe: stationToCafe ? parseInt(stationToCafe) : null,
+                        cafeToStation: cafeToStation ? parseInt(cafeToStation) : null,
+                        stationToWork: stationToWork ? parseInt(stationToWork) : null
                     }
                 };
 

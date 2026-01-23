@@ -127,43 +127,77 @@ class RoutePlanner {
   /**
    * Calculate the complete route from home to work via coffee
    * Returns detailed journey plan with departure times
+   * @param {Object} params - Route parameters
+   * @param {string} params.homeAddress - Home address
+   * @param {string} params.coffeeAddress - Coffee shop address
+   * @param {string} params.workAddress - Work address
+   * @param {string} params.arrivalTime - Desired arrival time (HH:MM)
+   * @param {Object} params.manualWalkingTimes - Optional manual walking times
+   * @param {Object} params.addressFlags - Address validation flags
    */
-  async calculateRoute(homeAddress, coffeeAddress, workAddress, arrivalTime) {
+  async calculateRoute(homeAddress, coffeeAddress, workAddress, arrivalTime, manualWalkingTimes = {}, addressFlags = {}) {
     console.log('\n=== CALCULATING SMART ROUTE ===');
     console.log(`Home: ${homeAddress}`);
     console.log(`Coffee: ${coffeeAddress}`);
     console.log(`Work: ${workAddress}`);
     console.log(`Desired arrival: ${arrivalTime}`);
 
-    try {
-      // Step 1: Geocode all addresses
-      console.log('\n1. Geocoding addresses...');
-      const home = await this.geocodeAddress(homeAddress);
-      const coffee = await this.geocodeAddress(coffeeAddress);
-      const work = await this.geocodeAddress(workAddress);
+    if (manualWalkingTimes.useManualTimes) {
+      console.log('\n⚙️  Using manual walking times (override mode)');
+    }
 
-      // Step 2: Calculate walking times
+    try {
+      // Step 1: Geocode all addresses (skip if using manual times)
+      let home, coffee, work;
+
+      if (!manualWalkingTimes.useManualTimes) {
+        console.log('\n1. Geocoding addresses...');
+        home = await this.geocodeAddress(homeAddress);
+        coffee = await this.geocodeAddress(coffeeAddress);
+        work = await this.geocodeAddress(workAddress);
+      } else {
+        console.log('\n1. Skipping geocoding (using manual times)...');
+        // Set dummy coordinates - won't be used
+        home = { lat: 0, lon: 0 };
+        coffee = { lat: 0, lon: 0 };
+        work = { lat: 0, lon: 0 };
+      }
+
+      // Step 2: Calculate walking times (use manual if provided)
       console.log('\n2. Calculating walking times...');
 
-      const homeToStation = this.calculateWalkingTime(
-        home.lat, home.lon,
-        -37.8408, 145.0002 // South Yarra Station (hardcoded for now)
-      );
+      let homeToStation, stationToCoffee, coffeeToStation, stationToWork;
 
-      const stationToCoffee = this.calculateWalkingTime(
-        -37.8408, 145.0002, // South Yarra Station
-        coffee.lat, coffee.lon
-      );
+      if (manualWalkingTimes.useManualTimes && manualWalkingTimes.homeToStation) {
+        // Use manual walking times
+        homeToStation = { walkingTime: manualWalkingTimes.homeToStation, distance: 0 };
+        stationToCoffee = { walkingTime: manualWalkingTimes.stationToCafe || 0, distance: 0 };
+        coffeeToStation = { walkingTime: manualWalkingTimes.cafeToStation || manualWalkingTimes.stationToCafe || 0, distance: 0 };
+        stationToWork = { walkingTime: manualWalkingTimes.stationToWork || 0, distance: 0 };
 
-      const coffeeToStation = this.calculateWalkingTime(
-        coffee.lat, coffee.lon,
-        -37.8408, 145.0002 // Back to station
-      );
+        console.log('  ⚙️  Using manual times:');
+      } else {
+        // Calculate from geocoded coordinates
+        homeToStation = this.calculateWalkingTime(
+          home.lat, home.lon,
+          -37.8408, 145.0002 // South Yarra Station (hardcoded for now)
+        );
 
-      const stationToWork = this.calculateWalkingTime(
-        -37.8530, 144.9560, // Flinders Street Station (destination)
-        work.lat, work.lon
-      );
+        stationToCoffee = this.calculateWalkingTime(
+          -37.8408, 145.0002, // South Yarra Station
+          coffee.lat, coffee.lon
+        );
+
+        coffeeToStation = this.calculateWalkingTime(
+          coffee.lat, coffee.lon,
+          -37.8408, 145.0002 // Back to station
+        );
+
+        stationToWork = this.calculateWalkingTime(
+          -37.8530, 144.9560, // Flinders Street Station (destination)
+          work.lat, work.lon
+        );
+      }
 
       console.log(`  Home → Station: ${homeToStation.walkingTime} min (${homeToStation.distance}m)`);
       console.log(`  Station → Coffee: ${stationToCoffee.walkingTime} min (${stationToCoffee.distance}m)`);
