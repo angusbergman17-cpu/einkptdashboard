@@ -158,7 +158,7 @@ bool fetchAndDisplayImage() {
     delay(2000);
 
     // Set up HTTP client with secure client
-    http.setTimeout(30000);  // 30 seconds
+    http.setTimeout(60000);  // 60 seconds to handle Render cold starts
     http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
 
     if (!http.begin(*client, imageUrl)) {

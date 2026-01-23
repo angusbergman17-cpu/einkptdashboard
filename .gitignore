@@ -19,3 +19,7 @@ Thumbs.db
 # Temporary files
 *.tmp
 .cache/
+
+# Persistent storage
+devices.json
+cache/

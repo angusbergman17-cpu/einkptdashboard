@@ -1,5 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
+import fs from 'fs/promises';
+import path from 'path';
 import config from './config.js';
 import { getSnapshot } from './data-scraper.js';
 import PidsRenderer from './pids-renderer.js';
@@ -20,6 +22,50 @@ let cachedImage = null;
 let cachedData = null;
 let lastUpdate = 0;
 const CACHE_MS = 30 * 1000; // 30 seconds
+
+// Persistent storage paths
+const DEVICES_FILE = path.join(process.cwd(), 'devices.json');
+const CACHE_DIR = path.join(process.cwd(), 'cache');
+const PNG_CACHE_FILE = path.join(CACHE_DIR, 'display.png');
+
+/**
+ * Load devices from persistent storage
+ */
+async function loadDevices() {
+  try {
+    const data = await fs.readFile(DEVICES_FILE, 'utf8');
+    const devicesArray = JSON.parse(data);
+    devicesArray.forEach(device => devices.set(device.macAddress, device));
+    console.log(`✅ Loaded ${devices.size} device(s) from storage`);
+  } catch (err) {
+    if (err.code !== 'ENOENT') {
+      console.error('⚠️  Error loading devices:', err.message);
+    }
+  }
+}
+
+/**
+ * Save devices to persistent storage
+ */
+async function saveDevices() {
+  try {
+    const devicesArray = Array.from(devices.values());
+    await fs.writeFile(DEVICES_FILE, JSON.stringify(devicesArray, null, 2));
+  } catch (err) {
+    console.error('⚠️  Error saving devices:', err.message);
+  }
+}
+
+/**
+ * Ensure cache directory exists
+ */
+async function ensureCacheDir() {
+  try {
+    await fs.mkdir(CACHE_DIR, { recursive: true });
+  } catch (err) {
+    console.error('⚠️  Error creating cache directory:', err.message);
+  }
+}
 
 /**
  * Fetch fresh data from all sources
@@ -112,12 +158,36 @@ async function getData() {
  */
 async function getImage() {
   const now = Date.now();
+
+  // Check in-memory cache first
   if (cachedImage && (now - lastUpdate) < CACHE_MS) {
     return cachedImage;
   }
 
+  // Try to load from file cache if within cache window
+  try {
+    const stats = await fs.stat(PNG_CACHE_FILE);
+    const fileAge = Date.now() - stats.mtimeMs;
+
+    if (fileAge < CACHE_MS) {
+      cachedImage = await fs.readFile(PNG_CACHE_FILE);
+      lastUpdate = stats.mtimeMs;
+      return cachedImage;
+    }
+  } catch (err) {
+    // File doesn't exist or error reading - will regenerate
+  }
+
+  // Generate fresh image
   const data = await getData();
   cachedImage = await renderer.render(data, data.coffee);
+  lastUpdate = now;
+
+  // Save to file cache (async, don't wait)
+  fs.writeFile(PNG_CACHE_FILE, cachedImage).catch(err =>
+    console.error('Error caching PNG:', err.message)
+  );
+
   return cachedImage;
 }
 
@@ -128,6 +198,16 @@ async function getImage() {
 // Health check
 app.get('/', (req, res) => {
   res.send('✅ PTV-TRMNL service running');
+});
+
+// Keep-alive endpoint (for cron pings to prevent cold starts)
+app.get('/api/keepalive', (req, res) => {
+  res.json({
+    status: 'ok',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+    devices: devices.size
+  });
 });
 
 // Status endpoint
@@ -215,7 +295,7 @@ app.get('/trmnl.png', async (req, res) => {
 const devices = new Map();
 
 // Device setup/registration endpoint
-app.get('/api/setup', (req, res) => {
+app.get('/api/setup', async (req, res) => {
   const macAddress = req.headers.id || req.headers['ID'];
 
   if (!macAddress) {
@@ -241,6 +321,9 @@ app.get('/api/setup', (req, res) => {
 
     devices.set(macAddress, device);
     console.log(`📱 New device registered: ${friendlyID} (${macAddress})`);
+
+    // Save to persistent storage
+    await saveDevices();
   }
 
   res.json({
@@ -272,6 +355,9 @@ app.get('/api/display', (req, res) => {
       device.lastSeen = new Date().toISOString();
       device.batteryVoltage = batteryVoltage;
       device.rssi = rssi;
+
+      // Save updated device stats (async, don't wait)
+      saveDevices().catch(err => console.error('Error saving devices:', err));
       break;
     }
   }
@@ -385,10 +471,15 @@ app.get('/preview', (req, res) => {
    START SERVER
    ========================================================= */
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`🚀 PTV-TRMNL server listening on port ${PORT}`);
   console.log(`📍 Preview: http://localhost:${PORT}/preview`);
   console.log(`🔗 TRMNL endpoint: http://localhost:${PORT}/api/screen`);
+  console.log(`💚 Keep-alive: http://localhost:${PORT}/api/keepalive`);
+
+  // Initialize persistent storage
+  await ensureCacheDir();
+  await loadDevices();
 
   // Pre-warm cache
   getData().then(() => {
