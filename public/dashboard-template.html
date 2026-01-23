@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PTV-TRMNL Dashboard - Live Transit Display</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      background: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 900px;
+      width: 100%;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .header h1 {
+      font-size: 24px;
+      color: #2d3748;
+      margin-bottom: 5px;
+    }
+
+    .header p {
+      font-size: 14px;
+      color: #718096;
+    }
+
+    /* Main Dashboard - Exact 800×480 e-ink dimensions */
+    .dashboard {
+      width: 800px;
+      height: 480px;
+      background: white;
+      border: 3px solid #333;
+      position: relative;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+      margin: 0 auto;
+    }
+
+    /* Station Name Box (Top Left) */
+    .station-box {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      width: 90px;
+      height: 50px;
+      border: 2px solid black;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: bold;
+      letter-spacing: -0.5px;
+      padding: 5px;
+      text-align: center;
+    }
+
+    /* Large Time Display (Top Center) */
+    .time {
+      position: absolute;
+      top: 15px;
+      left: 140px;
+      font-size: 36px;
+      font-weight: bold;
+      letter-spacing: 2px;
+    }
+
+    /* Section Headers (Black Strips) */
+    .section-header {
+      position: absolute;
+      height: 25px;
+      background: black;
+      color: white;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      font-size: 11px;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+    }
+
+    .tram-header {
+      top: 120px;
+      left: 10px;
+      width: 370px;
+    }
+
+    .train-header {
+      top: 120px;
+      left: 400px;
+      width: 360px;
+    }
+
+    /* Departure Labels (Next/Then) */
+    .departure-label {
+      position: absolute;
+      font-size: 12px;
+      color: #666;
+      font-weight: 500;
+    }
+
+    /* Departure Times (Large Numbers) */
+    .departure {
+      position: absolute;
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    /* Status Bar (Bottom Center) */
+    .status {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+
+    /* Weather (Right Sidebar) */
+    .weather {
+      position: absolute;
+      right: 15px;
+      top: 340px;
+      font-size: 11px;
+      text-align: right;
+      max-width: 80px;
+    }
+
+    .temperature {
+      position: absolute;
+      right: 15px;
+      top: 410px;
+      font-size: 16px;
+      text-align: right;
+      font-weight: bold;
+    }
+
+    /* Info Panel (Below Dashboard) */
+    .info {
+      margin-top: 30px;
+      padding: 20px;
+      background: white;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .info h3 {
+      font-size: 16px;
+      color: #2d3748;
+      margin-bottom: 10px;
+    }
+
+    .region {
+      display: inline-block;
+      margin: 5px;
+      padding: 6px 12px;
+      background: #edf2f7;
+      border-radius: 6px;
+      font-size: 12px;
+      font-family: 'Courier New', monospace;
+    }
+
+    .region strong {
+      color: #2d3748;
+    }
+
+    .metadata {
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid #e2e8f0;
+      font-size: 13px;
+      color: #4a5568;
+    }
+
+    .metadata p {
+      margin: 5px 0;
+    }
+
+    /* Live indicator */
+    .live-indicator {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: #48bb78;
+      border-radius: 50%;
+      margin-right: 6px;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .refresh-timer {
+      text-align: center;
+      margin-top: 15px;
+      font-size: 12px;
+      color: #718096;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 850px) {
+      .dashboard {
+        transform: scale(0.9);
+        transform-origin: top center;
+      }
+    }
+
+    @media (max-width: 750px) {
+      .dashboard {
+        transform: scale(0.7);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>PTV-TRMNL Dashboard Preview</h1>
+      <p><span class="live-indicator"></span>Live visualization of 800×480 e-ink display</p>
+    </div>
+
+    <!-- Main Dashboard (Exact E-ink Dimensions) -->
+    <div class="dashboard" id="dashboard">
+      <!-- Station Name Box -->
+      <div class="station-box">SOUTH YARRA</div>
+
+      <!-- Large Time -->
+      <div class="time" id="time">--:--</div>
+
+      <!-- Tram Section -->
+      <div class="section-header tram-header">TRAM #58 TO WEST COBURG</div>
+      <div class="departure-label" style="top: 152px; left: 20px;">Next:</div>
+      <div class="departure" id="tram1" style="top: 170px; left: 20px;">-- min*</div>
+      <div class="departure-label" style="top: 222px; left: 20px;">Then:</div>
+      <div class="departure" id="tram2" style="top: 240px; left: 20px;">-- min*</div>
+
+      <!-- Train Section -->
+      <div class="section-header train-header">TRAINS (CITY LOOP)</div>
+      <div class="departure-label" style="top: 152px; left: 410px;">Next:</div>
+      <div class="departure" id="train1" style="top: 170px; left: 410px;">-- min*</div>
+      <div class="departure-label" style="top: 222px; left: 410px;">Then:</div>
+      <div class="departure" id="train2" style="top: 240px; left: 410px;">-- min*</div>
+
+      <!-- Weather (Right Sidebar) -->
+      <div class="weather" id="weather">N/A</div>
+      <div class="temperature" id="temperature">--°</div>
+
+      <!-- Status Bar -->
+      <div class="status">GOOD SERVICE</div>
+    </div>
+
+    <!-- Info Panel -->
+    <div class="info">
+      <h3>Region Data</h3>
+      <div id="regionData">
+        <span class="region"><strong>Loading...</strong></span>
+      </div>
+
+      <div class="metadata">
+        <p><strong>Server:</strong> <span id="serverUrl">Connecting...</span></p>
+        <p><strong>Last Update:</strong> <span id="lastUpdate">Never</span></p>
+        <p><strong>Data Mode:</strong> <span id="dataMode">Unknown</span></p>
+        <p><strong>Next Refresh:</strong> <span id="countdown">10</span>s</p>
+      </div>
+    </div>
+
+    <div class="refresh-timer">
+      Auto-refreshing every 10 seconds
+    </div>
+  </div>
+
+  <script>
+    // Configuration
+    const API_URL = window.location.hostname === 'localhost'
+      ? 'http://localhost:3000/api/region-updates'
+      : 'https://ptv-trmnl-new.onrender.com/api/region-updates';
+
+    let countdown = 10;
+    let countdownInterval;
+
+    // Fetch and update dashboard
+    async function updateDashboard() {
+      try {
+        console.log('Fetching data from:', API_URL);
+        const response = await fetch(API_URL);
+        const data = await response.json();
+
+        console.log('Data received:', data);
+
+        // Update dashboard elements
+        const regions = data.regions;
+
+        // Update each region
+        const timeRegion = regions.find(r => r.id === 'time');
+        if (timeRegion) document.getElementById('time').textContent = timeRegion.text;
+
+        const train1Region = regions.find(r => r.id === 'train1');
+        if (train1Region) document.getElementById('train1').textContent = train1Region.text + ' min*';
+
+        const train2Region = regions.find(r => r.id === 'train2');
+        if (train2Region) document.getElementById('train2').textContent = train2Region.text + ' min*';
+
+        const tram1Region = regions.find(r => r.id === 'tram1');
+        if (tram1Region) document.getElementById('tram1').textContent = tram1Region.text + ' min*';
+
+        const tram2Region = regions.find(r => r.id === 'tram2');
+        if (tram2Region) document.getElementById('tram2').textContent = tram2Region.text + ' min*';
+
+        const weatherRegion = regions.find(r => r.id === 'weather');
+        if (weatherRegion) document.getElementById('weather').textContent = weatherRegion.text;
+
+        const tempRegion = regions.find(r => r.id === 'temperature');
+        if (tempRegion) document.getElementById('temperature').textContent = tempRegion.text + '°';
+
+        // Update info panel
+        const regionDataHtml = regions.map(r =>
+          `<span class="region"><strong>${r.id}:</strong> "${r.text}"</span>`
+        ).join('');
+        document.getElementById('regionData').innerHTML = regionDataHtml;
+
+        // Update metadata
+        document.getElementById('serverUrl').textContent = API_URL;
+        document.getElementById('lastUpdate').textContent = new Date(data.timestamp).toLocaleTimeString();
+        document.getElementById('dataMode').textContent = data.weather ? 'Live' : 'Fallback';
+
+        // Reset countdown
+        countdown = 10;
+
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+        document.getElementById('regionData').innerHTML =
+          `<span class="region" style="color: #e53e3e;"><strong>Error:</strong> ${error.message}</span>`;
+      }
+    }
+
+    // Countdown timer
+    function startCountdown() {
+      countdownInterval = setInterval(() => {
+        countdown--;
+        document.getElementById('countdown').textContent = countdown;
+
+        if (countdown <= 0) {
+          updateDashboard();
+        }
+      }, 1000);
+    }
+
+    // Initial load
+    updateDashboard();
+    startCountdown();
+
+    // Also refresh on page focus
+    window.addEventListener('focus', () => {
+      updateDashboard();
+    });
+  </script>
+</body>
+</html>

@@ -17,6 +17,7 @@
 #include <bb_epaper.h>
 #include <PNGdec.h>
 #include <esp_task_wdt.h>
+#include <esp_system.h>
 #include "../include/config.h"
 
 // E-paper display object (using BBEPAPER class like official firmware)
@@ -46,8 +47,11 @@ bool showingLog = true;  // Control when to show log vs template
 // Function declarations
 void initDisplay();
 bool connectWiFi();
-void drawInitialDashboard(JsonDocument& doc);
-void drawDashboardSections(JsonDocument& doc);
+void drawDashboardShell();
+void drawDynamicData(const char* timeText, const char* tram1, const char* tram2, const char* train1, const char* train2);
+void cacheDynamicData(const char* timeText, const char* tram1, const char* tram2, const char* train1, const char* train2);
+void restoreDashboardFromCache();
+void drawCompleteDashboard(JsonDocument& doc);
 void updateDashboardRegions(JsonDocument& doc);
 void deepSleep(int seconds);
 float getBatteryVoltage();
@@ -61,58 +65,123 @@ void checkLongPressReset();
 void showConfirmationPrompt();
 
 void setup() {
+    // Initialize serial for debugging
+    Serial.begin(115200);
+    delay(100);
+    Serial.println("\n\n=== PTV-TRMNL BOOT ===");
+
+    // Check reset reason to diagnose reboots
+    esp_reset_reason_t resetReason = esp_reset_reason();
+    Serial.print("Reset reason: ");
+    switch(resetReason) {
+        case ESP_RST_POWERON: Serial.println("POWER ON"); break;
+        case ESP_RST_SW: Serial.println("SOFTWARE RESET"); break;
+        case ESP_RST_PANIC: Serial.println("PANIC/EXCEPTION"); break;
+        case ESP_RST_INT_WDT: Serial.println("INTERRUPT WATCHDOG"); break;
+        case ESP_RST_TASK_WDT: Serial.println("TASK WATCHDOG"); break;
+        case ESP_RST_WDT: Serial.println("OTHER WATCHDOG"); break;
+        case ESP_RST_DEEPSLEEP: Serial.println("DEEP SLEEP WAKE"); break;
+        case ESP_RST_BROWNOUT: Serial.println("BROWNOUT"); break;
+        default: Serial.println("UNKNOWN"); break;
+    }
+
+    // Check free heap
+    Serial.print("Free heap at boot: ");
+    Serial.print(ESP.getFreeHeap());
+    Serial.println(" bytes");
+
     // Initialize display FIRST
     initDisplay();
+    Serial.println("Display initialized");
 
-    // Disable watchdog completely during boot
-    esp_task_wdt_reset();
-    esp_task_wdt_delete(NULL);
+    // COMPLETELY DISABLE WATCHDOG - do not use it at all
+    esp_task_wdt_deinit();
+    Serial.println("Watchdog FULLY DISABLED");
 
     // Initialize preferences
     preferences.begin("trmnl", false);
     setupComplete = preferences.getBool("setup_done", false);
+    bool dashboardCached = preferences.getBool("dashboard_cached", false);
 
-    // BOOT SCREEN (800x480 landscape - no rotation)
-    // Simple test with clear coordinates
+    Serial.print("Setup complete flag: ");
+    Serial.println(setupComplete);
+    Serial.print("Dashboard cached: ");
+    Serial.println(dashboardCached);
+
+    // If we have cached dashboard and this is unexpected reboot, restore from cache
+    if (dashboardCached && resetReason != ESP_RST_POWERON) {
+        Serial.println("UNEXPECTED REBOOT DETECTED - Restoring from cache");
+
+        // Restore dashboard from cached shell + data
+        restoreDashboardFromCache();
+
+        // Close preferences
+        preferences.end();
+
+        // Skip to operation mode
+        Serial.println("Skipping boot sequence - entering operation mode");
+        Serial.println("Dashboard should remain visible - NO REBOOTS");
+        delay(2000);
+        return;  // Exit setup(), go straight to loop()
+    }
+
+    // Normal boot sequence continues below...
+
+    // ========================================
+    // STEP 1: Clear screen and show initial status
+    // ========================================
     bbep.fillScreen(BBEP_WHITE);
-    bbep.setFont(FONT_12x16);
-    bbep.setCursor(10, 20);
-    bbep.print("PTV-TRMNL");
 
+    int logY = 20;
+    int lineHeight = 20;
     bbep.setFont(FONT_8x8);
-    bbep.setCursor(10, 50);
-    bbep.print("Booting...");
 
-    bbep.setCursor(10, 70);
+    bbep.setCursor(10, logY);
+    bbep.print("PTV-TRMNL System Starting...");
+    logY += lineHeight;
+
+    bbep.setCursor(10, logY);
     bbep.print("Connecting to WiFi...");
 
+    // ONE REFRESH to show boot screen
     bbep.refresh(REFRESH_FULL, true);
-    delay(1000);
+    delay(500);
 
+    // ========================================
+    // STEP 2: Connect WiFi
+    // ========================================
     WiFiManager wm;
     wm.setConfigPortalTimeout(30);
 
     if (!wm.autoConnect(WIFI_AP_NAME)) {
-        bbep.setCursor(10, 90);
-        bbep.print("WiFi FAILED");
-        bbep.refresh(REFRESH_PARTIAL, false);
-        delay(2000);
+        logY += lineHeight;
+        bbep.setCursor(10, logY);
+        bbep.print("ERROR: WiFi failed");
+        bbep.refresh(REFRESH_FULL, true);
+        delay(3000);
         deepSleep(60);
         return;
     }
 
-    bbep.setCursor(10, 90);
-    bbep.print("WiFi OK        ");
-    bbep.refresh(REFRESH_PARTIAL, false);
-    delay(500);
+    logY += lineHeight;
+    bbep.setCursor(10, logY);
+    bbep.print("WiFi OK");
+    logY += lineHeight;
 
-    // Fetch data
-    bbep.setCursor(10, 110);
+    // ========================================
+    // STEP 3: Fetch data
+    // ========================================
+    bbep.setCursor(10, logY);
     bbep.print("Fetching data...");
-    bbep.refresh(REFRESH_PARTIAL, false);
+    bbep.refresh(REFRESH_FULL, true);
 
     WiFiClientSecure *client = new WiFiClientSecure();
     if (!client) {
+        logY += lineHeight;
+        bbep.setCursor(10, logY);
+        bbep.print("ERROR: Memory failed");
+        bbep.refresh(REFRESH_FULL, true);
+        delay(3000);
         deepSleep(60);
         return;
     }
@@ -122,12 +191,26 @@ void setup() {
     String url = String(SERVER_URL) + "/api/region-updates";
     http.setTimeout(15000);
 
-    if (!http.begin(*client, url) || http.GET() != 200) {
-        bbep.setCursor(10, 130);
-        bbep.print("Server error");
-        bbep.refresh(REFRESH_PARTIAL, false);
+    if (!http.begin(*client, url)) {
+        logY += lineHeight;
+        bbep.setCursor(10, logY);
+        bbep.print("ERROR: Server connect failed");
+        bbep.refresh(REFRESH_FULL, true);
         delete client;
-        delay(2000);
+        delay(3000);
+        deepSleep(60);
+        return;
+    }
+
+    int httpCode = http.GET();
+    if (httpCode != 200) {
+        logY += lineHeight;
+        bbep.setCursor(10, logY);
+        bbep.print("ERROR: Server code ");
+        bbep.print(httpCode);
+        bbep.refresh(REFRESH_FULL, true);
+        delete client;
+        delay(3000);
         deepSleep(60);
         return;
     }
@@ -137,38 +220,120 @@ void setup() {
     client->stop();
     delete client;
 
+    logY += lineHeight;
+    bbep.setCursor(10, logY);
+    bbep.print("Data OK");
+    logY += lineHeight;
+
+    // ========================================
+    // STEP 4: Parse JSON
+    // ========================================
+    bbep.setCursor(10, logY);
+    bbep.print("Parsing...");
+    bbep.refresh(REFRESH_FULL, true);
+
     JsonDocument doc;
-    if (deserializeJson(doc, payload)) {
+    DeserializationError error = deserializeJson(doc, payload);
+    if (error) {
+        logY += lineHeight;
+        bbep.setCursor(10, logY);
+        bbep.print("ERROR: Parse failed");
+        bbep.refresh(REFRESH_FULL, true);
+        delay(3000);
         deepSleep(60);
         return;
     }
 
-    // Draw dashboard - LANDSCAPE layout (800x480)
-    bbep.fillScreen(BBEP_WHITE);
-    drawDashboardSections(doc);
+    logY += lineHeight;
+    bbep.setCursor(10, logY);
+    bbep.print("Parse OK");
+    logY += lineHeight;
 
+    // ========================================
+    // STEP 5: Draw dashboard
+    // ========================================
+    bbep.setCursor(10, logY);
+    bbep.print("Drawing dashboard...");
     bbep.refresh(REFRESH_FULL, true);
-    delay(2000);
+    delay(1000);
 
-    // Mark as complete
+    // Draw complete dashboard (shell + dynamic data) and cache it
+    drawCompleteDashboard(doc);
+
+    // Final refresh to show everything
+    bbep.refresh(REFRESH_FULL, true);
+    delay(1000);
+
+    Serial.println("Dashboard displayed successfully");
+    Serial.print("Free heap after dashboard: ");
+    Serial.println(ESP.getFreeHeap());
+
+    // ========================================
+    // STEP 7: Disconnect WiFi to free resources
+    // ========================================
+    Serial.println("Disconnecting WiFi to free memory...");
+    WiFi.disconnect(true);  // Disconnect and turn off WiFi
+    WiFi.mode(WIFI_OFF);
+    delay(100);
+
+    Serial.print("Free heap after WiFi disconnect: ");
+    Serial.println(ESP.getFreeHeap());
+
+    // ========================================
+    // STEP 8: Enter operation mode (NO REBOOT)
+    // ========================================
     if (!setupComplete) {
         setupComplete = true;
         preferences.putBool("setup_done", true);
-        deepSleep(5);
-        return;
+
+        // Show success message
+        logY += lineHeight;
+        bbep.setFont(FONT_8x8);
+        bbep.setCursor(10, logY);
+        bbep.print("System ready - entering operation mode");
+        bbep.refresh(REFRESH_FULL, true);
+        delay(2000);
+
+        Serial.println("First boot complete - staying awake for operation mode");
     }
 
-    // OPERATING MODE: Update regions
-    updateDashboardRegions(doc);
-    bbep.refresh(REFRESH_PARTIAL, false);
+    preferences.end();
 
-    deepSleep(refreshRate);
+    Serial.println("Setup complete - entering loop()");
+    Serial.println("Dashboard should remain visible - NO REBOOTS");
+    Serial.println("Watchdog is DISABLED - no automatic reboots");
+    Serial.println("WiFi is OFF - maximum available memory");
+    delay(2000);  // Give time for serial to flush
 }
 
 void loop() {
-    // Everything runs in setup() then deep sleeps
-    // This should never execute
-    delay(1000);
+    // ========================================
+    // OPERATION MODE: Stay alive, do NOTHING
+    // ========================================
+    // Watchdog is DISABLED, WiFi is OFF
+    // This is the absolute minimum code to stay alive
+    // If it still reboots, the problem is hardware or power related
+
+    // Print heartbeat every 10 seconds
+    static unsigned long lastPrint = 0;
+    unsigned long now = millis();
+
+    if (now - lastPrint >= 10000) {
+        Serial.print("Alive - uptime: ");
+        Serial.print(now / 1000);
+        Serial.print("s, free heap: ");
+        Serial.println(ESP.getFreeHeap());
+        lastPrint = now;
+    }
+
+    // Just delay, nothing else
+    delay(100);
+
+    // NOTE: If device still reboots with this minimal loop:
+    // - Check power supply (insufficient current)
+    // - Check for hardware issues (bad solder joints, etc.)
+    // - Check for brownout detection in serial output
+    // - Try different USB cable/power source
 }
 
 void initDisplay() {
@@ -190,191 +355,245 @@ static char prevTrain2[16] = "";
 static char prevTram1[16] = "";
 static char prevTram2[16] = "";
 
-// INITIAL SETUP: Draw complete dashboard ONCE (PIDS style)
-void drawInitialDashboard(JsonDocument& doc) {
-    // Extract data
-    JsonArray regions = doc["regions"].as<JsonArray>();
-    const char* timeText = "00:00";
-    const char* train1 = "--";
-    const char* train2 = "--";
-    const char* tram1 = "--";
-    const char* tram2 = "--";
+// ============================================================================
+// DASHBOARD TEMPLATE - CACHED SHELL SYSTEM
+// ============================================================================
+// Separates static layout (shell) from dynamic data for fast cache recovery
 
-    for (JsonObject region : regions) {
-        const char* id = region["id"] | "";
-        if (strcmp(id, "time") == 0) timeText = region["text"] | "00:00";
-        else if (strcmp(id, "train1") == 0) train1 = region["text"] | "--";
-        else if (strcmp(id, "train2") == 0) train2 = region["text"] | "--";
-        else if (strcmp(id, "tram1") == 0) tram1 = region["text"] | "--";
-        else if (strcmp(id, "tram2") == 0) tram2 = region["text"] | "--";
-    }
-
-    // Save initial values
-    strncpy(prevTime, timeText, sizeof(prevTime) - 1);
-    strncpy(prevTrain1, train1, sizeof(prevTrain1) - 1);
-    strncpy(prevTrain2, train2, sizeof(prevTrain2) - 1);
-    strncpy(prevTram1, tram1, sizeof(prevTram1) - 1);
-    strncpy(prevTram2, tram2, sizeof(prevTram2) - 1);
+// STEP 1: Draw static shell (borders, headers, labels) - NO DYNAMIC DATA
+void drawDashboardShell() {
+    Serial.println("Drawing dashboard shell...");
 
     // Clear screen
     bbep.fillScreen(BBEP_WHITE);
 
-    // ========== HEADER ==========
-    bbep.setFont(FONT_12x16);
-    bbep.setCursor(10, 20);
+    // ========================================================================
+    // 1. STATION NAME BOX (Top-Left)
+    // ========================================================================
+    bbep.drawRect(10, 10, 90, 50, BBEP_BLACK);
+    bbep.drawRect(11, 11, 88, 48, BBEP_BLACK); // Double border for thickness
+
+    bbep.setFont(FONT_8x8);
+    bbep.setCursor(15, 30);
     bbep.print("SOUTH YARRA");
 
-    // Time (top right corner)
-    bbep.setFont(FONT_12x16);
-    bbep.setCursor(360, 20);
-    bbep.print(timeText);
+    // ========================================================================
+    // 2. TRAM SECTION (Left Column)
+    // ========================================================================
+    // Header strip (black background)
+    bbep.fillRect(10, 120, 370, 25, BBEP_BLACK);
 
-    // ========== METRO TRAINS SECTION ==========
-    bbep.setFont(FONT_12x16);
-    bbep.setCursor(10, 60);
-    bbep.print("METRO TRAINS");
-
+    // Header text (draw above black strip for visibility)
     bbep.setFont(FONT_8x8);
-    bbep.setCursor(10, 80);
-    bbep.print("FLINDERS ST (LOOP)");
+    bbep.setCursor(15, 110);
+    bbep.print("TRAM #58 TO WEST COBURG");
 
-    // Train departures (large text)
-    bbep.setFont(FONT_12x16);
-    bbep.setCursor(10, 110);
-    bbep.print(train1);
+    // Departure labels (static)
     bbep.setFont(FONT_8x8);
-    bbep.print(" min");
+    bbep.setCursor(20, 152);
+    bbep.print("Next:");
 
-    bbep.setFont(FONT_12x16);
-    bbep.setCursor(10, 140);
-    bbep.print(train2);
+    bbep.setCursor(20, 222);
+    bbep.print("Then:");
+
+    // ========================================================================
+    // 3. TRAIN SECTION (Right Column)
+    // ========================================================================
+    // Header strip (black background)
+    bbep.fillRect(400, 120, 360, 25, BBEP_BLACK);
+
+    // Header text (draw above black strip)
     bbep.setFont(FONT_8x8);
-    bbep.print(" min");
+    bbep.setCursor(405, 110);
+    bbep.print("TRAINS (CITY LOOP)");
 
-    // ========== YARRA TRAMS SECTION ==========
-    bbep.setFont(FONT_12x16);
-    bbep.setCursor(10, 200);
-    bbep.print("YARRA TRAMS");
+    // Departure labels (static)
+    bbep.setCursor(410, 152);
+    bbep.print("Next:");
 
+    bbep.setCursor(410, 222);
+    bbep.print("Then:");
+
+    // ========================================================================
+    // 4. STATUS BAR (Bottom)
+    // ========================================================================
     bbep.setFont(FONT_8x8);
-    bbep.setCursor(10, 220);
-    bbep.print("58 TOORAK (DOMAIN)");
+    bbep.setCursor(250, 460);
+    bbep.print("GOOD SERVICE");
 
-    // Tram departures (large text)
-    bbep.setFont(FONT_12x16);
-    bbep.setCursor(10, 250);
-    bbep.print(tram1);
-    bbep.setFont(FONT_8x8);
-    bbep.print(" min");
-
-    bbep.setFont(FONT_12x16);
-    bbep.setCursor(10, 280);
-    bbep.print(tram2);
-    bbep.setFont(FONT_8x8);
-    bbep.print(" min");
-
-    // ========== STATUS BAR ==========
-    bbep.setFont(FONT_8x8);
-    bbep.setCursor(10, 350);
-    bbep.print("SERVICE STATUS: GOOD SERVICE");
+    Serial.println("Shell drawn (static elements only)");
 }
 
-// Draw dashboard to buffer - LANDSCAPE LAYOUT (800w × 480h)
-void drawDashboardSections(JsonDocument& doc) {
+// STEP 2: Draw dynamic data onto shell
+void drawDynamicData(const char* timeText, const char* tram1, const char* tram2,
+                     const char* train1, const char* train2) {
+    Serial.println("Drawing dynamic data...");
+
+    // ========================================================================
+    // 1. LARGE TIME DISPLAY (Center-Top)
+    // ========================================================================
+    bbep.setFont(FONT_12x16);
+    int timeX = 140;
+    int timeY = 25;
+
+    // Draw time with bold effect (4x draw with offset)
+    for (int dx = 0; dx <= 1; dx++) {
+        for (int dy = 0; dy <= 1; dy++) {
+            bbep.setCursor(timeX + dx, timeY + dy);
+            bbep.print(timeText);
+        }
+    }
+
+    // ========================================================================
+    // 2. TRAM DEPARTURES
+    // ========================================================================
+    bbep.setFont(FONT_12x16);
+    bbep.setCursor(20, 170);
+    bbep.print(tram1);
+    bbep.setFont(FONT_8x8);
+    bbep.print(" min*");
+
+    bbep.setFont(FONT_12x16);
+    bbep.setCursor(20, 240);
+    bbep.print(tram2);
+    bbep.setFont(FONT_8x8);
+    bbep.print(" min*");
+
+    // ========================================================================
+    // 3. TRAIN DEPARTURES
+    // ========================================================================
+    bbep.setFont(FONT_12x16);
+    bbep.setCursor(410, 170);
+    bbep.print(train1);
+    bbep.setFont(FONT_8x8);
+    bbep.print(" min*");
+
+    bbep.setFont(FONT_12x16);
+    bbep.setCursor(410, 240);
+    bbep.print(train2);
+    bbep.setFont(FONT_8x8);
+    bbep.print(" min*");
+
+    Serial.println("Dynamic data drawn");
+}
+
+// STEP 3: Cache dynamic data to NVS for crash recovery
+void cacheDynamicData(const char* timeText, const char* tram1, const char* tram2,
+                      const char* train1, const char* train2) {
+    Serial.println("Caching dynamic data to NVS...");
+
+    preferences.begin("trmnl", false);
+    preferences.putString("cache_time", timeText);
+    preferences.putString("cache_tram1", tram1);
+    preferences.putString("cache_tram2", tram2);
+    preferences.putString("cache_train1", train1);
+    preferences.putString("cache_train2", train2);
+    preferences.putBool("dashboard_cached", true);
+    preferences.end();
+
+    Serial.println("Data cached successfully");
+}
+
+// STEP 4: Restore dashboard from cache (on unexpected reboot)
+void restoreDashboardFromCache() {
+    Serial.println("=== RESTORING DASHBOARD FROM CACHE ===");
+
+    // Load cached values
+    preferences.begin("trmnl", false);
+    String cachedTime = preferences.getString("cache_time", "00:00");
+    String cachedTram1 = preferences.getString("cache_tram1", "--");
+    String cachedTram2 = preferences.getString("cache_tram2", "--");
+    String cachedTrain1 = preferences.getString("cache_train1", "--");
+    String cachedTrain2 = preferences.getString("cache_train2", "--");
+    preferences.end();
+
+    Serial.println("Cached values loaded:");
+    Serial.print("  Time: "); Serial.println(cachedTime);
+    Serial.print("  Tram1: "); Serial.println(cachedTram1);
+    Serial.print("  Tram2: "); Serial.println(cachedTram2);
+    Serial.print("  Train1: "); Serial.println(cachedTrain1);
+    Serial.print("  Train2: "); Serial.println(cachedTrain2);
+
+    // Draw shell (fast)
+    drawDashboardShell();
+
+    // Draw cached dynamic data
+    drawDynamicData(cachedTime.c_str(), cachedTram1.c_str(), cachedTram2.c_str(),
+                    cachedTrain1.c_str(), cachedTrain2.c_str());
+
+    // Show recovery indicator
+    bbep.setFont(FONT_8x8);
+    bbep.setCursor(10, 460);
+    bbep.print("RECOVERED");
+
+    // Single full refresh
+    bbep.refresh(REFRESH_FULL, true);
+
+    Serial.println("Dashboard restored from cache");
+}
+
+// COMBINED: Draw complete dashboard from live data
+void drawCompleteDashboard(JsonDocument& doc) {
+    Serial.println("Drawing complete dashboard from live data...");
+
     // Extract data from JSON
     JsonArray regions = doc["regions"].as<JsonArray>();
     const char* timeText = "00:00";
-    const char* train1 = "--";
-    const char* train2 = "--";
     const char* tram1 = "--";
     const char* tram2 = "--";
+    const char* train1 = "--";
+    const char* train2 = "--";
 
-    for (JsonObject region : regions) {
-        const char* id = region["id"] | "";
-        if (strcmp(id, "time") == 0) timeText = region["text"] | "00:00";
-        else if (strcmp(id, "train1") == 0) train1 = region["text"] | "--";
-        else if (strcmp(id, "train2") == 0) train2 = region["text"] | "--";
-        else if (strcmp(id, "tram1") == 0) tram1 = region["text"] | "--";
-        else if (strcmp(id, "tram2") == 0) tram2 = region["text"] | "--";
+    if (!regions.isNull()) {
+        for (JsonObject region : regions) {
+            const char* id = region["id"] | "";
+            if (strcmp(id, "time") == 0) timeText = region["text"] | "00:00";
+            else if (strcmp(id, "tram1") == 0) tram1 = region["text"] | "--";
+            else if (strcmp(id, "tram2") == 0) tram2 = region["text"] | "--";
+            else if (strcmp(id, "train1") == 0) train1 = region["text"] | "--";
+            else if (strcmp(id, "train2") == 0) train2 = region["text"] | "--";
+        }
     }
 
-    // Save initial values for change detection
+    // Save to previous values for change detection
     strncpy(prevTime, timeText, sizeof(prevTime) - 1);
-    strncpy(prevTrain1, train1, sizeof(prevTrain1) - 1);
-    strncpy(prevTrain2, train2, sizeof(prevTrain2) - 1);
     strncpy(prevTram1, tram1, sizeof(prevTram1) - 1);
     strncpy(prevTram2, tram2, sizeof(prevTram2) - 1);
+    strncpy(prevTrain1, train1, sizeof(prevTrain1) - 1);
+    strncpy(prevTrain2, train2, sizeof(prevTrain2) - 1);
 
-    // ========== HEADER (0-60) ==========
-    bbep.setFont(FONT_12x16);
-    bbep.setCursor(20, 30);
-    bbep.print("SOUTH YARRA");
+    // Draw shell
+    drawDashboardShell();
 
-    // Time on right side
-    bbep.setFont(FONT_12x16);
-    bbep.setCursor(680, 30);
-    bbep.print(timeText);
+    // Draw dynamic data
+    drawDynamicData(timeText, tram1, tram2, train1, train2);
 
-    // Horizontal separator
-    bbep.drawLine(0, 60, 800, 60, BBEP_BLACK);
+    // Cache the data for recovery
+    cacheDynamicData(timeText, tram1, tram2, train1, train2);
 
-    // ========== LEFT: METRO TRAINS (0-400, 60-440) ==========
-    bbep.setFont(FONT_12x16);
-    bbep.setCursor(20, 90);
-    bbep.print("METRO TRAINS");
-
-    bbep.setFont(FONT_8x8);
-    bbep.setCursor(20, 120);
-    bbep.print("FLINDERS ST (LOOP)");
-
-    // Train 1
-    bbep.setFont(FONT_12x16);
-    bbep.setCursor(40, 180);
-    bbep.print(train1);
-    bbep.setFont(FONT_8x8);
-    bbep.print(" min");
-
-    // Train 2
-    bbep.setFont(FONT_12x16);
-    bbep.setCursor(40, 250);
-    bbep.print(train2);
-    bbep.setFont(FONT_8x8);
-    bbep.print(" min");
-
-    // Vertical divider
-    bbep.drawLine(400, 60, 400, 440, BBEP_BLACK);
-
-    // ========== RIGHT: YARRA TRAMS (400-800, 60-440) ==========
-    bbep.setFont(FONT_12x16);
-    bbep.setCursor(420, 90);
-    bbep.print("YARRA TRAMS");
-
-    bbep.setFont(FONT_8x8);
-    bbep.setCursor(420, 120);
-    bbep.print("58 TOORAK (DOMAIN)");
-
-    // Tram 1
-    bbep.setFont(FONT_12x16);
-    bbep.setCursor(440, 180);
-    bbep.print(tram1);
-    bbep.setFont(FONT_8x8);
-    bbep.print(" min");
-
-    // Tram 2
-    bbep.setFont(FONT_12x16);
-    bbep.setCursor(440, 250);
-    bbep.print(tram2);
-    bbep.setFont(FONT_8x8);
-    bbep.print(" min");
-
-    // ========== STATUS BAR (440-480) ==========
-    bbep.drawLine(0, 440, 800, 440, BBEP_BLACK);
-    bbep.setFont(FONT_8x8);
-    bbep.setCursor(250, 460);
-    bbep.print("SERVICE STATUS: GOOD SERVICE");
+    Serial.println("Complete dashboard drawn and cached");
 }
 
-// OPERATING MODE: Update only changed regions - LANDSCAPE coordinates
+// Draw dashboard to buffer - SIMPLIFIED LANDSCAPE LAYOUT (800w × 480h)
+// ============================================================================
+// OLD DASHBOARD FUNCTION (REPLACED)
+// ============================================================================
+// This function has been replaced by the new cached shell system:
+// - drawDashboardShell() - draws static elements
+// - drawDynamicData() - draws changeable values
+// - drawCompleteDashboard() - draws shell + data + caches
+//
+// Keeping this here as reference in case we need to revert
+// ============================================================================
+
+/*
+void drawDashboardSections_OLD(JsonDocument& doc) {
+    // This was the old simple dashboard - replaced with template design
+    // See drawCompleteDashboard() for new implementation
+}
+*/
+
+// OPERATING MODE: Update only changed regions with anti-ghosting boxes
 void updateDashboardRegions(JsonDocument& doc) {
     // Extract current data
     JsonArray regions = doc["regions"].as<JsonArray>();
@@ -394,60 +613,84 @@ void updateDashboardRegions(JsonDocument& doc) {
     }
 
     // Update TIME region (top-right)
+    // Box: 5 chars × 12px = 60px wide + 10px padding = 70px
+    // Height: 16px + 8px padding = 24px
     if (strcmp(prevTime, timeText) != 0) {
-        bbep.fillRect(670, 15, 110, 30, BBEP_BLACK);
-        bbep.fillRect(670, 15, 110, 30, BBEP_WHITE);
+        Serial.print("Updating TIME: ");
+        Serial.println(timeText);
+        int boxX = 675, boxY = 18, boxW = 80, boxH = 24;
+        bbep.fillRect(boxX, boxY, boxW, boxH, BBEP_BLACK);  // Anti-ghosting: BLACK
+        bbep.fillRect(boxX, boxY, boxW, boxH, BBEP_WHITE);  // Anti-ghosting: WHITE
         bbep.setFont(FONT_12x16);
         bbep.setCursor(680, 30);
         bbep.print(timeText);
+        bbep.refresh(REFRESH_PARTIAL, true);  // Partial refresh for this region
         strncpy(prevTime, timeText, sizeof(prevTime) - 1);
     }
 
     // Update TRAIN1 region (left side)
+    // Box: "XX min" = 2×12px + 4×8px = 24+32 = 56px + 20px padding = 80px
+    // Height: 16px + 8px padding = 24px
     if (strcmp(prevTrain1, train1) != 0) {
-        bbep.fillRect(30, 165, 200, 30, BBEP_BLACK);
-        bbep.fillRect(30, 165, 200, 30, BBEP_WHITE);
+        Serial.print("Updating TRAIN1: ");
+        Serial.println(train1);
+        int boxX = 35, boxY = 168, boxW = 100, boxH = 24;
+        bbep.fillRect(boxX, boxY, boxW, boxH, BBEP_BLACK);  // Anti-ghosting: BLACK
+        bbep.fillRect(boxX, boxY, boxW, boxH, BBEP_WHITE);  // Anti-ghosting: WHITE
         bbep.setFont(FONT_12x16);
         bbep.setCursor(40, 180);
         bbep.print(train1);
         bbep.setFont(FONT_8x8);
         bbep.print(" min");
+        bbep.refresh(REFRESH_PARTIAL, true);  // Partial refresh for this region
         strncpy(prevTrain1, train1, sizeof(prevTrain1) - 1);
     }
 
     // Update TRAIN2 region (left side)
     if (strcmp(prevTrain2, train2) != 0) {
-        bbep.fillRect(30, 235, 200, 30, BBEP_BLACK);
-        bbep.fillRect(30, 235, 200, 30, BBEP_WHITE);
+        Serial.print("Updating TRAIN2: ");
+        Serial.println(train2);
+        int boxX = 35, boxY = 238, boxW = 100, boxH = 24;
+        bbep.fillRect(boxX, boxY, boxW, boxH, BBEP_BLACK);  // Anti-ghosting: BLACK
+        bbep.fillRect(boxX, boxY, boxW, boxH, BBEP_WHITE);  // Anti-ghosting: WHITE
         bbep.setFont(FONT_12x16);
         bbep.setCursor(40, 250);
         bbep.print(train2);
         bbep.setFont(FONT_8x8);
         bbep.print(" min");
+        bbep.refresh(REFRESH_PARTIAL, true);  // Partial refresh for this region
         strncpy(prevTrain2, train2, sizeof(prevTrain2) - 1);
     }
 
     // Update TRAM1 region (right side)
     if (strcmp(prevTram1, tram1) != 0) {
-        bbep.fillRect(430, 165, 200, 30, BBEP_BLACK);
-        bbep.fillRect(430, 165, 200, 30, BBEP_WHITE);
+        Serial.print("Updating TRAM1: ");
+        Serial.println(tram1);
+        int boxX = 435, boxY = 168, boxW = 100, boxH = 24;
+        bbep.fillRect(boxX, boxY, boxW, boxH, BBEP_BLACK);  // Anti-ghosting: BLACK
+        bbep.fillRect(boxX, boxY, boxW, boxH, BBEP_WHITE);  // Anti-ghosting: WHITE
         bbep.setFont(FONT_12x16);
         bbep.setCursor(440, 180);
         bbep.print(tram1);
         bbep.setFont(FONT_8x8);
         bbep.print(" min");
+        bbep.refresh(REFRESH_PARTIAL, true);  // Partial refresh for this region
         strncpy(prevTram1, tram1, sizeof(prevTram1) - 1);
     }
 
     // Update TRAM2 region (right side)
     if (strcmp(prevTram2, tram2) != 0) {
-        bbep.fillRect(430, 235, 200, 30, BBEP_BLACK);
-        bbep.fillRect(430, 235, 200, 30, BBEP_WHITE);
+        Serial.print("Updating TRAM2: ");
+        Serial.println(tram2);
+        int boxX = 435, boxY = 238, boxW = 100, boxH = 24;
+        bbep.fillRect(boxX, boxY, boxW, boxH, BBEP_BLACK);  // Anti-ghosting: BLACK
+        bbep.fillRect(boxX, boxY, boxW, boxH, BBEP_WHITE);  // Anti-ghosting: WHITE
         bbep.setFont(FONT_12x16);
         bbep.setCursor(440, 250);
         bbep.print(tram2);
         bbep.setFont(FONT_8x8);
         bbep.print(" min");
+        bbep.refresh(REFRESH_PARTIAL, true);  // Partial refresh for this region
         strncpy(prevTram2, tram2, sizeof(prevTram2) - 1);
     }
 }

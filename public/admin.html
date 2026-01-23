@@ -316,6 +316,99 @@
             </div>
         </div>
 
+        <!-- User Preferences Section -->
+        <div style="background: white; border-radius: 12px; padding: 25px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+            <h2 style="color: #2d3748; font-size: 20px; margin-bottom: 20px;">👤 User Preferences</h2>
+
+            <!-- Addresses -->
+            <div style="background: #f7fafc; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                <h3 style="color: #2d3748; font-size: 16px; margin-bottom: 15px;">📍 Addresses</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                    <div class="form-group">
+                        <label class="form-label">Home Address</label>
+                        <input type="text" class="form-input" id="prefHomeAddress" placeholder="123 Main St, South Yarra">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Preferred Cafe</label>
+                        <input type="text" class="form-input" id="prefCafeAddress" placeholder="Market Lane Coffee, Prahran">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Work Address</label>
+                        <input type="text" class="form-input" id="prefWorkAddress" placeholder="456 Collins St, Melbourne">
+                    </div>
+                </div>
+            </div>
+
+            <!-- PTV API Credentials -->
+            <div style="background: #f7fafc; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                <h3 style="color: #2d3748; font-size: 16px; margin-bottom: 15px;">🔑 PTV API Credentials</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;">
+                    <div class="form-group">
+                        <label class="form-label">API Key (Developer ID)</label>
+                        <input type="text" class="form-input" id="prefApiKey" placeholder="ce606b90-9ffb-43e8-bcd7-0c2bd0498367">
+                        <small style="color: #718096; font-size: 11px;">Your PTV Open Data account identifier</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">API Token</label>
+                        <input type="password" class="form-input" id="prefApiToken" placeholder="Your API token">
+                        <small style="color: #718096; font-size: 11px;">Keep this secret - it's your authentication key</small>
+                    </div>
+                </div>
+                <div style="margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 6px; font-size: 12px; color: #856404;">
+                    <strong>ℹ️ Note:</strong> Get your API credentials from <a href="https://www.ptv.vic.gov.au/footer/data-and-reporting/datasets/ptv-timetable-api/" target="_blank" style="color: #856404; text-decoration: underline;">PTV Timetable API</a>
+                </div>
+            </div>
+
+            <!-- Journey Preferences -->
+            <div style="background: #f7fafc; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                <h3 style="color: #2d3748; font-size: 16px; margin-bottom: 15px;">🚆 Journey Preferences</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <div class="form-group">
+                        <label class="form-label">Default Arrival Time</label>
+                        <input type="time" class="form-input" id="prefArrivalTime" value="09:00">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">
+                            <input type="checkbox" class="form-checkbox" id="prefCoffeeEnabled" checked>
+                            Enable Coffee Stop
+                        </label>
+                    </div>
+                </div>
+                <div style="margin-top: 10px;">
+                    <label class="form-label">Preferred Transit Modes</label>
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                        <label style="display: flex; align-items: center; gap: 5px;">
+                            <input type="checkbox" class="form-checkbox" id="prefModeTrains" checked>
+                            <span>🚆 Trains</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 5px;">
+                            <input type="checkbox" class="form-checkbox" id="prefModeTrams" checked>
+                            <span>🚊 Trams</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 5px;">
+                            <input type="checkbox" class="form-checkbox" id="prefModeBuses" checked>
+                            <span>🚌 Buses</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 5px;">
+                            <input type="checkbox" class="form-checkbox" id="prefModeVLine" checked>
+                            <span>🚄 V/Line</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="btn" onclick="savePreferences()" style="background: #48bb78;">💾 Save All Preferences</button>
+                <button class="btn" onclick="loadPreferences()">🔄 Reload</button>
+                <button class="btn" onclick="testPreferences()">✅ Test Configuration</button>
+                <button class="btn btn-danger" onclick="resetPreferences()">⚠️ Reset to Defaults</button>
+            </div>
+
+            <!-- Status Display -->
+            <div id="preferencesStatus" style="margin-top: 15px; display: none;"></div>
+        </div>
+
         <div class="grid">
             <!-- API Configuration Card -->
             <div class="card">
@@ -372,6 +465,62 @@
                     <strong>Note:</strong> Clearing caches will force the server to regenerate all data and images on next request.
                 </div>
             </div>
+
+            <!-- Weather Status Card -->
+            <div class="card">
+                <h2>🌤️ Weather Status</h2>
+                <div id="weatherStatus">
+                    <div style="text-align: center; color: #718096;">Loading weather...</div>
+                </div>
+                <button class="btn" onclick="refreshWeather()" style="margin-top: 10px;">🔄 Refresh Weather</button>
+            </div>
+
+            <!-- Smart Route Planner Card -->
+            <div class="card">
+                <h2>☕ Smart Route Planner</h2>
+                <p style="color: #718096; margin-bottom: 15px;">Plan your journey: Home → Coffee → Work</p>
+
+                <div class="form-group">
+                    <label class="form-label">Home Address</label>
+                    <input type="text" class="form-input" id="homeAddress" placeholder="123 Main St, South Yarra">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Coffee Shop Address</label>
+                    <input type="text" class="form-input" id="coffeeAddress" placeholder="Market Lane Coffee, Prahran">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Work Address</label>
+                    <input type="text" class="form-input" id="workAddress" placeholder="456 Collins St, Melbourne">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Desired Arrival Time</label>
+                    <input type="time" class="form-input" id="arrivalTime" value="09:00">
+                </div>
+
+                <button class="btn" onclick="calculateRoute()" id="calculateRouteBtn">
+                    🗺️ Calculate Route
+                </button>
+
+                <div id="routeResult" style="margin-top: 15px; display: none;">
+                    <!-- Route will be displayed here -->
+                </div>
+
+                <div id="ptvConnections" style="margin-top: 15px; display: none;">
+                    <!-- PTV connections will be displayed here -->
+                </div>
+            </div>
+
+            <!-- Dashboard Preview Card -->
+            <div class="card">
+                <h2>📱 Dashboard Preview</h2>
+                <p style="color: #718096; margin-bottom: 15px;">View live dashboard as it appears on the e-ink display</p>
+                <a href="/admin/dashboard-preview" target="_blank" class="btn" style="display: inline-block; text-decoration: none;">
+                    👁️ Open Preview
+                </a>
+            </div>
         </div>
     </div>
 
@@ -386,8 +535,14 @@
                     <input type="text" class="form-input" id="apiName" required>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">API Key</label>
-                    <input type="password" class="form-input" id="apiKey" required>
+                    <label class="form-label">API Key (Account ID)</label>
+                    <input type="text" class="form-input" id="apiKey" placeholder="e.g., ce606b90-9ffb-43e8-bcd7-0c2bd0498367">
+                    <small style="color: #718096; font-size: 11px;">Your PTV Open Data account identifier</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">API Token (JWT)</label>
+                    <input type="password" class="form-input" id="apiToken" required placeholder="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...">
+                    <small style="color: #718096; font-size: 11px;">JWT token used for API authentication</small>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Base URL</label>
@@ -414,13 +569,171 @@
             loadApis();
             loadSystemConfig();
             loadDevices();
+            loadWeatherStatus();
+            loadPreferences(); // Load user preferences
 
             // Auto-refresh every 5 seconds
             setInterval(() => {
                 loadStatus();
                 loadDevices();
+                loadWeatherStatus();
             }, 5000);
         });
+
+        // ========== PREFERENCES MANAGEMENT ==========
+
+        async function loadPreferences() {
+            try {
+                const response = await fetch('/admin/preferences');
+                const data = await response.json();
+
+                if (data.success) {
+                    const prefs = data.preferences;
+
+                    // Load addresses
+                    document.getElementById('prefHomeAddress').value = prefs.addresses?.home || '';
+                    document.getElementById('prefCafeAddress').value = prefs.addresses?.cafe || '';
+                    document.getElementById('prefWorkAddress').value = prefs.addresses?.work || '';
+
+                    // Load API credentials
+                    document.getElementById('prefApiKey').value = prefs.api?.key || '';
+                    // Don't load token for security (it's saved, just not displayed)
+
+                    // Load journey preferences
+                    document.getElementById('prefArrivalTime').value = prefs.journey?.arrivalTime || '09:00';
+                    document.getElementById('prefCoffeeEnabled').checked = prefs.journey?.coffeeEnabled !== false;
+
+                    // Load transit mode preferences
+                    const modes = prefs.journey?.preferredTransitModes || [0, 1, 2, 3];
+                    document.getElementById('prefModeTrains').checked = modes.includes(0);
+                    document.getElementById('prefModeTrams').checked = modes.includes(1);
+                    document.getElementById('prefModeBuses').checked = modes.includes(2);
+                    document.getElementById('prefModeVLine').checked = modes.includes(3);
+
+                    // Show status
+                    if (!data.status.configured) {
+                        showPreferencesStatus('⚠️ Preferences not fully configured. Please fill in all required fields.', 'warning');
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading preferences:', error);
+                showPreferencesStatus('❌ Error loading preferences', 'error');
+            }
+        }
+
+        async function savePreferences() {
+            try {
+                // Collect selected transit modes
+                const preferredTransitModes = [];
+                if (document.getElementById('prefModeTrains').checked) preferredTransitModes.push(0);
+                if (document.getElementById('prefModeTrams').checked) preferredTransitModes.push(1);
+                if (document.getElementById('prefModeBuses').checked) preferredTransitModes.push(2);
+                if (document.getElementById('prefModeVLine').checked) preferredTransitModes.push(3);
+
+                const updates = {
+                    addresses: {
+                        home: document.getElementById('prefHomeAddress').value,
+                        cafe: document.getElementById('prefCafeAddress').value,
+                        work: document.getElementById('prefWorkAddress').value
+                    },
+                    api: {
+                        key: document.getElementById('prefApiKey').value,
+                        token: document.getElementById('prefApiToken').value || undefined, // Only update if provided
+                        baseUrl: 'https://timetableapi.ptv.vic.gov.au'
+                    },
+                    journey: {
+                        arrivalTime: document.getElementById('prefArrivalTime').value,
+                        coffeeEnabled: document.getElementById('prefCoffeeEnabled').checked,
+                        preferredTransitModes
+                    }
+                };
+
+                // Remove undefined token if not provided
+                if (!updates.api.token) {
+                    delete updates.api.token;
+                }
+
+                const response = await fetch('/admin/preferences', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updates)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showPreferencesStatus('✅ Preferences saved successfully!', 'success');
+
+                    // Clear token field for security
+                    document.getElementById('prefApiToken').value = '';
+
+                    // Reload to confirm
+                    setTimeout(() => loadPreferences(), 1000);
+                } else {
+                    showPreferencesStatus('❌ Failed to save preferences', 'error');
+                }
+            } catch (error) {
+                console.error('Error saving preferences:', error);
+                showPreferencesStatus('❌ Error saving preferences: ' + error.message, 'error');
+            }
+        }
+
+        async function testPreferences() {
+            try {
+                const response = await fetch('/admin/preferences/validate');
+                const data = await response.json();
+
+                if (data.validation.valid) {
+                    showPreferencesStatus('✅ Configuration is valid! All required fields are set.', 'success');
+                } else {
+                    const errors = data.validation.errors.join(', ');
+                    showPreferencesStatus('⚠️ Configuration incomplete: ' + errors, 'warning');
+                }
+            } catch (error) {
+                showPreferencesStatus('❌ Error testing configuration', 'error');
+            }
+        }
+
+        async function resetPreferences() {
+            if (!confirm('Are you sure you want to reset all preferences to defaults? This cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/admin/preferences/reset', { method: 'POST' });
+                const data = await response.json();
+
+                if (data.success) {
+                    showPreferencesStatus('✅ Preferences reset to defaults', 'success');
+                    loadPreferences();
+                } else {
+                    showPreferencesStatus('❌ Failed to reset preferences', 'error');
+                }
+            } catch (error) {
+                showPreferencesStatus('❌ Error resetting preferences', 'error');
+            }
+        }
+
+        function showPreferencesStatus(message, type) {
+            const statusDiv = document.getElementById('preferencesStatus');
+            const colors = {
+                success: '#48bb78',
+                error: '#f56565',
+                warning: '#ed8936'
+            };
+
+            statusDiv.innerHTML = `
+                <div style="padding: 12px; background: ${colors[type]}20; border-left: 4px solid ${colors[type]}; border-radius: 6px; color: #2d3748;">
+                    ${message}
+                </div>
+            `;
+            statusDiv.style.display = 'block';
+
+            // Hide after 5 seconds
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 5000);
+        }
 
         // API Form submission
         document.getElementById('apiForm').addEventListener('submit', async (e) => {
@@ -429,7 +742,8 @@
             const apiId = document.getElementById('apiId').value;
             const apiData = {
                 name: document.getElementById('apiName').value,
-                key: document.getElementById('apiKey').value,
+                api_key: document.getElementById('apiKey').value,
+                token: document.getElementById('apiToken').value,
                 baseUrl: document.getElementById('apiBaseUrl').value,
                 enabled: document.getElementById('apiEnabled').checked
             };
@@ -548,7 +862,8 @@
                 .then(api => {
                     document.getElementById('apiId').value = apiId;
                     document.getElementById('apiName').value = api.name;
-                    document.getElementById('apiKey').value = api.key || '';
+                    document.getElementById('apiKey').value = api.api_key || '';
+                    document.getElementById('apiToken').value = api.token || '';
                     document.getElementById('apiBaseUrl').value = api.baseUrl || '';
                     document.getElementById('apiEnabled').checked = api.enabled;
                     document.getElementById('apiModal').classList.add('active');
@@ -577,6 +892,7 @@
             document.getElementById('apiId').value = 'custom_' + Date.now();
             document.getElementById('apiName').value = '';
             document.getElementById('apiKey').value = '';
+            document.getElementById('apiToken').value = '';
             document.getElementById('apiBaseUrl').value = '';
             document.getElementById('apiEnabled').checked = false;
             document.getElementById('apiModal').classList.add('active');
@@ -687,6 +1003,423 @@
                 .catch(error => {
                     alert('Error restarting server: ' + error.message);
                 });
+        }
+
+        // Load weather status
+        async function loadWeatherStatus() {
+            try {
+                const response = await fetch('/admin/weather');
+                const data = await response.json();
+
+                const weatherHtml = `
+                    <div style="display: flex; flex-direction: column; gap: 15px;">
+                        <div style="padding: 15px; background: #f7fafc; border-radius: 8px;">
+                            <div style="font-size: 32px; font-weight: bold; color: #2d3748;">
+                                ${data.current.temperature !== null ? data.current.temperature + '°C' : 'N/A'}
+                            </div>
+                            <div style="font-size: 16px; color: #718096; margin-top: 5px;">
+                                ${data.current.condition.full || 'Unknown'}
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 13px;">
+                            <div>
+                                <strong>Feels Like:</strong> ${data.current.feelsLike ? data.current.feelsLike + '°C' : 'N/A'}
+                            </div>
+                            <div>
+                                <strong>Humidity:</strong> ${data.current.humidity ? data.current.humidity + '%' : 'N/A'}
+                            </div>
+                            <div>
+                                <strong>Wind:</strong> ${data.current.windSpeed ? data.current.windSpeed + ' km/h' : 'N/A'}
+                            </div>
+                            <div>
+                                <strong>Rain:</strong> ${data.current.rainSince9am !== null ? data.current.rainSince9am + ' mm' : 'N/A'}
+                            </div>
+                        </div>
+                        <div style="padding: 10px; background: #edf2f7; border-radius: 6px; font-size: 12px;">
+                            <div><strong>Location:</strong> ${data.location}</div>
+                            <div><strong>Source:</strong> ${data.source}</div>
+                            <div><strong>Cache Age:</strong> ${data.cache.age ? data.cache.age + 's' : 'N/A'}</div>
+                            <div><strong>Cache TTL:</strong> ${data.cache.ttl ? data.cache.ttl + 's' : 'N/A'}</div>
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('weatherStatus').innerHTML = weatherHtml;
+            } catch (error) {
+                document.getElementById('weatherStatus').innerHTML = `
+                    <div style="color: #e53e3e; padding: 15px; text-align: center;">
+                        ❌ Error loading weather: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // Refresh weather cache
+        async function refreshWeather() {
+            try {
+                const response = await fetch('/admin/weather/refresh', { method: 'POST' });
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('✅ Weather cache refreshed!');
+                    loadWeatherStatus();
+                } else {
+                    alert('Failed to refresh weather');
+                }
+            } catch (error) {
+                alert('Error refreshing weather: ' + error.message);
+            }
+        }
+
+        // ========== ROUTE PLANNER FUNCTIONS ==========
+
+        // Calculate smart route
+        async function calculateRoute() {
+            const homeAddress = document.getElementById('homeAddress').value;
+            const coffeeAddress = document.getElementById('coffeeAddress').value;
+            const workAddress = document.getElementById('workAddress').value;
+            const arrivalTime = document.getElementById('arrivalTime').value;
+
+            // If fields are empty, we'll use saved preferences
+            // Server will fall back to saved preferences automatically
+            if (!homeAddress && !workAddress && !arrivalTime) {
+                alert('Please fill in addresses and arrival time, or configure them in User Preferences above');
+                return;
+            }
+
+            const btn = document.getElementById('calculateRouteBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Calculating...';
+
+            try {
+                const response = await fetch('/admin/route/calculate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        homeAddress,
+                        coffeeAddress,
+                        workAddress,
+                        arrivalTime
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayRoute(data.route);
+                    await loadPTVConnections();
+                } else {
+                    alert('Failed to calculate route: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('Error calculating route: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🗺️ Calculate Route';
+            }
+        }
+
+        // Display calculated route
+        function displayRoute(route) {
+            const routeResult = document.getElementById('routeResult');
+
+            const html = `
+                <div style="background: #f7fafc; border-radius: 8px; padding: 15px; border-left: 4px solid #667eea;">
+                    <h3 style="margin: 0 0 10px 0; color: #2d3748; font-size: 16px;">
+                        📍 Route Calculated
+                    </h3>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                        <div>
+                            <div style="font-size: 11px; color: #718096; text-transform: uppercase; margin-bottom: 4px;">
+                                Leave Home
+                            </div>
+                            <div style="font-size: 24px; font-weight: bold; color: #2d3748;">
+                                ${route.must_leave_home}
+                            </div>
+                        </div>
+                        <div>
+                            <div style="font-size: 11px; color: #718096; text-transform: uppercase; margin-bottom: 4px;">
+                                Arrive Work
+                            </div>
+                            <div style="font-size: 24px; font-weight: bold; color: #2d3748;">
+                                ${route.arrival_time}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="background: white; border-radius: 6px; padding: 12px; margin-bottom: 10px;">
+                        <div style="font-size: 12px; font-weight: 600; color: #2d3748; margin-bottom: 8px;">
+                            Journey Segments
+                        </div>
+                        ${route.segments.map((seg, idx) => {
+                            const icons = {
+                                'walk': '🚶',
+                                'coffee': '☕',
+                                'train': '🚆',
+                                'wait': '⏱️'
+                            };
+                            const icon = icons[seg.type] || '📍';
+
+                            return `
+                                <div style="display: flex; align-items: center; padding: 6px 0; border-bottom: 1px solid #e2e8f0;">
+                                    <span style="margin-right: 8px;">${icon}</span>
+                                    <div style="flex: 1;">
+                                        <div style="font-size: 13px; color: #2d3748;">
+                                            ${seg.type === 'walk' ? `${seg.from} → ${seg.to}` :
+                                              seg.type === 'coffee' ? `Get Coffee ${seg.busyIcon || ''}` :
+                                              seg.type === 'train' ? `${seg.from} → ${seg.to}` :
+                                              'Wait at station'}
+                                        </div>
+                                        ${seg.type === 'coffee' && seg.busyText ? `
+                                            <div style="font-size: 11px; color: ${seg.busyLevel === 'high' ? '#e53e3e' : seg.busyLevel === 'medium' ? '#ed8936' : '#48bb78'}; font-weight: 600;">
+                                                ${seg.busyText} - ${seg.busyDetails?.reason || seg.busyDetails?.peakName || 'Estimated wait'}
+                                            </div>
+                                        ` : ''}
+                                        ${seg.departure && seg.arrival ? `
+                                            <div style="font-size: 11px; color: #718096;">
+                                                ${seg.departure} → ${seg.arrival}
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                    <div style="font-size: 13px; font-weight: 600; color: ${seg.type === 'coffee' ? (seg.busyLevel === 'high' ? '#e53e3e' : seg.busyLevel === 'medium' ? '#ed8936' : '#667eea') : '#667eea'};">
+                                        ${seg.duration} min
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; font-size: 12px; margin-bottom: 10px;">
+                        <div style="text-align: center; padding: 8px; background: white; border-radius: 6px;">
+                            <div style="color: #718096;">Total</div>
+                            <div style="font-weight: 600; color: #2d3748;">${route.summary.total_duration} min</div>
+                        </div>
+                        <div style="text-align: center; padding: 8px; background: white; border-radius: 6px;">
+                            <div style="color: #718096;">Walking</div>
+                            <div style="font-weight: 600; color: #2d3748;">${route.summary.walking_time} min</div>
+                        </div>
+                        <div style="text-align: center; padding: 8px; background: white; border-radius: 6px;">
+                            <div style="color: #718096;">Coffee</div>
+                            <div style="font-weight: 600; color: ${route.summary.can_get_coffee ? '#48bb78' : '#f56565'};">
+                                ${route.summary.can_get_coffee ? '✅ Yes' : '❌ No'}
+                            </div>
+                        </div>
+                        <div style="text-align: center; padding: 8px; background: white; border-radius: 6px;">
+                            <div style="color: #718096;">Wait Time</div>
+                            <div style="font-weight: 600; color: ${route.summary.cafe_busy?.level === 'high' ? '#e53e3e' : route.summary.cafe_busy?.level === 'medium' ? '#ed8936' : '#48bb78'};">
+                                ${route.summary.coffee_time} min ${route.summary.cafe_busy?.icon || ''}
+                            </div>
+                        </div>
+                    </div>
+
+                    ${route.summary.cafe_busy ? `
+                        <div style="background: white; border-radius: 6px; padding: 10px; font-size: 12px; border-left: 3px solid ${route.summary.cafe_busy.level === 'high' ? '#e53e3e' : route.summary.cafe_busy.level === 'medium' ? '#ed8936' : '#48bb78'};">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                <span style="color: #718096;">Cafe Busy-ness:</span>
+                                <span style="font-weight: 600; color: #2d3748;">${route.summary.cafe_busy.icon} ${route.summary.cafe_busy.text}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                <span style="color: #718096;">Data Source:</span>
+                                <span style="font-weight: 600; color: #2d3748;">${route.summary.cafe_busy.source}</span>
+                            </div>
+                            ${route.summary.cafe_busy.details?.peakName ? `
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: #718096;">Peak Status:</span>
+                                    <span style="font-weight: 600; color: #2d3748;">${route.summary.cafe_busy.details.peakName}</span>
+                                </div>
+                            ` : ''}
+                            ${route.summary.cafe_busy.details?.reason ? `
+                                <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e2e8f0; color: #4a5568; font-size: 11px;">
+                                    💡 ${route.summary.cafe_busy.details.reason}
+                                </div>
+                            ` : ''}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+
+            routeResult.innerHTML = html;
+            routeResult.style.display = 'block';
+        }
+
+        // Load PTV connections for the calculated route
+        async function loadPTVConnections() {
+            try {
+                // Try multi-modal endpoint first (trains, trams, buses, V/Line)
+                const response = await fetch('/admin/route/multi-modal');
+                const data = await response.json();
+
+                if (data.success && data.options && data.options.length > 0) {
+                    displayMultiModalConnections(data);
+                } else if (data.error && data.error.includes('API credentials')) {
+                    // Show API configuration error
+                    document.getElementById('ptvConnections').innerHTML = `
+                        <div style="background: #fff3cd; border-radius: 8px; padding: 15px; border-left: 4px solid #ffc107;">
+                            <div style="font-weight: 600; color: #856404; margin-bottom: 5px;">
+                                ⚠️ API Credentials Not Configured
+                            </div>
+                            <div style="font-size: 13px; color: #856404;">
+                                Please configure your PTV API credentials in the User Preferences section above.
+                            </div>
+                        </div>
+                    `;
+                    document.getElementById('ptvConnections').style.display = 'block';
+                } else {
+                    // No transit options found
+                    document.getElementById('ptvConnections').innerHTML = `
+                        <div style="background: #fff3cd; border-radius: 8px; padding: 15px; border-left: 4px solid #ffc107;">
+                            <div style="font-weight: 600; color: #856404; margin-bottom: 5px;">
+                                ⚠️ No Transit Options Found
+                            </div>
+                            <div style="font-size: 13px; color: #856404;">
+                                No trains, trams, buses, or V/Line services available in the required time window. Try adjusting your arrival time.
+                            </div>
+                        </div>
+                    `;
+                    document.getElementById('ptvConnections').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error loading transit connections:', error);
+                document.getElementById('ptvConnections').innerHTML = `
+                    <div style="background: #fee; border-radius: 8px; padding: 15px; border-left: 4px solid #f56565;">
+                        <div style="font-weight: 600; color: #c53030; margin-bottom: 5px;">
+                            ❌ Error Loading Transit Options
+                        </div>
+                        <div style="font-size: 13px; color: #c53030;">
+                            ${error.message}
+                        </div>
+                    </div>
+                `;
+                document.getElementById('ptvConnections').style.display = 'block';
+            }
+        }
+
+        // Display multi-modal transit connections
+        function displayMultiModalConnections(data) {
+            const ptvDiv = document.getElementById('ptvConnections');
+
+            const modesText = data.modesSearched
+                ? data.modesSearched.map(m => m.icon + ' ' + m.name).join(', ')
+                : 'All modes';
+
+            const html = `
+                <div style="background: #f7fafc; border-radius: 8px; padding: 15px; border-left: 4px solid #48bb78;">
+                    <h3 style="margin: 0 0 10px 0; color: #2d3748; font-size: 16px;">
+                        🚆 Best Transit Options (Max 2)
+                    </h3>
+                    <div style="font-size: 12px; color: #718096; margin-bottom: 15px;">
+                        Searched: ${modesText}
+                    </div>
+
+                    ${data.options.map((option, idx) => `
+                        <div style="background: white; border-radius: 6px; padding: 12px; margin-bottom: 10px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <div>
+                                    <div style="font-size: 16px; font-weight: 600; color: #2d3748;">
+                                        ${option.icon} Option ${idx + 1}: ${option.mode}
+                                    </div>
+                                    <div style="font-size: 12px; color: #718096; margin-top: 2px;">
+                                        ${option.routeName} → ${option.direction}
+                                    </div>
+                                    <div style="font-size: 13px; color: #2d3748; margin-top: 4px;">
+                                        Departs: <strong>${option.departureTime}</strong> (${option.minutesUntil} min)
+                                    </div>
+                                    <div style="font-size: 12px; color: #718096;">
+                                        Est. arrival: ${option.estimatedArrival} (${option.estimatedDuration} min journey)
+                                    </div>
+                                </div>
+                                <div style="text-align: right;">
+                                    ${option.canGetCoffee ? `
+                                        <div style="font-size: 24px;">☕</div>
+                                        <div style="font-size: 11px; color: #48bb78; font-weight: 600;">
+                                            COFFEE TIME
+                                        </div>
+                                    ` : `
+                                        <div style="font-size: 24px;">⚡</div>
+                                        <div style="font-size: 11px; color: #ed8936; font-weight: 600;">
+                                            DIRECT
+                                        </div>
+                                    `}
+                                </div>
+                            </div>
+
+                            <div style="background: #f7fafc; border-radius: 4px; padding: 8px; font-size: 12px;">
+                                <div style="color: #2d3748;">
+                                    <strong>Recommendation:</strong> ${option.recommendation}
+                                </div>
+                                <div style="color: #718096; margin-top: 4px;">
+                                    Time available: ${option.timeAvailable} min | Time needed: ${option.timeNeeded} min
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+
+                    <div style="font-size: 11px; color: #718096; margin-top: 10px; padding: 8px; background: white; border-radius: 4px;">
+                        💡 <strong>Tip:</strong> Choose the option that best fits your schedule. Coffee time means you have enough time to stop for coffee on the way.
+                    </div>
+                </div>
+            `;
+
+            ptvDiv.innerHTML = html;
+            ptvDiv.style.display = 'block';
+        }
+
+        // Display PTV connections overlay
+        function displayPTVConnections(connections) {
+            const ptvDiv = document.getElementById('ptvConnections');
+
+            const html = `
+                <div style="background: #f7fafc; border-radius: 8px; padding: 15px; border-left: 4px solid #48bb78;">
+                    <h3 style="margin: 0 0 10px 0; color: #2d3748; font-size: 16px;">
+                        🚆 Available Trains (Max 2 Options)
+                    </h3>
+
+                    ${connections.connections.map((conn, idx) => `
+                        <div style="background: white; border-radius: 6px; padding: 12px; margin-bottom: 10px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <div>
+                                    <div style="font-size: 14px; font-weight: 600; color: #2d3748;">
+                                        Option ${idx + 1}: ${conn.train.minutes} minutes
+                                    </div>
+                                    <div style="font-size: 12px; color: #718096;">
+                                        Departure: ${conn.train.departure_time}
+                                    </div>
+                                </div>
+                                <div style="text-align: right;">
+                                    ${conn.can_get_coffee ? `
+                                        <div style="font-size: 16px;">☕</div>
+                                        <div style="font-size: 11px; color: #48bb78; font-weight: 600;">
+                                            COFFEE TIME
+                                        </div>
+                                    ` : `
+                                        <div style="font-size: 16px;">⚡</div>
+                                        <div style="font-size: 11px; color: #ed8936; font-weight: 600;">
+                                            DIRECT
+                                        </div>
+                                    `}
+                                </div>
+                            </div>
+
+                            <div style="background: #f7fafc; border-radius: 4px; padding: 8px; font-size: 12px;">
+                                <div style="color: #2d3748;">
+                                    <strong>Recommendation:</strong> ${conn.recommendation}
+                                </div>
+                                <div style="color: #718096; margin-top: 4px;">
+                                    Time available: ${conn.time_available} min | Time needed: ${conn.time_needed} min
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+
+                    <div style="font-size: 11px; color: #718096; margin-top: 10px; padding: 8px; background: white; border-radius: 4px;">
+                        💡 <strong>Tip:</strong> Choose the first option if you want coffee, or the fastest train if you're in a hurry.
+                    </div>
+                </div>
+            `;
+
+            ptvDiv.innerHTML = html;
+            ptvDiv.style.display = 'block';
         }
     </script>
 </body>

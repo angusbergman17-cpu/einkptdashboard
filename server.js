@@ -15,6 +15,11 @@ import config from './config.js';
 import { getSnapshot } from './data-scraper.js';
 import PidsRenderer from './pids-renderer.js';
 import CoffeeDecision from './coffee-decision.js';
+import WeatherBOM from './weather-bom.js';
+import RoutePlanner from './route-planner.js';
+import CafeBusyDetector from './cafe-busy-detector.js';
+import PreferencesManager from './preferences-manager.js';
+import MultiModalRouter from './multi-modal-router.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -22,9 +27,24 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(express.json());
 
-// Initialize renderer and coffee decision engine
+// Initialize all modules
 const renderer = new PidsRenderer();
 const coffeeEngine = new CoffeeDecision();
+const weather = new WeatherBOM();
+const routePlanner = new RoutePlanner();
+const busyDetector = new CafeBusyDetector();
+const preferences = new PreferencesManager();
+const multiModalRouter = new MultiModalRouter();
+
+// Load preferences on startup
+preferences.load().then(() => {
+  console.log('✅ User preferences loaded');
+  const status = preferences.getStatus();
+  if (!status.configured) {
+    console.log('⚠️  User preferences not fully configured');
+    console.log('   Please configure via admin panel: http://localhost:3000/admin');
+  }
+});
 
 /**
  * Fallback timetable - typical weekday schedule for South Yarra
@@ -147,8 +167,8 @@ async function ensureCacheDir() {
  */
 async function fetchData() {
   try {
-    const apiKey = process.env.ODATA_KEY || process.env.PTV_KEY;
-    const snapshot = await getSnapshot(apiKey);
+    const apiToken = process.env.ODATA_TOKEN || process.env.ODATA_KEY || process.env.PTV_KEY;
+    const snapshot = await getSnapshot(apiToken);
 
     // Transform snapshot into format for renderer
     const now = new Date();
@@ -283,6 +303,15 @@ async function getRegionUpdates() {
     hour: '2-digit', minute: '2-digit', hour12: false
   });
 
+  // Fetch weather data (cached for 15 minutes)
+  let weatherData = null;
+  try {
+    weatherData = await weather.getCurrentWeather();
+  } catch (error) {
+    console.error('Weather fetch failed:', error.message);
+    // Continue without weather data
+  }
+
   // Define regions for firmware (simple format: id + text only)
   const regions = [];
 
@@ -308,9 +337,34 @@ async function getRegionUpdates() {
     });
   }
 
+  // Weather data (optional - display on right sidebar)
+  if (weatherData) {
+    regions.push({
+      id: 'weather',
+      text: weatherData.condition.short || weatherData.condition.full || 'N/A'
+    });
+
+    regions.push({
+      id: 'temperature',
+      text: weatherData.temperature !== null ? `${weatherData.temperature}` : '--'
+    });
+  } else {
+    // Send placeholder weather if unavailable
+    regions.push({
+      id: 'weather',
+      text: 'N/A'
+    });
+
+    regions.push({
+      id: 'temperature',
+      text: '--'
+    });
+  }
+
   return {
     timestamp: now.toISOString(),
-    regions
+    regions,
+    weather: weatherData // Include full weather data for admin/debugging
   };
 }
 
@@ -653,11 +707,12 @@ async function loadApiConfig() {
       apis: {
         ptv_opendata: {
           name: "PTV Open Data API",
-          key: process.env.ODATA_KEY || "",
+          api_key: process.env.ODATA_API_KEY || "",
+          token: process.env.ODATA_TOKEN || "",
           enabled: true,
           baseUrl: "https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1",
           lastChecked: null,
-          status: process.env.ODATA_KEY ? "active" : "unconfigured"
+          status: process.env.ODATA_TOKEN ? "active" : "unconfigured"
         }
       },
       server: {
@@ -675,9 +730,13 @@ async function saveApiConfig(config) {
   config.lastModified = new Date().toISOString();
   await fs.writeFile(API_CONFIG_FILE, JSON.stringify(config, null, 2));
 
-  // Update environment variable if PTV key changed
-  if (config.apis.ptv_opendata?.key) {
-    process.env.ODATA_KEY = config.apis.ptv_opendata.key;
+  // Update environment variables if PTV credentials changed
+  if (config.apis.ptv_opendata?.api_key) {
+    process.env.ODATA_API_KEY = config.apis.ptv_opendata.api_key;
+  }
+  if (config.apis.ptv_opendata?.token) {
+    process.env.ODATA_TOKEN = config.apis.ptv_opendata.token;
+    process.env.ODATA_KEY = config.apis.ptv_opendata.token; // Legacy compatibility
   }
 }
 
@@ -693,19 +752,19 @@ app.get('/admin', (req, res) => {
 app.get('/admin/status', async (req, res) => {
   const apiConfig = await loadApiConfig();
   const totalApis = Object.keys(apiConfig.apis).length;
-  const activeApis = Object.values(apiConfig.apis).filter(api => api.enabled && api.key).length;
+  const activeApis = Object.values(apiConfig.apis).filter(api => api.enabled && api.token).length;
 
   // Get data sources status
   const dataSources = [
     {
       name: 'Metro Trains',
-      active: !!process.env.ODATA_KEY,
-      status: process.env.ODATA_KEY ? 'Live' : 'Offline'
+      active: !!process.env.ODATA_TOKEN,
+      status: process.env.ODATA_TOKEN ? 'Live' : 'Offline'
     },
     {
       name: 'Yarra Trams',
-      active: !!process.env.ODATA_KEY,
-      status: process.env.ODATA_KEY ? 'Live' : 'Offline'
+      active: !!process.env.ODATA_TOKEN,
+      status: process.env.ODATA_TOKEN ? 'Live' : 'Offline'
     },
     {
       name: 'Fallback Timetable',
@@ -719,7 +778,7 @@ app.get('/admin/status', async (req, res) => {
     lastUpdate: lastUpdate || Date.now(),
     totalApis,
     activeApis,
-    dataMode: process.env.ODATA_KEY ? 'Live' : 'Fallback',
+    dataMode: process.env.ODATA_TOKEN ? 'Live' : 'Fallback',
     dataSources
   });
 });
@@ -752,7 +811,7 @@ app.put('/admin/api/:id', async (req, res) => {
     ...config.apis[apiId],
     ...req.body,
     lastChecked: new Date().toISOString(),
-    status: req.body.enabled && req.body.key ? 'active' : 'unconfigured'
+    status: req.body.enabled && req.body.token ? 'active' : 'unconfigured'
   };
 
   await saveApiConfig(config);
@@ -771,7 +830,7 @@ app.post('/admin/api/:id/toggle', async (req, res) => {
 
   api.enabled = req.body.enabled;
   api.lastChecked = new Date().toISOString();
-  api.status = api.enabled && api.key ? 'active' : 'inactive';
+  api.status = api.enabled && api.token ? 'active' : 'inactive';
 
   await saveApiConfig(config);
 
@@ -824,6 +883,689 @@ app.get('/admin/devices', (req, res) => {
   }));
 
   res.json(deviceList);
+});
+
+// Get weather status
+app.get('/admin/weather', async (req, res) => {
+  try {
+    const weatherData = await weather.getCurrentWeather();
+    const cacheStatus = weather.getCacheStatus();
+
+    res.json({
+      current: weatherData,
+      cache: cacheStatus,
+      location: 'Melbourne CBD',
+      source: 'Bureau of Meteorology'
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Force refresh weather cache
+app.post('/admin/weather/refresh', async (req, res) => {
+  try {
+    weather.clearCache();
+    const weatherData = await weather.getCurrentWeather();
+
+    res.json({
+      success: true,
+      message: 'Weather cache refreshed',
+      weather: weatherData
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ========== USER PREFERENCES ENDPOINTS ==========
+
+// Get all preferences
+app.get('/admin/preferences', (req, res) => {
+  try {
+    const prefs = preferences.get();
+    const status = preferences.getStatus();
+
+    res.json({
+      success: true,
+      preferences: prefs,
+      status
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update preferences (full or partial)
+app.put('/admin/preferences', async (req, res) => {
+  try {
+    const updates = req.body;
+
+    const updated = await preferences.update(updates);
+
+    res.json({
+      success: true,
+      preferences: updated,
+      message: 'Preferences updated successfully'
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update addresses specifically
+app.put('/admin/preferences/addresses', async (req, res) => {
+  try {
+    const { home, cafe, work } = req.body;
+
+    const addresses = await preferences.updateAddresses({
+      home: home || '',
+      cafe: cafe || '',
+      work: work || ''
+    });
+
+    res.json({
+      success: true,
+      addresses,
+      message: 'Addresses updated successfully'
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update API credentials
+app.put('/admin/preferences/api', async (req, res) => {
+  try {
+    const { key, token } = req.body;
+
+    if (!key || !token) {
+      return res.status(400).json({
+        error: 'Both API key and token are required'
+      });
+    }
+
+    const api = await preferences.updateApiCredentials({
+      key,
+      token,
+      baseUrl: 'https://timetableapi.ptv.vic.gov.au'
+    });
+
+    res.json({
+      success: true,
+      api: {
+        key: api.key,
+        baseUrl: api.baseUrl
+        // Don't return token in response for security
+      },
+      message: 'API credentials updated successfully'
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update journey preferences
+app.put('/admin/preferences/journey', async (req, res) => {
+  try {
+    const updates = req.body;
+
+    const journey = await preferences.updateJourneyPreferences(updates);
+
+    res.json({
+      success: true,
+      journey,
+      message: 'Journey preferences updated successfully'
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get preferences status
+app.get('/admin/preferences/status', (req, res) => {
+  try {
+    const status = preferences.getStatus();
+
+    res.json({
+      success: true,
+      status
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Validate preferences
+app.get('/admin/preferences/validate', (req, res) => {
+  try {
+    const validation = preferences.validate();
+
+    res.json({
+      success: true,
+      validation
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Reset preferences to defaults
+app.post('/admin/preferences/reset', async (req, res) => {
+  try {
+    const reset = await preferences.reset();
+
+    res.json({
+      success: true,
+      preferences: reset,
+      message: 'Preferences reset to defaults'
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Export preferences
+app.get('/admin/preferences/export', (req, res) => {
+  try {
+    const json = preferences.export();
+
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', 'attachment; filename="ptv-trmnl-preferences.json"');
+    res.send(json);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Import preferences
+app.post('/admin/preferences/import', async (req, res) => {
+  try {
+    const { json } = req.body;
+
+    const result = await preferences.import(json);
+
+    if (result.success) {
+      res.json({
+        success: true,
+        message: 'Preferences imported successfully'
+      });
+    } else {
+      res.status(400).json({
+        error: result.error
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ========== ROUTE PLANNING ENDPOINTS ==========
+
+// Calculate smart route: Home → Coffee → Work
+// Uses saved preferences if not provided in request
+app.post('/admin/route/calculate', async (req, res) => {
+  try {
+    // Get saved preferences
+    const prefs = preferences.get();
+    const savedAddresses = prefs.addresses || {};
+    const savedJourney = prefs.journey || {};
+    const savedApi = prefs.api || {};
+
+    // Use provided values or fall back to saved preferences
+    const homeAddress = req.body.homeAddress || savedAddresses.home;
+    const coffeeAddress = req.body.coffeeAddress || savedAddresses.cafe;
+    const workAddress = req.body.workAddress || savedAddresses.work;
+    const arrivalTime = req.body.arrivalTime || savedJourney.arrivalTime;
+
+    // Validate inputs
+    if (!homeAddress || !workAddress || !arrivalTime) {
+      return res.status(400).json({
+        error: 'Missing required fields',
+        required: ['homeAddress', 'workAddress', 'arrivalTime'],
+        message: 'Please configure addresses in preferences or provide them in the request'
+      });
+    }
+
+    // Coffee is optional
+    const coffeeEnabled = savedJourney.coffeeEnabled && coffeeAddress;
+
+    console.log('Calculating route:', { homeAddress, coffeeAddress, workAddress, arrivalTime });
+
+    // Calculate the route
+    const route = await routePlanner.calculateRoute(
+      homeAddress,
+      coffeeAddress,
+      workAddress,
+      arrivalTime
+    );
+
+    res.json({
+      success: true,
+      route,
+      message: 'Route calculated successfully'
+    });
+
+  } catch (error) {
+    console.error('Route calculation error:', error);
+    res.status(500).json({
+      error: error.message,
+      message: 'Failed to calculate route'
+    });
+  }
+});
+
+// Get cached route
+app.get('/admin/route', (req, res) => {
+  try {
+    const route = routePlanner.getCachedRoute();
+
+    if (!route) {
+      return res.status(404).json({
+        error: 'No cached route',
+        message: 'Calculate a route first using POST /admin/route/calculate'
+      });
+    }
+
+    res.json({
+      success: true,
+      route,
+      cached: true
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get PTV connections for cached route
+app.get('/admin/route/connections', async (req, res) => {
+  try {
+    const route = routePlanner.getCachedRoute();
+
+    if (!route) {
+      return res.status(404).json({
+        error: 'No cached route',
+        message: 'Calculate a route first using POST /admin/route/calculate'
+      });
+    }
+
+    // Get current PTV data
+    const data = await getData();
+
+    // Find suitable PTV connections
+    const connections = await routePlanner.findPTVConnections(route, data);
+
+    res.json({
+      success: true,
+      route: {
+        must_leave_home: route.must_leave_home,
+        arrival_time: route.arrival_time,
+        coffee_enabled: route.display.coffee_enabled
+      },
+      connections
+    });
+
+  } catch (error) {
+    console.error('Connection lookup error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get multi-modal transit options (trains, trams, buses, V/Line)
+// Returns best 2 options across all enabled transit modes
+app.get('/admin/route/multi-modal', async (req, res) => {
+  try {
+    const route = routePlanner.getCachedRoute();
+
+    if (!route) {
+      return res.status(404).json({
+        error: 'No cached route',
+        message: 'Calculate a route first using POST /admin/route/calculate'
+      });
+    }
+
+    // Get user preferences
+    const prefs = preferences.get();
+    const api = prefs.api || {};
+    const journey = prefs.journey || {};
+
+    // Validate API credentials
+    if (!api.key || !api.token) {
+      return res.status(400).json({
+        error: 'API credentials not configured',
+        message: 'Please configure PTV API credentials in preferences'
+      });
+    }
+
+    // Parse train departure time from route
+    const trainSegment = route.segments.find(s => s.type === 'train');
+    if (!trainSegment) {
+      return res.status(400).json({
+        error: 'No transit segment in route',
+        message: 'Route does not include public transport'
+      });
+    }
+
+    // Get enabled transit modes (default to all)
+    const enabledModes = journey.preferredTransitModes || [0, 1, 2, 3];
+
+    // Find best multi-modal options
+    // TODO: Use actual stop IDs from geocoding
+    // For now, using hardcoded South Yarra (19841) and Flinders St (19854)
+    const originStopId = 19841; // South Yarra
+    const destStopId = 19854;   // Flinders Street
+
+    const options = await multiModalRouter.findBestOptions(
+      originStopId,
+      destStopId,
+      trainSegment.departure,
+      api.key,
+      api.token,
+      enabledModes
+    );
+
+    // Calculate coffee feasibility for each option
+    const now = new Date();
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+    const optionsWithCoffee = options.map(option => {
+      const timeUntilDeparture = option.minutesUntil;
+
+      // Calculate time needed for coffee journey
+      const timeNeeded = route.segments
+        .filter(s => ['walk', 'coffee', 'wait'].includes(s.type))
+        .slice(0, 5) // Up to the train segment
+        .reduce((sum, s) => sum + s.duration, 0);
+
+      const canGetCoffee = timeUntilDeparture >= timeNeeded;
+
+      return {
+        ...option,
+        canGetCoffee,
+        timeAvailable: timeUntilDeparture,
+        timeNeeded,
+        recommendation: canGetCoffee
+          ? `Take the ${option.mode} and get coffee!`
+          : `Take the ${option.mode} - go direct (no time for coffee)`
+      };
+    });
+
+    res.json({
+      success: true,
+      route: {
+        must_leave_home: route.must_leave_home,
+        arrival_time: route.arrival_time,
+        coffee_enabled: route.display.coffee_enabled
+      },
+      options: optionsWithCoffee,
+      modesSearched: enabledModes.map(m => multiModalRouter.getRouteTypeInfo(m)).filter(Boolean)
+    });
+
+  } catch (error) {
+    console.error('Multi-modal lookup error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get all supported transit modes
+app.get('/admin/route/transit-modes', (req, res) => {
+  try {
+    const modes = multiModalRouter.getAllRouteTypes();
+
+    res.json({
+      success: true,
+      modes
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Clear route cache
+app.delete('/admin/route', (req, res) => {
+  try {
+    routePlanner.clearCache();
+
+    res.json({
+      success: true,
+      message: 'Route cache cleared'
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Check cafe busy-ness for a specific address
+app.post('/admin/cafe/busyness', async (req, res) => {
+  try {
+    const { address, lat, lon } = req.body;
+
+    if (!address) {
+      return res.status(400).json({
+        error: 'Missing required field: address'
+      });
+    }
+
+    // Get busy-ness data
+    const busyData = await busyDetector.getCafeBusyness(
+      address,
+      lat || null,
+      lon || null
+    );
+
+    const description = busyDetector.getBusyDescription(busyData);
+
+    res.json({
+      success: true,
+      busy: busyData,
+      description,
+      message: 'Cafe busy-ness retrieved successfully'
+    });
+
+  } catch (error) {
+    console.error('Cafe busy-ness check error:', error);
+    res.status(500).json({
+      error: error.message,
+      message: 'Failed to check cafe busy-ness'
+    });
+  }
+});
+
+// Get current peak time information
+app.get('/admin/cafe/peak-times', (req, res) => {
+  try {
+    const peakInfo = busyDetector.getCurrentPeakInfo();
+
+    res.json({
+      success: true,
+      peak: peakInfo
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Dashboard preview (HTML visualization)
+app.get('/admin/dashboard-preview', async (req, res) => {
+  try {
+    const updates = await getRegionUpdates();
+
+    // Create HTML preview of dashboard
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PTV-TRMNL Dashboard Preview</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      background: #f5f5f5;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .dashboard {
+      width: 800px;
+      height: 480px;
+      background: white;
+      border: 2px solid #333;
+      position: relative;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    .station-box {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      width: 90px;
+      height: 50px;
+      border: 2px solid black;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .time {
+      position: absolute;
+      top: 15px;
+      left: 140px;
+      font-size: 32px;
+      font-weight: bold;
+    }
+    .section-header {
+      position: absolute;
+      height: 25px;
+      background: black;
+      color: white;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      font-size: 11px;
+      font-weight: bold;
+    }
+    .tram-header {
+      top: 120px;
+      left: 10px;
+      width: 370px;
+    }
+    .train-header {
+      top: 120px;
+      left: 400px;
+      width: 360px;
+    }
+    .departure {
+      position: absolute;
+      font-size: 24px;
+      font-weight: bold;
+    }
+    .departure-label {
+      position: absolute;
+      font-size: 12px;
+      color: #666;
+    }
+    .status {
+      position: absolute;
+      bottom: 20px;
+      left: 250px;
+      font-size: 12px;
+    }
+    .weather {
+      position: absolute;
+      right: 10px;
+      top: 340px;
+      font-size: 11px;
+      text-align: right;
+    }
+    .temperature {
+      position: absolute;
+      right: 10px;
+      top: 410px;
+      font-size: 14px;
+      text-align: right;
+      font-weight: bold;
+    }
+    .info {
+      margin-top: 20px;
+      padding: 15px;
+      background: white;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+    }
+    .region {
+      display: inline-block;
+      margin: 5px;
+      padding: 5px 10px;
+      background: #e0e0e0;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>PTV-TRMNL Dashboard Preview</h1>
+    <p>Live visualization of 800×480 e-ink display</p>
+
+    <div class="dashboard">
+      <!-- Station Name -->
+      <div class="station-box">SOUTH YARRA</div>
+
+      <!-- Large Time -->
+      <div class="time">${updates.regions.find(r => r.id === 'time')?.text || '00:00'}</div>
+
+      <!-- Tram Section -->
+      <div class="section-header tram-header">TRAM #58 TO WEST COBURG</div>
+      <div class="departure-label" style="top: 152px; left: 20px;">Next:</div>
+      <div class="departure" style="top: 170px; left: 20px;">${updates.regions.find(r => r.id === 'tram1')?.text || '--'} min*</div>
+      <div class="departure-label" style="top: 222px; left: 20px;">Then:</div>
+      <div class="departure" style="top: 240px; left: 20px;">${updates.regions.find(r => r.id === 'tram2')?.text || '--'} min*</div>
+
+      <!-- Train Section -->
+      <div class="section-header train-header">TRAINS (CITY LOOP)</div>
+      <div class="departure-label" style="top: 152px; left: 410px;">Next:</div>
+      <div class="departure" style="top: 170px; left: 410px;">${updates.regions.find(r => r.id === 'train1')?.text || '--'} min*</div>
+      <div class="departure-label" style="top: 222px; left: 410px;">Then:</div>
+      <div class="departure" style="top: 240px; left: 410px;">${updates.regions.find(r => r.id === 'train2')?.text || '--'} min*</div>
+
+      <!-- Weather (Right Sidebar) -->
+      <div class="weather">${updates.regions.find(r => r.id === 'weather')?.text || 'N/A'}</div>
+      <div class="temperature">${updates.regions.find(r => r.id === 'temperature')?.text || '--'}°</div>
+
+      <!-- Status Bar -->
+      <div class="status">GOOD SERVICE</div>
+    </div>
+
+    <div class="info">
+      <h3>Region Data</h3>
+      ${updates.regions.map(r => `<span class="region"><strong>${r.id}:</strong> ${r.text}</span>`).join('')}
+
+      <h3 style="margin-top: 20px;">Metadata</h3>
+      <p><strong>Timestamp:</strong> ${updates.timestamp}</p>
+      <p><strong>Auto-refresh:</strong> Every 10 seconds</p>
+    </div>
+  </div>
+
+  <script>
+    // Auto-refresh every 10 seconds
+    setTimeout(() => location.reload(), 10000);
+  </script>
+</body>
+</html>
+    `;
+
+    res.set('Content-Type', 'text/html');
+    res.send(html);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Clear server caches
