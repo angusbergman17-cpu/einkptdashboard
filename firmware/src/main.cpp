@@ -1213,8 +1213,7 @@ bool fetchAndDisplayRegionUpdates() {
     // First operating cycle after setup: do full refresh to show template for first time
     // Otherwise: partial refresh (unless it's time for periodic full refresh)
     bool firstDisplay = setupComplete && !templateDisplayed;
-    bool periodicFullRefresh = (refreshCounter >= FULL_REFRESH_CYCLES);
-    bool useFullRefresh = firstDisplay || periodicFullRefresh;
+    bool useFullRefresh = firstDisplay;
 
     if (useFullRefresh) {
         if (firstDisplay) {
@@ -1236,9 +1235,6 @@ bool fetchAndDisplayRegionUpdates() {
 
         templateDisplayed = true;
         showingLog = false;  // After first full refresh, stop showing log
-        if (periodicFullRefresh) {
-            refreshCounter = 0;
-        }
     } else {
         // Only refresh if something changed
         if (hasChanges) {
