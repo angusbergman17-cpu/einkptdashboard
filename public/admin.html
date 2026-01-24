@@ -875,13 +875,27 @@
                 </div>
             </div>
 
-            <!-- Dashboard Preview Card -->
+            <!-- Live Display & Preview Card -->
             <div class="card">
-                <h2>📱 Dashboard Preview</h2>
-                <p style="color: #718096; margin-bottom: 15px;">View live dashboard as it appears on the e-ink display</p>
-                <a href="/admin/dashboard-preview" target="_blank" class="btn" style="display: inline-block; text-decoration: none;">
-                    👁️ Open Preview
-                </a>
+                <h2>📺 Live Display & Previews</h2>
+                <p style="color: #718096; margin-bottom: 15px;">View all data being pushed to your TRMNL device in real-time</p>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                    <a href="/admin/live-display" target="_blank" class="btn" style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <span style="font-size: 20px;">📺</span>
+                        <span>Full Live Display</span>
+                    </a>
+                    <a href="/admin/dashboard-preview" target="_blank" class="btn" style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; background: #48bb78;">
+                        <span style="font-size: 20px;">📱</span>
+                        <span>E-Ink Preview</span>
+                    </a>
+                </div>
+
+                <div style="background: #f7fafc; padding: 12px; border-radius: 6px; font-size: 13px; color: #4a5568;">
+                    <strong>📺 Full Live Display:</strong> Comprehensive dashboard showing all transit data, weather, journey plan, coffee decision, and system status.<br><br>
+                    <strong>📱 E-Ink Preview:</strong> Shows exactly how the 800x480 e-ink display appears on the device.
+                </div>
+
                 <div style="margin-top: 15px; text-align: right;">
                     <button class="btn btn-small" onclick="scrollToTop()" style="background: #718096;">⬆️ Back to Top</button>
                 </div>

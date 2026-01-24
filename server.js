@@ -1935,6 +1935,652 @@ app.get('/admin/dashboard-preview', async (req, res) => {
   }
 });
 
+// ========== COMPREHENSIVE LIVE DISPLAY PAGE ==========
+// Shows all data being pushed to the TRMNL device in real-time
+
+// Helper functions for building HTML
+function buildDepartureRows(departures, type) {
+  if (!departures || departures.length === 0) {
+    return '<div class="no-data">No departures available</div>';
+  }
+  return departures.slice(0, 4).map(dep => `
+    <div class="departure-row">
+      <div class="departure-info">
+        <span class="departure-dest">${dep.destination || (type === 'train' ? 'Flinders Street' : 'West Coburg')}</span>
+        <span class="departure-status">${dep.isScheduled ? '📅 Scheduled' : '⚡ Live'}</span>
+      </div>
+      <div class="departure-time">
+        ${dep.minutes}<span> min</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function buildSegmentRows(segments) {
+  if (!segments || segments.length === 0) return '';
+  const icons = { walk: '🚶', coffee: '☕', train: '🚆', tram: '🚊', bus: '🚌', vline: '🚄', wait: '⏱️' };
+  return segments.map(seg => {
+    const icon = icons[seg.type] || seg.mode_icon || '📍';
+    let details = '';
+    if (seg.type === 'walk') details = `${seg.from} → ${seg.to}`;
+    else if (seg.type === 'coffee') details = `Coffee at ${seg.location}`;
+    else if (seg.type === 'wait') details = `Wait at ${seg.location}`;
+    else details = `${seg.from} → ${seg.to}`;
+    return `
+      <div class="segment">
+        <span class="segment-icon">${icon}</span>
+        <span class="segment-details">${details}</span>
+        <span class="segment-duration">${seg.duration} min</span>
+      </div>
+    `;
+  }).join('');
+}
+
+function buildRegionDataItems(regions) {
+  return regions.map(r => `
+    <div class="data-item">
+      <div class="data-label">${r.id}</div>
+      <div class="data-value">${r.text}</div>
+    </div>
+  `).join('');
+}
+
+app.get('/admin/live-display', async (req, res) => {
+  try {
+    // Gather all live data
+    const data = await getData();
+    const regionUpdates = await getRegionUpdates();
+    const prefs = preferences.get();
+    const cachedRoute = routePlanner.getCachedRoute();
+    const cachedAutoJourney = smartPlanner.getCachedJourney();
+
+    // Get weather data
+    let weatherData = null;
+    try {
+      weatherData = await weather.getCurrentWeather();
+    } catch (e) {
+      weatherData = { temperature: '--', condition: { short: 'N/A' } };
+    }
+
+    // Get cafe busyness if cafe is configured
+    let cafeData = null;
+    if (prefs.addresses?.cafe) {
+      try {
+        cafeData = await busyDetector.getCafeBusyness(prefs.addresses.cafe);
+      } catch (e) {
+        cafeData = { level: 'unknown', coffeeTime: 3 };
+      }
+    }
+
+    // Pre-build dynamic HTML parts
+    const trainRows = buildDepartureRows(data.trains, 'train');
+    const tramRows = buildDepartureRows(data.trams, 'tram');
+    const regionDataItems = buildRegionDataItems(regionUpdates.regions);
+
+    // Build journey section
+    const journey = cachedAutoJourney || cachedRoute;
+    const journeySegments = journey ? buildSegmentRows(cachedAutoJourney?.segments || cachedRoute?.segments) : '';
+    const leaveHome = cachedAutoJourney?.summary?.must_leave_home || cachedRoute?.must_leave_home || '--:--';
+    const arriveWork = cachedAutoJourney?.summary?.arrival_at_work || cachedRoute?.arrival_time || '--:--';
+    const totalDuration = cachedAutoJourney?.summary?.total_duration || cachedRoute?.summary?.total_duration || '--';
+    const walkingTime = cachedAutoJourney?.summary?.walking_time || cachedRoute?.summary?.walking_time || '--';
+    const transitTime = cachedAutoJourney?.summary?.transit_time || cachedRoute?.summary?.transit_time || '--';
+    const coffeeTime = cachedAutoJourney?.summary?.coffee_time || cachedRoute?.summary?.coffee_time || '0';
+
+    // Cafe busyness display
+    let cafeBusynessHtml = '';
+    if (cafeData) {
+      const busyIcon = cafeData.level === 'high' ? '😅 Busy' : cafeData.level === 'medium' ? '🙂 Moderate' : '😊 Quiet';
+      cafeBusynessHtml = `
+        <div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+          <div style="font-size: 12px; opacity: 0.7;">Cafe Busyness</div>
+          <div style="font-size: 16px; font-weight: 600;">
+            ${busyIcon} - ~${cafeData.coffeeTime || 3} min wait
+          </div>
+        </div>
+      `;
+    }
+
+    const now = new Date();
+    const melbourneTime = now.toLocaleString('en-AU', {
+      timeZone: 'Australia/Melbourne',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+    const melbourneDate = now.toLocaleDateString('en-AU', {
+      timeZone: 'Australia/Melbourne',
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
+    const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Device Display - PTV-TRMNL</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: white;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(239, 68, 68, 0.2);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        .live-dot {
+            width: 10px;
+            height: 10px;
+            background: #ef4444;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        .time-display {
+            font-size: 48px;
+            font-weight: 700;
+            margin: 15px 0 5px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .date-display {
+            font-size: 16px;
+            opacity: 0.8;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .card-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .card-icon {
+            font-size: 24px;
+        }
+
+        .departure-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .departure-row:last-child {
+            border-bottom: none;
+        }
+
+        .departure-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .departure-dest {
+            font-weight: 500;
+            font-size: 15px;
+        }
+
+        .departure-status {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        .departure-time {
+            font-size: 28px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .departure-time span {
+            font-size: 14px;
+            font-weight: 400;
+            opacity: 0.7;
+        }
+
+        .weather-display {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .weather-temp {
+            font-size: 48px;
+            font-weight: 700;
+        }
+
+        .weather-condition {
+            font-size: 16px;
+            opacity: 0.8;
+        }
+
+        .coffee-decision {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .coffee-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .coffee-text {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .coffee-subtext {
+            font-size: 14px;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        .route-summary {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .route-time {
+            text-align: center;
+            padding: 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+        }
+
+        .route-time-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            opacity: 0.7;
+            margin-bottom: 5px;
+        }
+
+        .route-time-value {
+            font-size: 32px;
+            font-weight: 700;
+        }
+
+        .segment-list {
+            margin-top: 15px;
+        }
+
+        .segment {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .segment:last-child {
+            border-bottom: none;
+        }
+
+        .segment-icon {
+            font-size: 18px;
+            width: 30px;
+            text-align: center;
+        }
+
+        .segment-details {
+            flex: 1;
+            font-size: 13px;
+        }
+
+        .segment-duration {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .status-good { color: #4ade80; }
+        .status-warning { color: #fbbf24; }
+        .status-bad { color: #f87171; }
+
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+
+        .data-item {
+            background: rgba(255,255,255,0.05);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .data-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            opacity: 0.6;
+            margin-bottom: 4px;
+        }
+
+        .data-value {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .refresh-info {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            opacity: 0.6;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .alert-box {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 30px;
+            opacity: 0.5;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .back-link:hover {
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/admin" class="back-link">← Back to Admin Panel</a>
+
+        <div class="header">
+            <h1>📺 Live Device Display</h1>
+            <div class="live-indicator">
+                <span class="live-dot"></span>
+                LIVE DATA
+            </div>
+            <div class="time-display" id="currentTime">${melbourneTime}</div>
+            <div class="date-display">${melbourneDate}</div>
+        </div>
+
+        <div class="grid">
+            <!-- Train Departures -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">🚆</span>
+                    <h2>Metro Trains - South Yarra</h2>
+                </div>
+                ${trainRows}
+            </div>
+
+            <!-- Tram Departures -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">🚊</span>
+                    <h2>Yarra Trams - Route 58</h2>
+                </div>
+                ${tramRows}
+            </div>
+
+            <!-- Weather -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">🌤️</span>
+                    <h2>Weather - Melbourne</h2>
+                </div>
+                <div class="weather-display">
+                    <div class="weather-temp">${weatherData?.temperature || '--'}°</div>
+                    <div>
+                        <div class="weather-condition">${weatherData?.condition?.short || weatherData?.condition?.full || 'N/A'}</div>
+                        ${weatherData?.humidity ? '<div class="weather-condition">Humidity: ' + weatherData.humidity + '%</div>' : ''}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Coffee Decision -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">☕</span>
+                    <h2>Coffee Decision</h2>
+                </div>
+                <div class="coffee-decision">
+                    <div class="coffee-icon">${data.coffee?.canGet ? '☕' : '⚡'}</div>
+                    <div class="coffee-text ${data.coffee?.canGet ? 'status-good' : 'status-warning'}">
+                        ${data.coffee?.canGet ? 'TIME FOR COFFEE!' : 'NO COFFEE - GO DIRECT'}
+                    </div>
+                    <div class="coffee-subtext">${data.coffee?.subtext || ''}</div>
+                    ${cafeBusynessHtml}
+                </div>
+            </div>
+
+            <!-- Journey Plan -->
+            ${journey ? `
+            <div class="card full-width">
+                <div class="card-header">
+                    <span class="card-icon">🗺️</span>
+                    <h2>Your Journey Plan</h2>
+                </div>
+                <div class="route-summary">
+                    <div class="route-time">
+                        <div class="route-time-label">🏠 Leave Home</div>
+                        <div class="route-time-value">${leaveHome}</div>
+                    </div>
+                    <div class="route-time">
+                        <div class="route-time-label">🏢 Arrive Work</div>
+                        <div class="route-time-value">${arriveWork}</div>
+                    </div>
+                </div>
+
+                ${journeySegments ? '<div class="segment-list">' + journeySegments + '</div>' : ''}
+
+                <div class="data-grid" style="margin-top: 15px;">
+                    <div class="data-item">
+                        <div class="data-label">Total Time</div>
+                        <div class="data-value">${totalDuration} min</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Walking</div>
+                        <div class="data-value">${walkingTime} min</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Transit</div>
+                        <div class="data-value">${transitTime} min</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Coffee</div>
+                        <div class="data-value">${coffeeTime} min</div>
+                    </div>
+                </div>
+            </div>
+            ` : `
+            <div class="card full-width">
+                <div class="card-header">
+                    <span class="card-icon">🗺️</span>
+                    <h2>Journey Plan</h2>
+                </div>
+                <div class="no-data">
+                    No journey planned yet.<br>
+                    <a href="/admin" style="color: #60a5fa;">Configure your journey in the admin panel →</a>
+                </div>
+            </div>
+            `}
+
+            <!-- Service Status -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">📢</span>
+                    <h2>Service Status</h2>
+                </div>
+                ${data.news ? `
+                    <div class="alert-box">
+                        <strong>⚠️ Alert:</strong> ${data.news}
+                    </div>
+                ` : `
+                    <div style="display: flex; align-items: center; gap: 10px; color: #4ade80;">
+                        <span style="font-size: 24px;">✓</span>
+                        <span style="font-size: 16px; font-weight: 500;">Good service on all lines</span>
+                    </div>
+                `}
+            </div>
+
+            <!-- Region Data (Raw) -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">📊</span>
+                    <h2>Device Region Data</h2>
+                </div>
+                <div class="data-grid">
+                    ${regionDataItems}
+                </div>
+            </div>
+
+            <!-- System Info -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">⚙️</span>
+                    <h2>System Information</h2>
+                </div>
+                <div class="data-grid">
+                    <div class="data-item">
+                        <div class="data-label">Data Mode</div>
+                        <div class="data-value">${data.meta?.mode === 'fallback' ? '📅 Fallback' : '⚡ Live'}</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Last Update</div>
+                        <div class="data-value">${new Date(data.meta?.generatedAt || Date.now()).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Cache Age</div>
+                        <div class="data-value" id="cacheAge">0s</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Refresh In</div>
+                        <div class="data-value" id="refreshIn">10s</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="refresh-info">
+            Auto-refreshing every 10 seconds • Data pushed to device every 30 seconds
+        </div>
+    </div>
+
+    <script>
+        // Update time display every second
+        function updateTime() {
+            const now = new Date();
+            const time = now.toLocaleTimeString('en-AU', {
+                timeZone: 'Australia/Melbourne',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
+            document.getElementById('currentTime').textContent = time;
+        }
+        setInterval(updateTime, 1000);
+
+        // Countdown to refresh
+        let refreshCountdown = 10;
+        const lastUpdate = ${Date.now()};
+
+        function updateCountdown() {
+            refreshCountdown--;
+            document.getElementById('refreshIn').textContent = refreshCountdown + 's';
+            document.getElementById('cacheAge').textContent = Math.round((Date.now() - lastUpdate) / 1000) + 's';
+
+            if (refreshCountdown <= 0) {
+                location.reload();
+            }
+        }
+        setInterval(updateCountdown, 1000);
+    </script>
+</body>
+</html>
+    `;
+
+    res.set('Content-Type', 'text/html');
+    res.send(html);
+  } catch (error) {
+    console.error('Live display error:', error);
+    res.status(500).send('<h1>Error loading live display</h1><pre>' + error.message + '</pre>');
+  }
+});
+
 // Clear server caches
 app.post('/admin/cache/clear', async (req, res) => {
   try {
