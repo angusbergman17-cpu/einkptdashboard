@@ -748,13 +748,95 @@
                 </div>
             </div>
 
-            <!-- Smart Route Planner Card -->
+            <!-- One-Click Smart Journey Planner -->
+            <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <h2 style="color: white; border-bottom-color: rgba(255,255,255,0.3);">
+                    <span style="margin-right: 8px;">🚀</span> One-Click Journey Planner
+                </h2>
+                <p style="color: rgba(255,255,255,0.9); margin-bottom: 20px;">
+                    Just enter your addresses - we handle everything else automatically!
+                </p>
+
+                <div style="background: rgba(255,255,255,0.15); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                    <div style="display: grid; gap: 15px;">
+                        <div class="form-group" style="margin-bottom: 0; position: relative;">
+                            <label style="display: block; font-size: 14px; font-weight: 600; color: white; margin-bottom: 8px;">
+                                <span style="margin-right: 6px;">🏠</span> Home Address
+                            </label>
+                            <input type="text" class="form-input" id="autoHomeAddress"
+                                   placeholder="e.g., 123 Smith St, Richmond VIC"
+                                   style="background: white; color: #2d3748;"
+                                   oninput="handleAutoAddressInput('home', this.value)"
+                                   autocomplete="off">
+                            <div id="autoHomeDropdown" class="autocomplete-dropdown"></div>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 0; position: relative;">
+                            <label style="display: block; font-size: 14px; font-weight: 600; color: white; margin-bottom: 8px;">
+                                <span style="margin-right: 6px;">🏢</span> Work Address
+                            </label>
+                            <input type="text" class="form-input" id="autoWorkAddress"
+                                   placeholder="e.g., 456 Collins St, Melbourne VIC"
+                                   style="background: white; color: #2d3748;"
+                                   oninput="handleAutoAddressInput('work', this.value)"
+                                   autocomplete="off">
+                            <div id="autoWorkDropdown" class="autocomplete-dropdown"></div>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 0; position: relative;">
+                            <label style="display: block; font-size: 14px; font-weight: 600; color: white; margin-bottom: 8px;">
+                                <span style="margin-right: 6px;">☕</span> Cafe (optional - we'll find one if blank)
+                            </label>
+                            <input type="text" class="form-input" id="autoCafeAddress"
+                                   placeholder="Leave blank for automatic cafe detection"
+                                   style="background: white; color: #2d3748;"
+                                   oninput="handleAutoAddressInput('cafe', this.value)"
+                                   autocomplete="off">
+                            <div id="autoCafeDropdown" class="autocomplete-dropdown"></div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="display: block; font-size: 14px; font-weight: 600; color: white; margin-bottom: 8px;">
+                                    <span style="margin-right: 6px;">⏰</span> Arrive at Work by
+                                </label>
+                                <input type="time" class="form-input" id="autoArrivalTime" value="09:00"
+                                       style="background: white; color: #2d3748;">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="display: block; font-size: 14px; font-weight: 600; color: white; margin-bottom: 8px;">
+                                    <span style="margin-right: 6px;">☕</span> Include Coffee Stop
+                                </label>
+                                <select class="form-input" id="autoIncludeCoffee" style="background: white; color: #2d3748;">
+                                    <option value="true">Yes, I need coffee!</option>
+                                    <option value="false">No coffee today</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn" id="autoPlanBtn" onclick="autoplanJourney()"
+                        style="width: 100%; padding: 15px 20px; font-size: 18px; background: white; color: #667eea; border: none; font-weight: 700;">
+                    <span id="autoPlanBtnText">🚀 Plan My Journey Automatically</span>
+                </button>
+
+                <div style="margin-top: 10px; font-size: 12px; color: rgba(255,255,255,0.8); text-align: center;">
+                    We'll automatically find the best transit stops, route, and optimal cafe placement.
+                </div>
+
+                <div id="autoRouteResult" style="margin-top: 15px; display: none;">
+                    <!-- Automatic route result will be displayed here -->
+                </div>
+            </div>
+
+            <!-- Smart Route Planner Card (Legacy/Advanced) -->
             <div class="card">
-                <h2>☕ Smart Route Planner</h2>
-                <p style="color: #718096; margin-bottom: 15px;">Plan your journey: Home → Coffee → Work</p>
+                <h2>☕ Advanced Route Planner</h2>
+                <p style="color: #718096; margin-bottom: 15px;">For manual configuration - use the One-Click Planner above for automatic routing</p>
 
                 <div style="background: #e6fffa; border-radius: 6px; padding: 12px; margin-bottom: 15px; font-size: 13px; color: #234e52;">
-                    <strong>✨ Auto-Populated:</strong> Fields below are filled with your saved preferences. Configure once above, use anywhere!
+                    <strong>ℹ️ Advanced Mode:</strong> Configure transit routes manually if you have specific preferences. Most users should use the One-Click Planner above.
                 </div>
 
                 <div class="form-group">
@@ -793,13 +875,27 @@
                 </div>
             </div>
 
-            <!-- Dashboard Preview Card -->
+            <!-- Live Display & Preview Card -->
             <div class="card">
-                <h2>📱 Dashboard Preview</h2>
-                <p style="color: #718096; margin-bottom: 15px;">View live dashboard as it appears on the e-ink display</p>
-                <a href="/admin/dashboard-preview" target="_blank" class="btn" style="display: inline-block; text-decoration: none;">
-                    👁️ Open Preview
-                </a>
+                <h2>📺 Live Display & Previews</h2>
+                <p style="color: #718096; margin-bottom: 15px;">View all data being pushed to your TRMNL device in real-time</p>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                    <a href="/admin/live-display" target="_blank" class="btn" style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <span style="font-size: 20px;">📺</span>
+                        <span>Full Live Display</span>
+                    </a>
+                    <a href="/admin/dashboard-preview" target="_blank" class="btn" style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; background: #48bb78;">
+                        <span style="font-size: 20px;">📱</span>
+                        <span>E-Ink Preview</span>
+                    </a>
+                </div>
+
+                <div style="background: #f7fafc; padding: 12px; border-radius: 6px; font-size: 13px; color: #4a5568;">
+                    <strong>📺 Full Live Display:</strong> Comprehensive dashboard showing all transit data, weather, journey plan, coffee decision, and system status.<br><br>
+                    <strong>📱 E-Ink Preview:</strong> Shows exactly how the 800x480 e-ink display appears on the device.
+                </div>
+
                 <div style="margin-top: 15px; text-align: right;">
                     <button class="btn btn-small" onclick="scrollToTop()" style="background: #718096;">⬆️ Back to Top</button>
                 </div>
@@ -1394,7 +1490,24 @@
                         addressFlags.workFound
                     );
 
-                    // Auto-populate Smart Route Planner with saved preferences
+                    // Auto-populate One-Click Journey Planner
+                    if (document.getElementById('autoHomeAddress')) {
+                        document.getElementById('autoHomeAddress').value = homeAddr;
+                    }
+                    if (document.getElementById('autoWorkAddress')) {
+                        document.getElementById('autoWorkAddress').value = workAddr;
+                    }
+                    if (document.getElementById('autoCafeAddress')) {
+                        document.getElementById('autoCafeAddress').value = cafeAddr;
+                    }
+                    if (document.getElementById('autoArrivalTime')) {
+                        document.getElementById('autoArrivalTime').value = arrivalTime;
+                    }
+                    if (document.getElementById('autoIncludeCoffee')) {
+                        document.getElementById('autoIncludeCoffee').value = coffeeEnabled ? 'true' : 'false';
+                    }
+
+                    // Auto-populate Legacy Smart Route Planner with saved preferences
                     if (document.getElementById('homeAddress')) {
                         document.getElementById('homeAddress').value = homeAddr;
                     }
@@ -1926,7 +2039,286 @@
             }
         }
 
-        // ========== ROUTE PLANNER FUNCTIONS ==========
+        // ========== ONE-CLICK AUTO JOURNEY PLANNER ==========
+
+        // Auto address search timeout
+        let autoAddressTimeout = {};
+
+        // Handle address input for auto planner
+        function handleAutoAddressInput(type, value) {
+            clearTimeout(autoAddressTimeout[type]);
+
+            const dropdown = document.getElementById(`auto${type.charAt(0).toUpperCase() + type.slice(1)}Dropdown`);
+
+            if (value.length < 3) {
+                dropdown.classList.remove('show');
+                return;
+            }
+
+            dropdown.innerHTML = '<div class="autocomplete-loading">Searching...</div>';
+            dropdown.classList.add('show');
+
+            autoAddressTimeout[type] = setTimeout(async () => {
+                try {
+                    const response = await fetch(`/admin/address/search?query=${encodeURIComponent(value)}`);
+                    const data = await response.json();
+
+                    if (data.results && data.results.length > 0) {
+                        dropdown.innerHTML = data.results.map(result => `
+                            <div class="autocomplete-item" onclick="selectAutoAddress('${type}', ${JSON.stringify(result).replace(/'/g, "\\'").replace(/"/g, '&quot;')})">
+                                <div class="autocomplete-item-title">${result.address || result.display_name}</div>
+                                <div class="autocomplete-item-subtitle">${result.full_address || ''}</div>
+                            </div>
+                        `).join('');
+                    } else {
+                        dropdown.innerHTML = '<div class="autocomplete-empty">No results found. Try a different search.</div>';
+                    }
+                } catch (error) {
+                    dropdown.innerHTML = '<div class="autocomplete-empty">Search error. Try again.</div>';
+                }
+            }, 300);
+        }
+
+        // Select address from dropdown
+        function selectAutoAddress(type, result) {
+            const parsed = typeof result === 'string' ? JSON.parse(result.replace(/&quot;/g, '"')) : result;
+            const input = document.getElementById(`auto${type.charAt(0).toUpperCase() + type.slice(1)}Address`);
+            const dropdown = document.getElementById(`auto${type.charAt(0).toUpperCase() + type.slice(1)}Dropdown`);
+
+            input.value = parsed.full_address || parsed.display_name || parsed.address;
+            dropdown.classList.remove('show');
+        }
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.form-group')) {
+                document.querySelectorAll('.autocomplete-dropdown').forEach(d => d.classList.remove('show'));
+            }
+        });
+
+        // Auto plan journey - one click magic!
+        async function autoplanJourney() {
+            const homeAddress = document.getElementById('autoHomeAddress').value.trim();
+            const workAddress = document.getElementById('autoWorkAddress').value.trim();
+            const cafeAddress = document.getElementById('autoCafeAddress').value.trim();
+            const arrivalTime = document.getElementById('autoArrivalTime').value;
+            const includeCoffee = document.getElementById('autoIncludeCoffee').value === 'true';
+
+            if (!homeAddress || !workAddress) {
+                alert('Please enter both your home and work addresses.');
+                return;
+            }
+
+            const btn = document.getElementById('autoPlanBtn');
+            const btnText = document.getElementById('autoPlanBtnText');
+            const resultDiv = document.getElementById('autoRouteResult');
+
+            btn.disabled = true;
+            btnText.textContent = '⏳ Planning your journey...';
+            resultDiv.style.display = 'none';
+
+            try {
+                const response = await fetch('/admin/route/auto-plan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        homeAddress,
+                        workAddress,
+                        cafeAddress: cafeAddress || null,
+                        arrivalTime,
+                        includeCoffee
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayAutoRoute(data);
+
+                    // Also sync to legacy planner
+                    document.getElementById('homeAddress').value = homeAddress;
+                    document.getElementById('coffeeAddress').value = cafeAddress || data.locations?.cafe?.address || '';
+                    document.getElementById('workAddress').value = workAddress;
+                    document.getElementById('arrivalTime').value = arrivalTime;
+
+                    // Update preferences display
+                    document.getElementById('prefHomeAddress').value = homeAddress;
+                    document.getElementById('prefCafeAddress').value = cafeAddress || '';
+                    document.getElementById('prefWorkAddress').value = workAddress;
+                } else {
+                    resultDiv.style.display = 'block';
+                    resultDiv.innerHTML = `
+                        <div style="background: rgba(255,100,100,0.2); border-radius: 8px; padding: 15px; border: 1px solid rgba(255,100,100,0.3);">
+                            <div style="font-weight: 600; margin-bottom: 8px;">❌ Could not plan journey</div>
+                            <div style="font-size: 14px; margin-bottom: 8px;">${data.error || 'Unknown error'}</div>
+                            ${data.suggestion ? `<div style="font-size: 13px; color: rgba(255,255,255,0.8);">💡 ${data.suggestion}</div>` : ''}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = `
+                    <div style="background: rgba(255,100,100,0.2); border-radius: 8px; padding: 15px; border: 1px solid rgba(255,100,100,0.3);">
+                        <div style="font-weight: 600;">❌ Error: ${error.message}</div>
+                    </div>
+                `;
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = '🚀 Plan My Journey Automatically';
+            }
+        }
+
+        // Display auto route result
+        function displayAutoRoute(data) {
+            const resultDiv = document.getElementById('autoRouteResult');
+            const summary = data.summary;
+            const transit = data.transit;
+            const cafe = data.cafe;
+            const segments = data.segments || [];
+
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `
+                <div style="background: rgba(255,255,255,0.15); border-radius: 8px; padding: 20px; margin-top: 10px;">
+                    <!-- Main times -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                        <div style="text-align: center; background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px;">
+                            <div style="font-size: 12px; text-transform: uppercase; opacity: 0.8; margin-bottom: 5px;">🏠 Leave Home</div>
+                            <div style="font-size: 36px; font-weight: 700;">${summary.must_leave_home}</div>
+                        </div>
+                        <div style="text-align: center; background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px;">
+                            <div style="font-size: 12px; text-transform: uppercase; opacity: 0.8; margin-bottom: 5px;">🏢 Arrive Work</div>
+                            <div style="font-size: 36px; font-weight: 700;">${summary.arrival_at_work}</div>
+                        </div>
+                    </div>
+
+                    <!-- Recommendation -->
+                    ${data.recommendation ? `
+                        <div style="background: rgba(72, 187, 120, 0.3); border-radius: 8px; padding: 12px; margin-bottom: 15px; text-align: center; font-size: 15px; font-weight: 500;">
+                            💡 ${data.recommendation}
+                        </div>
+                    ` : ''}
+
+                    <!-- Transit info -->
+                    <div style="background: rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; margin-bottom: 15px;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                            <span style="font-size: 24px;">${transit.icon}</span>
+                            <div>
+                                <div style="font-weight: 600; font-size: 16px;">${transit.mode}</div>
+                                <div style="font-size: 13px; opacity: 0.8;">
+                                    ${transit.origin.name} → ${transit.destination.name}
+                                    <span style="opacity: 0.7;">(~${transit.estimated_duration} min)</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="font-size: 12px; opacity: 0.8;">
+                            🚶 ${transit.origin.walking_time} min walk to station •
+                            🚶 ${transit.destination.walking_time} min walk to work
+                        </div>
+                    </div>
+
+                    <!-- Cafe info -->
+                    ${cafe.enabled ? `
+                        <div style="background: rgba(237, 137, 54, 0.2); border-radius: 8px; padding: 12px; margin-bottom: 15px;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                                <span style="font-size: 20px;">☕</span>
+                                <span style="font-weight: 600;">Coffee Stop Planned</span>
+                                <span style="font-size: 12px; opacity: 0.8;">(${cafe.placement_description})</span>
+                            </div>
+                            ${cafe.location ? `
+                                <div style="font-size: 13px; opacity: 0.9; margin-bottom: 4px;">
+                                    📍 ${cafe.location.display_name || cafe.location.address || 'Nearby cafe'}
+                                </div>
+                            ` : ''}
+                            <div style="font-size: 12px; display: flex; gap: 15px;">
+                                <span>⏱️ Coffee time: ${cafe.coffee_time} min</span>
+                                <span>📊 Busyness: ${cafe.busy_level || 'unknown'}</span>
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    <!-- Time breakdown -->
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px;">
+                        <div style="text-align: center; background: rgba(255,255,255,0.1); padding: 10px; border-radius: 6px;">
+                            <div style="font-size: 11px; opacity: 0.8;">Total</div>
+                            <div style="font-weight: 600; font-size: 16px;">${summary.total_duration} min</div>
+                        </div>
+                        <div style="text-align: center; background: rgba(255,255,255,0.1); padding: 10px; border-radius: 6px;">
+                            <div style="font-size: 11px; opacity: 0.8;">Walking</div>
+                            <div style="font-weight: 600; font-size: 16px;">${summary.walking_time} min</div>
+                        </div>
+                        <div style="text-align: center; background: rgba(255,255,255,0.1); padding: 10px; border-radius: 6px;">
+                            <div style="font-size: 11px; opacity: 0.8;">Transit</div>
+                            <div style="font-weight: 600; font-size: 16px;">${summary.transit_time} min</div>
+                        </div>
+                        <div style="text-align: center; background: rgba(255,255,255,0.1); padding: 10px; border-radius: 6px;">
+                            <div style="font-size: 11px; opacity: 0.8;">Coffee</div>
+                            <div style="font-weight: 600; font-size: 16px;">${summary.coffee_time || 0} min</div>
+                        </div>
+                    </div>
+
+                    <!-- Journey segments -->
+                    <div style="background: rgba(255,255,255,0.1); border-radius: 8px; padding: 12px;">
+                        <div style="font-size: 12px; font-weight: 600; margin-bottom: 10px; opacity: 0.9;">
+                            📍 Journey Breakdown
+                        </div>
+                        ${segments.map((seg, idx) => {
+                            const icons = {
+                                'walk': '🚶',
+                                'coffee': '☕',
+                                'train': '🚆',
+                                'tram': '🚊',
+                                'bus': '🚌',
+                                'vline': '🚄',
+                                'wait': '⏱️'
+                            };
+                            const icon = icons[seg.type] || seg.mode_icon || '📍';
+
+                            return `
+                                <div style="display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1); ${idx === segments.length - 1 ? 'border-bottom: none;' : ''}">
+                                    <span style="margin-right: 10px; font-size: 16px;">${icon}</span>
+                                    <div style="flex: 1;">
+                                        <div style="font-size: 13px;">
+                                            ${seg.type === 'walk' ? `${seg.from} → ${seg.to}` :
+                                              seg.type === 'coffee' ? `Get coffee at ${seg.location}` :
+                                              seg.type === 'wait' ? `Wait at ${seg.location}` :
+                                              `${seg.from} → ${seg.to}`}
+                                        </div>
+                                        ${seg.departure ? `<div style="font-size: 11px; opacity: 0.7;">${seg.departure} - ${seg.arrival}</div>` : ''}
+                                    </div>
+                                    <div style="font-size: 13px; font-weight: 600; opacity: 0.9;">
+                                        ${seg.duration} min
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+
+                    <!-- Real-time departures -->
+                    ${data.departure_options && data.departure_options.length > 0 ? `
+                        <div style="background: rgba(102, 126, 234, 0.2); border-radius: 8px; padding: 12px; margin-top: 15px;">
+                            <div style="font-size: 12px; font-weight: 600; margin-bottom: 10px;">
+                                ⏰ Real-Time Departures
+                            </div>
+                            ${data.departure_options.slice(0, 3).map(opt => `
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                    <div>
+                                        <span>${opt.icon || '🚆'}</span>
+                                        <span style="margin-left: 6px;">${opt.scheduled_time || opt.scheduled}</span>
+                                        ${opt.direction ? `<span style="opacity: 0.7; font-size: 12px; margin-left: 6px;">(${opt.direction})</span>` : ''}
+                                    </div>
+                                    <div style="text-align: right;">
+                                        ${opt.minutes_until !== undefined ? `<span style="font-weight: 600;">${opt.minutes_until} min</span>` : ''}
+                                        ${opt.is_delayed ? `<span style="color: #f59e0b; font-size: 11px; margin-left: 6px;">+${opt.delay_minutes}m</span>` : ''}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        // ========== ROUTE PLANNER FUNCTIONS (LEGACY/ADVANCED) ==========
 
         // Calculate smart route
         async function calculateRoute() {
