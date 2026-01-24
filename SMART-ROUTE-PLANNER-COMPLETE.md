@@ -127,10 +127,10 @@ Step 5: Calculate home departure:
 ```
 Arrival time: 09:00 (540 minutes)
 Station to work: 8 min + 2 min buffer = 10 min
-Must arrive at Flinders St: 08:50 (530 minutes)
+Must arrive at City: 08:50 (530 minutes)
 
 Train journey: 20 min
-Must depart South Yarra: 08:30 (510 minutes)
+Must depart Origin Station: 08:30 (510 minutes)
 
 Coffee stop:
   - Walk to coffee: 3 min
@@ -139,7 +139,7 @@ Coffee stop:
   - Buffer: 2 min
   Total: 11 min
 
-Must leave South Yarra for coffee: 08:19 (499 minutes)
+Must leave Origin Station for coffee: 08:19 (499 minutes)
 
 Home to station: 5 min + 2 min buffer = 7 min
 Must leave home: 08:12 (492 minutes)
@@ -167,7 +167,7 @@ Once the route is calculated, the system:
       "train": {
         "minutes": 15,
         "departure_time": "08:27",
-        "destination": "Flinders Street"
+        "destination": "City"
       },
       "can_get_coffee": true,
       "time_available": 15,
@@ -178,7 +178,7 @@ Once the route is calculated, the system:
       "train": {
         "minutes": 8,
         "departure_time": "08:20",
-        "destination": "Flinders Street"
+        "destination": "City"
       },
       "can_get_coffee": false,
       "time_available": 8,
@@ -197,20 +197,20 @@ Addresses are converted to coordinates using OpenStreetMap Nominatim:
 // Example request
 GET https://nominatim.openstreetmap.org/search?
   format=json
-  &q=123 Main St, South Yarra, Melbourne, Australia
+  &q=123 Main St, Your Suburb, Your City, Australia
   &limit=1
 
 // Response
 {
   "lat": "-37.8408",
   "lon": "145.0002",
-  "display_name": "123 Main Street, South Yarra, Victoria, Australia"
+  "display_name": "123 Main Street, Origin Station, Victoria, Australia"
 }
 ```
 
 **Features**:
 - Free, no API key required
-- Includes "Melbourne, Australia" in all queries
+- Includes "Your City, Australia" in all queries
 - Results cached forever (addresses don't move!)
 - Handles errors gracefully
 
@@ -254,9 +254,9 @@ Calculate a new route from home to work via coffee.
 **Request**:
 ```json
 {
-  "homeAddress": "123 Main St, South Yarra",
-  "coffeeAddress": "Market Lane Coffee, Prahran",
-  "workAddress": "456 Collins St, Melbourne",
+  "homeAddress": "123 Main St, Your Suburb",
+  "coffeeAddress": "Your Favorite Cafe",
+  "workAddress": "456 Central Ave, Your City",
   "arrivalTime": "09:00"
 }
 ```
@@ -273,7 +273,7 @@ Calculate a new route from home to work via coffee.
       {
         "type": "walk",
         "from": "Home",
-        "to": "South Yarra Station",
+        "to": "Origin Station",
         "duration": 5,
         "distance": 350,
         "departure": "08:12",
@@ -286,8 +286,8 @@ Calculate a new route from home to work via coffee.
       },
       {
         "type": "train",
-        "from": "South Yarra",
-        "to": "Flinders Street",
+        "from": "Origin Station",
+        "to": "City",
         "duration": 20,
         "departure": "08:30",
         "arrival": "08:50"
@@ -382,9 +382,9 @@ open https://ptv-trmnl-new.onrender.com/admin
 
 1. Scroll down to the **Smart Route Planner** card
 2. Fill in the addresses:
-   - **Home**: `123 Main St, South Yarra`
-   - **Coffee**: `Market Lane Coffee, Prahran`
-   - **Work**: `456 Collins St, Melbourne`
+   - **Home**: `123 Main St, Your Suburb`
+   - **Coffee**: `Your Favorite Cafe`
+   - **Work**: `456 Central Ave, Your City`
 3. Set **Arrival Time**: `09:00`
 4. Click **Calculate Route**
 
@@ -440,21 +440,21 @@ this.routeCacheDuration = 5 * 60 * 1000; // 5 minutes
 
 ### Hardcoded Stations
 
-Currently uses hardcoded Melbourne stations:
+Currently uses hardcoded local stations:
 
 ```javascript
-// Origin station (South Yarra)
+// Origin station (Origin Station)
 const originStation = {
   lat: -37.8408,
   lon: 145.0002,
-  name: "South Yarra Station"
+  name: "Origin Station"
 };
 
-// Destination station (Flinders Street)
+// Destination station (City)
 const destStation = {
   lat: -37.8530,
   lon: 144.9560,
-  name: "Flinders Street Station"
+  name: "City Station"
 };
 
 // Train journey time
@@ -584,9 +584,9 @@ To integrate with the e-ink dashboard:
    ```javascript
    // Save to database or config file
    {
-     "home_address": "123 Main St, South Yarra",
-     "coffee_address": "Market Lane Coffee, Prahran",
-     "work_address": "456 Collins St, Melbourne",
+     "home_address": "123 Main St, Your Suburb",
+     "coffee_address": "Your Favorite Cafe",
+     "work_address": "456 Central Ave, Your City",
      "arrival_time": "09:00"
    }
    ```
@@ -649,7 +649,7 @@ To integrate with the e-ink dashboard:
 - Check address spelling
 - Be more specific (include suburb)
 - Try a nearby landmark
-- Example: Instead of "123 Main St", try "123 Main Street, South Yarra VIC 3141"
+- Example: Instead of "123 Main St", try "123 Main Street, Origin Station VIC 3141"
 
 ### Issue: "No suitable trains found"
 

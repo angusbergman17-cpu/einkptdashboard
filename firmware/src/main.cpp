@@ -375,7 +375,8 @@ void drawDashboardShell() {
 
     bbep.setFont(FONT_8x8);
     bbep.setCursor(15, 30);
-    bbep.print("SOUTH YARRA");
+    // Station name from API response (configured in admin panel)
+    bbep.print(stationName ? stationName : "STATION");
 
     // ========================================================================
     // 2. TRAM SECTION (Left Column)
@@ -383,10 +384,10 @@ void drawDashboardShell() {
     // Header strip (black background)
     bbep.fillRect(10, 120, 370, 25, BBEP_BLACK);
 
-    // Header text (draw above black strip for visibility)
+    // Header text (from API response)
     bbep.setFont(FONT_8x8);
     bbep.setCursor(15, 110);
-    bbep.print("TRAM #58 TO WEST COBURG");
+    bbep.print(tramHeader ? tramHeader : "TRAMS");
 
     // Departure labels (static)
     bbep.setFont(FONT_8x8);

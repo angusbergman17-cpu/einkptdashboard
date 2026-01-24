@@ -176,7 +176,7 @@ Try Data Source #1: Google Places API
   └─ Success? → Return live data
           ↓
 Fallback: Time-Based Detection
-  ├─ Get current Melbourne time
+  ├─ Get current local time
   ├─ Check if in peak period
   ├─ Calculate peak intensity
   ├─ Apply multiplier
@@ -199,9 +199,9 @@ Calculate a new route.
 **Request**:
 ```json
 {
-  "homeAddress": "123 Main St, South Yarra",
-  "coffeeAddress": "Market Lane Coffee, Prahran",
-  "workAddress": "456 Collins St, Melbourne",
+  "homeAddress": "123 Main St, Your Suburb",
+  "coffeeAddress": "Your Favorite Cafe",
+  "workAddress": "456 Central Ave, Your City",
   "arrivalTime": "09:00"
 }
 ```
@@ -225,7 +225,7 @@ Check busy-ness for a cafe.
 **Request**:
 ```json
 {
-  "address": "Market Lane Coffee, Prahran",
+  "address": "Your Favorite Cafe",
   "lat": -37.8408,
   "lon": 145.0002
 }
@@ -387,12 +387,12 @@ open https://ptv-trmnl-new.onrender.com/admin
 ### Geocoding (OpenStreetMap)
 - Free, no API key required
 - Permanent caching (addresses don't move)
-- Melbourne-specific queries
+- Location-specific queries
 - Graceful error handling
 
 ### Walking Time (Haversine Formula)
 - Great-circle distance calculation
-- Accurate for Melbourne distances
+- Accurate for local distances
 - Fast computation (< 1ms)
 - Configurable walking speed
 

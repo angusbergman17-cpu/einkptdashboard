@@ -1,20 +1,38 @@
 /**
  * PIDS Renderer
  * Generates PNG images for TRMNL e-ink display (800x480px, 4-bit grayscale)
- * Design matches Melbourne Metro/TramTracker PIDS styling
+ * Design matches public transit PIDS (Passenger Information Display) styling
  *
  * Copyright (c) 2026 Angus Bergman
- * All rights reserved.
+ * Licensed under MIT for open source distribution.
  */
 
 import sharp from 'sharp';
 
 class PidsRenderer {
-  constructor() {
+  constructor(config = {}) {
     // Full resolution for e-ink display (with cached image, drawing is fast)
     // 800x480 rotated = 480x800 on device (384,000 pixels)
     this.width = 800;
     this.height = 480;
+
+    // Configurable display names - set via updateConfig()
+    this.trainHeader = config.trainHeader || 'TRAINS';
+    this.tramHeader = config.tramHeader || 'TRAMS';
+    this.trainDestination = config.trainDestination || 'CITY';
+    this.tramDestination = config.tramDestination || 'CITY';
+    this.workDestination = config.workDestination || 'WORK';
+  }
+
+  /**
+   * Update display configuration
+   */
+  updateConfig(config) {
+    if (config.trainHeader) this.trainHeader = config.trainHeader;
+    if (config.tramHeader) this.tramHeader = config.tramHeader;
+    if (config.trainDestination) this.trainDestination = config.trainDestination;
+    if (config.tramDestination) this.tramDestination = config.tramDestination;
+    if (config.workDestination) this.workDestination = config.workDestination;
   }
 
   /**
@@ -128,24 +146,24 @@ class PidsRenderer {
     return `
       <!-- Header Bar -->
       <rect x="10" y="65" width="460" height="24" fill="black"/>
-      <text x="20" y="82" class="header-bar">METRO TRAINS - FLINDERS STREET</text>
-      
+      <text x="20" y="82" class="header-bar">${this.trainHeader}</text>
+
       <!-- Next Departure Label -->
       <text x="15" y="105" class="label">NEXT DEPARTURE:</text>
-      <text x="400" y="105" class="platform" text-anchor="end">PLAT 3</text>
-      
+      <text x="400" y="105" class="platform" text-anchor="end">PLAT</text>
+
       <!-- Departure 1 -->
       ${train1 ? `
         <text x="15" y="130" class="departure-time">${train1.minutes} min${train1.isScheduled ? '*' : ''}</text>
-        <text x="90" y="130" class="departure-dest">FLINDERS STREET (CITY LOOP)</text>
+        <text x="90" y="130" class="departure-dest">${train1.destination || this.trainDestination}</text>
       ` : `
         <text x="15" y="130" class="departure-dest" fill="#666">No scheduled departures</text>
       `}
-      
+
       <!-- Departure 2 -->
       ${train2 ? `
         <text x="15" y="158" class="departure-time">${train2.minutes} min${train2.isScheduled ? '*' : ''}</text>
-        <text x="90" y="158" class="departure-dest">FLINDERS STREET (CITY LOOP)</text>
+        <text x="90" y="158" class="departure-dest">${train2.destination || this.trainDestination}</text>
       ` : ''}
     `;
   }
@@ -157,23 +175,23 @@ class PidsRenderer {
     return `
       <!-- Header Bar -->
       <rect x="10" y="175" width="460" height="24" fill="black"/>
-      <text x="20" y="192" class="header-bar">YARRA TRAMS - 58 WEST COBURG</text>
-      
+      <text x="20" y="192" class="header-bar">${this.tramHeader}</text>
+
       <!-- Next Departure Label -->
       <text x="15" y="215" class="label">NEXT DEPARTURE:</text>
-      
+
       <!-- Departure 1 -->
       ${tram1 ? `
         <text x="15" y="240" class="departure-time">${tram1.minutes} min${tram1.isScheduled ? '*' : ''}</text>
-        <text x="90" y="240" class="departure-dest">TOORAK (VIA DOMAIN RD)</text>
+        <text x="90" y="240" class="departure-dest">${tram1.destination || this.tramDestination}</text>
       ` : `
         <text x="15" y="240" class="departure-dest" fill="#666">No scheduled departures</text>
       `}
-      
+
       <!-- Departure 2 -->
       ${tram2 ? `
         <text x="15" y="268" class="departure-time">${tram2.minutes} min${tram2.isScheduled ? '*' : ''}</text>
-        <text x="90" y="268" class="departure-dest">TOORAK (VIA DOMAIN RD)</text>
+        <text x="90" y="268" class="departure-dest">${tram2.destination || this.tramDestination}</text>
       ` : ''}
     `;
   }
@@ -248,7 +266,7 @@ class PidsRenderer {
           <circle cx="20" cy="15" r="18" fill="black"/>
           <text x="20" y="21" font-family="sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">🏢</text>
           
-          <text x="50" y="12" class="route-step" font-weight="bold">80 COLLINS ST:</text>
+          <text x="50" y="12" class="route-step" font-weight="bold">${this.workDestination}:</text>
           <text x="200" y="12" class="route-time" text-anchor="end">${routePlus.arrivalTime}</text>
         </g>
       </g>

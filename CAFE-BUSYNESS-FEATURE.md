@@ -201,7 +201,7 @@ Check busy-ness for a specific cafe address.
 **Request**:
 ```json
 {
-  "address": "Market Lane Coffee, Prahran",
+  "address": "Your Favorite Cafe",
   "lat": -37.8408,  // Optional
   "lon": 145.0002   // Optional
 }
@@ -329,9 +329,9 @@ npm start
 1. Open admin panel: `https://ptv-trmnl-new.onrender.com/admin`
 2. Scroll to **Smart Route Planner**
 3. Enter addresses:
-   - Home: `123 Main St, South Yarra`
-   - Coffee: `Market Lane Coffee, Prahran`
-   - Work: `456 Collins St, Melbourne`
+   - Home: `123 Main St, Your Suburb`
+   - Coffee: `Your Favorite Cafe`
+   - Work: `456 Central Ave, Your City`
 4. Set arrival time
 5. Click **Calculate Route**
 
@@ -377,7 +377,7 @@ Test at different times to see peak detection:
 curl -X POST https://ptv-trmnl-new.onrender.com/admin/cafe/busyness \
   -H "Content-Type: application/json" \
   -d '{
-    "address": "Market Lane Coffee, Prahran"
+    "address": "Your Favorite Cafe"
   }'
 
 # Get peak times info
@@ -462,7 +462,7 @@ Step 2.5: Check Cafe Busy-ness
           │              └─ Current time of day
           │
           └─ Fail/No Key → Use time-based
-                            ├─ Current Melbourne time
+                            ├─ Current local time
                             ├─ Check peak periods
                             ├─ Calculate intensity
                             └─ Apply multiplier
@@ -557,7 +557,7 @@ Check console logs when calculating route:
 ```
 2.5. Checking cafe busy-ness...
   ✅ Got busy-ness from Google Places API
-  Cafe: Market Lane Coffee, Prahran
+  Cafe: Your Favorite Cafe
   Busy Level: 🙂 Moderate (Live Data)
 ```
 

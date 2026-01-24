@@ -1,7 +1,7 @@
-# PTV-TRMNL - Smart Melbourne Transit System
+# PTV-TRMNL - Smart Transit Display System
 
-**Version**: 2.2.0
-**Last Updated**: January 23, 2026
+**Version**: 2.3.0
+**Last Updated**: January 24, 2026
 **Status**: ✅ Production Ready
 **Live Server**: https://ptv-trmnl-new.onrender.com
 
@@ -9,13 +9,13 @@
 
 ## 🎯 System Overview
 
-A complete smart transit system for Melbourne that combines:
-- **Live multi-modal transit data** (trains, trams, buses, V/Line)
+A configurable smart transit system that combines:
+- **Live multi-modal transit data** (trains, trams, buses, regional services)
 - **Intelligent route planning** with coffee stop optimization
 - **E-ink display integration** via TRMNL device
 - **User preference management** with address autocomplete
 - **Real-time cafe busy-ness detection**
-- **Weather integration** with Bureau of Meteorology data
+- **Weather integration** (configurable by region)
 
 ### What This System Does
 
@@ -115,7 +115,7 @@ GOOGLE_PLACES_KEY=your-google-api-key
 │  │  PTV API     │  │  OpenStreetMap│ │  Bureau of           │ │
 │  │  (GTFS-RT)   │  │  (Nominatim)  │ │  Meteorology (BOM)   │ │
 │  │  Trains/Trams│  │  Geocoding    │ │  Weather Data        │ │
-│  │  Buses/V/Line│  │  Address      │ │  Melbourne           │ │
+│  │  Buses/V/Line│  │  Address      │ │  Weather Service     │ │
 │  └──────────────┘  └──────────────┘  └──────────────────────┘ │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -198,9 +198,9 @@ GET  /admin/dashboard-preview       # Dashboard preview
 ```javascript
 {
   addresses: {
-    home: "123 Chapel St, South Yarra VIC 3141",
-    cafe: "Market Lane Coffee, Prahran VIC 3181",
-    work: "456 Collins St, Melbourne VIC 3000"
+    home: "123 Main St, Your Suburb",
+    cafe: "Your Favorite Cafe, Nearby Suburb",
+    work: "456 Central Ave, City Center"
   },
   journey: {
     arrivalTime: "09:00",
@@ -274,8 +274,8 @@ buildPTVUrl(endpoint, params, apiKey, apiToken) {
 4. **Work backwards from arrival time**:
    ```
    Arrival Time: 09:00
-   - Walk to work (5 min) = 08:55 arrive Flinders St
-   - Train journey (20 min) = 08:35 depart South Yarra
+   - Walk to work (5 min) = 08:55 arrive destination station
+   - Train journey (20 min) = 08:35 depart origin station
    - Walk to station (3 min) = 08:32 leave coffee shop
    - Get coffee (2-8 min) = 08:27 arrive coffee shop
    - Walk to coffee (4 min) = 08:23 leave station
@@ -301,13 +301,13 @@ calculateWalkingTime(lat1, lon1, lat2, lon2) {
   must_leave_home: "08:15",
   arrival_time: "09:00",
   segments: [
-    { type: 'walk', from: 'Home', to: 'South Yarra Station', duration: 8 },
-    { type: 'wait', location: 'South Yarra Station', duration: 2 },
+    { type: 'walk', from: 'Home', to: 'Origin Station', duration: 8 },
+    { type: 'wait', location: 'Origin Station', duration: 2 },
     { type: 'walk', from: 'Station', to: 'Coffee Shop', duration: 4 },
     { type: 'coffee', location: 'Coffee Shop', duration: 3, busyLevel: 'medium' },
     { type: 'walk', from: 'Coffee Shop', to: 'Station', duration: 3 },
-    { type: 'train', from: 'South Yarra', to: 'Flinders St', duration: 20 },
-    { type: 'walk', from: 'Flinders St', to: 'Work', duration: 5 }
+    { type: 'train', from: 'Origin Station', to: 'Destination Station', duration: 20 },
+    { type: 'walk', from: 'Destination Station', to: 'Work', duration: 5 }
   ],
   summary: {
     total_duration: 45,
@@ -384,7 +384,7 @@ GTFS_FEEDS = {
   trains: [
     {
       minutes: 3,
-      destination: 'Flinders Street',
+      destination: 'City Center',
       platform: '1',
       scheduled: '2026-01-23T08:32:00Z',
       realtime: true
@@ -400,7 +400,7 @@ GTFS_FEEDS = {
 ---
 
 #### 7. `weather-bom.js` (Weather Integration)
-**Purpose**: Fetches Melbourne weather from Bureau of Meteorology
+**Purpose**: Fetches local weather from Bureau of Meteorology (configurable station)
 
 **Data Points**:
 - Current temperature (°C)
@@ -410,7 +410,7 @@ GTFS_FEEDS = {
 - Wind speed (km/h)
 - Rainfall since 9am (mm)
 
-**BOM Station**: Melbourne (Olympic Park) - ID: 086338
+**BOM Station**: Configurable via environment variable (default: your BOM station - ID: configurable)
 
 **Cache**: 5 minutes (300 seconds)
 
@@ -612,8 +612,8 @@ regions: [
        └─> Server serves admin.html (1800 lines)
 
 2. User Configures Addresses
-   └─> JavaScript: handleAddressInput("home", "123 chapel")
-       └─> Browser GET /admin/address/search?query=123+chapel
+   └─> JavaScript: handleAddressInput("home", "123 main")
+       └─> Browser GET /admin/address/search?query=123+main
            └─> server.js line 1082-1130
                └─> fetch('https://nominatim.openstreetmap.org/search...')
                    └─> Returns: [{ display_name, lat, lon }]
@@ -670,12 +670,12 @@ regions: [
                │   └─> If stale: fetch new data
                │       └─> fetch('http://data.ptv.vic.gov.au/downloads/gtfs.zip')
                │           └─> Parse GTFS-Realtime protobuf
-               │               └─> Extract departures for South Yarra
+               │               └─> Extract departures for configured origin station
                │                   └─> Cache and return
                ├─> weather-bom.js: getCurrentWeather()
                │   └─> fetch('http://www.bom.gov.au/fwo/...')
                │       └─> Parse BOM XML
-               │           └─> Extract Melbourne weather
+               │           └─> Extract local weather data
                └─> Combine data into regions JSON
                    └─> server.js formats response:
                        {
@@ -1457,7 +1457,7 @@ console.error('❌ Error:', error);
 
 2. **Add More Detail to Address**
    - Include suburb: "123 Main St, Richmond, VIC"
-   - Add landmarks: "Cafe near Flinders Street Station"
+   - Add landmarks: "Cafe near Central Station"
    - Try full address format
 
 3. **Add Google Places API Key** (optional)
@@ -1476,7 +1476,7 @@ console.error('❌ Error:', error);
    - Regenerate token if expired
 
 2. **Verify Addresses**
-   - Ensure addresses are in Melbourne, Victoria
+   - Ensure addresses are within your configured transit region
    - Check address validation status in User Preferences
    - Green checkmarks = addresses verified
 
@@ -1548,9 +1548,9 @@ console.error('❌ Error:', error);
    - Will auto-recover when API is back
 
 2. **Verify Location**
-   - Weather pulls from Melbourne CBD by default
-   - No configuration needed
-   - Should work automatically
+   - Weather pulls from configured weather station by default
+   - Set WEATHER_STATION_ID in environment for your location
+   - Should work automatically once configured
 
 ---
 
@@ -1564,8 +1564,8 @@ A: No! The system works standalone with the web dashboard at `/admin`. The dashb
 **Q: Is this free to use?**
 A: Yes, completely free. The PTV API is free for non-commercial use. Google Places API is optional (has free tier). Hosting on Render free tier is possible.
 
-**Q: Does this work outside Melbourne?**
-A: Currently optimized for Melbourne, Victoria. The system uses PTV (Public Transport Victoria) API, which covers Melbourne metro, regional Victoria, and V/Line services. Adaptation for other cities would require changing the transit API.
+**Q: Does this work in other regions?**
+A: The default configuration uses PTV (Public Transport Victoria) API for metro, regional, and V/Line services. The system architecture is designed to be region-agnostic - with environment variable configuration, you can adapt it for other transit APIs. The address geocoding, route planning, and display components are fully generic.
 
 **Q: How accurate are the route times?**
 A: Very accurate (95%+) when using real PTV live data. Walking times use standard 80m/min (4.8km/h) pace or your manual custom times. Cafe busy-ness detection adjusts coffee time based on actual peak periods.
@@ -1705,12 +1705,19 @@ MIT License - Customize for your own commute!
 
 ---
 
-**Last Updated**: January 23, 2026
-**Version**: 2.2.0
+**Last Updated**: January 24, 2026
+**Version**: 2.3.0
 **Status**: ✅ Production Ready - Verified End-to-End
-**Commit**: f8142dd
 
 ### Recent Updates
+
+**v2.3.0** (January 24, 2026):
+- ✅ Made codebase fully generic for open source distribution
+- ✅ Removed all hardcoded location references
+- ✅ Added environment variable configuration for region/transit API
+- ✅ Configurable station names, weather stations, and geocoding regions
+- ✅ Generic address examples and documentation
+- ✅ Ready for adaptation to any transit system
 
 **v2.2.0** (January 23, 2026):
 - ✅ Manual walking times feature with address validation

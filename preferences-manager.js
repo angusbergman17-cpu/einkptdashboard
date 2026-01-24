@@ -48,24 +48,25 @@ class PreferencesManager {
         // Cafe location in journey (NEW)
         cafeLocation: 'before-transit-1',  // Options: 'before-transit-1', 'between-transits', 'after-last-transit'
 
-        // Transit route configuration (NEW)
+        // Transit route configuration
+        // No hardcoded defaults - users configure via Journey Planner
         transitRoute: {
           numberOfModes: 1,              // 1 or 2 transit modes
           mode1: {
             type: 0,                     // Route type ID (0=Train, 1=Tram, 2=Bus, 3=V/Line)
             originStation: {
-              name: 'South Yarra',
+              name: null,                // Configure via Journey Planner
               id: null,                  // PTV station ID
-              lat: -37.8408,
-              lon: 145.0002
+              lat: null,
+              lon: null
             },
             destinationStation: {
-              name: 'Flinders Street',
+              name: null,                // Configure via Journey Planner
               id: null,
-              lat: -37.8530,
-              lon: 144.9560
+              lat: null,
+              lon: null
             },
-            estimatedDuration: 20        // minutes
+            estimatedDuration: null      // minutes - auto-calculated
           },
           mode2: {                       // Only used if numberOfModes === 2
             type: null,

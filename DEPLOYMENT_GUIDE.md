@@ -2,7 +2,7 @@
 
 ## ✅ What Was Built
 
-Your entire TRMNL Melbourne PT project has been **completely rebuilt from scratch** based on your project context document, ensuring all API integrations work properly.
+Your entire TRMNL your city PT project has been **completely rebuilt from scratch** based on your project context document, ensuring all API integrations work properly.
 
 ---
 
@@ -27,7 +27,7 @@ Your entire TRMNL Melbourne PT project has been **completely rebuilt from scratc
 
 3. **pids-renderer.js** (11KB)
    - SVG to PNG conversion using Sharp
-   - Melbourne Metro/TramTracker PIDS styling
+   - Metro/TramTracker PIDS styling
    - 800x480px optimized for e-ink
    - Two-column layout matching your mockup
    - Route+ journey planner with times
@@ -35,12 +35,12 @@ Your entire TRMNL Melbourne PT project has been **completely rebuilt from scratc
 4. **coffee-decision.js** (4.6KB)
    - Calculates if there's time for coffee
    - Factors in: walk time, coffee time, tram/train connections
-   - Target: 9am arrival at 80 Collins St
+   - Target: 9am arrival at 80 Central Ave
    - Weekend mode with relaxed timing
    - Service disruption awareness
 
 5. **config.js** (601 bytes)
-   - Stop IDs: South Yarra (1120), Tivoli Road (2189)
+   - Stop IDs: Origin Station (1120), Tivoli Road (2189)
    - Platform: 3
    - Customizable settings
 
@@ -154,12 +154,12 @@ WEATHER_KEY = your_openweather_key
 Hello,
 
 I would like to request access to the PTV Timetable API for a personal 
-project - a custom e-ink display showing Melbourne public transport times.
+project - a custom e-ink display showing your city public transport times.
 
 Project details:
 - Personal use only
 - TRMNL e-ink display (800x480)
-- Shows South Yarra to Parliament train times
+- Shows Origin Station to Parliament train times
 - Non-commercial
 
 Thank you,
@@ -207,7 +207,7 @@ added 247 packages in 45s
 ==> Build successful 🎉
 ==> Deploying...
 ==> Running 'node server.js'
-🚀 TRMNL Melbourne PT Server - ULTIMATE++ Edition
+🚀 TRMNL your city PT Server - ULTIMATE++ Edition
 📡 Server running on port 10000
 🎯 Data Sources:
   ✓ TramTracker API (no auth) - Trams primary
@@ -333,7 +333,7 @@ Your TRMNL should now show:
 - ✅ Service status alerts
 - ✅ Weather (if API key provided)
 
-**Enjoy your custom Melbourne PT display!** ☕🚆🚊
+**Enjoy your custom your city PT display!** ☕🚆🚊
 
 ---
 

@@ -49,13 +49,19 @@ preferences.load().then(() => {
 });
 
 /**
- * Fallback timetable - typical weekday schedule for South Yarra
+ * Fallback timetable - typical weekday schedule
  * Used when API is unavailable
+ * Destinations are configurable via user preferences
  */
 function getFallbackTimetable() {
   const now = new Date();
   const localNow = new Date(now.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
   const currentMinutes = localNow.getHours() * 60 + localNow.getMinutes();
+
+  // Get configured destinations from preferences, or use generic defaults
+  const prefs = preferences.get();
+  const trainDest = prefs?.journey?.transitRoute?.mode1?.destinationStation?.name || 'City';
+  const tramDest = prefs?.journey?.transitRoute?.mode2?.destinationStation?.name || 'City';
 
   // Typical weekday schedule (minutes from midnight)
   const trainSchedule = []; // Every 5-10 minutes during peak
@@ -75,13 +81,13 @@ function getFallbackTimetable() {
   // Find next departures
   const nextTrains = trainSchedule.filter(t => t > currentMinutes).slice(0, 3).map(t => ({
     minutes: Math.max(1, t - currentMinutes),
-    destination: 'Flinders Street',
+    destination: trainDest,
     isScheduled: true
   }));
 
   const nextTrams = tramSchedule.filter(t => t > currentMinutes).slice(0, 3).map(t => ({
     minutes: Math.max(1, t - currentMinutes),
-    destination: 'Toorak',
+    destination: tramDest,
     isScheduled: true
   }));
 
@@ -176,12 +182,17 @@ async function fetchData() {
     const now = new Date();
 
     // Process trains
+    // Get configured destinations from preferences
+    const prefs = preferences.get();
+    const defaultTrainDest = prefs?.journey?.transitRoute?.mode1?.destinationStation?.name || 'City';
+    const defaultTramDest = prefs?.journey?.transitRoute?.mode2?.destinationStation?.name || 'City';
+
     const trains = (snapshot.trains || []).slice(0, 5).map(train => {
       const departureTime = new Date(train.when);
       const minutes = Math.max(0, Math.round((departureTime - now) / 60000));
       return {
         minutes,
-        destination: 'Flinders Street',
+        destination: train.destination || defaultTrainDest,
         isScheduled: false
       };
     });
@@ -192,7 +203,7 @@ async function fetchData() {
       const minutes = Math.max(0, Math.round((departureTime - now) / 60000));
       return {
         minutes,
-        destination: 'West Coburg',
+        destination: tram.destination || defaultTramDest,
         isScheduled: false
       };
     });
@@ -266,17 +277,17 @@ async function getBaseTemplate() {
     // Generate new template
     console.log('📝 Generating base template...');
 
-    // Create static data with placeholders
+    // Create static data with placeholders (generic destinations)
     const templateData = {
       trains: [
-        { minutes: 0, destination: 'Flinders Street', isScheduled: false },
-        { minutes: 0, destination: 'Flinders Street', isScheduled: false },
-        { minutes: 0, destination: 'Flinders Street', isScheduled: false }
+        { minutes: 0, destination: 'Loading...', isScheduled: false },
+        { minutes: 0, destination: 'Loading...', isScheduled: false },
+        { minutes: 0, destination: 'Loading...', isScheduled: false }
       ],
       trams: [
-        { minutes: 0, destination: 'West Coburg', isScheduled: false },
-        { minutes: 0, destination: 'West Coburg', isScheduled: false },
-        { minutes: 0, destination: 'West Coburg', isScheduled: false }
+        { minutes: 0, destination: 'Loading...', isScheduled: false },
+        { minutes: 0, destination: 'Loading...', isScheduled: false },
+        { minutes: 0, destination: 'Loading...', isScheduled: false }
       ],
       weather: { temp: '--', condition: 'Loading...', icon: '☁️' },
       news: null,
@@ -458,16 +469,21 @@ app.get('/api/screen', async (req, res) => {
   try {
     const data = await getData();
 
+    // Get station names from preferences
+    const prefs = preferences.get();
+    const trainStation = prefs?.journey?.transitRoute?.mode1?.originStation?.name || 'TRAINS';
+    const tramStation = prefs?.journey?.transitRoute?.mode2?.originStation?.name || 'TRAMS';
+
     // Build TRMNL markup
     const markup = [
       `**${new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: false })}** | ${data.weather.icon} ${data.weather.temp}°C`,
       '',
       data.coffee.canGet ? '☕ **YOU HAVE TIME FOR COFFEE!**' : '⚡ **NO COFFEE - GO DIRECT**',
       '',
-      '**METRO TRAINS - SOUTH YARRA**',
+      `**${trainStation.toUpperCase()}**`,
       data.trains.length > 0 ? data.trains.slice(0, 3).map(t => `→ ${t.minutes} min`).join('\n') : '→ No departures',
       '',
-      '**YARRA TRAMS - ROUTE 58**',
+      `**${tramStation.toUpperCase()}**`,
       data.trams.length > 0 ? data.trams.slice(0, 3).map(t => `→ ${t.minutes} min`).join('\n') : '→ No departures',
       '',
       data.news ? `⚠️ ${data.news}` : '✓ Good service on all lines'
@@ -893,10 +909,14 @@ app.get('/admin/weather', async (req, res) => {
     const weatherData = await weather.getCurrentWeather();
     const cacheStatus = weather.getCacheStatus();
 
+    // Get location from preferences or use default
+    const prefs = preferences.get();
+    const location = prefs?.weather?.location || 'Configured Location';
+
     res.json({
       current: weatherData,
       cache: cacheStatus,
-      location: 'Melbourne CBD',
+      location: location,
       source: 'Bureau of Meteorology'
     });
   } catch (error) {
@@ -1256,6 +1276,7 @@ app.post('/admin/route/calculate', async (req, res) => {
     }
 
     // Extract journey configuration from preferences
+    // No hardcoded defaults - users must configure their own stations via journey planner
     const journeyConfig = {
       coffeeEnabled: savedJourney.coffeeEnabled !== false,
       cafeLocation: savedJourney.cafeLocation || 'before-transit-1',
@@ -1264,16 +1285,16 @@ app.post('/admin/route/calculate', async (req, res) => {
         mode1: {
           type: 0,
           originStation: {
-            name: 'South Yarra',
-            lat: -37.8408,
-            lon: 145.0002
+            name: null,  // Must be configured by user
+            lat: null,
+            lon: null
           },
           destinationStation: {
-            name: 'Flinders Street',
-            lat: -37.8530,
-            lon: 144.9560
+            name: null,  // Must be configured by user
+            lat: null,
+            lon: null
           },
-          estimatedDuration: 20
+          estimatedDuration: null
         },
         mode2: null
       }
@@ -1366,7 +1387,7 @@ app.post('/admin/route/calculate', async (req, res) => {
  * Request body:
  * {
  *   homeAddress: "123 Smith St, Richmond" (required)
- *   workAddress: "456 Collins St, Melbourne" (required)
+ *   workAddress: "456 Central Ave, City" (required)
  *   cafeAddress: "Some Cafe, Suburb" (optional - auto-finds if not provided)
  *   arrivalTime: "09:00" (required)
  *   includeCoffee: true (optional, default true)
@@ -1396,7 +1417,7 @@ app.post('/admin/route/auto-plan', async (req, res) => {
         error: 'Missing required addresses',
         required: ['homeAddress', 'workAddress'],
         message: 'Please provide your home and work addresses. You can save them in preferences or include them in the request.',
-        tip: 'Example: { "homeAddress": "123 Smith St, Richmond VIC", "workAddress": "456 Collins St, Melbourne VIC", "arrivalTime": "09:00" }'
+        tip: 'Example: { "homeAddress": "123 Main St, Your Suburb", "workAddress": "456 Central Ave, City", "arrivalTime": "09:00" }'
       });
     }
 
@@ -1617,11 +1638,17 @@ app.get('/admin/route/multi-modal', async (req, res) => {
     // Get enabled transit modes (default to all)
     const enabledModes = journey.preferredTransitModes || [0, 1, 2, 3];
 
-    // Find best multi-modal options
-    // TODO: Use actual stop IDs from geocoding
-    // For now, using hardcoded South Yarra (19841) and Flinders St (19854)
-    const originStopId = 19841; // South Yarra
-    const destStopId = 19854;   // Flinders Street
+    // Get stop IDs from user's configured transit route
+    const transitRoute = journey.transitRoute || {};
+    const originStopId = transitRoute.mode1?.originStation?.id;
+    const destStopId = transitRoute.mode1?.destinationStation?.id;
+
+    if (!originStopId || !destStopId) {
+      return res.status(400).json({
+        error: 'Transit stations not configured',
+        message: 'Please use the Journey Planner to configure your route with origin and destination stations'
+      });
+    }
 
     const options = await multiModalRouter.findBestOptions(
       originStopId,
@@ -1759,6 +1786,11 @@ app.get('/admin/cafe/peak-times', (req, res) => {
 app.get('/admin/dashboard-preview', async (req, res) => {
   try {
     const updates = await getRegionUpdates();
+    const prefs = preferences.get();
+
+    // Get station names from preferences
+    const trainStationName = (prefs?.journey?.transitRoute?.mode1?.originStation?.name || 'STATION').toUpperCase();
+    const tramDestination = prefs?.journey?.transitRoute?.mode2?.destinationStation?.name || 'CITY';
 
     // Create HTML preview of dashboard
     const html = `
@@ -1883,13 +1915,13 @@ app.get('/admin/dashboard-preview', async (req, res) => {
 
     <div class="dashboard">
       <!-- Station Name -->
-      <div class="station-box">SOUTH YARRA</div>
+      <div class="station-box">${trainStationName}</div>
 
       <!-- Large Time -->
       <div class="time">${updates.regions.find(r => r.id === 'time')?.text || '00:00'}</div>
 
       <!-- Tram Section -->
-      <div class="section-header tram-header">TRAM #58 TO WEST COBURG</div>
+      <div class="section-header tram-header">TRAM TO ${tramDestination.toUpperCase()}</div>
       <div class="departure-label" style="top: 152px; left: 20px;">Next:</div>
       <div class="departure" style="top: 170px; left: 20px;">${updates.regions.find(r => r.id === 'tram1')?.text || '--'} min*</div>
       <div class="departure-label" style="top: 222px; left: 20px;">Then:</div>
@@ -1946,7 +1978,7 @@ function buildDepartureRows(departures, type) {
   return departures.slice(0, 4).map(dep => `
     <div class="departure-row">
       <div class="departure-info">
-        <span class="departure-dest">${dep.destination || (type === 'train' ? 'Flinders Street' : 'West Coburg')}</span>
+        <span class="departure-dest">${dep.destination || 'City'}</span>
         <span class="departure-status">${dep.isScheduled ? '📅 Scheduled' : '⚡ Live'}</span>
       </div>
       <div class="departure-time">
@@ -2011,6 +2043,10 @@ app.get('/admin/live-display', async (req, res) => {
         cafeData = { level: 'unknown', coffeeTime: 3 };
       }
     }
+
+    // Get configured station names or use generic defaults
+    const trainStationName = prefs?.journey?.transitRoute?.mode1?.originStation?.name || 'Train Station';
+    const tramStationName = prefs?.journey?.transitRoute?.mode2?.originStation?.name || 'Tram Stop';
 
     // Pre-build dynamic HTML parts
     const trainRows = buildDepartureRows(data.trains, 'train');
@@ -2381,7 +2417,7 @@ app.get('/admin/live-display', async (req, res) => {
             <div class="card">
                 <div class="card-header">
                     <span class="card-icon">🚆</span>
-                    <h2>Metro Trains - South Yarra</h2>
+                    <h2>Metro Trains - ${trainStationName}</h2>
                 </div>
                 ${trainRows}
             </div>
@@ -2390,7 +2426,7 @@ app.get('/admin/live-display', async (req, res) => {
             <div class="card">
                 <div class="card-header">
                     <span class="card-icon">🚊</span>
-                    <h2>Yarra Trams - Route 58</h2>
+                    <h2>Trams - ${tramStationName}</h2>
                 </div>
                 ${tramRows}
             </div>
@@ -2399,7 +2435,7 @@ app.get('/admin/live-display', async (req, res) => {
             <div class="card">
                 <div class="card-header">
                     <span class="card-icon">🌤️</span>
-                    <h2>Weather - Melbourne</h2>
+                    <h2>Weather</h2>
                 </div>
                 <div class="weather-display">
                     <div class="weather-temp">${weatherData?.temperature || '--'}°</div>

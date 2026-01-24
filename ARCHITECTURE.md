@@ -237,7 +237,7 @@ PTV API (protobuf)
     ▼
 opendata.js
     │ Decodes protobuf to JSON
-    │ Filters for South Yarra
+    │ Filters for origin station
     │
     ▼
 data-scraper.js
@@ -413,12 +413,12 @@ Connection: close
 │                                                                        │
 │  HEADER (0-60px height)                                                │
 │  ┌──────────────────────────────────────────────────────────────────┐ │
-│  │ SOUTH YARRA (20, 30)                     TIME (680, 30) 19:47    │ │
+│  │ ORIGIN STATION (20, 30)                     TIME (680, 30) 19:47    │ │
 │  └──────────────────────────────────────────────────────────────────┘ │
 │                                                                        │
 │  LEFT COLUMN (0-400px)           │  RIGHT COLUMN (400-800px)          │
 │  ┌──────────────────────────────┐│┌──────────────────────────────────┐│
-│  │ METRO TRAINS - FLINDERS ST   │││ YARRA TRAMS - ROUTE 58           ││
+│  │ METRO TRAINS - CITY   │││ YARRA TRAMS - ROUTE 58           ││
 │  │ (20, 90)                     │││ (420, 90)                        ││
 │  │                              │││                                  ││
 │  │                              │││                                  ││

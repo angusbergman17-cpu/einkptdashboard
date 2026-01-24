@@ -30,12 +30,12 @@
 
 ## 1.1 Project Description
 
-PTV-TRMNL is a custom e-ink display dashboard that shows real-time Melbourne public transport information (trains and trams) along with weather data. The system fetches live departure times from PTV (Public Transport Victoria) Open Data API and weather from Bureau of Meteorology (BOM).
+PTV-TRMNL is a custom e-ink display dashboard that shows real-time public transport information (trains and trams) along with weather data. The system fetches live departure times from PTV (Public Transport Victoria) Open Data API and weather from Bureau of Meteorology (BOM).
 
 ## 1.2 Key Features
 
 - **Real-time transit data**: Live train and tram departure times
-- **Weather integration**: Current Melbourne weather from BOM
+- **Weather integration**: Current local weather from BOM
 - **Smart caching**: Separate static layout from dynamic data
 - **Crash recovery**: NVS cache allows 3-second recovery on unexpected reboot
 - **Admin panel**: Web-based configuration and monitoring
@@ -346,7 +346,7 @@ PORT=3000
 
 **URL**: https://api.weather.bom.gov.au/
 **Authentication**: None (public API)
-**Location**: Melbourne CBD (geohash: r1r0gx)
+**Location**: City CBD (geohash: r1r0gx)
 **Rate Limit**: None documented
 **Update Frequency**: ~30 minutes
 
@@ -378,7 +378,7 @@ async function fetchData() {
       const minutes = Math.max(0, Math.round((departureTime - now) / 60000));
       return {
         minutes,
-        destination: 'Flinders Street',
+        destination: 'City',
         isScheduled: false
       };
     });
@@ -389,7 +389,7 @@ async function fetchData() {
       const minutes = Math.max(0, Math.round((departureTime - now) / 60000));
       return {
         minutes,
-        destination: 'West Coburg',
+        destination: 'Destination',
         isScheduled: false
       };
     });
@@ -529,7 +529,7 @@ async function getRegionUpdates() {
     "ttl": 655,
     "expired": false
   },
-  "location": "Melbourne CBD",
+  "location": "City CBD",
   "source": "Bureau of Meteorology"
 }
 ```
@@ -631,7 +631,7 @@ Returns full HTML page with:
 
 **Location**: `/Users/angusbergman/PTV-TRMNL-NEW/weather-bom.js`
 **Lines**: 263
-**Purpose**: Fetch and cache Melbourne weather from Bureau of Meteorology
+**Purpose**: Fetch and cache local weather from Bureau of Meteorology
 
 ### Complete Code
 
@@ -656,7 +656,7 @@ class WeatherBOM {
 
     // Melbourne location ID (from BOM API)
     // Melbourne City: geohash r1r0gx
-    this.locationId = 'r1r0gx'; // Melbourne CBD
+    this.locationId = 'r1r0gx'; // City CBD
 
     // Cache weather data for 15 minutes (BOM updates every 30 min)
     this.cache = null;
@@ -904,7 +904,7 @@ export async function getSnapshot(apiKey) {
 }
 ```
 
-**getTrains(apiKey)**: Fetches Metro Trains data for South Yarra
+**getTrains(apiKey)**: Fetches Metro Trains data for Origin Station
 
 ```javascript
 async function getTrains(apiKey) {
@@ -921,7 +921,7 @@ async function getTrains(apiKey) {
       const stopTimeUpdates = entity.tripUpdate.stopTimeUpdate || [];
 
       for (const update of stopTimeUpdates) {
-        if (update.stopId === STOP_ID_SOUTH_YARRA) {
+        if (update.stopId === STOP_ID_ORIGIN_STATION) {
           const departureTime = update.departure?.time?.low || update.arrival?.time?.low;
 
           if (departureTime) {
@@ -1061,7 +1061,7 @@ void drawDashboardShell() {
   bbep.drawRect(11, 11, 88, 48, BBEP_BLACK); // Double border
   bbep.setFont(FONT_6x8);
   bbep.setCursor(15, 30);
-  bbep.print("SOUTH YARRA");
+  bbep.print("ORIGIN STATION");
 
   // Tram section header (black strip)
   bbep.fillRect(10, 120, 370, 25, BBEP_BLACK);
@@ -1725,7 +1725,7 @@ document.addEventListener('DOMContentLoaded', () => {
     "ttl": 655,
     "expired": false
   },
-  "location": "Melbourne CBD",
+  "location": "City CBD",
   "source": "Bureau of Meteorology"
 }
 ```
@@ -1926,7 +1926,7 @@ document.addEventListener('DOMContentLoaded', () => {
 │                                                             │
 │  Layout:                                                    │
 │  ┌────────────────────────────────────────────────────┐    │
-│  │ SOUTH YARRA    19:47                               │    │
+│  │ ORIGIN STATION    19:47                               │    │
 │  │                                                    │    │
 │  │ TRAM #58           TRAINS                         │    │
 │  │ Next:  3 min*      Next:  5 min*      P.Cloudy    │    │
@@ -2064,12 +2064,12 @@ const minutes = Math.max(0, Math.round((departureTime - now) / 60000));
 ```javascript
 {
   trains: [
-    { minutes: 5, destination: "Flinders Street" },
-    { minutes: 12, destination: "Flinders Street" }
+    { minutes: 5, destination: "City" },
+    { minutes: 12, destination: "City" }
   ],
   trams: [
-    { minutes: 3, destination: "West Coburg" },
-    { minutes: 8, destination: "West Coburg" }
+    { minutes: 3, destination: "Destination" },
+    { minutes: 8, destination: "Destination" }
   ]
 }
 ```
@@ -2559,7 +2559,7 @@ This keeps server warm and responsive for firmware requests.
 2. Visit https://www.ptv.vic.gov.au/ for service alerts
 3. Verify stop IDs in `data-scraper.js`:
    ```javascript
-   const STOP_ID_SOUTH_YARRA = "19841"; // Metro trains
+   const STOP_ID_ORIGIN_STATION = "19841"; // Metro trains
    const STOP_ID_TRAM_58 = "2534";      // Tram 58
    ```
 4. Use fallback timetable temporarily

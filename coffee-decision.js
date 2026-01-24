@@ -2,25 +2,46 @@
  * COFFEE DECISION ENGINE
  * Calculates whether there's time to get coffee before work
  *
- * Commute: South Yarra → Norman Cafe (optional) → Route 58 Tram → South Yarra Station → Parliament → 80 Collins St
- * Target arrival: 9:00 AM
+ * Commute timing is configurable based on user's journey settings.
+ * Uses Journey Planner configuration for accurate calculations.
  *
  * Copyright (c) 2026 Angus Bergman
- * All rights reserved.
+ * Licensed under MIT for open source distribution.
  */
 
 class CoffeeDecision {
-  constructor() {
-    // Timing constants (in minutes)
+  constructor(config = {}) {
+    // Default timing constants (in minutes)
+    // These are overridden by user's journey configuration
     this.commute = {
-      walkToWork: 6,      // Parliament Station → 80 Collins St
-      homeToNorman: 4,    // Home → Norman Cafe
-      makeCoffee: 6,      // Time at cafe (order + make)
-      normanToTram: 1,    // Norman Cafe → Tivoli Road tram stop
-      tramRide: 5,        // Tram ride to South Yarra
-      platformChange: 3,  // Walk to Platform 3
-      trainRide: 9        // Train to Parliament
+      walkToWork: config.walkToWork || 5,          // Station → Work
+      homeToCafe: config.homeToCafe || 5,          // Home → Cafe
+      makeCoffee: config.makeCoffee || 5,          // Time at cafe (order + make)
+      cafeToTransit: config.cafeToTransit || 2,    // Cafe → Transit stop
+      transitRide: config.transitRide || 5,        // Transit ride duration
+      platformChange: config.platformChange || 3,  // Connection walking time
+      trainRide: config.trainRide || 15            // Primary transit duration
     };
+  }
+
+  /**
+   * Update commute timings from journey configuration
+   */
+  updateFromJourney(journey) {
+    if (journey?.segments) {
+      // Extract timings from journey segments
+      journey.segments.forEach(seg => {
+        if (seg.type === 'walk' && seg.to?.toLowerCase().includes('work')) {
+          this.commute.walkToWork = seg.duration || this.commute.walkToWork;
+        }
+        if (seg.type === 'coffee') {
+          this.commute.makeCoffee = seg.duration || this.commute.makeCoffee;
+        }
+        if (seg.type === 'train' || seg.type === 'tram') {
+          this.commute.trainRide = seg.duration || this.commute.trainRide;
+        }
+      });
+    }
   }
 
   /**
@@ -102,54 +123,63 @@ class CoffeeDecision {
         };
     }
 
-    // 4. BEFORE 9 AM - Calculate timing for 80 Collins arrival
-    const target9am = 9 * 60; // 540 minutes (9:00 AM)
-    
-    // Total trip time calculations
-    const tripDirect = 4 + 5 + 3 + 9 + this.commute.walkToWork; // ~27 mins
-    const tripWithCoffee = tripDirect + this.commute.makeCoffee + 1; // ~34 mins
+    // 4. Calculate timing for work arrival (default 9 AM, configurable)
+    const targetArrival = this.targetArrivalMins || 9 * 60; // Default 9:00 AM (540 minutes)
 
-    const minsUntil9am = target9am - currentTimeInMins;
+    // Total trip time calculations based on configured timings
+    const tripDirect = this.commute.homeToCafe + this.commute.transitRide +
+                       this.commute.platformChange + this.commute.trainRide +
+                       this.commute.walkToWork;
+    const tripWithCoffee = tripDirect + this.commute.makeCoffee + this.commute.cafeToTransit;
+
+    const minsUntilArrival = targetArrival - currentTimeInMins;
 
     // Not enough time for direct route
-    if (minsUntil9am < tripDirect) {
-        return { 
-            decision: "LATE FOR WORK", 
-            subtext: `Only ${minsUntil9am}m to 9am! (Need ${tripDirect}m)`, 
-            canGet: false, 
-            urgent: true 
-        };
-    }
-
-    // Not enough time for coffee route
-    if (minsUntil9am < tripWithCoffee) {
-        return { 
-            decision: "SKIP COFFEE", 
-            subtext: `Need ${tripWithCoffee}m. Have ${minsUntil9am}m.`, 
-            canGet: false, 
+    if (minsUntilArrival < tripDirect) {
+        return {
+            decision: "LATE FOR WORK",
+            subtext: `Only ${minsUntilArrival}m left! (Need ${tripDirect}m)`,
+            canGet: false,
             urgent: true
         };
     }
 
-    // Find best tram that works with coffee timing
-    const coffeeReadyTime = this.commute.homeToNorman + this.commute.makeCoffee;
-    const bestTram = tramData ? tramData.find(t => t.minutes >= coffeeReadyTime) : null;
+    // Not enough time for coffee route
+    if (minsUntilArrival < tripWithCoffee) {
+        return {
+            decision: "SKIP COFFEE",
+            subtext: `Need ${tripWithCoffee}m. Have ${minsUntilArrival}m.`,
+            canGet: false,
+            urgent: true
+        };
+    }
 
-    if (bestTram) {
-         return { 
-            decision: "GET COFFEE", 
-            subtext: `Tram in ${bestTram.minutes}m → 80 Collins by 9am`, 
-            canGet: true, 
+    // Find best transit that works with coffee timing
+    const coffeeReadyTime = this.commute.homeToCafe + this.commute.makeCoffee;
+    const bestTransit = tramData ? tramData.find(t => t.minutes >= coffeeReadyTime) : null;
+
+    if (bestTransit) {
+         return {
+            decision: "GET COFFEE",
+            subtext: `Transit in ${bestTransit.minutes}m → arrive on time`,
+            canGet: true,
             urgent: false
         };
     } else {
-        return { 
-            decision: "GET COFFEE", 
-            subtext: `${minsUntil9am}m buffer before 9am`, 
-            canGet: true, 
+        return {
+            decision: "GET COFFEE",
+            subtext: `${minsUntilArrival}m buffer before arrival`,
+            canGet: true,
             urgent: false
         };
     }
+  }
+
+  /**
+   * Set target arrival time (in minutes from midnight)
+   */
+  setTargetArrival(hours, minutes = 0) {
+    this.targetArrivalMins = hours * 60 + minutes;
   }
 }
 

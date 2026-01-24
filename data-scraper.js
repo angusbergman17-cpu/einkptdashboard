@@ -1,10 +1,10 @@
 /**
  * data-scraper.js
  * Combines Open Data GTFS‑R (trains + trams) with static GTFS (platforms),
- * includes ANY city‑bound train, prioritises South Yarra Platform 5, and returns a snapshot.
+ * filters departures based on user's configured origin station and returns a snapshot.
  *
  * Copyright (c) 2026 Angus Bergman
- * All rights reserved.
+ * Licensed under MIT for open source distribution.
  */
 
 import dayjs from "dayjs";
@@ -15,7 +15,7 @@ import {
   getTramTripUpdates,
   getTramServiceAlerts
 } from "./opendata.js";
-import { tryLoadStops, resolveSouthYarraIds, buildTargetStopIdSet } from "./gtfs-static.js";
+import { tryLoadStops, resolveOriginStationIds, buildTargetStopIdSet } from "./gtfs-static.js";
 
 // In‑memory cache to reduce upstream calls (and honour provider caching)
 const mem = {
@@ -38,14 +38,14 @@ function timeFromStu(stu) {
 
 /**
  * Return true if the trip update will call at any of the target stop_ids
- * after the current South Yarra call (city‑bound heuristic).
+ * after the current origin station call (city‑bound heuristic).
  */
-function isCityBoundTrip(tripUpdate, targetStopIds, southYarraStopId, southYarraSeq) {
+function isCityBoundTrip(tripUpdate, targetStopIds, originStopId, originSeq) {
   if (!tripUpdate?.stop_time_update?.length) return false;
 
-  // Identify sequence of current South Yarra call (if not provided, we still allow any future match)
-  const currentSeq = southYarraSeq ?? (() => {
-    const idx = tripUpdate.stop_time_update.findIndex(s => s.stop_id === southYarraStopId);
+  // Identify sequence of current origin station call (if not provided, we still allow any future match)
+  const currentSeq = originSeq ?? (() => {
+    const idx = tripUpdate.stop_time_update.findIndex(s => s.stop_id === originStopId);
     return idx >= 0 ? Number(tripUpdate.stop_time_update[idx].stop_sequence ?? idx) : 0;
   })();
 
@@ -58,7 +58,7 @@ function isCityBoundTrip(tripUpdate, targetStopIds, southYarraStopId, southYarra
 }
 
 /**
- * Sort departures: earliest first, but if within 2 minutes, prefer Platform 5.
+ * Sort departures: earliest first, but if within 2 minutes, prefer preferred platform.
  */
 function sortWithPlatformPreference(list, preferredStopId) {
   const WINDOW_MS = 2 * 60 * 1000; // 2 minutes
@@ -88,8 +88,8 @@ export async function getSnapshot(apiKey) {
   // Load static GTFS (for platforms + station name->stop_id mapping)
   if (!mem.gtfs) mem.gtfs = tryLoadStops();
 
-  // Resolve South Yarra ids + platform 5 stop_id
-  if (!mem.ids) mem.ids = resolveSouthYarraIds(config, mem.gtfs);
+  // Resolve Origin Station ids + preferred platform stop_id
+  if (!mem.ids) mem.ids = resolveOriginStationIds(config, mem.gtfs);
 
   // Build a set of stop_ids for city‑bound targets (Parliament, State Library, etc.)
   if (!mem.targetStopIdSet) {
@@ -104,9 +104,9 @@ export async function getSnapshot(apiKey) {
     notes: {
       platformResolution: {
         usedStaticGtfs: !!(mem.gtfs?.stops?.length),
-        southYarra: {
+        originStation: {
           parentStopId: mem.ids?.parentStopId || null,
-          platform5StopId: mem.ids?.platform5StopId || null,
+          preferredPlatformStopId: mem.ids?.preferredPlatformStopId || null,
           platformCount: mem.ids?.allPlatformStopIds?.length || 0
         }
       }
@@ -139,9 +139,9 @@ export async function getSnapshot(apiKey) {
     tramServiceAlertsTs: headerTs(tramSA)
   };
 
-  // ==== TRAINS (Metro) — include ANY city‑bound, prioritise South Yarra Platform 5 ====
-  const southYarraPlatformIds = new Set(mem.ids?.allPlatformStopIds || []);
-  const platform5StopId = mem.ids?.platform5StopId || null;
+  // ==== TRAINS (Metro) — include ANY city‑bound, prioritise Origin Station preferred platform ====
+  const originStationPlatformIds = new Set(mem.ids?.allPlatformStopIds || []);
+  const preferredPlatformStopId = mem.ids?.preferredPlatformStopId || null;
 
   if (metroTU?.entity?.length) {
     const trainDeps = [];
@@ -150,8 +150,8 @@ export async function getSnapshot(apiKey) {
       const tu = ent.trip_update;
       if (!tu?.stop_time_update?.length) continue;
 
-      // Must call at South Yarra (any platform)
-      const syStu = tu.stop_time_update.find(s => southYarraPlatformIds.has(s.stop_id));
+      // Must call at Origin Station (any platform)
+      const syStu = tu.stop_time_update.find(s => originStationPlatformIds.has(s.stop_id));
       if (!syStu) continue;
 
       const when = timeFromStu(syStu);
@@ -172,11 +172,11 @@ export async function getSnapshot(apiKey) {
         stopId: syStu.stop_id,
         when,
         delaySec: Number(syStu.departure?.delay || syStu.arrival?.delay || 0),
-        platformPreferred: platform5StopId && syStu.stop_id === platform5StopId
+        platformPreferred: preferredPlatformStopId && syStu.stop_id === preferredPlatformStopId
       });
     }
 
-    snapshotBase.trains = sortWithPlatformPreference(trainDeps, platform5StopId).slice(0, 12);
+    snapshotBase.trains = sortWithPlatformPreference(trainDeps, preferredPlatformStopId).slice(0, 12);
   }
 
   // Alerts (count only — you can surface text in your renderer if you like)

@@ -290,19 +290,13 @@ class RoutePlanner {
    */
   async findNearestStop(lat, lon, routeType = null) {
     // This would use PTV API's /v3/stops/location endpoint
-    // For now, we'll use hardcoded South Yarra stops as default
+    // Returns null to indicate stops should be configured by user
 
     // TODO: Implement actual PTV stop search when API supports it
-    // For prototype, return South Yarra station
+    // For production: configure stops via Journey Planner or PTV API
 
-    return {
-      stop_id: 19841,
-      stop_name: "South Yarra Station",
-      stop_latitude: -37.8408,
-      stop_longitude: 145.0002,
-      route_type: 0, // Train
-      distance: 0
-    };
+    console.log('⚠️  No stop configured - use Journey Planner to set up your route');
+    return null;
   }
 
   /**
@@ -325,7 +319,8 @@ class RoutePlanner {
     console.log(`Desired arrival: ${arrivalTime}`);
     console.log(`Journey Config:`, JSON.stringify(journeyConfig, null, 2));
 
-    // Extract journey configuration with defaults
+    // Extract journey configuration - no hardcoded defaults
+    // Users must configure their stations via Journey Planner
     const {
       coffeeEnabled = true,
       cafeLocation = 'before-transit-1',
@@ -333,9 +328,9 @@ class RoutePlanner {
         numberOfModes: 1,
         mode1: {
           type: 0,
-          originStation: { name: 'South Yarra', lat: -37.8408, lon: 145.0002 },
-          destinationStation: { name: 'Flinders Street', lat: -37.8530, lon: 144.9560 },
-          estimatedDuration: 20
+          originStation: { name: null, lat: null, lon: null },  // Must be configured
+          destinationStation: { name: null, lat: null, lon: null },  // Must be configured
+          estimatedDuration: null
         },
         mode2: null
       }

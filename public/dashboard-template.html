@@ -241,21 +241,21 @@
 
     <!-- Main Dashboard (Exact E-ink Dimensions) -->
     <div class="dashboard" id="dashboard">
-      <!-- Station Name Box -->
-      <div class="station-box">SOUTH YARRA</div>
+      <!-- Station Name Box (Dynamic - configured via admin panel) -->
+      <div class="station-box" id="station-name">STATION</div>
 
       <!-- Large Time -->
       <div class="time" id="time">--:--</div>
 
       <!-- Tram Section -->
-      <div class="section-header tram-header">TRAM #58 TO WEST COBURG</div>
+      <div class="section-header tram-header" id="tram-header">TRAMS</div>
       <div class="departure-label" style="top: 152px; left: 20px;">Next:</div>
       <div class="departure" id="tram1" style="top: 170px; left: 20px;">-- min*</div>
       <div class="departure-label" style="top: 222px; left: 20px;">Then:</div>
       <div class="departure" id="tram2" style="top: 240px; left: 20px;">-- min*</div>
 
       <!-- Train Section -->
-      <div class="section-header train-header">TRAINS (CITY LOOP)</div>
+      <div class="section-header train-header" id="train-header">TRAINS</div>
       <div class="departure-label" style="top: 152px; left: 410px;">Next:</div>
       <div class="departure" id="train1" style="top: 170px; left: 410px;">-- min*</div>
       <div class="departure-label" style="top: 222px; left: 410px;">Then:</div>

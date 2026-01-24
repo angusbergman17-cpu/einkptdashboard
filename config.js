@@ -2,23 +2,30 @@
  * Configuration for PTV-TRMNL
  * Station preferences, route definitions, and API settings
  *
+ * NOTE: This is a template configuration.
+ * Users should configure their own stations via the Journey Planner
+ * in the admin panel at /admin
+ *
  * Copyright (c) 2026 Angus Bergman
- * All rights reserved.
+ * Licensed under MIT for open source distribution.
  */
 
 export default {
-  // South Yarra with Platform 5 preference
+  // User's configured station (set via admin panel)
+  // No hardcoded defaults - users must configure their own
   stations: {
-    southYarra: {
-      name: "South Yarra",
-      preferredPlatformCode: "5"   // <-- Prioritise Platform 5
+    origin: {
+      name: null,                    // Set via Journey Planner
+      preferredPlatformCode: null    // Optional platform preference
     }
   },
-  // "City-bound" targets (you asked to include any city-bound, prioritise Platform 5).
-  // Keep Parliament if you prefer; Metro Tunnel CBD pair added too.
-  cityBoundTargetStopNames: ["Parliament", "State Library", "Town Hall", "Melbourne Central", "Flagstaff"],
 
-  // Open Data GTFS-R feed bases (single key ODATA_KEY)
+  // Target destination stops (city-bound, configurable)
+  // These are example Victorian station names - configure for your network
+  targetStopNames: [],
+
+  // PTV Open Data GTFS-R feed endpoints (Victorian public transport)
+  // For other regions, replace with your local transit authority's GTFS feeds
   feeds: {
     metro: {
       base: "https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1/metro",
@@ -34,6 +41,7 @@ export default {
     }
   },
 
+  // Cache and refresh settings (seconds)
   cacheSeconds: 60,
   refreshSeconds: 60
 }

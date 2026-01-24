@@ -23,7 +23,7 @@
 ### 2. Weather Integration ✅
 - **BOM API** integration (Bureau of Meteorology)
 - **15-minute caching** to reduce API load
-- **Melbourne CBD** weather (geohash r1r0gx)
+- **City CBD** weather (geohash r1r0gx)
 - **Admin panel** weather card with live status
 - **Dashboard preview** HTML visualization
 
@@ -276,7 +276,7 @@ Before moving to next phase (design/formatting), verify:
 - [ ] Weather data fetches from BOM
 - [ ] Train data fetches from PTV
 - [ ] Tram data fetches from PTV
-- [ ] All timestamps are in Australia/Melbourne timezone
+- [ ] All timestamps are in your local timezone timezone
 
 ### ✅ Data Processing
 - [ ] Departure times calculated correctly (minutes from now)
@@ -310,7 +310,7 @@ train2:      "12" to "25" (following train)
 tram1:       "3" to "12" (next tram in 3-12 min)
 tram2:       "8" to "20" (following tram)
 weather:     "P.Cloudy", "Clear", "Cloudy", "Rain", etc.
-temperature: "10" to "25" (Melbourne temps)
+temperature: "10" to "25" (typical temps)
 ```
 
 ### Invalid Values (Would Indicate Errors):

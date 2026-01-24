@@ -198,7 +198,7 @@ curl -s https://ptv-trmnl-new.onrender.com/admin/weather | jq .
     "ttl": 780,
     "expired": false
   },
-  "location": "Melbourne CBD",
+  "location": "City CBD",
   "source": "Bureau of Meteorology"
 }
 ```
@@ -334,7 +334,7 @@ Use this checklist to verify data accuracy:
 - [ ] Departure times calculated correctly (minutes from now)
 - [ ] Values update every 30 seconds
 - [ ] Cache respects TTL (25 seconds for data, 15 min for weather)
-- [ ] Timestamps are in correct timezone (Australia/Melbourne)
+- [ ] Timestamps are in correct timezone (your local timezone)
 
 ---
 

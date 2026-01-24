@@ -14,12 +14,12 @@
 **Uses**: OpenStreetMap Nominatim API (free, no key needed)
 
 **Good For**:
-- ✅ Street addresses (e.g., "123 Chapel St")
+- ✅ Street addresses (e.g., "123 Main St")
 - ✅ Suburbs and locations
 - ✅ General geocoding
 
 **Limited For**:
-- ⚠️ Cafe and business names (e.g., "Market Lane Coffee")
+- ⚠️ Cafe and business names (e.g., "Your Favorite Cafe")
 - ⚠️ POI (Points of Interest) search
 - ⚠️ Current/popular businesses
 
@@ -28,7 +28,7 @@
 **Uses**: Google Places Autocomplete API (paid, requires key, free tier available)
 
 **Excellent For**:
-- ✅ Cafe and business names (e.g., "Market Lane Coffee")
+- ✅ Cafe and business names (e.g., "Your Favorite Cafe")
 - ✅ Street addresses with numbers
 - ✅ POI search (parks, stations, landmarks)
 - ✅ Current business listings
@@ -41,10 +41,10 @@
 
 | Without Google | With Google |
 |----------------|-------------|
-| 🟢 Market St, Melbourne | 🔵 Market Lane Coffee, Prahran VIC 3181 |
-| 🟢 Market Lane, South Melbourne | 🔵 Market Lane Coffee, Collins St, Melbourne VIC 3000 |
-| 🟢 (Generic streets only) | 🔵 Market Lane Coffee, Therry St, Melbourne VIC 3000 |
-|  | 🔵 Market Lane Coffee, multiple locations |
+| 🟢 Market St, Your City | 🔵 Your Favorite Cafe |
+| 🟢 Market Lane, Your Suburb | 🔵 Your Favorite Cafe, Central Ave |
+| 🟢 (Generic streets only) | 🔵 Your Favorite Cafe, Side St |
+|  | 🔵 Your Favorite Cafe, multiple locations |
 
 ---
 
@@ -226,9 +226,9 @@ curl "https://ptv-trmnl-new.onrender.com/admin/address/search?query=market+lane+
   "success": true,
   "results": [
     {
-      "display_name": "Market Lane Coffee",
-      "address": "Market Lane Coffee",
-      "full_address": "Shop 14/436 Lonsdale St, Melbourne VIC 3000, Australia",
+      "display_name": "Your Favorite Cafe",
+      "address": "Your Favorite Cafe",
+      "full_address": "Shop 14/436 Main St, Your City, Australia",
       "lat": -37.8136,
       "lon": 144.9631,
       "type": "cafe",
@@ -247,9 +247,9 @@ curl "https://ptv-trmnl-new.onrender.com/admin/address/search?query=market+lane+
   "success": true,
   "results": [
     {
-      "display_name": "Market Lane, South Melbourne VIC, Australia",
+      "display_name": "Market Lane, Your Suburb VIC, Australia",
       "address": "Market Lane",
-      "full_address": "Market Lane, South Melbourne VIC 3205, Australia",
+      "full_address": "Market Lane, Your Suburb VIC 3205, Australia",
       "lat": -37.8299,
       "lon": 144.9559,
       "type": "road",

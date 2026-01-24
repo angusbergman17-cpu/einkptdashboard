@@ -25,12 +25,12 @@ void drawDashboardTemplate(JsonDocument& doc) {
     // Extract data from JSON
     JsonArray regions = doc["regions"].as<JsonArray>();
 
-    // Default values
-    const char* stationName = "SOUTH YARRA";
+    // Default values (overridden by API response from admin panel config)
+    const char* stationName = "STATION";
     const char* timeText = "00:00";
 
-    const char* tramRoute = "58";
-    const char* tramDest = "WEST COBURG";
+    const char* tramRoute = "";
+    const char* tramDest = "CITY";
     const char* tram1Time = "--";
     const char* tram1Dest = "---";
     const char* tram1Status = "";

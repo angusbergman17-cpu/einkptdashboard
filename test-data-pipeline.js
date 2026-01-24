@@ -87,7 +87,7 @@ try {
   console.log('✅ PTV API Fetch: SUCCESS');
   console.log('');
   console.log('─────────────────────────────────────────────────────────────');
-  console.log('METRO TRAINS (South Yarra → City)');
+  console.log('METRO TRAINS (Origin Station → City)');
   console.log('─────────────────────────────────────────────────────────────');
   console.log('');
 
