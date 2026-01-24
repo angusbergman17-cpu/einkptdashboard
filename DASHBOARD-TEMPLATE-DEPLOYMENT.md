@@ -34,7 +34,7 @@ The dashboard template is the HTML/CSS/JavaScript visualization of the 800×480 
 - ✅ Countdown timer
 - ✅ Region data display
 - ✅ Error handling
-- ✅ Auto-detects localhost vs production
+- ✅ Uses production URL (ptv-trmnl-new.onrender.com)
 
 ### 2. Server Endpoint
 **Location**: `server.js` lines 904-1077 (`GET /admin/dashboard-preview`)
@@ -81,7 +81,7 @@ cd /Users/angusbergman/PTV-TRMNL-NEW
 npm start
 
 # Open endpoint (Terminal 2)
-open http://localhost:3000/admin/dashboard-preview
+open https://ptv-trmnl-new.onrender.com/admin/dashboard-preview
 
 # Or production
 open https://ptv-trmnl-new.onrender.com/admin/dashboard-preview
@@ -99,7 +99,7 @@ open https://ptv-trmnl-new.onrender.com/admin/dashboard-preview
 
 ```bash
 # Open admin panel
-open http://localhost:3000/admin
+open https://ptv-trmnl-new.onrender.com/admin
 
 # Click "Open Preview" button in Dashboard Preview card
 ```
@@ -183,9 +183,8 @@ GET /api/region-updates
 ### JavaScript Fetch Logic
 
 ```javascript
-const API_URL = window.location.hostname === 'localhost'
-  ? 'http://localhost:3000/api/region-updates'
-  : 'https://ptv-trmnl-new.onrender.com/api/region-updates';
+// Production API URL
+const API_URL = 'https://ptv-trmnl-new.onrender.com/api/region-updates';
 
 async function updateDashboard() {
   const response = await fetch(API_URL);
@@ -218,7 +217,7 @@ npm start
 # 2. Open standalone template
 open public/dashboard-template.html
 
-# 3. Verify data loads from localhost:3000
+# 3. Verify data loads from ptv-trmnl-new.onrender.com
 ```
 
 **Expected behavior**:
@@ -232,7 +231,7 @@ open public/dashboard-template.html
 
 ```bash
 # Open server-generated preview
-open http://localhost:3000/admin/dashboard-preview
+open https://ptv-trmnl-new.onrender.com/admin/dashboard-preview
 ```
 
 **Expected behavior**:
@@ -416,7 +415,7 @@ body {
 **Cause**: API not reachable or CORS error
 
 **Fix**:
-1. Check server is running: `curl http://localhost:3000/api/region-updates`
+1. Check server is running: `curl https://ptv-trmnl-new.onrender.com/api/region-updates`
 2. Open browser console (F12) and check for errors
 3. Verify API_URL in script matches server URL
 
@@ -427,7 +426,7 @@ body {
 **Fix**:
 1. Ensure server allows CORS (Express should allow all by default)
 2. Check browser console for specific error
-3. Try accessing API directly: `open http://localhost:3000/api/region-updates`
+3. Try accessing API directly: `open https://ptv-trmnl-new.onrender.com/api/region-updates`
 
 ### Issue: Data doesn't update
 

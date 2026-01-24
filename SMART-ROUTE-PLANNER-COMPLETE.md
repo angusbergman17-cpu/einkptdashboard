@@ -375,7 +375,7 @@ Expected output:
 ### Step 2: Open Admin Panel
 
 ```bash
-open http://localhost:3000/admin
+open https://ptv-trmnl-new.onrender.com/admin
 ```
 
 ### Step 3: Use Route Planner
@@ -831,7 +831,7 @@ Not yet implemented:
 ```bash
 cd /Users/angusbergman/PTV-TRMNL-NEW
 npm start
-open http://localhost:3000/admin
+open https://ptv-trmnl-new.onrender.com/admin
 ```
 
 Scroll down to **Smart Route Planner** card and enjoy your coffee! ☕🚆

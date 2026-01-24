@@ -6,7 +6,7 @@
 
 set -e
 
-BASE_URL="http://localhost:3000"
+BASE_URL="https://ptv-trmnl-new.onrender.com"
 TEMPLATE_FILE="public/dashboard-template.html"
 TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
 
@@ -359,7 +359,7 @@ echo "   - Data updates every 10 seconds"
 echo "   - No console errors"
 echo ""
 echo "4. Test server endpoint:"
-echo "   open http://localhost:3000/admin/dashboard-preview"
+echo "   open https://ptv-trmnl-new.onrender.com/admin/dashboard-preview"
 echo ""
 
 # ========== NEXT STEPS ==========

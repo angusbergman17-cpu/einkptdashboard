@@ -21,7 +21,7 @@
 - ✅ Countdown timer
 - ✅ Region data display panel
 - ✅ Error handling
-- ✅ Auto-detects localhost vs production
+- ✅ Uses production URL (ptv-trmnl-new.onrender.com)
 
 **Access**:
 ```bash
@@ -29,7 +29,7 @@
 open public/dashboard-template.html
 
 # Via server (when running)
-open http://localhost:3000/admin/dashboard-template.html
+open https://ptv-trmnl-new.onrender.com/admin/dashboard-template.html
 
 # Production (after deployment)
 open https://ptv-trmnl-new.onrender.com/admin/dashboard-template.html
@@ -101,7 +101,7 @@ chmod +x test-dashboard-template.sh
 
 ```bash
 # Open dashboard preview
-open http://localhost:3000/admin/dashboard-preview
+open https://ptv-trmnl-new.onrender.com/admin/dashboard-preview
 
 # Or standalone template
 open public/dashboard-template.html
@@ -400,7 +400,7 @@ https://ptv-trmnl-new.onrender.com/admin/dashboard-template.html
 **Fix**:
 ```bash
 # Check server is running
-curl http://localhost:3000/api/region-updates
+curl https://ptv-trmnl-new.onrender.com/api/region-updates
 
 # Check for errors in browser console (F12)
 ```

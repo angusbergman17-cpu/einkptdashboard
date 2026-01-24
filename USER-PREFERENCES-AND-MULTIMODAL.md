@@ -145,7 +145,7 @@ GET /admin/route/transit-modes
 
 2. **Open Admin Panel**:
    ```bash
-   open http://localhost:3000/admin
+   open https://ptv-trmnl-new.onrender.com/admin
    ```
 
 3. **Fill in User Preferences** (top section):
@@ -723,7 +723,7 @@ npm start
 **Next Action**: Configure preferences and test multi-modal routing
 
 ```bash
-npm start && open http://localhost:3000/admin
+npm start && open https://ptv-trmnl-new.onrender.com/admin
 ```
 
 **Scroll to User Preferences → Fill in details → Save → Calculate Route → View multi-modal options! 🚆🚊🚌🚄**

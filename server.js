@@ -44,7 +44,7 @@ preferences.load().then(() => {
   const status = preferences.getStatus();
   if (!status.configured) {
     console.log('⚠️  User preferences not fully configured');
-    console.log('   Please configure via admin panel: http://localhost:3000/admin');
+    console.log('   Please configure via admin panel: https://ptv-trmnl-new.onrender.com/admin');
   }
 });
 
@@ -2685,9 +2685,10 @@ app.get('/preview', (req, res) => {
 
 app.listen(PORT, async () => {
   console.log(`🚀 PTV-TRMNL server listening on port ${PORT}`);
-  console.log(`📍 Preview: http://localhost:${PORT}/preview`);
-  console.log(`🔗 TRMNL endpoint: http://localhost:${PORT}/api/screen`);
-  console.log(`💚 Keep-alive: http://localhost:${PORT}/api/keepalive`);
+  console.log(`📍 Preview: https://ptv-trmnl-new.onrender.com/preview`);
+  console.log(`🔗 TRMNL endpoint: https://ptv-trmnl-new.onrender.com/api/screen`);
+  console.log(`💚 Keep-alive: https://ptv-trmnl-new.onrender.com/api/keepalive`);
+  console.log(`🔧 Admin Panel: https://ptv-trmnl-new.onrender.com/admin`);
 
   // Initialize persistent storage
   await ensureCacheDir();

@@ -2162,7 +2162,7 @@ node test-data-pipeline.js
 ### test-endpoints.sh
 
 **Purpose**: HTTP endpoint validation
-**Requires**: Server running on localhost:3000
+**Requires**: Server running on ptv-trmnl-new.onrender.com
 
 **Tests**:
 1. Health check (/)
@@ -2188,22 +2188,22 @@ chmod +x test-endpoints.sh
 
 ```bash
 # 1. Check region updates
-curl -s http://localhost:3000/api/region-updates | jq '.regions'
+curl -s https://ptv-trmnl-new.onrender.com/api/region-updates | jq '.regions'
 
 # Expected: 7 regions with valid data
 
 # 2. Check weather
-curl -s http://localhost:3000/admin/weather | jq '.current.temperature'
+curl -s https://ptv-trmnl-new.onrender.com/admin/weather | jq '.current.temperature'
 
 # Expected: Number (e.g., 15)
 
 # 3. Check data mode
-curl -s http://localhost:3000/admin/status | jq '.dataMode'
+curl -s https://ptv-trmnl-new.onrender.com/admin/status | jq '.dataMode'
 
 # Expected: "Live"
 
 # 4. Check API config
-curl -s http://localhost:3000/admin/apis | jq '.ptv_opendata.status'
+curl -s https://ptv-trmnl-new.onrender.com/admin/apis | jq '.ptv_opendata.status'
 
 # Expected: "active"
 ```
@@ -2212,7 +2212,7 @@ curl -s http://localhost:3000/admin/apis | jq '.ptv_opendata.status'
 
 ```bash
 # Open dashboard visualization
-open http://localhost:3000/admin/dashboard-preview
+open https://ptv-trmnl-new.onrender.com/admin/dashboard-preview
 ```
 
 **Expected**:
@@ -2224,7 +2224,7 @@ open http://localhost:3000/admin/dashboard-preview
 
 ```bash
 # Open admin panel
-open http://localhost:3000/admin
+open https://ptv-trmnl-new.onrender.com/admin
 ```
 
 **Check**:
@@ -2331,7 +2331,7 @@ npm start
 
 # Expected output:
 # 🚀 PTV-TRMNL server listening on port 3000
-# 📍 Preview: http://localhost:3000/preview
+# 📍 Preview: https://ptv-trmnl-new.onrender.com/preview
 # ✅ Initial data loaded
 ```
 
@@ -2339,13 +2339,13 @@ npm start
 
 ```bash
 # Test region updates
-curl http://localhost:3000/api/region-updates
+curl https://ptv-trmnl-new.onrender.com/api/region-updates
 
 # Test weather
-curl http://localhost:3000/admin/weather
+curl https://ptv-trmnl-new.onrender.com/admin/weather
 
 # Open admin panel
-open http://localhost:3000/admin
+open https://ptv-trmnl-new.onrender.com/admin
 
 # Run validation scripts
 node test-data-pipeline.js
@@ -2427,7 +2427,7 @@ open https://ptv-trmnl-new.onrender.com/admin/dashboard-preview
 Edit `firmware/src/main.cpp`:
 
 ```cpp
-// Change from localhost to production URL
+// Production API URL
 const char* serverUrl = "https://ptv-trmnl-new.onrender.com/api/region-updates";
 ```
 
@@ -2577,7 +2577,7 @@ This keeps server warm and responsive for firmware requests.
 1. Check server logs for errors
 2. Test `/api/region-updates` endpoint:
    ```bash
-   curl http://localhost:3000/api/region-updates | jq '.regions | length'
+   curl https://ptv-trmnl-new.onrender.com/api/region-updates | jq '.regions | length'
    ```
 3. Verify `getRegionUpdates()` always returns 7 regions
 4. Check weather fallback logic
@@ -2736,7 +2736,7 @@ curl -H "Ocp-Apim-Subscription-Key: YOUR_TOKEN" \
 curl "https://api.weather.bom.gov.au/v1/locations/r1r0gx/observations" | jq .
 
 # Monitor region updates in real-time
-watch -n 5 'curl -s http://localhost:3000/api/region-updates | jq ".regions"'
+watch -n 5 'curl -s https://ptv-trmnl-new.onrender.com/api/region-updates | jq ".regions"'
 ```
 
 ## 13.3 Reset & Recovery Procedures
@@ -2745,10 +2745,10 @@ watch -n 5 'curl -s http://localhost:3000/api/region-updates | jq ".regions"'
 
 ```bash
 # Clear all caches
-curl -X POST http://localhost:3000/admin/cache/clear
+curl -X POST https://ptv-trmnl-new.onrender.com/admin/cache/clear
 
 # Force data refresh
-curl -X POST http://localhost:3000/admin/server/refresh
+curl -X POST https://ptv-trmnl-new.onrender.com/admin/server/refresh
 
 # Restart server (local)
 # Ctrl+C, then npm start
@@ -3204,9 +3204,9 @@ pio device monitor                     # Monitor serial
 pio run --target erase                 # Erase flash
 
 # Testing
-curl http://localhost:3000/api/region-updates | jq .
-curl http://localhost:3000/admin/weather | jq .
-curl http://localhost:3000/api/status | jq .
+curl https://ptv-trmnl-new.onrender.com/api/region-updates | jq .
+curl https://ptv-trmnl-new.onrender.com/admin/weather | jq .
+curl https://ptv-trmnl-new.onrender.com/api/status | jq .
 
 # Deployment
 git add .
@@ -3214,8 +3214,8 @@ git commit -m "message"
 git push origin main                   # Auto-deploys to Render
 
 # Troubleshooting
-curl -X POST http://localhost:3000/admin/cache/clear
-curl -X POST http://localhost:3000/admin/server/refresh
+curl -X POST https://ptv-trmnl-new.onrender.com/admin/cache/clear
+curl -X POST https://ptv-trmnl-new.onrender.com/admin/server/refresh
 ```
 
 ### Environment Variables
@@ -3242,7 +3242,7 @@ Temperature: (775, 410) - FONT_8x8
 ### Important URLs
 
 ```
-Local Server:       http://localhost:3000
+Local Server:       https://ptv-trmnl-new.onrender.com
 Production Server:  https://ptv-trmnl-new.onrender.com
 Admin Panel:        /admin
 Dashboard Preview:  /admin/dashboard-preview

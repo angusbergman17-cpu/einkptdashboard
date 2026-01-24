@@ -288,7 +288,7 @@ cd /Users/angusbergman/PTV-TRMNL-NEW
 npm start
 
 # Step 2: Open admin panel
-open http://localhost:3000/admin
+open https://ptv-trmnl-new.onrender.com/admin
 
 # Step 3: Use Smart Route Planner card
 # - Fill in addresses
@@ -454,7 +454,7 @@ open http://localhost:3000/admin
 1. ✅ **Start server and test**
    ```bash
    npm start
-   open http://localhost:3000/admin
+   open https://ptv-trmnl-new.onrender.com/admin
    ```
 
 2. ✅ **Test route calculation**
@@ -524,9 +524,9 @@ npm start
 ```
 
 **Access**:
-- Server: http://localhost:3000
-- Admin: http://localhost:3000/admin
-- Dashboard: http://localhost:3000/admin/dashboard-preview
+- Server: https://ptv-trmnl-new.onrender.com
+- Admin: https://ptv-trmnl-new.onrender.com/admin
+- Dashboard: https://ptv-trmnl-new.onrender.com/admin/dashboard-preview
 
 ### Production Deployment (Render.com)
 
@@ -677,7 +677,7 @@ git push origin main
 **Next Action**: Test route planner in admin panel
 
 ```bash
-npm start && open http://localhost:3000/admin
+npm start && open https://ptv-trmnl-new.onrender.com/admin
 ```
 
 **Enjoy your perfectly-timed coffee! ☕🚆😊**

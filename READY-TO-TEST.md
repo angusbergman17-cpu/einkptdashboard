@@ -192,7 +192,7 @@ chmod +x test-endpoints.sh
 
 #### Quick Test - Region Updates
 ```bash
-curl -s http://localhost:3000/api/region-updates | jq '.regions'
+curl -s https://ptv-trmnl-new.onrender.com/api/region-updates | jq '.regions'
 ```
 
 **Expected output**:
@@ -210,14 +210,14 @@ curl -s http://localhost:3000/api/region-updates | jq '.regions'
 
 #### Visual Test - Dashboard Preview
 ```bash
-open http://localhost:3000/admin/dashboard-preview
+open https://ptv-trmnl-new.onrender.com/admin/dashboard-preview
 ```
 
 **Expected**: HTML page showing live dashboard layout with auto-refresh every 10s
 
 #### Admin Panel Test
 ```bash
-open http://localhost:3000/admin
+open https://ptv-trmnl-new.onrender.com/admin
 ```
 
 **Check**:

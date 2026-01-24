@@ -57,12 +57,12 @@ cp .env.example .env
 ```bash
 npm start
 
-# Server starts on http://localhost:3000
-# Admin Panel: http://localhost:3000/admin
+# Server starts and connects to production
+# Admin Panel: https://ptv-trmnl-new.onrender.com/admin
 ```
 
 ### 5. Configure Preferences (First Time Only)
-1. Open `http://localhost:3000/admin` in browser
+1. Open `https://ptv-trmnl-new.onrender.com/admin` in browser
 2. Enter your addresses (autocomplete enabled)
 3. Set arrival time (e.g., 09:00)
 4. Click "Save All Preferences"
@@ -796,7 +796,7 @@ PORT=3000                                    # Server port (default: 3000)
 
 5. **Access Admin Panel**
    ```
-   http://localhost:3000/admin
+   https://ptv-trmnl-new.onrender.com/admin
    ```
 
 ### Production Deployment (Render)

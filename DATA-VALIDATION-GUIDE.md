@@ -89,9 +89,9 @@ npm start
 **Expected output**:
 ```
 🚀 PTV-TRMNL server listening on port 3000
-📍 Preview: http://localhost:3000/preview
-🔗 TRMNL endpoint: http://localhost:3000/api/screen
-💚 Keep-alive: http://localhost:3000/api/keepalive
+📍 Preview: https://ptv-trmnl-new.onrender.com/preview
+🔗 TRMNL endpoint: https://ptv-trmnl-new.onrender.com/api/screen
+💚 Keep-alive: https://ptv-trmnl-new.onrender.com/api/keepalive
 ✅ Initial data loaded
 ```
 
@@ -139,7 +139,7 @@ If the automated scripts don't work, test manually with curl:
 
 ### Test 1: Health Check
 ```bash
-curl http://localhost:3000/
+curl https://ptv-trmnl-new.onrender.com/
 ```
 **Expected**: `✅ PTV-TRMNL service running`
 
@@ -147,7 +147,7 @@ curl http://localhost:3000/
 
 ### Test 2: Region Updates (Most Important!)
 ```bash
-curl -s http://localhost:3000/api/region-updates | jq .
+curl -s https://ptv-trmnl-new.onrender.com/api/region-updates | jq .
 ```
 
 **Expected output**:
@@ -178,7 +178,7 @@ curl -s http://localhost:3000/api/region-updates | jq .
 
 ### Test 3: Weather Status
 ```bash
-curl -s http://localhost:3000/admin/weather | jq .
+curl -s https://ptv-trmnl-new.onrender.com/admin/weather | jq .
 ```
 
 **Expected**:
@@ -207,7 +207,7 @@ curl -s http://localhost:3000/admin/weather | jq .
 
 ### Test 4: Server Status
 ```bash
-curl -s http://localhost:3000/api/status | jq .
+curl -s https://ptv-trmnl-new.onrender.com/api/status | jq .
 ```
 
 **Expected**:
@@ -241,7 +241,7 @@ curl -s http://localhost:3000/api/status | jq .
 
 ### Test 5: Admin Status
 ```bash
-curl -s http://localhost:3000/admin/status | jq .
+curl -s https://ptv-trmnl-new.onrender.com/admin/status | jq .
 ```
 
 **Expected**:
@@ -269,7 +269,7 @@ curl -s http://localhost:3000/admin/status | jq .
 
 ### Test 6: API Configuration
 ```bash
-curl -s http://localhost:3000/admin/apis | jq .ptv_opendata
+curl -s https://ptv-trmnl-new.onrender.com/admin/apis | jq .ptv_opendata
 ```
 
 **Expected**:
@@ -495,7 +495,7 @@ curl "https://api.weather.bom.gov.au/v1/locations/r1r0gx/observations" | jq .
 ### Monitor Real-time Updates
 ```bash
 # Watch region updates every 5 seconds
-watch -n 5 'curl -s http://localhost:3000/api/region-updates | jq ".regions"'
+watch -n 5 'curl -s https://ptv-trmnl-new.onrender.com/api/region-updates | jq ".regions"'
 ```
 
 ---

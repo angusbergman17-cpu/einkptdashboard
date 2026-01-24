@@ -32,7 +32,7 @@ npm start
 ### Step 2: Open Admin Panel
 
 ```bash
-open http://localhost:3000/admin
+open https://ptv-trmnl-new.onrender.com/admin
 ```
 
 ### Step 3: Use Route Planner
@@ -133,7 +133,7 @@ Time available: 8 min | Time needed: 11 min
 
 ### Calculate Route
 ```bash
-curl -X POST http://localhost:3000/admin/route/calculate \
+curl -X POST https://ptv-trmnl-new.onrender.com/admin/route/calculate \
   -H "Content-Type: application/json" \
   -d '{
     "homeAddress": "123 Main St, South Yarra",
@@ -145,17 +145,17 @@ curl -X POST http://localhost:3000/admin/route/calculate \
 
 ### Get Cached Route
 ```bash
-curl http://localhost:3000/admin/route
+curl https://ptv-trmnl-new.onrender.com/admin/route
 ```
 
 ### Get PTV Connections
 ```bash
-curl http://localhost:3000/admin/route/connections
+curl https://ptv-trmnl-new.onrender.com/admin/route/connections
 ```
 
 ### Clear Cache
 ```bash
-curl -X DELETE http://localhost:3000/admin/route
+curl -X DELETE https://ptv-trmnl-new.onrender.com/admin/route
 ```
 
 ---
@@ -327,7 +327,7 @@ Hardcoded stations (will be dynamic in future):
 
 Start the server and visit:
 ```
-http://localhost:3000/admin
+https://ptv-trmnl-new.onrender.com/admin
 ```
 
 Enjoy your coffee! ☕

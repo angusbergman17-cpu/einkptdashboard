@@ -13,7 +13,7 @@ cd /Users/angusbergman/PTV-TRMNL-NEW
 npm start
 
 # Open admin panel
-open http://localhost:3000/admin
+open https://ptv-trmnl-new.onrender.com/admin
 
 # Scroll to "Smart Route Planner" card
 # Fill in addresses and time → Click "Calculate Route"
@@ -231,20 +231,20 @@ PTV-TRMNL-NEW/
 npm start
 
 # Open admin panel
-open http://localhost:3000/admin
+open https://ptv-trmnl-new.onrender.com/admin
 
 # Test API directly
-curl -X POST http://localhost:3000/admin/route/calculate \
+curl -X POST https://ptv-trmnl-new.onrender.com/admin/route/calculate \
   -H "Content-Type: application/json" \
   -d '{"homeAddress":"123 Main St, South Yarra","coffeeAddress":"Market Lane Coffee","workAddress":"456 Collins St","arrivalTime":"09:00"}'
 
 # Check cafe busy-ness
-curl -X POST http://localhost:3000/admin/cafe/busyness \
+curl -X POST https://ptv-trmnl-new.onrender.com/admin/cafe/busyness \
   -H "Content-Type: application/json" \
   -d '{"address":"Market Lane Coffee, Prahran"}'
 
 # Get peak times
-curl http://localhost:3000/admin/cafe/peak-times
+curl https://ptv-trmnl-new.onrender.com/admin/cafe/peak-times
 ```
 
 ---
@@ -311,9 +311,9 @@ curl http://localhost:3000/admin/cafe/peak-times
 
 | Resource | Location |
 |----------|----------|
-| Admin Panel | http://localhost:3000/admin |
-| Dashboard Preview | http://localhost:3000/admin/dashboard-preview |
-| API Status | http://localhost:3000/api/status |
+| Admin Panel | https://ptv-trmnl-new.onrender.com/admin |
+| Dashboard Preview | https://ptv-trmnl-new.onrender.com/admin/dashboard-preview |
+| API Status | https://ptv-trmnl-new.onrender.com/api/status |
 | Server Logs | Terminal window |
 | Documentation | `/Users/angusbergman/PTV-TRMNL-NEW/*.md` |
 
@@ -333,7 +333,7 @@ curl http://localhost:3000/admin/cafe/peak-times
 
 ```bash
 # Just run:
-npm start && open http://localhost:3000/admin
+npm start && open https://ptv-trmnl-new.onrender.com/admin
 ```
 
 **Scroll down → Find "Smart Route Planner" → Enter addresses → Click "Calculate Route"**

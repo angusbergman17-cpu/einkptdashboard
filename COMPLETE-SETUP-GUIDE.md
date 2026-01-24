@@ -35,10 +35,10 @@ npm start
 ### Step 2: Open Admin Panel
 
 ```bash
-open http://localhost:3000/admin
+open https://ptv-trmnl-new.onrender.com/admin
 ```
 
-Or visit: `http://localhost:3000/admin` in your browser
+Or visit: `https://ptv-trmnl-new.onrender.com/admin` in your browser
 
 ### Step 3: Configure User Preferences
 
@@ -342,10 +342,10 @@ After using a few times:
 
 ```bash
 # Via browser
-GET http://localhost:3000/admin/preferences/export
+GET https://ptv-trmnl-new.onrender.com/admin/preferences/export
 
 # Or via terminal
-curl http://localhost:3000/admin/preferences/export > backup.json
+curl https://ptv-trmnl-new.onrender.com/admin/preferences/export > backup.json
 ```
 
 ---
@@ -543,7 +543,7 @@ PTV-TRMNL-NEW/
 **Ready to go!** 🎉
 
 ```bash
-npm start && open http://localhost:3000/admin
+npm start && open https://ptv-trmnl-new.onrender.com/admin
 ```
 
 **Your perfect morning**: Leave home at exactly the right time, get your coffee, catch the best transit option, and arrive at work on time. Every day. ☕🚆😊

@@ -311,7 +311,7 @@ npm start
 ### 3. Admin Panel
 ```bash
 # Open in browser
-open http://localhost:3000/admin
+open https://ptv-trmnl-new.onrender.com/admin
 ```
 
 **Verify**:
@@ -327,15 +327,15 @@ open http://localhost:3000/admin
 ### 4. API Endpoints
 ```bash
 # Test status endpoint
-curl http://localhost:3000/admin/status | jq '.dataMode'
+curl https://ptv-trmnl-new.onrender.com/admin/status | jq '.dataMode'
 # Should return: "Live"
 
 # Test API data
-curl http://localhost:3000/admin/apis | jq '.ptv_opendata'
+curl https://ptv-trmnl-new.onrender.com/admin/apis | jq '.ptv_opendata'
 # Should show: { "api_key": "...", "token": "...", ... }
 
 # Test data fetch
-curl http://localhost:3000/api/status | jq '.data'
+curl https://ptv-trmnl-new.onrender.com/api/status | jq '.data'
 # Should return: { "trains": 3, "trams": 3, ... }
 ```
 
@@ -344,7 +344,7 @@ curl http://localhost:3000/api/status | jq '.data'
 ### 5. Live Data Test
 ```bash
 # Test region updates (used by firmware)
-curl http://localhost:3000/api/region-updates | jq
+curl https://ptv-trmnl-new.onrender.com/api/region-updates | jq
 ```
 
 **Expected**:

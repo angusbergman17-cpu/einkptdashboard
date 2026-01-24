@@ -290,10 +290,8 @@
   </div>
 
   <script>
-    // Configuration
-    const API_URL = window.location.hostname === 'localhost'
-      ? 'http://localhost:3000/api/region-updates'
-      : 'https://ptv-trmnl-new.onrender.com/api/region-updates';
+    // Configuration - Production URL
+    const API_URL = 'https://ptv-trmnl-new.onrender.com/api/region-updates';
 
     let countdown = 10;
     let countdownInterval;
