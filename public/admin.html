@@ -572,6 +572,39 @@
             margin: 0 10px;
             color: #cbd5e0;
         }
+
+        /* Autocomplete dropdown */
+        .autocomplete-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: rgba(30, 41, 59, 0.98);
+            border: 1px solid rgba(102, 126, 234, 0.4);
+            border-radius: 10px;
+            margin-top: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+        }
+
+        .autocomplete-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.2s;
+        }
+
+        .autocomplete-item:hover {
+            background: rgba(102, 126, 234, 0.2);
+        }
+
+        .autocomplete-item:last-child {
+            border-bottom: none;
+        }
     </style>
 </head>
 <body>
@@ -606,6 +639,174 @@
             <button class="nav-tab" onclick="showTab('journey')">🗺️ Journey Planner</button>
             <button class="nav-tab" onclick="showTab('config')">⚙️ Configuration</button>
             <button class="nav-tab" onclick="showTab('system')">🧠 System & Support</button>
+        </div>
+
+        <!-- Setup Tab -->
+        <div id="tab-setup" class="tab-content">
+            <div class="card" style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-left: 4px solid #667eea;">
+                <div class="card-header">
+                    <span class="card-icon">🚀</span>
+                    <h2>Quick Setup Wizard</h2>
+                </div>
+                <p style="margin-bottom: 20px; opacity: 0.9; font-size: 14px;">
+                    Get started in 4 easy steps. Configure your location, addresses, transit routes, and API credentials.
+                </p>
+
+                <!-- Setup Progress Indicator -->
+                <div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 30px;">
+                    <div id="setup-step-1" class="step" style="width: 40px; height: 40px; border-radius: 50%; background: #667eea; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600;">1</div>
+                    <div id="setup-step-2" class="step" style="width: 40px; height: 40px; border-radius: 50%; background: #e2e8f0; color: #2d3748; display: flex; align-items: center; justify-content: center; font-weight: 600;">2</div>
+                    <div id="setup-step-3" class="step" style="width: 40px; height: 40px; border-radius: 50%; background: #e2e8f0; color: #2d3748; display: flex; align-items: center; justify-content: center; font-weight: 600;">3</div>
+                    <div id="setup-step-4" class="step" style="width: 40px; height: 40px; border-radius: 50%; background: #e2e8f0; color: #2d3748; display: flex; align-items: center; justify-content: center; font-weight: 600;">4</div>
+                </div>
+
+                <!-- Step 1: Addresses -->
+                <div id="setup-content-1" class="setup-step-content">
+                    <h3 style="margin-bottom: 15px;">📍 Step 1: Your Addresses</h3>
+                    <p style="color: #718096; margin-bottom: 20px; font-size: 14px;">
+                        Enter your home and work addresses. We'll automatically detect your state and transit authority.
+                    </p>
+
+                    <div class="form-group" style="position: relative;">
+                        <label class="form-label">🏠 Home Address</label>
+                        <input type="text" id="setup-home-address" class="form-input" placeholder="Start typing your home address..." autocomplete="off">
+                        <div id="setup-home-suggestions" class="autocomplete-dropdown"></div>
+                    </div>
+
+                    <div class="form-group" style="position: relative;">
+                        <label class="form-label">💼 Work Address</label>
+                        <input type="text" id="setup-work-address" class="form-input" placeholder="Start typing your work address..." autocomplete="off">
+                        <div id="setup-work-suggestions" class="autocomplete-dropdown"></div>
+                    </div>
+
+                    <div class="form-group" style="position: relative;">
+                        <label class="form-label">☕ Favorite Cafe (Optional)</label>
+                        <input type="text" id="setup-cafe-address" class="form-input" placeholder="Start typing cafe name or address..." autocomplete="off">
+                        <div id="setup-cafe-suggestions" class="autocomplete-dropdown"></div>
+                    </div>
+
+                    <div id="setup-step-1-message" class="message" style="display: none;"></div>
+                    <button class="btn btn-block" onclick="setupNextStep(2)">Next: Transit Routes →</button>
+                </div>
+
+                <!-- Step 2: Transit Routes -->
+                <div id="setup-content-2" class="setup-step-content" style="display: none;">
+                    <h3 style="margin-bottom: 15px;">🚆 Step 2: Transit Route</h3>
+                    <p style="color: #718096; margin-bottom: 20px; font-size: 14px;">
+                        Configure your primary transit route. Add a second leg if you need to transfer.
+                    </p>
+
+                    <div class="form-group">
+                        <label class="form-label">Transit Mode</label>
+                        <select id="setup-mode1-type" class="form-input">
+                            <option value="0">Train</option>
+                            <option value="1">Tram</option>
+                            <option value="2">Bus</option>
+                            <option value="3">V/Line</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">From Station</label>
+                            <input type="text" id="setup-mode1-origin" class="form-input" placeholder="Origin station">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">To Station</label>
+                            <input type="text" id="setup-mode1-destination" class="form-input" placeholder="Destination station">
+                        </div>
+                    </div>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="setup-add-mode2" onchange="toggleSetupMode2()">
+                        <label for="setup-add-mode2">Add a second transit leg (e.g., train then tram)</label>
+                    </div>
+
+                    <div id="setup-mode2-section" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.2);">
+                        <div class="form-group">
+                            <label class="form-label">Second Transit Mode</label>
+                            <select id="setup-mode2-type" class="form-input">
+                                <option value="0">Train</option>
+                                <option value="1">Tram</option>
+                                <option value="2">Bus</option>
+                                <option value="3">V/Line</option>
+                            </select>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">From Station</label>
+                                <input type="text" id="setup-mode2-origin" class="form-input" placeholder="Transfer station">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">To Station</label>
+                                <input type="text" id="setup-mode2-destination" class="form-input" placeholder="Final destination">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button class="btn btn-secondary" onclick="setupPrevStep(1)" style="flex: 1;">← Back</button>
+                        <button class="btn" onclick="setupNextStep(3)" style="flex: 2;">Next: Arrival Time →</button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Journey Preferences -->
+                <div id="setup-content-3" class="setup-step-content" style="display: none;">
+                    <h3 style="margin-bottom: 15px;">⏰ Step 3: Journey Preferences</h3>
+                    <p style="color: #718096; margin-bottom: 20px; font-size: 14px;">
+                        When do you need to arrive at work? Should we include coffee stops?
+                    </p>
+
+                    <div class="form-group">
+                        <label class="form-label">Desired Arrival Time at Work</label>
+                        <input type="time" id="setup-arrival-time" class="form-input" value="09:00">
+                    </div>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="setup-include-coffee" checked onchange="toggleSetupCoffeeTime()">
+                        <label for="setup-include-coffee">Include coffee stops in journey planning</label>
+                    </div>
+
+                    <div id="setup-coffee-time-section" class="form-group">
+                        <label class="form-label">Estimated Coffee Prep Time (minutes)</label>
+                        <input type="number" id="setup-coffee-time" class="form-input" value="5" min="2" max="15">
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button class="btn btn-secondary" onclick="setupPrevStep(2)" style="flex: 1;">← Back</button>
+                        <button class="btn" onclick="setupNextStep(4)" style="flex: 2;">Next: API Setup →</button>
+                    </div>
+                </div>
+
+                <!-- Step 4: API Configuration -->
+                <div id="setup-content-4" class="setup-step-content" style="display: none;">
+                    <h3 style="margin-bottom: 15px;">🔑 Step 4: API Credentials</h3>
+                    <p style="color: #718096; margin-bottom: 20px; font-size: 14px;">
+                        Enter your API credentials from <a href="https://data.vic.gov.au/data/dataset/ptv-timetable-api" target="_blank" style="color: #667eea;">OpenData Transport Victoria</a>
+                    </p>
+
+                    <div id="setup-detected-authority" class="message message-info" style="display: none;"></div>
+
+                    <div class="form-group">
+                        <label class="form-label">API Key</label>
+                        <input type="text" id="setup-api-key" class="form-input" placeholder="Your API Key from OpenData Transport Victoria">
+                        <small style="color: rgba(255,255,255,0.6); font-size: 12px;">Previously called "Developer ID"</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">API Token</label>
+                        <input type="password" id="setup-api-token" class="form-input" placeholder="Your API Token">
+                    </div>
+
+                    <div id="setup-step-4-message" class="message" style="display: none;"></div>
+
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button class="btn btn-secondary" onclick="setupPrevStep(3)" style="flex: 1;">← Back</button>
+                        <button class="btn btn-success" onclick="completeSetup()" style="flex: 2;">✓ Complete Setup</button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Live Data Tab -->
@@ -2751,12 +2952,20 @@
                 return;
             }
 
-            // Fetch current configuration to show active services
-            const attributions = await fetch(BASE_URL + '/api/attributions').then(r => r.json()).catch(() => ({ attributions: [] }));
+            // Fetch current configuration to show active services (or defaults if not configured)
+            const attributions = await fetch(BASE_URL + '/api/attributions').then(r => r.json()).catch(() => ({
+                attributions: [
+                    { name: 'PTV-TRMNL', license: 'CC BY-NC 4.0', required: true },
+                    { name: 'Transport Authority', license: 'Varies by state', required: true },
+                    { name: 'Bureau of Meteorology', license: 'CC BY 3.0 AU', required: true },
+                    { name: 'OpenStreetMap', license: 'ODbL', required: true }
+                ]
+            }));
             const preferences = await fetch(BASE_URL + '/admin/preferences').then(r => r.json()).catch(() => null);
 
-            const transitAuthority = attributions.transitAuthority || 'Not configured';
-            const location = attributions.location || 'Not configured';
+            // Use defaults if not configured to show full architecture BEFORE user configuration
+            const transitAuthority = preferences?.location?.transitAuthority || 'Auto-detected based on your state';
+            const location = preferences?.location?.city ? `${preferences.location.city}, ${preferences.location.state}` : 'To be configured';
             const hasGooglePlaces = !!process.env.GOOGLE_PLACES_API_KEY;
 
             vizDiv.innerHTML = `
@@ -2891,6 +3100,184 @@
             vizDiv.style.display = 'block';
             toggleBtn.innerHTML = '<span style="font-size: 20px;">🔼</span> Hide Architecture Map';
         }
+
+        // ===== SETUP WIZARD FUNCTIONS =====
+
+        // Setup wizard step navigation
+        function setupNextStep(step) {
+            // Hide all steps
+            for (let i = 1; i <= 4; i++) {
+                document.getElementById(`setup-content-${i}`).style.display = 'none';
+                document.getElementById(`setup-step-${i}`).style.background = '#e2e8f0';
+                document.getElementById(`setup-step-${i}`).style.color = '#2d3748';
+            }
+
+            // Show current step
+            document.getElementById(`setup-content-${step}`).style.display = 'block';
+            document.getElementById(`setup-step-${step}`).style.background = '#667eea';
+            document.getElementById(`setup-step-${step}`).style.color = 'white';
+
+            // Mark previous steps as complete
+            for (let i = 1; i < step; i++) {
+                document.getElementById(`setup-step-${i}`).style.background = '#48bb78';
+                document.getElementById(`setup-step-${i}`).style.color = 'white';
+            }
+        }
+
+        function setupPrevStep(step) {
+            setupNextStep(step);
+        }
+
+        function toggleSetupMode2() {
+            const section = document.getElementById('setup-mode2-section');
+            const checkbox = document.getElementById('setup-add-mode2');
+            section.style.display = checkbox.checked ? 'block' : 'none';
+        }
+
+        function toggleSetupCoffeeTime() {
+            const section = document.getElementById('setup-coffee-time-section');
+            const checkbox = document.getElementById('setup-include-coffee');
+            section.style.display = checkbox.checked ? 'block' : 'none';
+        }
+
+        async function completeSetup() {
+            const data = {
+                addresses: {
+                    home: document.getElementById('setup-home-address').value,
+                    work: document.getElementById('setup-work-address').value,
+                    cafe: document.getElementById('setup-cafe-address').value
+                },
+                journey: {
+                    arrivalTime: document.getElementById('setup-arrival-time').value,
+                    coffeeEnabled: document.getElementById('setup-include-coffee').checked,
+                    coffeeTime: parseInt(document.getElementById('setup-coffee-time').value) || 5,
+                    transitRoute: {
+                        numberOfModes: document.getElementById('setup-add-mode2').checked ? 2 : 1,
+                        mode1: {
+                            type: parseInt(document.getElementById('setup-mode1-type').value),
+                            originStation: { name: document.getElementById('setup-mode1-origin').value },
+                            destinationStation: { name: document.getElementById('setup-mode1-destination').value }
+                        }
+                    }
+                },
+                api: {
+                    key: document.getElementById('setup-api-key').value,
+                    token: document.getElementById('setup-api-token').value
+                }
+            };
+
+            // Add mode2 if enabled
+            if (data.journey.transitRoute.numberOfModes === 2) {
+                data.journey.transitRoute.mode2 = {
+                    type: parseInt(document.getElementById('setup-mode2-type').value),
+                    originStation: { name: document.getElementById('setup-mode2-origin').value },
+                    destinationStation: { name: document.getElementById('setup-mode2-destination').value }
+                };
+            }
+
+            try {
+                const response = await fetch(BASE_URL + '/admin/preferences', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage('setup-step-4-message', '✅ Setup complete! Redirecting to Live Data...', 'success');
+                    setTimeout(() => {
+                        showTab('live');
+                        loadAllData();
+                    }, 2000);
+                } else {
+                    showMessage('setup-step-4-message', '❌ ' + (result.message || 'Setup failed'), 'error');
+                }
+            } catch (error) {
+                showMessage('setup-step-4-message', '❌ Error: ' + error.message, 'error');
+            }
+        }
+
+        // ===== ADDRESS AUTOCOMPLETE FUNCTIONS =====
+
+        let addressSearchTimeout = null;
+
+        function setupAddressAutocomplete(inputId, dropdownId) {
+            const input = document.getElementById(inputId);
+            const dropdown = document.getElementById(dropdownId);
+
+            if (!input || !dropdown) return;
+
+            input.addEventListener('input', function() {
+                const query = this.value.trim();
+
+                clearTimeout(addressSearchTimeout);
+
+                if (query.length < 3) {
+                    dropdown.style.display = 'none';
+                    return;
+                }
+
+                addressSearchTimeout = setTimeout(async () => {
+                    try {
+                        const response = await fetch(`${BASE_URL}/admin/address/search?query=${encodeURIComponent(query)}`);
+                        const data = await response.json();
+
+                        if (data.success && data.results && data.results.length > 0) {
+                            dropdown.innerHTML = data.results.map(result => `
+                                <div class="autocomplete-item" onclick='selectAddress("${inputId}", "${dropdownId}", ${JSON.stringify(result).replace(/'/g, "\\'")})'>
+                                    <div style="font-weight: 600; margin-bottom: 3px;">${result.display_name || result.address}</div>
+                                    <div style="font-size: 12px; opacity: 0.7;">${result.full_address || ''}</div>
+                                </div>
+                            `).join('');
+                            dropdown.style.display = 'block';
+                        } else {
+                            dropdown.innerHTML = '<div class="autocomplete-item" style="opacity: 0.6;">No results found</div>';
+                            dropdown.style.display = 'block';
+                        }
+                    } catch (error) {
+                        console.error('Address search error:', error);
+                        dropdown.innerHTML = '<div class="autocomplete-item" style="color: #fc8181;">Search error. Please try again.</div>';
+                        dropdown.style.display = 'block';
+                    }
+                }, 300);
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (e.target !== input) {
+                    dropdown.style.display = 'none';
+                }
+            });
+        }
+
+        function selectAddress(inputId, dropdownId, result) {
+            const input = document.getElementById(inputId);
+            const dropdown = document.getElementById(dropdownId);
+
+            if (input) {
+                input.value = result.display_name || result.address;
+                input.setAttribute('data-lat', result.lat);
+                input.setAttribute('data-lon', result.lon);
+            }
+
+            if (dropdown) {
+                dropdown.style.display = 'none';
+            }
+        }
+
+        // Initialize autocomplete on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Setup autocomplete for Setup tab
+            setupAddressAutocomplete('setup-home-address', 'setup-home-suggestions');
+            setupAddressAutocomplete('setup-work-address', 'setup-work-suggestions');
+            setupAddressAutocomplete('setup-cafe-address', 'setup-cafe-suggestions');
+
+            // Setup autocomplete for Journey Planner tab (if fields exist)
+            setupAddressAutocomplete('home-address', 'home-suggestions');
+            setupAddressAutocomplete('work-address', 'work-suggestions');
+            setupAddressAutocomplete('cafe-address', 'cafe-suggestions');
+        });
     </script>
 </body>
 </html>
