@@ -787,6 +787,68 @@
                 <div id="architecture-viz" style="display: none; margin-top: 20px;"></div>
             </div>
 
+            <!-- Decision Log -->
+            <div class="card" style="margin-bottom: 20px;">
+                <div class="card-header">
+                    <span class="card-icon">📋</span>
+                    <h2>Decision Log</h2>
+                </div>
+                <p style="margin-bottom: 15px; opacity: 0.9;">
+                    View all decisions made by the system for full transparency and troubleshooting
+                </p>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <button class="btn btn-primary" onclick="loadDecisionLog()" style="flex: 1;">
+                        <span style="font-size: 18px;">📊</span> View Decision Log
+                    </button>
+                    <button class="btn btn-success" onclick="exportDecisionLog()" style="flex: 1;">
+                        <span style="font-size: 18px;">💾</span> Export Logs
+                    </button>
+                </div>
+                <div id="decision-log-content" style="display: none; margin-top: 20px; max-height: 500px; overflow-y: auto;">
+                    <div id="decision-log-stats" style="margin-bottom: 15px;"></div>
+                    <div id="decision-log-entries"></div>
+                </div>
+            </div>
+
+            <!-- Feedback Form -->
+            <div class="card" style="margin-bottom: 20px;">
+                <div class="card-header">
+                    <span class="card-icon">💬</span>
+                    <h2>Send Feedback & Ideas</h2>
+                </div>
+                <p style="margin-bottom: 15px; opacity: 0.9;">
+                    Have ideas for improvements or experiencing issues? Send feedback directly to Angus Bergman.
+                </p>
+                <div id="feedback-form">
+                    <div class="form-group">
+                        <label class="form-label">Your Name (Optional)</label>
+                        <input type="text" id="feedback-name" class="form-input" placeholder="Your name">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Your Email (Optional)</label>
+                        <input type="email" id="feedback-email" class="form-input" placeholder="your.email@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Feedback Type</label>
+                        <select id="feedback-type" class="form-input">
+                            <option value="idea">💡 Feature Idea</option>
+                            <option value="bug">🐛 Bug Report</option>
+                            <option value="question">❓ Question</option>
+                            <option value="praise">🎉 Praise</option>
+                            <option value="other">📝 Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Message</label>
+                        <textarea id="feedback-message" class="form-input" rows="5" placeholder="Describe your feedback, idea, or issue..." required></textarea>
+                    </div>
+                    <button class="btn btn-primary btn-block" onclick="submitFeedback()">
+                        <span style="font-size: 18px;">📨</span> Send Feedback
+                    </button>
+                    <div id="feedback-status" style="margin-top: 15px; text-align: center; display: none;"></div>
+                </div>
+            </div>
+
             <!-- Support Section -->
             <div class="card" style="background: linear-gradient(135deg, #40DCA5 0%, #2ecc71 100%); color: white; border: none;">
                 <div class="card-header" style="border: none;">
@@ -1025,7 +1087,76 @@
         async function loadJourneySummary() {
             try {
                 const journey = await fetch(BASE_URL + '/admin/route/auto').then(r => r.json());
-                if (journey?.summary) {
+                if (journey?.success && journey?.route) {
+                    document.getElementById('journey-summary-card').style.display = 'block';
+
+                    let legsHTML = '';
+                    const route = journey.route;
+
+                    // Display all journey legs
+                    if (route.legs && route.legs.length > 0) {
+                        legsHTML = route.legs.map((leg, idx) => {
+                            const icon = {
+                                'train': '🚆',
+                                'tram': '🚊',
+                                'bus': '🚌',
+                                'walk': '🚶',
+                                'walking': '🚶',
+                                'coffee': '☕'
+                            }[leg.type?.toLowerCase()] || '🚶';
+
+                            return `
+                                <div style="display: flex; align-items: center; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 10px;">
+                                    <div style="font-size: 28px; margin-right: 15px;">${icon}</div>
+                                    <div style="flex: 1;">
+                                        <div style="font-weight: 600; margin-bottom: 4px;">${leg.route || leg.description || 'Walking'}</div>
+                                        <div style="font-size: 13px; opacity: 0.8;">
+                                            ${leg.from || ''} ${leg.to ? '→ ' + leg.to : ''}
+                                        </div>
+                                        ${leg.departureTime ? `<div style="font-size: 12px; margin-top: 4px;">Depart: ${leg.departureTime}</div>` : ''}
+                                    </div>
+                                    <div style="text-align: right; font-size: 13px;">
+                                        ${leg.duration ? `<div>${leg.duration} min</div>` : ''}
+                                        ${leg.delay ? `<div style="color: #fc8181; font-weight: 600;">+${leg.delay} min delay</div>` : ''}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                    }
+
+                    document.getElementById('journey-summary').innerHTML = `
+                        <div style="margin-bottom: 20px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                                <div style="padding: 15px; background: rgba(102, 126, 234, 0.15); border-radius: 8px;">
+                                    <div style="font-size: 12px; opacity: 0.8; margin-bottom: 5px;">🏠 Leave Home</div>
+                                    <div style="font-size: 24px; font-weight: 700;">${journey.summary?.must_leave_home || route.startTime || '--:--'}</div>
+                                </div>
+                                <div style="padding: 15px; background: rgba(72, 187, 120, 0.15); border-radius: 8px;">
+                                    <div style="font-size: 12px; opacity: 0.8; margin-bottom: 5px;">🏢 Arrive Work</div>
+                                    <div style="font-size: 24px; font-weight: 700;">${journey.arrivalTime || journey.summary?.arrival_at_work || '--:--'}</div>
+                                </div>
+                            </div>
+
+                            ${route.includedCoffee ? `
+                                <div style="padding: 12px; background: rgba(237, 137, 54, 0.15); border-radius: 8px; margin-bottom: 15px; text-align: center;">
+                                    ☕ Coffee stop included at ${route.cafeName || 'selected cafe'}
+                                    ${route.coffeeWaitTime ? ` (${route.coffeeWaitTime} min wait)` : ''}
+                                </div>
+                            ` : ''}
+
+                            <div style="font-weight: 600; margin-bottom: 10px; font-size: 14px;">📍 Journey Breakdown:</div>
+                            ${legsHTML || '<div style="opacity: 0.6;">No journey legs available</div>'}
+
+                            ${journey.warnings && journey.warnings.length > 0 ? `
+                                <div style="margin-top: 15px; padding: 12px; background: rgba(252, 129, 129, 0.15); border-radius: 8px;">
+                                    <div style="font-weight: 600; margin-bottom: 8px;">⚠️ Warnings:</div>
+                                    ${journey.warnings.map(w => `<div style="font-size: 13px; margin-bottom: 4px;">• ${w}</div>`).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                } else if (journey?.summary) {
+                    // Fallback for old format
                     document.getElementById('journey-summary-card').style.display = 'block';
                     document.getElementById('journey-summary').innerHTML = `
                         <div class="route-summary">
@@ -1035,6 +1166,7 @@
                     `;
                 }
             } catch (e) {
+                console.error('Journey summary error:', e);
                 document.getElementById('journey-summary-card').style.display = 'none';
             }
         }
@@ -1359,10 +1491,16 @@
                     <div class="arch-arrow">↓</div>
 
                     <div class="arch-node">
-                        <div class="arch-node-title">2️⃣ Address Geocoding</div>
+                        <div class="arch-node-title">2️⃣ Multi-Tier Address Geocoding</div>
                         <div class="arch-node-desc">
-                            <strong>OpenStreetMap Nominatim</strong> converts your addresses to GPS coordinates<br>
-                            <em>Cached in memory for performance</em>
+                            <strong>6-Tier Fallback System</strong> finds addresses with maximum accuracy:<br>
+                            1️⃣ <strong>Google Places</strong> (best for cafes/businesses)<br>
+                            2️⃣ <strong>Mapbox</strong> (excellent accuracy)<br>
+                            3️⃣ <strong>HERE</strong> (optimized for Australia)<br>
+                            4️⃣ <strong>Foursquare</strong> (venues/locations)<br>
+                            5️⃣ <strong>LocationIQ</strong> (free tier)<br>
+                            6️⃣ <strong>Nominatim</strong> (always available)<br>
+                            <em>Cached in memory for 24 hours</em>
                         </div>
                     </div>
 
@@ -1391,8 +1529,9 @@
                     <div class="arch-node">
                         <div class="arch-node-title">5️⃣ Transit Data Fetching</div>
                         <div class="arch-node-desc">
-                            <strong>PTV GTFS-Realtime API</strong> provides live train/tram/bus departures<br>
-                            HMAC-SHA1 authentication · 25-second cache TTL
+                            <strong>Transport Victoria GTFS-Realtime API</strong> provides live departures<br>
+                            OpenData Platform · Metro Trains, Yarra Trams, Metro Bus, V/Line<br>
+                            API Key authentication · 30-second cache TTL
                         </div>
                     </div>
 
@@ -1419,7 +1558,18 @@
                     <div class="arch-arrow">↓</div>
 
                     <div class="arch-node">
-                        <div class="arch-node-title">8️⃣ Coffee Decision</div>
+                        <div class="arch-node-title">8️⃣ Real-Time Delay Detection</div>
+                        <div class="arch-node-desc">
+                            <strong>Live GTFS-RT Monitoring</strong> detects service disruptions<br>
+                            Automatically recalculates connections when delays occur<br>
+                            Updates every 30 seconds · Shows revised departure times
+                        </div>
+                    </div>
+
+                    <div class="arch-arrow">↓</div>
+
+                    <div class="arch-node">
+                        <div class="arch-node-title">9️⃣ Coffee Decision</div>
                         <div class="arch-node-desc">
                             Compares available time vs required time (walk + coffee purchase + walk)<br>
                             <strong>Result:</strong> ☕ YES or ⚡ NO
@@ -1429,10 +1579,24 @@
                     <div class="arch-arrow">↓</div>
 
                     <div class="arch-node">
-                        <div class="arch-node-title">9️⃣ Weather Integration</div>
+                        <div class="arch-node-title">🔟 Weather Integration</div>
                         <div class="arch-node-desc">
                             <strong>Bureau of Meteorology</strong> official JSON feeds<br>
                             Updates every 30 min · 10-minute cache
+                        </div>
+                    </div>
+
+                    <div class="arch-arrow">↓</div>
+
+                    <div class="arch-node">
+                        <div class="arch-node-title">1️⃣1️⃣ Decision Logging</div>
+                        <div class="arch-node-desc">
+                            <strong>Transparent Decision Trail</strong> records all system decisions:<br>
+                            • Geocoding service used<br>
+                            • Route calculations<br>
+                            • Delay detections<br>
+                            • Connection adjustments<br>
+                            <em>Available for troubleshooting and transparency</em>
                         </div>
                     </div>
 
@@ -1459,6 +1623,151 @@
                     </div>
                 </div>
             `;
+        }
+
+        // Decision Log Functions
+        async function loadDecisionLog() {
+            const content = document.getElementById('decision-log-content');
+            const stats = document.getElementById('decision-log-stats');
+            const entries = document.getElementById('decision-log-entries');
+
+            try {
+                const response = await fetch(BASE_URL + '/api/decisions?limit=50');
+                const data = await response.json();
+
+                if (data.success) {
+                    // Show content
+                    content.style.display = 'block';
+
+                    // Display stats
+                    stats.innerHTML = `
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                            <div>
+                                <div style="font-size: 24px; font-weight: 700;">${data.stats.totalDecisions}</div>
+                                <div style="font-size: 12px; opacity: 0.8;">Total Decisions</div>
+                            </div>
+                            ${Object.entries(data.stats.categories).map(([cat, count]) => `
+                                <div>
+                                    <div style="font-size: 20px; font-weight: 600;">${count}</div>
+                                    <div style="font-size: 11px; opacity: 0.8;">${cat}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+
+                    // Display log entries
+                    if (data.logs.length > 0) {
+                        entries.innerHTML = `
+                            <div style="font-weight: 600; margin: 15px 0 10px 0; font-size: 14px;">Recent Decisions (Last 50):</div>
+                            ${data.logs.reverse().map(log => {
+                                const categoryColors = {
+                                    'Geocoding': 'rgba(102, 126, 234, 0.15)',
+                                    'Route Calculation': 'rgba(72, 187, 120, 0.15)',
+                                    'Delay Detection': 'rgba(252, 129, 129, 0.15)',
+                                    'Connection Adjustment': 'rgba(237, 137, 54, 0.15)',
+                                    'Coffee Decision': 'rgba(139, 92, 246, 0.15)',
+                                    'API Fallback': 'rgba(251, 191, 36, 0.15)',
+                                    'Transit Mode Selection': 'rgba(59, 130, 246, 0.15)',
+                                    'Cache': 'rgba(156, 163, 175, 0.15)'
+                                };
+
+                                const bgColor = categoryColors[log.category] || 'rgba(255,255,255,0.05)';
+
+                                return `
+                                    <div style="padding: 12px; background: ${bgColor}; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid rgba(255,255,255,0.3);">
+                                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 6px;">
+                                            <div style="font-weight: 600; font-size: 13px;">${log.category}</div>
+                                            <div style="font-size: 11px; opacity: 0.7; font-family: 'Courier New', monospace;">
+                                                ${new Date(log.timestamp).toLocaleTimeString()}
+                                            </div>
+                                        </div>
+                                        <div style="font-size: 13px; margin-bottom: 4px;">${log.decision}</div>
+                                        ${log.details ? `
+                                            <details style="margin-top: 6px; font-size: 12px; opacity: 0.8;">
+                                                <summary style="cursor: pointer; font-size: 11px;">Details</summary>
+                                                <pre style="margin-top: 6px; padding: 8px; background: rgba(0,0,0,0.2); border-radius: 4px; overflow-x: auto; font-size: 11px;">${JSON.stringify(log.details, null, 2)}</pre>
+                                            </details>
+                                        ` : ''}
+                                    </div>
+                                `;
+                            }).join('')}
+                        `;
+                    } else {
+                        entries.innerHTML = '<div style="padding: 20px; text-align: center; opacity: 0.6;">No decisions logged yet</div>';
+                    }
+                }
+            } catch (error) {
+                content.style.display = 'block';
+                entries.innerHTML = `<div style="padding: 20px; text-align: center; color: #fc8181;">Error loading decision log: ${error.message}</div>`;
+            }
+        }
+
+        async function exportDecisionLog() {
+            try {
+                const response = await fetch(BASE_URL + '/api/decisions/export');
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `decisions-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                alert('✅ Decision log exported successfully!');
+            } catch (error) {
+                alert('❌ Error exporting decision log: ' + error.message);
+            }
+        }
+
+        // Feedback Form
+        async function submitFeedback() {
+            const name = document.getElementById('feedback-name').value;
+            const email = document.getElementById('feedback-email').value;
+            const type = document.getElementById('feedback-type').value;
+            const message = document.getElementById('feedback-message').value;
+            const status = document.getElementById('feedback-status');
+
+            if (!message.trim()) {
+                status.style.display = 'block';
+                status.style.color = '#fc8181';
+                status.textContent = '❌ Please enter a message';
+                return;
+            }
+
+            status.style.display = 'block';
+            status.style.color = '#4a5568';
+            status.textContent = '📤 Sending...';
+
+            try {
+                const response = await fetch(BASE_URL + '/api/feedback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: name || 'Anonymous',
+                        email: email || 'No email provided',
+                        type,
+                        message,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    status.style.color = '#48bb78';
+                    status.textContent = '✅ Feedback sent successfully! Thank you for your input.';
+                    // Clear form
+                    document.getElementById('feedback-name').value = '';
+                    document.getElementById('feedback-email').value = '';
+                    document.getElementById('feedback-message').value = '';
+                } else {
+                    throw new Error(result.message || 'Failed to send feedback');
+                }
+            } catch (error) {
+                status.style.color = '#fc8181';
+                status.textContent = `❌ Error: ${error.message}`;
+            }
         }
     </script>
 </body>

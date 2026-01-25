@@ -50,8 +50,16 @@ class GeocodingService {
       const cached = this.cache.get(cacheKey);
       if (Date.now() - cached.timestamp < this.cacheExpiry) {
         console.log(`✓ Geocode cache hit: ${address}`);
+        if (global.decisionLogger) {
+          global.decisionLogger.logCacheUsage('Geocoding', true, cacheKey);
+        }
         return cached.result;
       }
+    }
+
+    // Cache miss
+    if (global.decisionLogger) {
+      global.decisionLogger.logCacheUsage('Geocoding', false, cacheKey);
     }
 
     const country = options.country || 'AU';
@@ -90,6 +98,12 @@ class GeocodingService {
           result.source = service.name;
           attempts.push({ service: service.name, success: true });
           console.log(`✅ ${service.name} succeeded: ${result.formattedAddress}`);
+
+          // Log successful geocoding decision
+          if (global.decisionLogger) {
+            global.decisionLogger.logGeocoding(address, service.name, result, attempts);
+          }
+
           break;
         }
       } catch (error) {
@@ -99,6 +113,10 @@ class GeocodingService {
     }
 
     if (!result) {
+      // Log failed geocoding attempt
+      if (global.decisionLogger) {
+        global.decisionLogger.logGeocoding(address, 'FAILED', null, attempts);
+      }
       throw new Error(`All geocoding services failed for "${address}". Attempts: ${attempts.map(a => a.service).join(', ')}`);
     }
 

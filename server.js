@@ -22,6 +22,7 @@ import PreferencesManager from './preferences-manager.js';
 import MultiModalRouter from './multi-modal-router.js';
 import SmartJourneyPlanner from './smart-journey-planner.js';
 import GeocodingService from './geocoding-service.js';
+import DecisionLogger from './decision-logger.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -42,6 +43,10 @@ const smartPlanner = new SmartJourneyPlanner();
 global.geocodingService = new GeocodingService();
 console.log('✅ Multi-tier geocoding service initialized');
 console.log('   Available services:', global.geocodingService.getAvailableServices());
+
+// Initialize decision logger (global for transparency and troubleshooting)
+global.decisionLogger = new DecisionLogger();
+console.log('✅ Decision logger initialized for full transparency');
 
 // Load preferences on startup
 preferences.load().then(() => {
@@ -389,6 +394,122 @@ app.get('/api/version', (req, res) => {
       date: new Date().toISOString().split('T')[0],
       fullHash: 'development',
       message: 'Development build'
+    });
+  }
+});
+
+// Decision log endpoints (transparency and troubleshooting)
+app.get('/api/decisions', (req, res) => {
+  try {
+    const { category, since, limit } = req.query;
+
+    let logs;
+    if (category) {
+      logs = global.decisionLogger.getLogsByCategory(category);
+    } else if (since) {
+      logs = global.decisionLogger.getLogsSince(since);
+    } else {
+      const count = limit ? parseInt(limit) : 100;
+      logs = global.decisionLogger.getRecentLogs(count);
+    }
+
+    res.json({
+      success: true,
+      stats: global.decisionLogger.getStats(),
+      logs
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+app.get('/api/decisions/export', (req, res) => {
+  try {
+    const exported = global.decisionLogger.export();
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="decisions-${new Date().toISOString().split('T')[0]}.json"`);
+    res.send(exported);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+app.post('/api/decisions/clear', (req, res) => {
+  try {
+    global.decisionLogger.clear();
+    res.json({
+      success: true,
+      message: 'Decision log cleared'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Feedback submission endpoint
+app.post('/api/feedback', async (req, res) => {
+  try {
+    const { name, email, type, message, timestamp } = req.body;
+
+    if (!message || !message.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Message is required'
+      });
+    }
+
+    // Log feedback to console and decision logger
+    const feedbackLog = {
+      from: name || 'Anonymous',
+      email: email || 'No email provided',
+      type: type || 'other',
+      message: message.trim(),
+      timestamp: timestamp || new Date().toISOString()
+    };
+
+    console.log('📨 FEEDBACK RECEIVED:');
+    console.log(JSON.stringify(feedbackLog, null, 2));
+
+    // Log to decision logger for record keeping
+    if (global.decisionLogger) {
+      global.decisionLogger.log({
+        category: 'User Feedback',
+        decision: `Feedback received: ${type}`,
+        details: feedbackLog
+      });
+    }
+
+    // TODO: Implement email sending using nodemailer
+    // For now, feedback is logged to console and decision log
+    // To enable email: install nodemailer and configure SMTP settings
+    // Example:
+    // const transporter = nodemailer.createTransport({...});
+    // await transporter.sendMail({
+    //   from: 'noreply@ptv-trmnl.com',
+    //   to: 'angusbergman17@gmail.com',
+    //   subject: `PTV-TRMNL Feedback: ${type}`,
+    //   text: `From: ${name} (${email})\nType: ${type}\n\n${message}`
+    // });
+
+    res.json({
+      success: true,
+      message: 'Feedback received and logged. Thank you for your input!'
+    });
+
+  } catch (error) {
+    console.error('Feedback submission error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to submit feedback: ' + error.message
     });
   }
 });
