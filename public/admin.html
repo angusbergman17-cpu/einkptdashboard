@@ -3,18 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PTV-TRMNL Admin Panel</title>
+    <title>PTV-TRMNL Admin</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             min-height: 100vh;
+            color: white;
             padding: 20px;
         }
 
@@ -24,62 +21,93 @@
         }
 
         .header {
-            background: white;
-            border-radius: 12px;
-            padding: 30px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
         }
 
         .header h1 {
-            color: #2d3748;
             font-size: 32px;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
 
-        .header p {
-            color: #718096;
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(34, 197, 94, 0.2);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        .live-dot {
+            width: 10px;
+            height: 10px;
+            background: #22c55e;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        .time-display {
+            font-size: 48px;
+            font-weight: 700;
+            margin: 15px 0 5px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .date-display {
             font-size: 16px;
+            opacity: 0.8;
         }
 
-        .status-bar {
+        /* Navigation tabs */
+        .nav-tabs {
             display: flex;
-            gap: 15px;
-            margin-top: 20px;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
             flex-wrap: wrap;
         }
 
-        .status-item {
-            background: #f7fafc;
-            padding: 12px 20px;
-            border-radius: 8px;
-            border-left: 4px solid #48bb78;
-            flex: 1;
-            min-width: 200px;
+        .nav-tab {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
         }
 
-        .status-item.error {
-            border-left-color: #f56565;
+        .nav-tab:hover {
+            background: rgba(255,255,255,0.2);
         }
 
-        .status-item.warning {
-            border-left-color: #ed8936;
+        .nav-tab.active {
+            background: rgba(99, 102, 241, 0.8);
         }
 
-        .status-label {
-            font-size: 12px;
-            color: #718096;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 4px;
+        /* Tab content */
+        .tab-content {
+            display: none;
         }
 
-        .status-value {
-            font-size: 18px;
-            font-weight: 600;
-            color: #2d3748;
+        .tab-content.active {
+            display: block;
         }
 
+        /* Grid layout */
         .grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
@@ -87,42 +115,239 @@
             margin-bottom: 20px;
         }
 
+        /* Cards */
         .card {
-            background: white;
-            border-radius: 12px;
-            padding: 25px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            background: rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
         }
 
-        .card h2 {
-            color: #2d3748;
-            font-size: 20px;
-            margin-bottom: 20px;
-            padding-bottom: 12px;
-            border-bottom: 2px solid #e2e8f0;
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
         }
 
-        .api-item {
-            background: #f7fafc;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 12px;
+        .card-header h2 {
+            font-size: 18px;
+            font-weight: 600;
         }
 
-        .api-header {
+        .card-icon {
+            font-size: 24px;
+        }
+
+        /* Departure rows */
+        .departure-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .departure-row:last-child {
+            border-bottom: none;
+        }
+
+        .departure-dest {
+            font-weight: 500;
+            font-size: 15px;
+        }
+
+        .departure-status {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        .departure-time {
+            font-size: 28px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .departure-time span {
+            font-size: 14px;
+            font-weight: 400;
+            opacity: 0.7;
+        }
+
+        /* Weather */
+        .weather-display {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .weather-temp {
+            font-size: 48px;
+            font-weight: 700;
+        }
+
+        .weather-condition {
+            font-size: 18px;
+            margin-bottom: 4px;
+        }
+
+        .weather-extra {
+            font-size: 13px;
+            opacity: 0.7;
+        }
+
+        /* Form elements */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            opacity: 0.9;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 10px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 15px;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: rgba(99, 102, 241, 0.8);
+            background: rgba(255,255,255,0.15);
+        }
+
+        .form-input::placeholder {
+            color: rgba(255,255,255,0.4);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        @media (max-width: 600px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Buttons */
+        .btn {
+            background: rgba(99, 102, 241, 0.8);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background: rgba(99, 102, 241, 1);
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: rgba(34, 197, 94, 0.8);
+        }
+
+        .btn-success:hover {
+            background: rgba(34, 197, 94, 1);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .btn-block {
+            width: 100%;
+            justify-content: center;
+        }
+
+        /* Checkbox */
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 0;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: #6366f1;
+        }
+
+        /* Messages */
+        .message {
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .message-success {
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid rgba(34, 197, 94, 0.4);
+        }
+
+        .message-error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+        }
+
+        .message-info {
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+        }
+
+        /* Coffee decision */
+        .coffee-decision {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .coffee-icon {
+            font-size: 48px;
             margin-bottom: 10px;
         }
 
-        .api-name {
-            font-weight: 600;
-            color: #2d3748;
-            font-size: 16px;
+        .coffee-text {
+            font-size: 22px;
+            font-weight: 700;
         }
 
-        .api-status {
+        .coffee-subtext {
+            font-size: 14px;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        /* Status badges */
+        .status-badge {
             display: inline-block;
             padding: 4px 12px;
             border-radius: 12px;
@@ -130,236 +355,123 @@
             font-weight: 600;
         }
 
-        .api-status.active {
-            background: #c6f6d5;
-            color: #22543d;
+        .status-live {
+            background: rgba(34, 197, 94, 0.3);
+            color: #4ade80;
         }
 
-        .api-status.inactive {
-            background: #fed7d7;
-            color: #742a2a;
+        .status-fallback {
+            background: rgba(251, 191, 36, 0.3);
+            color: #fbbf24;
         }
 
-        .api-status.unconfigured {
-            background: #e2e8f0;
-            color: #4a5568;
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            opacity: 0.7;
         }
 
-        .api-details {
-            font-size: 13px;
-            color: #718096;
-            margin-top: 8px;
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255,255,255,0.2);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
         }
 
-        .btn {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
-        .btn:hover {
-            background: #5a67d8;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+        /* Route summary */
+        .route-summary {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
         }
 
-        .btn-small {
-            padding: 6px 14px;
-            font-size: 12px;
-        }
-
-        .btn-danger {
-            background: #f56565;
-        }
-
-        .btn-danger:hover {
-            background: #e53e3e;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-label {
-            display: block;
-            font-size: 14px;
-            font-weight: 600;
-            color: #2d3748;
-            margin-bottom: 8px;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 10px 14px;
-            border: 2px solid #e2e8f0;
-            border-radius: 6px;
-            font-size: 14px;
-            transition: border-color 0.2s;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .form-checkbox {
-            margin-right: 8px;
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: white;
+        .route-time {
+            text-align: center;
+            padding: 15px;
+            background: rgba(255,255,255,0.1);
             border-radius: 12px;
-            padding: 30px;
-            max-width: 500px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
         }
 
-        .modal-header {
-            font-size: 24px;
-            font-weight: 600;
-            color: #2d3748;
-            margin-bottom: 20px;
+        .route-time-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            opacity: 0.7;
+            margin-bottom: 5px;
         }
 
-        .modal-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-            justify-content: flex-end;
+        .route-time-value {
+            font-size: 28px;
+            font-weight: 700;
         }
 
-        .data-sources {
-            margin-top: 15px;
+        /* Transit mode selector */
+        .transit-mode {
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
         }
 
-        .source-item {
+        .transit-mode-header {
             display: flex;
             justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid #e2e8f0;
+            align-items: center;
+            margin-bottom: 15px;
         }
 
-        .source-item:last-child {
-            border-bottom: none;
-        }
-
-        .source-label {
-            font-weight: 600;
-            color: #4a5568;
-        }
-
-        .source-status {
-            font-size: 13px;
-            color: #718096;
-        }
-
-        /* Address Autocomplete Styles */
-        .autocomplete-dropdown {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: white;
-            border: 2px solid #e2e8f0;
-            border-top: none;
-            border-radius: 0 0 6px 6px;
-            max-height: 300px;
-            overflow-y: auto;
-            z-index: 1000;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            display: none;
-        }
-
-        .autocomplete-dropdown.show {
-            display: block;
-        }
-
-        .autocomplete-item {
-            padding: 12px 14px;
+        .add-mode-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 15px;
+            border: 2px dashed rgba(255,255,255,0.3);
+            border-radius: 10px;
+            background: transparent;
+            color: rgba(255,255,255,0.6);
             cursor: pointer;
-            border-bottom: 1px solid #f7fafc;
-            transition: background 0.2s;
-        }
-
-        .autocomplete-item:last-child {
-            border-bottom: none;
-        }
-
-        .autocomplete-item:hover {
-            background: #f7fafc;
-        }
-
-        .autocomplete-item-title {
-            font-weight: 600;
-            color: #2d3748;
+            transition: all 0.2s;
             font-size: 14px;
-            margin-bottom: 4px;
         }
 
-        .autocomplete-item-subtitle {
-            font-size: 12px;
-            color: #718096;
+        .add-mode-btn:hover {
+            border-color: rgba(99, 102, 241, 0.8);
+            color: white;
         }
 
-        .autocomplete-loading {
-            padding: 12px 14px;
+        /* Footer */
+        .footer {
             text-align: center;
-            color: #718096;
+            padding: 20px;
+            margin-top: 20px;
+            opacity: 0.6;
             font-size: 13px;
         }
 
-        .autocomplete-empty {
-            padding: 12px 14px;
+        .footer a {
+            color: white;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* No data */
+        .no-data {
             text-align: center;
-            color: #a0aec0;
-            font-size: 13px;
-        }
-
-        .address-validated {
-            color: #48bb78;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .address-error {
-            color: #f56565;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        @media (max-width: 768px) {
-            .grid {
-                grid-template-columns: 1fr;
-            }
-
-            .status-bar {
-                flex-direction: column;
-            }
+            padding: 30px;
+            opacity: 0.6;
         }
     </style>
 </head>
@@ -367,2351 +479,481 @@
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <h1>🚆 PTV-TRMNL Admin Panel</h1>
-            <p>Manage API keys, monitor data sources, and configure your transit display</p>
+            <h1>PTV-TRMNL Admin</h1>
+            <div class="live-indicator">
+                <div class="live-dot"></div>
+                <span id="data-mode">Loading...</span>
+            </div>
+            <div class="time-display" id="current-time">--:--:--</div>
+            <div class="date-display" id="current-date">Loading...</div>
+        </div>
 
-            <div class="status-bar" id="statusBar">
-                <div class="status-item">
-                    <div class="status-label">Server Status</div>
-                    <div class="status-value" id="serverStatus">Loading...</div>
+        <!-- Navigation -->
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showTab('live')">Live Data</button>
+            <button class="nav-tab" onclick="showTab('journey')">Journey Planner</button>
+            <button class="nav-tab" onclick="showTab('config')">Configuration</button>
+        </div>
+
+        <!-- Live Data Tab -->
+        <div id="tab-live" class="tab-content active">
+            <div class="grid">
+                <!-- Train Departures -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-icon">🚆</span>
+                        <h2>Train Departures</h2>
+                    </div>
+                    <div id="train-departures">
+                        <div class="loading"><div class="spinner"></div>Loading...</div>
+                    </div>
                 </div>
-                <div class="status-item">
-                    <div class="status-label">Last Update</div>
-                    <div class="status-value" id="lastUpdate">--:--</div>
+
+                <!-- Tram Departures -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-icon">🚊</span>
+                        <h2>Tram Departures</h2>
+                    </div>
+                    <div id="tram-departures">
+                        <div class="loading"><div class="spinner"></div>Loading...</div>
+                    </div>
                 </div>
-                <div class="status-item">
-                    <div class="status-label">Active APIs</div>
-                    <div class="status-value" id="activeApis">0/0</div>
+
+                <!-- Weather -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-icon">🌤️</span>
+                        <h2>Weather</h2>
+                        <span class="status-badge status-live" id="weather-source">BOM</span>
+                    </div>
+                    <div id="weather-display">
+                        <div class="loading"><div class="spinner"></div>Loading...</div>
+                    </div>
                 </div>
-                <div class="status-item">
-                    <div class="status-label">Data Mode</div>
-                    <div class="status-value" id="dataMode">Live</div>
+
+                <!-- Coffee Decision -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-icon">☕</span>
+                        <h2>Coffee Decision</h2>
+                    </div>
+                    <div id="coffee-decision" class="coffee-decision">
+                        <div class="loading"><div class="spinner"></div>Loading...</div>
+                    </div>
                 </div>
+            </div>
+
+            <!-- Journey Summary -->
+            <div class="card" id="journey-summary-card" style="display: none;">
+                <div class="card-header">
+                    <span class="card-icon">🗺️</span>
+                    <h2>Today's Journey</h2>
+                </div>
+                <div id="journey-summary"></div>
             </div>
         </div>
 
-        <!-- User Preferences Section -->
-        <div style="background: white; border-radius: 12px; padding: 25px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-            <h2 style="color: #2d3748; font-size: 20px; margin-bottom: 20px;">👤 User Preferences</h2>
-
-            <!-- Addresses -->
-            <div style="background: #f7fafc; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
-                <h3 style="color: #2d3748; font-size: 16px; margin-bottom: 15px;">📍 Addresses</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
-                    <div class="form-group" style="position: relative;">
-                        <label class="form-label">
-                            Home Address
-                            <span id="homeAddressValidation" style="margin-left: 8px; display: none;"></span>
-                        </label>
-                        <input type="text" class="form-input address-autocomplete" id="prefHomeAddress" placeholder="Start typing your address..." oninput="handleAddressInput('home', this.value)" autocomplete="off">
-                        <div id="homeAddressDropdown" class="autocomplete-dropdown"></div>
-                    </div>
-                    <div class="form-group" style="position: relative;">
-                        <label class="form-label">
-                            Preferred Cafe
-                            <span id="cafeAddressValidation" style="margin-left: 8px; display: none;"></span>
-                        </label>
-                        <input type="text" class="form-input address-autocomplete" id="prefCafeAddress" placeholder="Start typing cafe name..." oninput="handleAddressInput('cafe', this.value)" autocomplete="off">
-                        <div id="cafeAddressDropdown" class="autocomplete-dropdown"></div>
-                    </div>
-                    <div class="form-group" style="position: relative;">
-                        <label class="form-label">
-                            Work Address
-                            <span id="workAddressValidation" style="margin-left: 8px; display: none;"></span>
-                        </label>
-                        <input type="text" class="form-input address-autocomplete" id="prefWorkAddress" placeholder="Start typing your work address..." oninput="handleAddressInput('work', this.value)" autocomplete="off">
-                        <div id="workAddressDropdown" class="autocomplete-dropdown"></div>
-                    </div>
-                </div>
-                <div style="margin-top: 10px; padding: 10px; background: #e6fffa; border-radius: 6px; font-size: 12px; color: #234e52;">
-                    <strong>✨ Tip:</strong> Start typing and select from the suggestions. Addresses are saved permanently once configured.
-                    <br>
-                    <strong>🔵 Better Search:</strong> Add <code style="background: rgba(0,0,0,0.1); padding: 2px 4px; border-radius: 3px;">GOOGLE_PLACES_KEY</code> environment variable for enhanced cafe/business search via Google Places API.
-                </div>
-            </div>
-
-            <!-- Manual Walking Times (Fallback for addresses that can't be geocoded) -->
-            <div style="background: #f7fafc; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
-                <h3 style="color: #2d3748; font-size: 16px; margin-bottom: 15px;">🚶 Manual Walking Times</h3>
-                <div style="padding: 10px; background: #fff3cd; border-radius: 6px; font-size: 12px; color: #856404; margin-bottom: 15px;">
-                    <strong>ℹ️ When to use:</strong> If your address can't be found by the autocomplete search, you can manually enter walking times. The route planner will use these instead of geocoding.
+        <!-- Journey Planner Tab -->
+        <div id="tab-journey" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">🚀</span>
+                    <h2>Plan Your Commute</h2>
                 </div>
 
-                <!-- Override toggle -->
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label style="display: flex; align-items: center; gap: 8px;">
-                        <input type="checkbox" class="form-checkbox" id="useManualTimes" onchange="toggleManualTimesInputs()">
-                        <span style="font-weight: 600; color: #2d3748;">Use Manual Walking Times (Override Geocoding)</span>
-                    </label>
-                    <small style="color: #718096; font-size: 11px; margin-left: 24px;">Enable this to use manual times instead of calculating from addresses</small>
-                </div>
+                <div id="planner-message"></div>
 
-                <!-- Manual time inputs (hidden by default) -->
-                <div id="manualTimesInputs" style="display: none;">
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 15px;">
-                        <div class="form-group">
-                            <label class="form-label">Home → Nearest Station (minutes)</label>
-                            <input type="number" class="form-input" id="homeToStation" placeholder="e.g., 8" min="0" step="1">
-                            <small style="color: #718096; font-size: 11px;">Walking time from home to your nearest train/tram stop</small>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Station → Cafe (minutes)</label>
-                            <input type="number" class="form-input" id="stationToCafe" placeholder="e.g., 3" min="0" step="1">
-                            <small style="color: #718096; font-size: 11px;">Walking time from station to cafe (if coffee enabled)</small>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Cafe → Station (minutes)</label>
-                            <input type="number" class="form-input" id="cafeToStation" placeholder="e.g., 3" min="0" step="1">
-                            <small style="color: #718096; font-size: 11px;">Walking time from cafe back to station (often same as above)</small>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Station → Work (minutes)</label>
-                            <input type="number" class="form-input" id="stationToWork" placeholder="e.g., 5" min="0" step="1">
-                            <small style="color: #718096; font-size: 11px;">Walking time from destination station to work</small>
-                        </div>
-                    </div>
-
-                    <div style="padding: 10px; background: #e6fffa; border-radius: 6px; font-size: 12px; color: #234e52;">
-                        <strong>💡 How to measure:</strong> Use Google Maps walking directions, or time yourself walking at normal pace. Include time to enter/exit stations.
-                    </div>
-                </div>
-
-                <!-- Address validation flags (show which addresses couldn't be geocoded) -->
-                <div style="margin-top: 15px; padding: 12px; background: #f7fafc; border-radius: 6px; border-left: 4px solid #4299e1;">
-                    <div style="font-size: 13px; color: #2d3748; margin-bottom: 8px; font-weight: 600;">Address Validation Status</div>
-                    <div style="display: flex; gap: 15px; flex-wrap: wrap; font-size: 12px;">
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                            <span id="homeFoundStatus">⏳</span>
-                            <span style="color: #718096;">Home</span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                            <span id="cafeFoundStatus">⏳</span>
-                            <span style="color: #718096;">Cafe</span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                            <span id="workFoundStatus">⏳</span>
-                            <span style="color: #718096;">Work</span>
-                        </div>
-                    </div>
-                    <div style="margin-top: 8px; font-size: 11px; color: #718096;">
-                        ✅ = Address found and geocoded successfully | ⚠️ = Address couldn't be geocoded (use manual times) | ⏳ = Not yet tested
-                    </div>
-                </div>
-            </div>
-
-            <!-- PTV API Credentials -->
-            <div style="background: #f7fafc; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
-                <h3 style="color: #2d3748; font-size: 16px; margin-bottom: 15px;">🔑 PTV API Credentials</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;">
+                <div class="form-row">
                     <div class="form-group">
-                        <label class="form-label">API Key (Developer ID)</label>
-                        <input type="text" class="form-input" id="prefApiKey" placeholder="ce606b90-9ffb-43e8-bcd7-0c2bd0498367">
-                        <small style="color: #718096; font-size: 11px;">Your PTV Open Data account identifier</small>
+                        <label class="form-label">Home Address</label>
+                        <input type="text" id="home-address" class="form-input" placeholder="123 Main Street, Suburb">
                     </div>
                     <div class="form-group">
-                        <label class="form-label">API Token</label>
-                        <input type="password" class="form-input" id="prefApiToken" placeholder="Your API token">
-                        <small style="color: #718096; font-size: 11px;">Keep this secret - it's your authentication key</small>
-                    </div>
-                </div>
-                <div style="margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 6px; font-size: 12px; color: #856404;">
-                    <strong>ℹ️ Note:</strong> Get your API credentials from <a href="https://www.ptv.vic.gov.au/footer/data-and-reporting/datasets/ptv-timetable-api/" target="_blank" style="color: #856404; text-decoration: underline;">PTV Timetable API</a>
-                </div>
-            </div>
-
-            <!-- Journey Preferences -->
-            <div style="background: #f7fafc; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
-                <h3 style="color: #2d3748; font-size: 16px; margin-bottom: 15px;">🚆 Journey Preferences</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                    <div class="form-group">
-                        <label class="form-label">Default Arrival Time</label>
-                        <input type="time" class="form-input" id="prefArrivalTime" value="09:00">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">
-                            <input type="checkbox" class="form-checkbox" id="prefCoffeeEnabled" checked onchange="toggleCafeLocation()">
-                            Enable Coffee Stop
-                        </label>
+                        <label class="form-label">Work Address</label>
+                        <input type="text" id="work-address" class="form-input" placeholder="456 Office Ave, City">
                     </div>
                 </div>
 
-                <!-- Cafe Location (shown only if coffee enabled) -->
-                <div id="cafeLocationSection" style="margin-top: 15px; display: none;">
-                    <div class="form-group">
-                        <label class="form-label">Cafe Location in Journey</label>
-                        <select class="form-input" id="prefCafeLocation">
-                            <option value="before-transit-1">Before First Transit (Home → Cafe → Transit)</option>
-                            <option value="between-transits">Between Transits (Transit 1 → Cafe → Transit 2)</option>
-                            <option value="after-last-transit">After Last Transit (Transit → Cafe → Work)</option>
+                <div class="form-group">
+                    <label class="form-label">Cafe Address (optional)</label>
+                    <input type="text" id="cafe-address" class="form-input" placeholder="Your favorite coffee shop">
+                </div>
+
+                <!-- Transit Route -->
+                <div class="transit-mode" id="transit-mode-1">
+                    <div class="transit-mode-header">
+                        <span style="font-weight: 600;">Transit Leg 1</span>
+                        <select id="mode1-type" class="form-input" style="width: 120px;">
+                            <option value="0">Train</option>
+                            <option value="1">Tram</option>
+                            <option value="2">Bus</option>
                         </select>
-                        <small style="color: #718096; font-size: 11px;">Choose where to stop for coffee during your commute</small>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">From Station</label>
+                            <input type="text" id="mode1-origin" class="form-input" placeholder="e.g., South Yarra">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">To Station</label>
+                            <input type="text" id="mode1-destination" class="form-input" placeholder="e.g., Flinders Street">
+                        </div>
                     </div>
                 </div>
 
-                <!-- Transit Route Configuration -->
-                <div style="margin-top: 15px; padding: 15px; background: #edf2f7; border-radius: 6px;">
-                    <h4 style="color: #2d3748; font-size: 14px; margin-bottom: 10px;">🚉 Transit Route Configuration</h4>
+                <div class="transit-mode" id="transit-mode-2" style="display: none;">
+                    <div class="transit-mode-header">
+                        <span style="font-weight: 600;">Transit Leg 2</span>
+                        <div style="display: flex; gap: 10px;">
+                            <select id="mode2-type" class="form-input" style="width: 120px;">
+                                <option value="0">Train</option>
+                                <option value="1">Tram</option>
+                                <option value="2">Bus</option>
+                            </select>
+                            <button class="btn btn-secondary" onclick="removeTransitLeg()" style="padding: 8px 16px;">Remove</button>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">From Station</label>
+                            <input type="text" id="mode2-origin" class="form-input" placeholder="e.g., Fed Square">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">To Station</label>
+                            <input type="text" id="mode2-destination" class="form-input" placeholder="e.g., Melbourne Central">
+                        </div>
+                    </div>
+                </div>
 
+                <button class="add-mode-btn" id="add-mode-btn" onclick="addTransitLeg()">
+                    + Add Another Transit Leg
+                </button>
+
+                <div class="form-row" style="margin-top: 15px;">
                     <div class="form-group">
-                        <label class="form-label">Number of Transit Modes</label>
-                        <select class="form-input" id="prefNumberOfModes" onchange="toggleTransitMode2()">
-                            <option value="1">Single Mode (e.g., Train only)</option>
-                            <option value="2">Two Modes (e.g., Train + Tram)</option>
-                        </select>
-                        <small style="color: #718096; font-size: 11px;">Do you take one or two different transit modes?</small>
+                        <label class="form-label">Arrival Time at Work</label>
+                        <input type="time" id="arrival-time" class="form-input" value="09:00">
                     </div>
-
-                    <!-- Transit Mode 1 -->
-                    <div style="margin-top: 10px;">
-                        <div style="font-weight: 600; color: #2d3748; margin-bottom: 8px;">Transit Mode 1:</div>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
-                            <div class="form-group">
-                                <label class="form-label">Mode Type</label>
-                                <select class="form-input" id="prefMode1Type">
-                                    <option value="0">🚆 Train</option>
-                                    <option value="1">🚊 Tram</option>
-                                    <option value="2">🚌 Bus</option>
-                                    <option value="3">🚄 V/Line</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Origin Station</label>
-                                <input type="text" class="form-input" id="prefMode1Origin" placeholder="e.g., South Yarra">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Destination Station</label>
-                                <input type="text" class="form-input" id="prefMode1Destination" placeholder="e.g., Flinders Street">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Duration (minutes)</label>
-                                <input type="number" class="form-input" id="prefMode1Duration" value="20" min="1">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Transit Mode 2 (hidden by default) -->
-                    <div id="transitMode2Section" style="margin-top: 15px; display: none;">
-                        <div style="font-weight: 600; color: #2d3748; margin-bottom: 8px;">Transit Mode 2:</div>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
-                            <div class="form-group">
-                                <label class="form-label">Mode Type</label>
-                                <select class="form-input" id="prefMode2Type">
-                                    <option value="0">🚆 Train</option>
-                                    <option value="1">🚊 Tram</option>
-                                    <option value="2">🚌 Bus</option>
-                                    <option value="3">🚄 V/Line</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Origin Station</label>
-                                <input type="text" class="form-input" id="prefMode2Origin" placeholder="e.g., Flinders Street">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Destination Station</label>
-                                <input type="text" class="form-input" id="prefMode2Destination" placeholder="e.g., Richmond">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Duration (minutes)</label>
-                                <input type="number" class="form-input" id="prefMode2Duration" value="15" min="1">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div style="margin-top: 10px; padding: 10px; background: #e6fffa; border-radius: 6px; font-size: 12px; color: #234e52;">
-                        <strong>💡 Tip:</strong> Route planning uses these stations to calculate walking times and connections. For accurate results, enter actual stations you use.
+                    <div class="form-group">
+                        <label class="form-label">Coffee Time (mins)</label>
+                        <input type="number" id="coffee-time" class="form-input" value="5" min="0" max="30">
                     </div>
                 </div>
 
-                <div style="margin-top: 10px;">
-                    <label class="form-label">Preferred Transit Modes (for search)</label>
-                    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                        <label style="display: flex; align-items: center; gap: 5px;">
-                            <input type="checkbox" class="form-checkbox" id="prefModeTrains" checked>
-                            <span>🚆 Trains</span>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 5px;">
-                            <input type="checkbox" class="form-checkbox" id="prefModeTrams" checked>
-                            <span>🚊 Trams</span>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 5px;">
-                            <input type="checkbox" class="form-checkbox" id="prefModeBuses" checked>
-                            <span>🚌 Buses</span>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 5px;">
-                            <input type="checkbox" class="form-checkbox" id="prefModeVLine" checked>
-                            <span>🚄 V/Line</span>
-                        </label>
-                    </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="include-coffee" checked>
+                    <label for="include-coffee">Include coffee stop</label>
                 </div>
-            </div>
 
-            <!-- Action Buttons -->
-            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <button class="btn" onclick="savePreferences()" style="background: #48bb78;">💾 Save All Preferences</button>
-                <button class="btn" onclick="loadPreferences()">🔄 Reload</button>
-                <button class="btn" onclick="testPreferences()">✅ Test Configuration</button>
-                <button class="btn btn-danger" onclick="resetPreferences()">⚠️ Reset to Defaults</button>
-            </div>
-
-            <!-- Status Display -->
-            <div id="preferencesStatus" style="margin-top: 15px; display: none;"></div>
-
-            <!-- Back to Top Button -->
-            <div style="margin-top: 20px; text-align: right;">
-                <button class="btn btn-small" onclick="scrollToTop()" style="background: #718096;">
-                    ⬆️ Back to Top
+                <button class="btn btn-success btn-block" onclick="planJourney()">
+                    <span id="plan-btn-text">Plan My Journey</span>
                 </button>
+            </div>
+
+            <!-- Journey Result -->
+            <div class="card" id="journey-result" style="display: none; margin-top: 20px;">
+                <div class="card-header">
+                    <span class="card-icon">📋</span>
+                    <h2>Your Journey</h2>
+                </div>
+                <div id="journey-result-content"></div>
             </div>
         </div>
 
-        <div class="grid">
-            <!-- API Configuration Card -->
-            <div class="card">
-                <h2>API Configuration</h2>
-                <div id="apiList">
-                    <!-- APIs will be loaded here -->
-                </div>
-                <button class="btn" onclick="addNewApi()" style="margin-top: 10px;">
-                    + Add Custom API
-                </button>
-                <div style="margin-top: 15px; text-align: right;">
-                    <button class="btn btn-small" onclick="scrollToTop()" style="background: #718096;">⬆️ Back to Top</button>
-                </div>
-            </div>
-
-            <!-- Data Sources Card -->
-            <div class="card">
-                <h2>Data Sources</h2>
-                <div class="data-sources" id="dataSources">
-                    <!-- Data sources will be loaded here -->
-                </div>
-                <div style="margin-top: 15px; text-align: right;">
-                    <button class="btn btn-small" onclick="scrollToTop()" style="background: #718096;">⬆️ Back to Top</button>
-                </div>
-            </div>
-
-            <!-- System Configuration Card -->
-            <div class="card">
-                <h2>System Configuration</h2>
-                <div class="form-group">
-                    <label class="form-label">Refresh Interval (seconds)</label>
-                    <input type="number" class="form-input" id="refreshInterval" value="30" min="10" max="300">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">
-                        <input type="checkbox" class="form-checkbox" id="fallbackEnabled" checked>
-                        Enable Fallback Timetable
-                    </label>
-                </div>
-                <button class="btn" onclick="saveSystemConfig()">Save Configuration</button>
-                <div style="margin-top: 15px; text-align: right;">
-                    <button class="btn btn-small" onclick="scrollToTop()" style="background: #718096;">⬆️ Back to Top</button>
-                </div>
-            </div>
-
-            <!-- Device Monitoring Card -->
-            <div class="card">
-                <h2>Connected Devices</h2>
-                <div id="deviceList">
-                    <!-- Devices will be loaded here -->
-                </div>
-                <div style="margin-top: 15px; text-align: right;">
-                    <button class="btn btn-small" onclick="scrollToTop()" style="background: #718096;">⬆️ Back to Top</button>
-                </div>
-            </div>
-
-            <!-- Server Management Card -->
-            <div class="card">
-                <h2>Server Management</h2>
-                <div style="display: flex; flex-direction: column; gap: 10px;">
-                    <button class="btn" onclick="clearCache()">🗑️ Clear Caches</button>
-                    <button class="btn" onclick="forceRefresh()">🔄 Force Data Refresh</button>
-                    <button class="btn btn-danger" onclick="confirmRestart()">⚠️ Restart Server</button>
-                </div>
-                <div style="margin-top: 15px; padding: 12px; background: #fff3cd; border-radius: 6px; font-size: 13px; color: #856404;">
-                    <strong>Note:</strong> Clearing caches will force the server to regenerate all data and images on next request.
-                </div>
-                <div style="margin-top: 15px; text-align: right;">
-                    <button class="btn btn-small" onclick="scrollToTop()" style="background: #718096;">⬆️ Back to Top</button>
-                </div>
-            </div>
-
-            <!-- Weather Status Card -->
-            <div class="card">
-                <h2>🌤️ Weather Status</h2>
-                <div id="weatherStatus">
-                    <div style="text-align: center; color: #718096;">Loading weather...</div>
-                </div>
-                <button class="btn" onclick="refreshWeather()" style="margin-top: 10px;">🔄 Refresh Weather</button>
-                <div style="margin-top: 15px; text-align: right;">
-                    <button class="btn btn-small" onclick="scrollToTop()" style="background: #718096;">⬆️ Back to Top</button>
-                </div>
-            </div>
-
-            <!-- One-Click Smart Journey Planner -->
-            <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-                <h2 style="color: white; border-bottom-color: rgba(255,255,255,0.3);">
-                    <span style="margin-right: 8px;">🚀</span> One-Click Journey Planner
-                </h2>
-                <p style="color: rgba(255,255,255,0.9); margin-bottom: 20px;">
-                    Just enter your addresses - we handle everything else automatically!
-                </p>
-
-                <div style="background: rgba(255,255,255,0.15); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
-                    <div style="display: grid; gap: 15px;">
-                        <div class="form-group" style="margin-bottom: 0; position: relative;">
-                            <label style="display: block; font-size: 14px; font-weight: 600; color: white; margin-bottom: 8px;">
-                                <span style="margin-right: 6px;">🏠</span> Home Address
-                            </label>
-                            <input type="text" class="form-input" id="autoHomeAddress"
-                                   placeholder="e.g., 123 Smith St, Richmond VIC"
-                                   style="background: white; color: #2d3748;"
-                                   oninput="handleAutoAddressInput('home', this.value)"
-                                   autocomplete="off">
-                            <div id="autoHomeDropdown" class="autocomplete-dropdown"></div>
-                        </div>
-
-                        <div class="form-group" style="margin-bottom: 0; position: relative;">
-                            <label style="display: block; font-size: 14px; font-weight: 600; color: white; margin-bottom: 8px;">
-                                <span style="margin-right: 6px;">🏢</span> Work Address
-                            </label>
-                            <input type="text" class="form-input" id="autoWorkAddress"
-                                   placeholder="e.g., 456 Collins St, Melbourne VIC"
-                                   style="background: white; color: #2d3748;"
-                                   oninput="handleAutoAddressInput('work', this.value)"
-                                   autocomplete="off">
-                            <div id="autoWorkDropdown" class="autocomplete-dropdown"></div>
-                        </div>
-
-                        <div class="form-group" style="margin-bottom: 0; position: relative;">
-                            <label style="display: block; font-size: 14px; font-weight: 600; color: white; margin-bottom: 8px;">
-                                <span style="margin-right: 6px;">☕</span> Cafe (optional - we'll find one if blank)
-                            </label>
-                            <input type="text" class="form-input" id="autoCafeAddress"
-                                   placeholder="Leave blank for automatic cafe detection"
-                                   style="background: white; color: #2d3748;"
-                                   oninput="handleAutoAddressInput('cafe', this.value)"
-                                   autocomplete="off">
-                            <div id="autoCafeDropdown" class="autocomplete-dropdown"></div>
-                        </div>
-
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                            <div class="form-group" style="margin-bottom: 0;">
-                                <label style="display: block; font-size: 14px; font-weight: 600; color: white; margin-bottom: 8px;">
-                                    <span style="margin-right: 6px;">⏰</span> Arrive at Work by
-                                </label>
-                                <input type="time" class="form-input" id="autoArrivalTime" value="09:00"
-                                       style="background: white; color: #2d3748;">
-                            </div>
-                            <div class="form-group" style="margin-bottom: 0;">
-                                <label style="display: block; font-size: 14px; font-weight: 600; color: white; margin-bottom: 8px;">
-                                    <span style="margin-right: 6px;">☕</span> Include Coffee Stop
-                                </label>
-                                <select class="form-input" id="autoIncludeCoffee" style="background: white; color: #2d3748;">
-                                    <option value="true">Yes, I need coffee!</option>
-                                    <option value="false">No coffee today</option>
-                                </select>
-                            </div>
-                        </div>
+        <!-- Configuration Tab -->
+        <div id="tab-config" class="tab-content">
+            <div class="grid">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-icon">🔑</span>
+                        <h2>PTV API</h2>
+                    </div>
+                    <div id="api-message"></div>
+                    <div class="form-group">
+                        <label class="form-label">Developer ID</label>
+                        <input type="text" id="ptv-dev-id" class="form-input" placeholder="Your Developer ID">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">API Key</label>
+                        <input type="password" id="ptv-api-key" class="form-input" placeholder="Your API Key">
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn" onclick="savePtvConfig()">Save</button>
+                        <button class="btn btn-secondary" onclick="testPtvApi()">Test</button>
                     </div>
                 </div>
 
-                <button class="btn" id="autoPlanBtn" onclick="autoplanJourney()"
-                        style="width: 100%; padding: 15px 20px; font-size: 18px; background: white; color: #667eea; border: none; font-weight: 700;">
-                    <span id="autoPlanBtnText">🚀 Plan My Journey Automatically</span>
-                </button>
-
-                <div style="margin-top: 10px; font-size: 12px; color: rgba(255,255,255,0.8); text-align: center;">
-                    We'll automatically find the best transit stops, route, and optimal cafe placement.
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-icon">⚙️</span>
+                        <h2>Display Settings</h2>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="use-24-hour" checked>
+                        <label for="use-24-hour">24-hour time</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="show-walking-times" checked>
+                        <label for="show-walking-times">Show walking times</label>
+                    </div>
+                    <button class="btn" onclick="saveDisplaySettings()">Save Settings</button>
                 </div>
 
-                <div id="autoRouteResult" style="margin-top: 15px; display: none;">
-                    <!-- Automatic route result will be displayed here -->
-                </div>
-            </div>
-
-            <!-- Smart Route Planner Card (Legacy/Advanced) -->
-            <div class="card">
-                <h2>☕ Advanced Route Planner</h2>
-                <p style="color: #718096; margin-bottom: 15px;">For manual configuration - use the One-Click Planner above for automatic routing</p>
-
-                <div style="background: #e6fffa; border-radius: 6px; padding: 12px; margin-bottom: 15px; font-size: 13px; color: #234e52;">
-                    <strong>ℹ️ Advanced Mode:</strong> Configure transit routes manually if you have specific preferences. Most users should use the One-Click Planner above.
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Home Address</label>
-                    <input type="text" class="form-input" id="homeAddress" placeholder="Auto-populated from preferences..." readonly style="background: #f7fafc;">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Coffee Shop Address</label>
-                    <input type="text" class="form-input" id="coffeeAddress" placeholder="Auto-populated from preferences..." readonly style="background: #f7fafc;">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Work Address</label>
-                    <input type="text" class="form-input" id="workAddress" placeholder="Auto-populated from preferences..." readonly style="background: #f7fafc;">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Desired Arrival Time</label>
-                    <input type="time" class="form-input" id="arrivalTime" value="09:00" readonly style="background: #f7fafc;">
-                </div>
-
-                <button class="btn" onclick="calculateRoute()" id="calculateRouteBtn">
-                    🗺️ Calculate Route
-                </button>
-
-                <div id="routeResult" style="margin-top: 15px; display: none;">
-                    <!-- Route will be displayed here -->
-                </div>
-
-                <div id="ptvConnections" style="margin-top: 15px; display: none;">
-                    <!-- PTV connections will be displayed here -->
-                </div>
-                <div style="margin-top: 20px; text-align: right;">
-                    <button class="btn btn-small" onclick="scrollToTop()" style="background: #718096;">⬆️ Back to Top</button>
-                </div>
-            </div>
-
-            <!-- Live Display & Preview Card -->
-            <div class="card">
-                <h2>📺 Live Display & Previews</h2>
-                <p style="color: #718096; margin-bottom: 15px;">View all data being pushed to your TRMNL device in real-time</p>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
-                    <a href="/admin/live-display" target="_blank" class="btn" style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                        <span style="font-size: 20px;">📺</span>
-                        <span>Full Live Display</span>
-                    </a>
-                    <a href="/admin/dashboard-preview" target="_blank" class="btn" style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; background: #48bb78;">
-                        <span style="font-size: 20px;">📱</span>
-                        <span>E-Ink Preview</span>
-                    </a>
-                </div>
-
-                <div style="background: #f7fafc; padding: 12px; border-radius: 6px; font-size: 13px; color: #4a5568;">
-                    <strong>📺 Full Live Display:</strong> Comprehensive dashboard showing all transit data, weather, journey plan, coffee decision, and system status.<br><br>
-                    <strong>📱 E-Ink Preview:</strong> Shows exactly how the 800x480 e-ink display appears on the device.
-                </div>
-
-                <div style="margin-top: 15px; text-align: right;">
-                    <button class="btn btn-small" onclick="scrollToTop()" style="background: #718096;">⬆️ Back to Top</button>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-icon">🛠️</span>
+                        <h2>Actions</h2>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <button class="btn" onclick="refreshData()">Refresh Data</button>
+                        <button class="btn btn-secondary" onclick="clearCache()">Clear Cache</button>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Support this Project Section -->
-        <div style="background: linear-gradient(135deg, #40DCA5 0%, #2ecc71 100%); border-radius: 12px; padding: 30px; margin-top: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); color: white;">
-            <h2 style="color: white; font-size: 24px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
-                ☕ Support this Project
-            </h2>
-            <p style="color: rgba(255,255,255,0.95); font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
-                From conception to execution, I have put many weeks, hours, and all-nighters into this project that I am so passionate about.
-                Your support helps me allocate my time to this project and make the best experience for you possible.
-            </p>
-            <div style="background: rgba(255,255,255,0.2); border-radius: 8px; padding: 20px; margin-bottom: 20px;">
-                <div style="font-size: 14px; color: rgba(255,255,255,0.9); margin-bottom: 15px;">
-                    <strong>What your support enables:</strong>
-                </div>
-                <ul style="list-style: none; padding: 0; margin: 0;">
-                    <li style="padding: 8px 0; display: flex; align-items: center; gap: 10px;">
-                        <span style="font-size: 18px;">🚀</span>
-                        <span>Continued development and new features</span>
-                    </li>
-                    <li style="padding: 8px 0; display: flex; align-items: center; gap: 10px;">
-                        <span style="font-size: 18px;">🐛</span>
-                        <span>Bug fixes and performance improvements</span>
-                    </li>
-                    <li style="padding: 8px 0; display: flex; align-items: center; gap: 10px;">
-                        <span style="font-size: 18px;">📚</span>
-                        <span>Better documentation and guides</span>
-                    </li>
-                    <li style="padding: 8px 0; display: flex; align-items: center; gap: 10px;">
-                        <span style="font-size: 18px;">💻</span>
-                        <span>Server hosting and API costs</span>
-                    </li>
-                </ul>
-            </div>
-            <div style="text-align: center;">
-                <a href="https://buymeacoffee.com/angusbergman"
-                   target="_blank"
-                   style="display: inline-block; background: white; color: #40DCA5; padding: 15px 40px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: transform 0.2s;"
-                   onmouseover="this.style.transform='translateY(-2px)'"
-                   onmouseout="this.style.transform='translateY(0)'">
-                    ☕ Buy Me a Coffee
-                </a>
-            </div>
-            <div style="text-align: center; margin-top: 15px; font-size: 13px; color: rgba(255,255,255,0.8);">
-                Every contribution, big or small, is deeply appreciated 💚
-            </div>
-            <div style="margin-top: 20px; text-align: right;">
-                <button class="btn btn-small" onclick="scrollToTop()" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);">
-                    ⬆️ Back to Top
-                </button>
-            </div>
-        </div>
-
-        <!-- Backend Data Operations Section -->
-        <div style="background: white; border-radius: 12px; padding: 25px; margin-top: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-            <h2 style="color: #2d3748; font-size: 20px; margin-bottom: 20px;">🔧 Backend Data Operations</h2>
-            <p style="color: #718096; margin-bottom: 20px;">
-                Understanding how the system processes your data and makes intelligent routing decisions.
-            </p>
-
-            <div style="display: grid; gap: 15px;">
-                <!-- Single-Entry Fields Explanation -->
-                <div style="background: #f7fafc; border-radius: 8px; padding: 15px; border-left: 4px solid #667eea;">
-                    <h3 style="color: #2d3748; font-size: 16px; margin-bottom: 10px;">📝 Single-Entry Configuration</h3>
-                    <p style="color: #4a5568; font-size: 14px; line-height: 1.6; margin-bottom: 10px;">
-                        <strong>Enter Once, Use Everywhere:</strong> All configuration fields (addresses, API credentials, journey settings) are stored in <code style="background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 3px;">user-preferences.json</code> on the server. Once saved, these values automatically populate across all modules.
-                    </p>
-                    <div style="font-size: 13px; color: #718096; line-height: 1.5;">
-                        <strong>Data Flow:</strong><br>
-                        1. You configure addresses in <strong>User Preferences</strong> (top section)<br>
-                        2. System saves to persistent JSON file<br>
-                        3. <strong>Route Planner</strong> auto-loads these addresses (readonly fields)<br>
-                        4. <strong>Multi-Modal Router</strong> uses saved PTV API credentials<br>
-                        5. <strong>Cafe Detector</strong> uses saved cafe address<br>
-                        6. All modules stay in sync automatically
-                    </div>
-                </div>
-
-                <!-- Route Planning Calculations -->
-                <div style="background: #f7fafc; border-radius: 8px; padding: 15px; border-left: 4px solid #48bb78;">
-                    <h3 style="color: #2d3748; font-size: 16px; margin-bottom: 10px;">🗺️ Route Planning Algorithm</h3>
-                    <div style="font-size: 13px; color: #4a5568; line-height: 1.6;">
-                        <strong>Module:</strong> <code>route-planner.js</code><br><br>
-                        <strong>Calculation Process:</strong><br>
-                        1. <strong>Geocoding</strong> - Converts your addresses to GPS coordinates (OpenStreetMap Nominatim API)<br>
-                        2. <strong>Walking Distance</strong> - Calculates walking time using Haversine formula (80m/min = 4.8km/h)<br>
-                        3. <strong>Cafe Busy-ness</strong> - Checks current time against peak periods, adjusts coffee wait time (2-8 min)<br>
-                        4. <strong>Backward Calculation</strong> - Works backwards from your arrival time:<br>
-                        <div style="margin-left: 20px; margin-top: 5px; font-family: monospace; font-size: 12px;">
-                            Arrival 09:00<br>
-                            - Walk to work (5 min) = 08:55 arrive station<br>
-                            - Train (20 min) = 08:35 depart origin<br>
-                            - Walk to station (3 min) = 08:32 leave cafe<br>
-                            - Coffee (3 min) = 08:29 arrive cafe<br>
-                            - Walk to cafe (4 min) = 08:25 leave station<br>
-                            - Walk to station (8 min) = <strong>08:17 LEAVE HOME</strong>
-                        </div>
-                        <br>
-                        <strong>Considered Variables:</strong> Walking speed (configurable), coffee purchase time (dynamic based on busy-ness), safety buffers (2 min per connection), transit journey duration
-                    </div>
-                </div>
-
-                <!-- Multi-Modal Transit Search -->
-                <div style="background: #f7fafc; border-radius: 8px; padding: 15px; border-left: 4px solid #ed8936;">
-                    <h3 style="color: #2d3748; font-size: 16px; margin-bottom: 10px;">🚆 Multi-Modal Transit Search</h3>
-                    <div style="font-size: 13px; color: #4a5568; line-height: 1.6;">
-                        <strong>Module:</strong> <code>multi-modal-router.js</code><br><br>
-                        <strong>Search Process:</strong><br>
-                        1. <strong>Query All Modes</strong> - Searches PTV API for: Trains (type 0), Trams (1), Buses (2), V/Line (3)<br>
-                        2. <strong>Fetch Departures</strong> - Gets next 10 departures for each enabled mode<br>
-                        3. <strong>Filter by Time</strong> - Only keeps departures within ±10 min of required departure time<br>
-                        4. <strong>Sort by Proximity</strong> - Orders by closest match to ideal departure time<br>
-                        5. <strong>Return Best 2</strong> - Shows the 2 best options across all transit modes<br><br>
-                        <strong>Authentication:</strong> Uses your saved PTV API credentials with HMAC-SHA1 signature<br>
-                        <strong>Cache:</strong> Results cached for 30 seconds to reduce API calls<br>
-                        <strong>Coffee Feasibility:</strong> Each option marked if you have time for coffee before departure
-                    </div>
-                </div>
-
-                <!-- Cafe Busy-ness Detection -->
-                <div style="background: #f7fafc; border-radius: 8px; padding: 15px; border-left: 4px solid #f56565;">
-                    <h3 style="color: #2d3748; font-size: 16px; margin-bottom: 10px;">☕ Cafe Busy-ness Detection</h3>
-                    <div style="font-size: 13px; color: #4a5568; line-height: 1.6;">
-                        <strong>Module:</strong> <code>cafe-busy-detector.js</code><br><br>
-                        <strong>Detection Methods:</strong><br>
-                        1. <strong>Google Places API</strong> (if configured) - Real-time "popular times" data from Google<br>
-                        2. <strong>Time-Based Fallback</strong> (always available) - Estimates based on peak periods<br><br>
-                        <strong>Peak Time Multipliers:</strong><br>
-                        - Morning Rush (7-9am): 2.0× wait time<br>
-                        - Lunch Rush (12-2pm): 1.8× wait time<br>
-                        - Afternoon Peak (4-5pm): 1.5× wait time<br>
-                        - Off-peak: 1.0× wait time<br><br>
-                        <strong>Coffee Time Calculation:</strong><br>
-                        Base time (3 min) × Peak multiplier = Final time (2-8 min range)<br><br>
-                        <strong>Busy Levels:</strong><br>
-                        - Low (0-30%): 2-3 min, green indicator<br>
-                        - Medium (30-70%): 3-5 min, orange indicator<br>
-                        - High (70-100%): 5-8 min, red indicator
-                    </div>
-                </div>
-
-                <!-- Live Transit Data -->
-                <div style="background: #f7fafc; border-radius: 8px; padding: 15px; border-left: 4px solid #805ad5;">
-                    <h3 style="color: #2d3748; font-size: 16px; margin-bottom: 10px;">📡 Live Transit Data Processing</h3>
-                    <div style="font-size: 13px; color: #4a5568; line-height: 1.6;">
-                        <strong>Module:</strong> <code>data-scraper.js</code><br><br>
-                        <strong>Data Sources:</strong><br>
-                        - PTV GTFS-Realtime feeds (trains, trams, buses, V/Line)<br>
-                        - Protobuf format parsed to JSON<br><br>
-                        <strong>Update Cycle:</strong><br>
-                        1. TRMNL device requests data every 30 seconds<br>
-                        2. Server checks cache (25-second TTL)<br>
-                        3. If stale: fetch fresh GTFS-RT data from PTV<br>
-                        4. Parse departure times, platforms, delays<br>
-                        5. Cache results and return to device<br><br>
-                        <strong>Data Freshness:</strong> Live data max 30 seconds old<br>
-                        <strong>Stale Threshold:</strong> Shows warning if data > 60 seconds old
-                    </div>
-                </div>
-
-                <!-- Address Geocoding -->
-                <div style="background: #f7fafc; border-radius: 8px; padding: 15px; border-left: 4px solid #38b2ac;">
-                    <h3 style="color: #2d3748; font-size: 16px; margin-bottom: 10px;">📍 Address Autocomplete & Geocoding</h3>
-                    <div style="font-size: 13px; color: #4a5568; line-height: 1.6;">
-                        <strong>Search Hierarchy:</strong><br>
-                        1. <strong>Google Places Autocomplete</strong> (if API key configured):<br>
-                        &nbsp;&nbsp;&nbsp;- Excellent for cafe/business names<br>
-                        &nbsp;&nbsp;&nbsp;- Returns place_id → fetch full details<br>
-                        &nbsp;&nbsp;&nbsp;- Gets exact coordinates, formatted address<br>
-                        2. <strong>OpenStreetMap Nominatim</strong> (fallback, always available):<br>
-                        &nbsp;&nbsp;&nbsp;- Good for street addresses<br>
-                        &nbsp;&nbsp;&nbsp;- Free, no API key needed<br>
-                        &nbsp;&nbsp;&nbsp;- Melbourne bounding box for relevance<br><br>
-                        <strong>Validation:</strong> Selected addresses stored with lat/lon coordinates<br>
-                        <strong>Cache:</strong> Geocoding results cached in-memory (permanent during session)
-                    </div>
-                </div>
-            </div>
-
-            <div style="margin-top: 20px; text-align: center;">
-                <button class="btn" onclick="scrollToTop()" style="background: #4a5568;">
-                    ⬆️ Back to Top
-                </button>
-            </div>
-        </div>
-
-        <!-- Footer with Copyright -->
-        <footer style="background: #2d3748; color: white; padding: 30px 20px; margin-top: 40px; border-radius: 12px 12px 0 0;">
-            <div style="max-width: 1200px; margin: 0 auto; text-align: center;">
-                <div style="margin-bottom: 20px;">
-                    <h3 style="font-size: 18px; margin-bottom: 10px;">🚆 PTV-TRMNL</h3>
-                    <p style="font-size: 14px; color: #cbd5e0;">Smart Melbourne Transit System</p>
-                </div>
-
-                <div style="border-top: 1px solid #4a5568; padding-top: 20px; margin-top: 20px;">
-                    <p style="font-size: 12px; color: #a0aec0; line-height: 1.6;">
-                        © 2026 Angus Bergman. All rights reserved.<br>
-                        Powered by PTV Open Data API.<br>
-                        Data sources: PTV GTFS-Realtime, OpenStreetMap Nominatim, Bureau of Meteorology.<br>
-                        <span style="opacity: 0.7;">This system is for educational and personal use only.</span>
-                    </p>
-                </div>
-
-                <div style="margin-top: 15px; font-size: 11px; color: #718096;">
-                    <a href="https://github.com/angusbergman17-cpu/PTV-TRMNL-NEW" target="_blank" style="color: #667eea; text-decoration: none; margin: 0 10px;">📦 GitHub</a>
-                    <span style="opacity: 0.5;">|</span>
-                    <a href="/admin/dashboard-preview" target="_blank" style="color: #667eea; text-decoration: none; margin: 0 10px;">👁️ Dashboard Preview</a>
-                    <span style="opacity: 0.5;">|</span>
-                    <span style="opacity: 0.7; margin: 0 10px;">Version 2.0.0</span>
-                </div>
-            </div>
-        </footer>
-    </div>
-
-    <!-- API Edit Modal -->
-    <div class="modal" id="apiModal">
-        <div class="modal-content">
-            <div class="modal-header">Configure API</div>
-            <form id="apiForm">
-                <input type="hidden" id="apiId">
-                <div class="form-group">
-                    <label class="form-label">API Name</label>
-                    <input type="text" class="form-input" id="apiName" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">API Key (Account ID)</label>
-                    <input type="text" class="form-input" id="apiKey" placeholder="e.g., ce606b90-9ffb-43e8-bcd7-0c2bd0498367">
-                    <small style="color: #718096; font-size: 11px;">Your PTV Open Data account identifier</small>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">API Token (JWT)</label>
-                    <input type="password" class="form-input" id="apiToken" required placeholder="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...">
-                    <small style="color: #718096; font-size: 11px;">JWT token used for API authentication</small>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Base URL</label>
-                    <input type="url" class="form-input" id="apiBaseUrl">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">
-                        <input type="checkbox" class="form-checkbox" id="apiEnabled">
-                        Enable this API
-                    </label>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-danger" onclick="closeModal()">Cancel</button>
-                    <button type="submit" class="btn">Save API</button>
-                </div>
-            </form>
+        <!-- Footer -->
+        <div class="footer">
+            <p><a href="/admin/live-display" target="_blank">Live Display</a> · <a href="/preview" target="_blank">E-Ink Preview</a> · <a href="/api/dashboard" target="_blank">HTML Dashboard</a></p>
         </div>
     </div>
 
     <script>
-        // Load configuration on page load
+        const BASE_URL = window.location.origin;
+        let refreshInterval;
+
         document.addEventListener('DOMContentLoaded', () => {
-            loadStatus();
-            loadApis();
-            loadSystemConfig();
-            loadDevices();
-            loadWeatherStatus();
-            loadPreferences(); // Load user preferences
-
-            // Auto-refresh every 5 seconds
-            setInterval(() => {
-                loadStatus();
-                loadDevices();
-                loadWeatherStatus();
-            }, 5000);
-
-            // Close autocomplete dropdowns when clicking outside
-            document.addEventListener('click', (e) => {
-                if (!e.target.classList.contains('address-autocomplete')) {
-                    document.querySelectorAll('.autocomplete-dropdown').forEach(dropdown => {
-                        dropdown.classList.remove('show');
-                    });
-                }
-            });
+            updateClock();
+            setInterval(updateClock, 1000);
+            loadAllData();
+            loadSavedPreferences();
+            refreshInterval = setInterval(loadAllData, 30000);
         });
 
-        // ========== ADDRESS AUTOCOMPLETE ==========
-
-        let addressSearchTimeout = null;
-        const validatedAddresses = {
-            home: null,
-            cafe: null,
-            work: null
-        };
-
-        async function handleAddressInput(type, value) {
-            // Clear previous timeout
-            if (addressSearchTimeout) {
-                clearTimeout(addressSearchTimeout);
-            }
-
-            // Clear validation status when typing
-            const validationEl = document.getElementById(`${type}AddressValidation`);
-            if (validationEl) {
-                validationEl.style.display = 'none';
-            }
-
-            // If value is empty, hide dropdown
-            if (!value || value.length < 3) {
-                hideAutocompleteDropdown(type);
-                return;
-            }
-
-            // Show loading state
-            const dropdown = document.getElementById(`${type}AddressDropdown`);
-            dropdown.innerHTML = '<div class="autocomplete-loading">🔍 Searching...</div>';
-            dropdown.classList.add('show');
-
-            // Debounce the search
-            addressSearchTimeout = setTimeout(async () => {
-                try {
-                    const response = await fetch(`/admin/address/search?query=${encodeURIComponent(value)}`);
-                    const data = await response.json();
-
-                    if (data.success && data.results.length > 0) {
-                        displayAutocompleteResults(type, data.results, data.source);
-                    } else {
-                        const suggestGoogle = data.source === 'nominatim' || !data.source;
-                        dropdown.innerHTML = `
-                            <div class="autocomplete-empty">
-                                No addresses found. Try being more specific.
-                                ${suggestGoogle ? '<br><small style="color: #718096; margin-top: 5px; display: block;">💡 Tip: Add Google Places API key for better cafe/business search</small>' : ''}
-                            </div>
-                        `;
-                    }
-                } catch (error) {
-                    console.error('Address search error:', error);
-                    dropdown.innerHTML = '<div class="autocomplete-empty">Error searching addresses. Please try again.</div>';
-                }
-            }, 300); // Wait 300ms after user stops typing
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+            event.target.classList.add('active');
         }
 
-        function displayAutocompleteResults(type, results, source) {
-            const dropdown = document.getElementById(`${type}AddressDropdown`);
-
-            // Add source indicator at top
-            const sourceIcon = source === 'google' ? '🔵' : '🟢';
-            const sourceName = source === 'google' ? 'Google Places' : 'OpenStreetMap';
-            const sourceNote = source === 'nominatim' ? '<small style="color: #718096; font-size: 10px; display: block; margin-top: 3px;">💡 Add Google API key for better cafe search</small>' : '';
-
-            const sourceHeader = `
-                <div style="padding: 8px 14px; background: #f7fafc; border-bottom: 1px solid #e2e8f0; font-size: 11px; color: #718096;">
-                    ${sourceIcon} Powered by ${sourceName}
-                    ${sourceNote}
-                </div>
-            `;
-
-            const resultsHtml = results.map((result, index) => `
-                <div class="autocomplete-item" onclick="selectAddress('${type}', ${index})">
-                    <div class="autocomplete-item-title">${escapeHtml(result.display_name || result.address)}</div>
-                    <div class="autocomplete-item-subtitle">${escapeHtml(result.full_address)}</div>
-                </div>
-            `).join('');
-
-            dropdown.innerHTML = sourceHeader + resultsHtml;
-
-            // Store results for selection
-            window[`${type}SearchResults`] = results;
-
-            dropdown.classList.add('show');
-        }
-
-        function selectAddress(type, index) {
-            const results = window[`${type}SearchResults`];
-            if (!results || !results[index]) return;
-
-            const selected = results[index];
-            const inputField = document.getElementById(`pref${type.charAt(0).toUpperCase() + type.slice(1)}Address`);
-
-            // Set the input value
-            inputField.value = selected.full_address;
-
-            // Store validated address data
-            validatedAddresses[type] = {
-                address: selected.full_address,
-                lat: selected.lat,
-                lon: selected.lon
-            };
-
-            // Show validation checkmark
-            const validationEl = document.getElementById(`${type}AddressValidation`);
-            if (validationEl) {
-                validationEl.innerHTML = '✅ Validated';
-                validationEl.className = 'address-validated';
-                validationEl.style.display = 'inline';
-            }
-
-            // Hide dropdown
-            hideAutocompleteDropdown(type);
-
-            console.log(`✅ Selected ${type} address:`, selected.full_address);
-        }
-
-        function hideAutocompleteDropdown(type) {
-            const dropdown = document.getElementById(`${type}AddressDropdown`);
-            if (dropdown) {
-                dropdown.classList.remove('show');
-                dropdown.innerHTML = '';
-            }
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        // Smooth scroll to top
-        function scrollToTop() {
-            window.scrollTo({
-                top: 0,
-                behavior: 'smooth'
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('current-time').textContent = now.toLocaleTimeString('en-AU', {
+                timeZone: 'Australia/Melbourne', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+            });
+            document.getElementById('current-date').textContent = now.toLocaleDateString('en-AU', {
+                timeZone: 'Australia/Melbourne', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
             });
         }
 
-        // ========== PREFERENCES MANAGEMENT ==========
-
-        function toggleManualTimesInputs() {
-            const useManual = document.getElementById('useManualTimes').checked;
-            const inputsDiv = document.getElementById('manualTimesInputs');
-            inputsDiv.style.display = useManual ? 'block' : 'none';
-        }
-
-        function toggleCafeLocation() {
-            const coffeeEnabled = document.getElementById('prefCoffeeEnabled').checked;
-            const cafeLocationSection = document.getElementById('cafeLocationSection');
-            cafeLocationSection.style.display = coffeeEnabled ? 'block' : 'none';
-        }
-
-        function toggleTransitMode2() {
-            const numberOfModes = document.getElementById('prefNumberOfModes').value;
-            const mode2Section = document.getElementById('transitMode2Section');
-            mode2Section.style.display = numberOfModes === '2' ? 'block' : 'none';
-
-            // Update cafe location options based on number of modes
-            const cafeLocationSelect = document.getElementById('prefCafeLocation');
-            const betweenTransitsOption = cafeLocationSelect.querySelector('option[value="between-transits"]');
-
-            if (numberOfModes === '1') {
-                betweenTransitsOption.disabled = true;
-                if (cafeLocationSelect.value === 'between-transits') {
-                    cafeLocationSelect.value = 'before-transit-1';
-                }
-            } else {
-                betweenTransitsOption.disabled = false;
-            }
-        }
-
-        function updateAddressValidationStatus(homeFound, cafeFound, workFound) {
-            // Update home status
-            const homeStatus = document.getElementById('homeFoundStatus');
-            if (homeFound === true) {
-                homeStatus.textContent = '✅';
-                homeStatus.title = 'Home address geocoded successfully';
-            } else if (homeFound === false) {
-                homeStatus.textContent = '⚠️';
-                homeStatus.title = 'Home address could not be geocoded - use manual times';
-            } else {
-                homeStatus.textContent = '⏳';
-                homeStatus.title = 'Not yet tested';
-            }
-
-            // Update cafe status
-            const cafeStatus = document.getElementById('cafeFoundStatus');
-            if (cafeFound === true) {
-                cafeStatus.textContent = '✅';
-                cafeStatus.title = 'Cafe address geocoded successfully';
-            } else if (cafeFound === false) {
-                cafeStatus.textContent = '⚠️';
-                cafeStatus.title = 'Cafe address could not be geocoded - use manual times';
-            } else {
-                cafeStatus.textContent = '⏳';
-                cafeStatus.title = 'Not yet tested';
-            }
-
-            // Update work status
-            const workStatus = document.getElementById('workFoundStatus');
-            if (workFound === true) {
-                workStatus.textContent = '✅';
-                workStatus.title = 'Work address geocoded successfully';
-            } else if (workFound === false) {
-                workStatus.textContent = '⚠️';
-                workStatus.title = 'Work address could not be geocoded - use manual times';
-            } else {
-                workStatus.textContent = '⏳';
-                workStatus.title = 'Not yet tested';
-            }
-        }
-
-        async function loadPreferences() {
+        async function loadAllData() {
             try {
-                const response = await fetch('/admin/preferences');
-                const data = await response.json();
+                const [status, weather, regions] = await Promise.all([
+                    fetch(BASE_URL + '/api/status').then(r => r.json()).catch(() => null),
+                    fetch(BASE_URL + '/admin/weather').then(r => r.json()).catch(() => null),
+                    fetch(BASE_URL + '/api/region-updates').then(r => r.json()).catch(() => null)
+                ]);
 
-                if (data.success) {
-                    const prefs = data.preferences;
-
-                    // Load addresses and show validation checkmarks if saved
-                    const homeAddr = prefs.addresses?.home || '';
-                    const cafeAddr = prefs.addresses?.cafe || '';
-                    const workAddr = prefs.addresses?.work || '';
-
-                    document.getElementById('prefHomeAddress').value = homeAddr;
-                    document.getElementById('prefCafeAddress').value = cafeAddr;
-                    document.getElementById('prefWorkAddress').value = workAddr;
-
-                    // Show validation checkmarks for saved addresses
-                    if (homeAddr) {
-                        const homeValidation = document.getElementById('homeAddressValidation');
-                        homeValidation.innerHTML = '✅ Saved';
-                        homeValidation.className = 'address-validated';
-                        homeValidation.style.display = 'inline';
-                    }
-                    if (cafeAddr) {
-                        const cafeValidation = document.getElementById('cafeAddressValidation');
-                        cafeValidation.innerHTML = '✅ Saved';
-                        cafeValidation.className = 'address-validated';
-                        cafeValidation.style.display = 'inline';
-                    }
-                    if (workAddr) {
-                        const workValidation = document.getElementById('workAddressValidation');
-                        workValidation.innerHTML = '✅ Saved';
-                        workValidation.className = 'address-validated';
-                        workValidation.style.display = 'inline';
-                    }
-
-                    // Load API credentials
-                    document.getElementById('prefApiKey').value = prefs.api?.key || '';
-                    // Don't load token for security (it's saved, just not displayed)
-
-                    // Load journey preferences
-                    const arrivalTime = prefs.journey?.arrivalTime || '09:00';
-                    document.getElementById('prefArrivalTime').value = arrivalTime;
-                    document.getElementById('prefCoffeeEnabled').checked = prefs.journey?.coffeeEnabled !== false;
-
-                    // Load transit mode preferences
-                    const modes = prefs.journey?.preferredTransitModes || [0, 1, 2, 3];
-                    document.getElementById('prefModeTrains').checked = modes.includes(0);
-                    document.getElementById('prefModeTrams').checked = modes.includes(1);
-                    document.getElementById('prefModeBuses').checked = modes.includes(2);
-                    document.getElementById('prefModeVLine').checked = modes.includes(3);
-
-                    // Load manual walking times
-                    const manualTimes = prefs.manualWalkingTimes || {};
-                    document.getElementById('useManualTimes').checked = manualTimes.useManualTimes || false;
-                    document.getElementById('homeToStation').value = manualTimes.homeToStation || '';
-                    document.getElementById('stationToCafe').value = manualTimes.stationToCafe || '';
-                    document.getElementById('cafeToStation').value = manualTimes.cafeToStation || '';
-                    document.getElementById('stationToWork').value = manualTimes.stationToWork || '';
-
-                    // Show/hide manual time inputs based on toggle
-                    toggleManualTimesInputs();
-
-                    // Load cafe location and transit route configuration (NEW)
-                    document.getElementById('prefCafeLocation').value = prefs.journey?.cafeLocation || 'before-transit-1';
-
-                    const transitRoute = prefs.journey?.transitRoute || {};
-                    document.getElementById('prefNumberOfModes').value = transitRoute.numberOfModes || '1';
-
-                    // Transit Mode 1
-                    if (transitRoute.mode1) {
-                        document.getElementById('prefMode1Type').value = transitRoute.mode1.type || 0;
-                        document.getElementById('prefMode1Origin').value = transitRoute.mode1.originStation?.name || '';
-                        document.getElementById('prefMode1Destination').value = transitRoute.mode1.destinationStation?.name || '';
-                        document.getElementById('prefMode1Duration').value = transitRoute.mode1.estimatedDuration || 20;
-                    }
-
-                    // Transit Mode 2 (if exists)
-                    if (transitRoute.mode2 && transitRoute.mode2.type !== null) {
-                        document.getElementById('prefMode2Type').value = transitRoute.mode2.type || 0;
-                        document.getElementById('prefMode2Origin').value = transitRoute.mode2.originStation?.name || '';
-                        document.getElementById('prefMode2Destination').value = transitRoute.mode2.destinationStation?.name || '';
-                        document.getElementById('prefMode2Duration').value = transitRoute.mode2.estimatedDuration || 15;
-                    }
-
-                    // Show/hide sections based on settings
-                    toggleCafeLocation();
-                    toggleTransitMode2();
-
-                    // Load and display address validation flags
-                    const addressFlags = prefs.addressFlags || {};
-                    updateAddressValidationStatus(
-                        addressFlags.homeFound,
-                        addressFlags.cafeFound,
-                        addressFlags.workFound
-                    );
-
-                    // Auto-populate One-Click Journey Planner
-                    if (document.getElementById('autoHomeAddress')) {
-                        document.getElementById('autoHomeAddress').value = homeAddr;
-                    }
-                    if (document.getElementById('autoWorkAddress')) {
-                        document.getElementById('autoWorkAddress').value = workAddr;
-                    }
-                    if (document.getElementById('autoCafeAddress')) {
-                        document.getElementById('autoCafeAddress').value = cafeAddr;
-                    }
-                    if (document.getElementById('autoArrivalTime')) {
-                        document.getElementById('autoArrivalTime').value = arrivalTime;
-                    }
-                    if (document.getElementById('autoIncludeCoffee')) {
-                        document.getElementById('autoIncludeCoffee').value = coffeeEnabled ? 'true' : 'false';
-                    }
-
-                    // Auto-populate Legacy Smart Route Planner with saved preferences
-                    if (document.getElementById('homeAddress')) {
-                        document.getElementById('homeAddress').value = homeAddr;
-                    }
-                    if (document.getElementById('coffeeAddress')) {
-                        document.getElementById('coffeeAddress').value = cafeAddr;
-                    }
-                    if (document.getElementById('workAddress')) {
-                        document.getElementById('workAddress').value = workAddr;
-                    }
-                    if (document.getElementById('arrivalTime')) {
-                        document.getElementById('arrivalTime').value = arrivalTime;
-                    }
-
-                    // Show status
-                    if (!data.status.configured) {
-                        showPreferencesStatus('⚠️ Preferences not fully configured. Please fill in all required fields.', 'warning');
-                    } else {
-                        showPreferencesStatus('✅ Preferences loaded successfully. Addresses are saved and will be used automatically.', 'success');
-
-                        // Auto-calculate route if all required fields are populated
-                        if (homeAddr && workAddr && arrivalTime) {
-                            console.log('📍 All required fields populated - auto-calculating route...');
-                            setTimeout(() => calculateRoute(), 500); // Small delay to let UI update
-                        }
-                    }
+                if (status) {
+                    updateDepartures(status);
+                    document.getElementById('data-mode').textContent = status.dataMode === 'Live' ? 'Live Data' : 'Fallback';
                 }
+                if (weather) updateWeather(weather);
+                loadJourneySummary();
+                loadCoffeeDecision();
             } catch (error) {
-                console.error('Error loading preferences:', error);
-                showPreferencesStatus('❌ Error loading preferences', 'error');
+                console.error('Error:', error);
             }
         }
 
-        async function savePreferences() {
-            try {
-                // Collect selected transit modes
-                const preferredTransitModes = [];
-                if (document.getElementById('prefModeTrains').checked) preferredTransitModes.push(0);
-                if (document.getElementById('prefModeTrams').checked) preferredTransitModes.push(1);
-                if (document.getElementById('prefModeBuses').checked) preferredTransitModes.push(2);
-                if (document.getElementById('prefModeVLine').checked) preferredTransitModes.push(3);
+        function updateDepartures(data) {
+            const trains = data.data?.trains || [];
+            const trams = data.data?.trams || [];
 
-                // Collect manual walking times
-                const homeToStation = document.getElementById('homeToStation').value;
-                const stationToCafe = document.getElementById('stationToCafe').value;
-                const cafeToStation = document.getElementById('cafeToStation').value;
-                const stationToWork = document.getElementById('stationToWork').value;
+            document.getElementById('train-departures').innerHTML = trains.length ?
+                trains.slice(0, 4).map(d => `
+                    <div class="departure-row">
+                        <div><div class="departure-dest">${d.destination || d.direction || 'Unknown'}</div></div>
+                        <div class="departure-time">${d.minutes || d.minutesToDeparture || '--'}<span> min</span></div>
+                    </div>
+                `).join('') : '<div class="no-data">No departures</div>';
 
-                const updates = {
-                    addresses: {
-                        home: document.getElementById('prefHomeAddress').value,
-                        cafe: document.getElementById('prefCafeAddress').value,
-                        work: document.getElementById('prefWorkAddress').value
-                    },
-                    api: {
-                        key: document.getElementById('prefApiKey').value,
-                        token: document.getElementById('prefApiToken').value || undefined, // Only update if provided
-                        baseUrl: 'https://timetableapi.ptv.vic.gov.au'
-                    },
-                    journey: {
-                        arrivalTime: document.getElementById('prefArrivalTime').value,
-                        coffeeEnabled: document.getElementById('prefCoffeeEnabled').checked,
-                        preferredTransitModes,
-                        cafeLocation: document.getElementById('prefCafeLocation').value,
-                        transitRoute: {
-                            numberOfModes: parseInt(document.getElementById('prefNumberOfModes').value),
-                            mode1: {
-                                type: parseInt(document.getElementById('prefMode1Type').value),
-                                originStation: {
-                                    name: document.getElementById('prefMode1Origin').value,
-                                    id: null,
-                                    lat: null,
-                                    lon: null
-                                },
-                                destinationStation: {
-                                    name: document.getElementById('prefMode1Destination').value,
-                                    id: null,
-                                    lat: null,
-                                    lon: null
-                                },
-                                estimatedDuration: parseInt(document.getElementById('prefMode1Duration').value)
-                            },
-                            mode2: parseInt(document.getElementById('prefNumberOfModes').value) === 2 ? {
-                                type: parseInt(document.getElementById('prefMode2Type').value),
-                                originStation: {
-                                    name: document.getElementById('prefMode2Origin').value,
-                                    id: null,
-                                    lat: null,
-                                    lon: null
-                                },
-                                destinationStation: {
-                                    name: document.getElementById('prefMode2Destination').value,
-                                    id: null,
-                                    lat: null,
-                                    lon: null
-                                },
-                                estimatedDuration: parseInt(document.getElementById('prefMode2Duration').value)
-                            } : null
-                        }
-                    },
-                    manualWalkingTimes: {
-                        useManualTimes: document.getElementById('useManualTimes').checked,
-                        homeToStation: homeToStation ? parseInt(homeToStation) : null,
-                        stationToCafe: stationToCafe ? parseInt(stationToCafe) : null,
-                        cafeToStation: cafeToStation ? parseInt(cafeToStation) : null,
-                        stationToWork: stationToWork ? parseInt(stationToWork) : null
-                    }
-                };
-
-                // Remove undefined token if not provided
-                if (!updates.api.token) {
-                    delete updates.api.token;
-                }
-
-                const response = await fetch('/admin/preferences', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(updates)
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    showPreferencesStatus('✅ Preferences saved successfully!', 'success');
-
-                    // Clear token field for security
-                    document.getElementById('prefApiToken').value = '';
-
-                    // Reload to confirm
-                    setTimeout(() => loadPreferences(), 1000);
-                } else {
-                    showPreferencesStatus('❌ Failed to save preferences', 'error');
-                }
-            } catch (error) {
-                console.error('Error saving preferences:', error);
-                showPreferencesStatus('❌ Error saving preferences: ' + error.message, 'error');
-            }
+            document.getElementById('tram-departures').innerHTML = trams.length ?
+                trams.slice(0, 4).map(d => `
+                    <div class="departure-row">
+                        <div><div class="departure-dest">${d.destination || d.direction || 'Unknown'}</div></div>
+                        <div class="departure-time">${d.minutes || d.minutesToDeparture || '--'}<span> min</span></div>
+                    </div>
+                `).join('') : '<div class="no-data">No departures</div>';
         }
 
-        async function testPreferences() {
-            try {
-                const response = await fetch('/admin/preferences/validate');
-                const data = await response.json();
-
-                if (data.validation.valid) {
-                    showPreferencesStatus('✅ Configuration is valid! All required fields are set.', 'success');
-                } else {
-                    const errors = data.validation.errors.join(', ');
-                    showPreferencesStatus('⚠️ Configuration incomplete: ' + errors, 'warning');
-                }
-            } catch (error) {
-                showPreferencesStatus('❌ Error testing configuration', 'error');
-            }
-        }
-
-        async function resetPreferences() {
-            if (!confirm('Are you sure you want to reset all preferences to defaults? This cannot be undone.')) {
-                return;
-            }
-
-            try {
-                const response = await fetch('/admin/preferences/reset', { method: 'POST' });
-                const data = await response.json();
-
-                if (data.success) {
-                    showPreferencesStatus('✅ Preferences reset to defaults', 'success');
-                    loadPreferences();
-                } else {
-                    showPreferencesStatus('❌ Failed to reset preferences', 'error');
-                }
-            } catch (error) {
-                showPreferencesStatus('❌ Error resetting preferences', 'error');
-            }
-        }
-
-        function showPreferencesStatus(message, type) {
-            const statusDiv = document.getElementById('preferencesStatus');
-            const colors = {
-                success: '#48bb78',
-                error: '#f56565',
-                warning: '#ed8936'
-            };
-
-            statusDiv.innerHTML = `
-                <div style="padding: 12px; background: ${colors[type]}20; border-left: 4px solid ${colors[type]}; border-radius: 6px; color: #2d3748;">
-                    ${message}
+        function updateWeather(data) {
+            const temp = data.current?.temperature || data.temperature || '--';
+            const condition = data.current?.condition?.full || data.condition || 'Unknown';
+            const humidity = data.current?.humidity || data.humidity || '--';
+            document.getElementById('weather-source').textContent = data.source || 'BOM';
+            document.getElementById('weather-display').innerHTML = `
+                <div class="weather-display">
+                    <div class="weather-temp">${temp}°</div>
+                    <div><div class="weather-condition">${condition}</div><div class="weather-extra">Humidity ${humidity}%</div></div>
                 </div>
             `;
-            statusDiv.style.display = 'block';
-
-            // Hide after 5 seconds
-            setTimeout(() => {
-                statusDiv.style.display = 'none';
-            }, 5000);
         }
 
-        // API Form submission
-        document.getElementById('apiForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+        async function loadCoffeeDecision() {
+            try {
+                const route = await fetch(BASE_URL + '/admin/route').then(r => r.json());
+                if (route?.coffee_decision) {
+                    document.getElementById('coffee-decision').innerHTML = `
+                        <div class="coffee-icon">${route.coffee_decision.can_get_coffee ? '☕' : '⏰'}</div>
+                        <div class="coffee-text">${route.coffee_decision.can_get_coffee ? 'Time for Coffee!' : 'Skip Coffee'}</div>
+                        <div class="coffee-subtext">${route.coffee_decision.message || ''}</div>
+                    `;
+                } else {
+                    document.getElementById('coffee-decision').innerHTML = `
+                        <div class="coffee-icon">☕</div>
+                        <div class="coffee-text">Plan a Journey</div>
+                        <div class="coffee-subtext">Configure your route first</div>
+                    `;
+                }
+            } catch (e) {
+                document.getElementById('coffee-decision').innerHTML = `
+                    <div class="coffee-icon">☕</div><div class="coffee-text">Plan a Journey</div>
+                `;
+            }
+        }
 
-            const apiId = document.getElementById('apiId').value;
-            const apiData = {
-                name: document.getElementById('apiName').value,
-                api_key: document.getElementById('apiKey').value,
-                token: document.getElementById('apiToken').value,
-                baseUrl: document.getElementById('apiBaseUrl').value,
-                enabled: document.getElementById('apiEnabled').checked
+        async function loadJourneySummary() {
+            try {
+                const journey = await fetch(BASE_URL + '/admin/route/auto').then(r => r.json());
+                if (journey?.summary) {
+                    document.getElementById('journey-summary-card').style.display = 'block';
+                    document.getElementById('journey-summary').innerHTML = `
+                        <div class="route-summary">
+                            <div class="route-time"><div class="route-time-label">Leave Home</div><div class="route-time-value">${journey.summary.must_leave_home || '--:--'}</div></div>
+                            <div class="route-time"><div class="route-time-label">Arrive Work</div><div class="route-time-value">${journey.summary.arrival_at_work || '--:--'}</div></div>
+                        </div>
+                    `;
+                }
+            } catch (e) {
+                document.getElementById('journey-summary-card').style.display = 'none';
+            }
+        }
+
+        function addTransitLeg() {
+            document.getElementById('transit-mode-2').style.display = 'block';
+            document.getElementById('add-mode-btn').style.display = 'none';
+        }
+
+        function removeTransitLeg() {
+            document.getElementById('transit-mode-2').style.display = 'none';
+            document.getElementById('add-mode-btn').style.display = 'flex';
+            document.getElementById('mode2-origin').value = '';
+            document.getElementById('mode2-destination').value = '';
+        }
+
+        async function planJourney() {
+            document.getElementById('plan-btn-text').textContent = 'Planning...';
+            const hasMode2 = document.getElementById('transit-mode-2').style.display !== 'none';
+
+            const data = {
+                homeAddress: document.getElementById('home-address').value,
+                workAddress: document.getElementById('work-address').value,
+                cafeAddress: document.getElementById('cafe-address').value,
+                arrivalTime: document.getElementById('arrival-time').value,
+                includeCoffee: document.getElementById('include-coffee').checked,
+                coffeeTime: parseInt(document.getElementById('coffee-time').value) || 5,
+                transitRoute: {
+                    numberOfModes: hasMode2 ? 2 : 1,
+                    mode1: { type: parseInt(document.getElementById('mode1-type').value), originStation: { name: document.getElementById('mode1-origin').value }, destinationStation: { name: document.getElementById('mode1-destination').value } },
+                    mode2: hasMode2 ? { type: parseInt(document.getElementById('mode2-type').value), originStation: { name: document.getElementById('mode2-origin').value }, destinationStation: { name: document.getElementById('mode2-destination').value } } : null
+                }
             };
 
             try {
-                const response = await fetch(`/admin/api/${apiId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(apiData)
-                });
+                const result = await fetch(BASE_URL + '/admin/route/auto-plan', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+                }).then(r => r.json());
 
-                if (response.ok) {
-                    alert('API configuration saved successfully!');
-                    closeModal();
-                    loadApis();
-                } else {
-                    alert('Failed to save API configuration');
-                }
-            } catch (error) {
-                alert('Error saving API configuration: ' + error.message);
-            }
-        });
-
-        async function loadStatus() {
-            try {
-                const response = await fetch('/admin/status');
-                const data = await response.json();
-
-                document.getElementById('serverStatus').textContent = data.status;
-                document.getElementById('lastUpdate').textContent = new Date(data.lastUpdate).toLocaleTimeString();
-                document.getElementById('activeApis').textContent = `${data.activeApis}/${data.totalApis}`;
-                document.getElementById('dataMode').textContent = data.dataMode;
-
-                // Update data sources
-                const sourcesHtml = data.dataSources.map(source => `
-                    <div class="source-item">
-                        <span class="source-label">${source.name}</span>
-                        <span class="source-status ${source.active ? 'active' : 'inactive'}">${source.status}</span>
-                    </div>
-                `).join('');
-                document.getElementById('dataSources').innerHTML = sourcesHtml;
-
-            } catch (error) {
-                console.error('Failed to load status:', error);
-            }
-        }
-
-        async function loadApis() {
-            try {
-                const response = await fetch('/admin/apis');
-                const apis = await response.json();
-
-                const apisHtml = Object.entries(apis).map(([id, api]) => `
-                    <div class="api-item">
-                        <div class="api-header">
-                            <span class="api-name">${api.name}</span>
-                            <span class="api-status ${api.status}">${api.status}</span>
-                        </div>
-                        <div class="api-details">
-                            ${api.baseUrl || 'No base URL configured'}
-                        </div>
-                        <div style="margin-top: 10px;">
-                            <button class="btn btn-small" onclick="editApi('${id}')">Configure</button>
-                            ${api.enabled ?
-                                `<button class="btn btn-small btn-danger" onclick="toggleApi('${id}', false)">Disable</button>` :
-                                `<button class="btn btn-small" onclick="toggleApi('${id}', true)">Enable</button>`
-                            }
-                        </div>
-                    </div>
-                `).join('');
-
-                document.getElementById('apiList').innerHTML = apisHtml;
-            } catch (error) {
-                console.error('Failed to load APIs:', error);
-            }
-        }
-
-        async function loadSystemConfig() {
-            try {
-                const response = await fetch('/admin/config');
-                const config = await response.json();
-
-                document.getElementById('refreshInterval').value = config.refreshInterval;
-                document.getElementById('fallbackEnabled').checked = config.fallbackEnabled;
-            } catch (error) {
-                console.error('Failed to load system config:', error);
-            }
-        }
-
-        async function saveSystemConfig() {
-            const config = {
-                refreshInterval: parseInt(document.getElementById('refreshInterval').value),
-                fallbackEnabled: document.getElementById('fallbackEnabled').checked
-            };
-
-            try {
-                const response = await fetch('/admin/config', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(config)
-                });
-
-                if (response.ok) {
-                    alert('System configuration saved successfully!');
-                } else {
-                    alert('Failed to save system configuration');
-                }
-            } catch (error) {
-                alert('Error saving configuration: ' + error.message);
-            }
-        }
-
-        function editApi(apiId) {
-            fetch(`/admin/api/${apiId}`)
-                .then(res => res.json())
-                .then(api => {
-                    document.getElementById('apiId').value = apiId;
-                    document.getElementById('apiName').value = api.name;
-                    document.getElementById('apiKey').value = api.api_key || '';
-                    document.getElementById('apiToken').value = api.token || '';
-                    document.getElementById('apiBaseUrl').value = api.baseUrl || '';
-                    document.getElementById('apiEnabled').checked = api.enabled;
-                    document.getElementById('apiModal').classList.add('active');
-                });
-        }
-
-        async function toggleApi(apiId, enabled) {
-            try {
-                const response = await fetch(`/admin/api/${apiId}/toggle`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ enabled })
-                });
-
-                if (response.ok) {
-                    loadApis();
-                } else {
-                    alert('Failed to toggle API');
-                }
-            } catch (error) {
-                alert('Error toggling API: ' + error.message);
-            }
-        }
-
-        function addNewApi() {
-            document.getElementById('apiId').value = 'custom_' + Date.now();
-            document.getElementById('apiName').value = '';
-            document.getElementById('apiKey').value = '';
-            document.getElementById('apiToken').value = '';
-            document.getElementById('apiBaseUrl').value = '';
-            document.getElementById('apiEnabled').checked = false;
-            document.getElementById('apiModal').classList.add('active');
-        }
-
-        function closeModal() {
-            document.getElementById('apiModal').classList.remove('active');
-        }
-
-        // Close modal when clicking outside
-        document.getElementById('apiModal').addEventListener('click', (e) => {
-            if (e.target.id === 'apiModal') {
-                closeModal();
-            }
-        });
-
-        // Load connected devices
-        async function loadDevices() {
-            try {
-                const response = await fetch('/admin/devices');
-                const devices = await response.json();
-
-                if (devices.length === 0) {
-                    document.getElementById('deviceList').innerHTML = `
-                        <div style="text-align: center; padding: 20px; color: #718096;">
-                            No devices connected
+                if (result.success) {
+                    showMessage('planner-message', 'Journey planned!', 'success');
+                    document.getElementById('journey-result').style.display = 'block';
+                    document.getElementById('journey-result-content').innerHTML = `
+                        <div class="route-summary">
+                            <div class="route-time"><div class="route-time-label">Leave Home</div><div class="route-time-value">${result.journey?.summary?.must_leave_home || '--:--'}</div></div>
+                            <div class="route-time"><div class="route-time-label">Arrive Work</div><div class="route-time-value">${result.journey?.summary?.arrival_at_work || '--:--'}</div></div>
                         </div>
                     `;
-                    return;
-                }
-
-                const devicesHtml = devices.map(device => `
-                    <div class="api-item">
-                        <div class="api-header">
-                            <span class="api-name">${device.id}</span>
-                            <span class="api-status ${device.status === 'online' ? 'active' : 'inactive'}">
-                                ${device.status}
-                            </span>
-                        </div>
-                        <div class="api-details">
-                            IP: ${device.ip || 'Unknown'} |
-                            Last seen: ${device.lastSeenAgo}s ago |
-                            Requests: ${device.requestCount}
-                        </div>
-                    </div>
-                `).join('');
-
-                document.getElementById('deviceList').innerHTML = devicesHtml;
-            } catch (error) {
-                console.error('Failed to load devices:', error);
-            }
-        }
-
-        // Clear server caches
-        async function clearCache() {
-            if (!confirm('Clear all server caches? This will force regeneration of all data.')) {
-                return;
-            }
-
-            try {
-                const response = await fetch('/admin/cache/clear', { method: 'POST' });
-                const data = await response.json();
-
-                if (data.success) {
-                    alert('✅ Caches cleared successfully!');
+                    localStorage.setItem('ptv-journey-prefs', JSON.stringify(data));
+                    loadJourneySummary();
+                    loadCoffeeDecision();
                 } else {
-                    alert('Failed to clear caches');
+                    showMessage('planner-message', result.error || 'Failed', 'error');
                 }
-            } catch (error) {
-                alert('Error clearing caches: ' + error.message);
+            } catch (e) {
+                showMessage('planner-message', 'Error: ' + e.message, 'error');
+            }
+            document.getElementById('plan-btn-text').textContent = 'Plan My Journey';
+        }
+
+        function loadSavedPreferences() {
+            const saved = localStorage.getItem('ptv-journey-prefs');
+            if (saved) {
+                const p = JSON.parse(saved);
+                document.getElementById('home-address').value = p.homeAddress || '';
+                document.getElementById('work-address').value = p.workAddress || '';
+                document.getElementById('cafe-address').value = p.cafeAddress || '';
+                document.getElementById('arrival-time').value = p.arrivalTime || '09:00';
+                document.getElementById('include-coffee').checked = p.includeCoffee !== false;
+                document.getElementById('coffee-time').value = p.coffeeTime || 5;
+                if (p.transitRoute?.mode1) {
+                    document.getElementById('mode1-type').value = p.transitRoute.mode1.type || 0;
+                    document.getElementById('mode1-origin').value = p.transitRoute.mode1.originStation?.name || '';
+                    document.getElementById('mode1-destination').value = p.transitRoute.mode1.destinationStation?.name || '';
+                }
+                if (p.transitRoute?.numberOfModes === 2 && p.transitRoute.mode2) {
+                    addTransitLeg();
+                    document.getElementById('mode2-type').value = p.transitRoute.mode2.type || 0;
+                    document.getElementById('mode2-origin').value = p.transitRoute.mode2.originStation?.name || '';
+                    document.getElementById('mode2-destination').value = p.transitRoute.mode2.destinationStation?.name || '';
+                }
             }
         }
 
-        // Force server data refresh
-        async function forceRefresh() {
+        async function savePtvConfig() {
             try {
-                const response = await fetch('/admin/server/refresh', { method: 'POST' });
-                const data = await response.json();
-
-                if (data.success) {
-                    alert('✅ Server data refreshed successfully!');
-                    loadStatus();
-                } else {
-                    alert('Failed to refresh server data');
-                }
-            } catch (error) {
-                alert('Error refreshing server: ' + error.message);
-            }
-        }
-
-        // Restart server
-        function confirmRestart() {
-            if (!confirm('⚠️ Restart the server? This will disconnect all devices temporarily.')) {
-                return;
-            }
-
-            if (!confirm('Are you absolutely sure? The server will be offline until it restarts.')) {
-                return;
-            }
-
-            fetch('/admin/server/restart', { method: 'POST' })
-                .then(() => {
-                    alert('Server restart initiated. The page will be unavailable for ~10 seconds.');
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 10000);
-                })
-                .catch(error => {
-                    alert('Error restarting server: ' + error.message);
+                await fetch(BASE_URL + '/admin/apis', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ptv_opendata: { api_key: document.getElementById('ptv-dev-id').value, token: document.getElementById('ptv-api-key').value } })
                 });
-        }
-
-        // Load weather status
-        async function loadWeatherStatus() {
-            try {
-                const response = await fetch('/admin/weather');
-                const data = await response.json();
-
-                const weatherHtml = `
-                    <div style="display: flex; flex-direction: column; gap: 15px;">
-                        <div style="padding: 15px; background: #f7fafc; border-radius: 8px;">
-                            <div style="font-size: 32px; font-weight: bold; color: #2d3748;">
-                                ${data.current.temperature !== null ? data.current.temperature + '°C' : 'N/A'}
-                            </div>
-                            <div style="font-size: 16px; color: #718096; margin-top: 5px;">
-                                ${data.current.condition.full || 'Unknown'}
-                            </div>
-                        </div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 13px;">
-                            <div>
-                                <strong>Feels Like:</strong> ${data.current.feelsLike ? data.current.feelsLike + '°C' : 'N/A'}
-                            </div>
-                            <div>
-                                <strong>Humidity:</strong> ${data.current.humidity ? data.current.humidity + '%' : 'N/A'}
-                            </div>
-                            <div>
-                                <strong>Wind:</strong> ${data.current.windSpeed ? data.current.windSpeed + ' km/h' : 'N/A'}
-                            </div>
-                            <div>
-                                <strong>Rain:</strong> ${data.current.rainSince9am !== null ? data.current.rainSince9am + ' mm' : 'N/A'}
-                            </div>
-                        </div>
-                        <div style="padding: 10px; background: #edf2f7; border-radius: 6px; font-size: 12px;">
-                            <div><strong>Location:</strong> ${data.location}</div>
-                            <div><strong>Source:</strong> ${data.source}</div>
-                            <div><strong>Cache Age:</strong> ${data.cache.age ? data.cache.age + 's' : 'N/A'}</div>
-                            <div><strong>Cache TTL:</strong> ${data.cache.ttl ? data.cache.ttl + 's' : 'N/A'}</div>
-                        </div>
-                    </div>
-                `;
-
-                document.getElementById('weatherStatus').innerHTML = weatherHtml;
-            } catch (error) {
-                document.getElementById('weatherStatus').innerHTML = `
-                    <div style="color: #e53e3e; padding: 15px; text-align: center;">
-                        ❌ Error loading weather: ${error.message}
-                    </div>
-                `;
+                showMessage('api-message', 'Saved!', 'success');
+            } catch (e) {
+                showMessage('api-message', 'Error', 'error');
             }
         }
 
-        // Refresh weather cache
-        async function refreshWeather() {
-            try {
-                const response = await fetch('/admin/weather/refresh', { method: 'POST' });
-                const data = await response.json();
-
-                if (data.success) {
-                    alert('✅ Weather cache refreshed!');
-                    loadWeatherStatus();
-                } else {
-                    alert('Failed to refresh weather');
-                }
-            } catch (error) {
-                alert('Error refreshing weather: ' + error.message);
-            }
+        async function testPtvApi() {
+            const data = await fetch(BASE_URL + '/api/status').then(r => r.json());
+            showMessage('api-message', data.dataMode === 'Live' ? 'Connected!' : 'Not connected', data.dataMode === 'Live' ? 'success' : 'error');
         }
 
-        // ========== ONE-CLICK AUTO JOURNEY PLANNER ==========
-
-        // Auto address search timeout
-        let autoAddressTimeout = {};
-
-        // Handle address input for auto planner
-        function handleAutoAddressInput(type, value) {
-            clearTimeout(autoAddressTimeout[type]);
-
-            const dropdown = document.getElementById(`auto${type.charAt(0).toUpperCase() + type.slice(1)}Dropdown`);
-
-            if (value.length < 3) {
-                dropdown.classList.remove('show');
-                return;
-            }
-
-            dropdown.innerHTML = '<div class="autocomplete-loading">Searching...</div>';
-            dropdown.classList.add('show');
-
-            autoAddressTimeout[type] = setTimeout(async () => {
-                try {
-                    const response = await fetch(`/admin/address/search?query=${encodeURIComponent(value)}`);
-                    const data = await response.json();
-
-                    if (data.results && data.results.length > 0) {
-                        dropdown.innerHTML = data.results.map(result => `
-                            <div class="autocomplete-item" onclick="selectAutoAddress('${type}', ${JSON.stringify(result).replace(/'/g, "\\'").replace(/"/g, '&quot;')})">
-                                <div class="autocomplete-item-title">${result.address || result.display_name}</div>
-                                <div class="autocomplete-item-subtitle">${result.full_address || ''}</div>
-                            </div>
-                        `).join('');
-                    } else {
-                        dropdown.innerHTML = '<div class="autocomplete-empty">No results found. Try a different search.</div>';
-                    }
-                } catch (error) {
-                    dropdown.innerHTML = '<div class="autocomplete-empty">Search error. Try again.</div>';
-                }
-            }, 300);
+        function saveDisplaySettings() {
+            localStorage.setItem('ptv-display-settings', JSON.stringify({
+                use24Hour: document.getElementById('use-24-hour').checked,
+                showWalkingTimes: document.getElementById('show-walking-times').checked
+            }));
+            showMessage('api-message', 'Saved!', 'success');
         }
 
-        // Select address from dropdown
-        function selectAutoAddress(type, result) {
-            const parsed = typeof result === 'string' ? JSON.parse(result.replace(/&quot;/g, '"')) : result;
-            const input = document.getElementById(`auto${type.charAt(0).toUpperCase() + type.slice(1)}Address`);
-            const dropdown = document.getElementById(`auto${type.charAt(0).toUpperCase() + type.slice(1)}Dropdown`);
+        function refreshData() { loadAllData(); }
+        async function clearCache() { await fetch(BASE_URL + '/admin/cache/clear', { method: 'POST' }); loadAllData(); }
 
-            input.value = parsed.full_address || parsed.display_name || parsed.address;
-            dropdown.classList.remove('show');
-        }
-
-        // Close dropdowns when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.form-group')) {
-                document.querySelectorAll('.autocomplete-dropdown').forEach(d => d.classList.remove('show'));
-            }
-        });
-
-        // Auto plan journey - one click magic!
-        async function autoplanJourney() {
-            const homeAddress = document.getElementById('autoHomeAddress').value.trim();
-            const workAddress = document.getElementById('autoWorkAddress').value.trim();
-            const cafeAddress = document.getElementById('autoCafeAddress').value.trim();
-            const arrivalTime = document.getElementById('autoArrivalTime').value;
-            const includeCoffee = document.getElementById('autoIncludeCoffee').value === 'true';
-
-            if (!homeAddress || !workAddress) {
-                alert('Please enter both your home and work addresses.');
-                return;
-            }
-
-            const btn = document.getElementById('autoPlanBtn');
-            const btnText = document.getElementById('autoPlanBtnText');
-            const resultDiv = document.getElementById('autoRouteResult');
-
-            btn.disabled = true;
-            btnText.textContent = '⏳ Planning your journey...';
-            resultDiv.style.display = 'none';
-
-            try {
-                const response = await fetch('/admin/route/auto-plan', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        homeAddress,
-                        workAddress,
-                        cafeAddress: cafeAddress || null,
-                        arrivalTime,
-                        includeCoffee
-                    })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    displayAutoRoute(data);
-
-                    // Also sync to legacy planner
-                    document.getElementById('homeAddress').value = homeAddress;
-                    document.getElementById('coffeeAddress').value = cafeAddress || data.locations?.cafe?.address || '';
-                    document.getElementById('workAddress').value = workAddress;
-                    document.getElementById('arrivalTime').value = arrivalTime;
-
-                    // Update preferences display
-                    document.getElementById('prefHomeAddress').value = homeAddress;
-                    document.getElementById('prefCafeAddress').value = cafeAddress || '';
-                    document.getElementById('prefWorkAddress').value = workAddress;
-                } else {
-                    resultDiv.style.display = 'block';
-                    resultDiv.innerHTML = `
-                        <div style="background: rgba(255,100,100,0.2); border-radius: 8px; padding: 15px; border: 1px solid rgba(255,100,100,0.3);">
-                            <div style="font-weight: 600; margin-bottom: 8px;">❌ Could not plan journey</div>
-                            <div style="font-size: 14px; margin-bottom: 8px;">${data.error || 'Unknown error'}</div>
-                            ${data.suggestion ? `<div style="font-size: 13px; color: rgba(255,255,255,0.8);">💡 ${data.suggestion}</div>` : ''}
-                        </div>
-                    `;
-                }
-            } catch (error) {
-                resultDiv.style.display = 'block';
-                resultDiv.innerHTML = `
-                    <div style="background: rgba(255,100,100,0.2); border-radius: 8px; padding: 15px; border: 1px solid rgba(255,100,100,0.3);">
-                        <div style="font-weight: 600;">❌ Error: ${error.message}</div>
-                    </div>
-                `;
-            } finally {
-                btn.disabled = false;
-                btnText.textContent = '🚀 Plan My Journey Automatically';
-            }
-        }
-
-        // Display auto route result
-        function displayAutoRoute(data) {
-            const resultDiv = document.getElementById('autoRouteResult');
-            const summary = data.summary;
-            const transit = data.transit;
-            const cafe = data.cafe;
-            const segments = data.segments || [];
-
-            resultDiv.style.display = 'block';
-            resultDiv.innerHTML = `
-                <div style="background: rgba(255,255,255,0.15); border-radius: 8px; padding: 20px; margin-top: 10px;">
-                    <!-- Main times -->
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-                        <div style="text-align: center; background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px;">
-                            <div style="font-size: 12px; text-transform: uppercase; opacity: 0.8; margin-bottom: 5px;">🏠 Leave Home</div>
-                            <div style="font-size: 36px; font-weight: 700;">${summary.must_leave_home}</div>
-                        </div>
-                        <div style="text-align: center; background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px;">
-                            <div style="font-size: 12px; text-transform: uppercase; opacity: 0.8; margin-bottom: 5px;">🏢 Arrive Work</div>
-                            <div style="font-size: 36px; font-weight: 700;">${summary.arrival_at_work}</div>
-                        </div>
-                    </div>
-
-                    <!-- Recommendation -->
-                    ${data.recommendation ? `
-                        <div style="background: rgba(72, 187, 120, 0.3); border-radius: 8px; padding: 12px; margin-bottom: 15px; text-align: center; font-size: 15px; font-weight: 500;">
-                            💡 ${data.recommendation}
-                        </div>
-                    ` : ''}
-
-                    <!-- Transit info -->
-                    <div style="background: rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; margin-bottom: 15px;">
-                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-                            <span style="font-size: 24px;">${transit.icon}</span>
-                            <div>
-                                <div style="font-weight: 600; font-size: 16px;">${transit.mode}</div>
-                                <div style="font-size: 13px; opacity: 0.8;">
-                                    ${transit.origin.name} → ${transit.destination.name}
-                                    <span style="opacity: 0.7;">(~${transit.estimated_duration} min)</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div style="font-size: 12px; opacity: 0.8;">
-                            🚶 ${transit.origin.walking_time} min walk to station •
-                            🚶 ${transit.destination.walking_time} min walk to work
-                        </div>
-                    </div>
-
-                    <!-- Cafe info -->
-                    ${cafe.enabled ? `
-                        <div style="background: rgba(237, 137, 54, 0.2); border-radius: 8px; padding: 12px; margin-bottom: 15px;">
-                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-                                <span style="font-size: 20px;">☕</span>
-                                <span style="font-weight: 600;">Coffee Stop Planned</span>
-                                <span style="font-size: 12px; opacity: 0.8;">(${cafe.placement_description})</span>
-                            </div>
-                            ${cafe.location ? `
-                                <div style="font-size: 13px; opacity: 0.9; margin-bottom: 4px;">
-                                    📍 ${cafe.location.display_name || cafe.location.address || 'Nearby cafe'}
-                                </div>
-                            ` : ''}
-                            <div style="font-size: 12px; display: flex; gap: 15px;">
-                                <span>⏱️ Coffee time: ${cafe.coffee_time} min</span>
-                                <span>📊 Busyness: ${cafe.busy_level || 'unknown'}</span>
-                            </div>
-                        </div>
-                    ` : ''}
-
-                    <!-- Time breakdown -->
-                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px;">
-                        <div style="text-align: center; background: rgba(255,255,255,0.1); padding: 10px; border-radius: 6px;">
-                            <div style="font-size: 11px; opacity: 0.8;">Total</div>
-                            <div style="font-weight: 600; font-size: 16px;">${summary.total_duration} min</div>
-                        </div>
-                        <div style="text-align: center; background: rgba(255,255,255,0.1); padding: 10px; border-radius: 6px;">
-                            <div style="font-size: 11px; opacity: 0.8;">Walking</div>
-                            <div style="font-weight: 600; font-size: 16px;">${summary.walking_time} min</div>
-                        </div>
-                        <div style="text-align: center; background: rgba(255,255,255,0.1); padding: 10px; border-radius: 6px;">
-                            <div style="font-size: 11px; opacity: 0.8;">Transit</div>
-                            <div style="font-weight: 600; font-size: 16px;">${summary.transit_time} min</div>
-                        </div>
-                        <div style="text-align: center; background: rgba(255,255,255,0.1); padding: 10px; border-radius: 6px;">
-                            <div style="font-size: 11px; opacity: 0.8;">Coffee</div>
-                            <div style="font-weight: 600; font-size: 16px;">${summary.coffee_time || 0} min</div>
-                        </div>
-                    </div>
-
-                    <!-- Journey segments -->
-                    <div style="background: rgba(255,255,255,0.1); border-radius: 8px; padding: 12px;">
-                        <div style="font-size: 12px; font-weight: 600; margin-bottom: 10px; opacity: 0.9;">
-                            📍 Journey Breakdown
-                        </div>
-                        ${segments.map((seg, idx) => {
-                            const icons = {
-                                'walk': '🚶',
-                                'coffee': '☕',
-                                'train': '🚆',
-                                'tram': '🚊',
-                                'bus': '🚌',
-                                'vline': '🚄',
-                                'wait': '⏱️'
-                            };
-                            const icon = icons[seg.type] || seg.mode_icon || '📍';
-
-                            return `
-                                <div style="display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1); ${idx === segments.length - 1 ? 'border-bottom: none;' : ''}">
-                                    <span style="margin-right: 10px; font-size: 16px;">${icon}</span>
-                                    <div style="flex: 1;">
-                                        <div style="font-size: 13px;">
-                                            ${seg.type === 'walk' ? `${seg.from} → ${seg.to}` :
-                                              seg.type === 'coffee' ? `Get coffee at ${seg.location}` :
-                                              seg.type === 'wait' ? `Wait at ${seg.location}` :
-                                              `${seg.from} → ${seg.to}`}
-                                        </div>
-                                        ${seg.departure ? `<div style="font-size: 11px; opacity: 0.7;">${seg.departure} - ${seg.arrival}</div>` : ''}
-                                    </div>
-                                    <div style="font-size: 13px; font-weight: 600; opacity: 0.9;">
-                                        ${seg.duration} min
-                                    </div>
-                                </div>
-                            `;
-                        }).join('')}
-                    </div>
-
-                    <!-- Real-time departures -->
-                    ${data.departure_options && data.departure_options.length > 0 ? `
-                        <div style="background: rgba(102, 126, 234, 0.2); border-radius: 8px; padding: 12px; margin-top: 15px;">
-                            <div style="font-size: 12px; font-weight: 600; margin-bottom: 10px;">
-                                ⏰ Real-Time Departures
-                            </div>
-                            ${data.departure_options.slice(0, 3).map(opt => `
-                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
-                                    <div>
-                                        <span>${opt.icon || '🚆'}</span>
-                                        <span style="margin-left: 6px;">${opt.scheduled_time || opt.scheduled}</span>
-                                        ${opt.direction ? `<span style="opacity: 0.7; font-size: 12px; margin-left: 6px;">(${opt.direction})</span>` : ''}
-                                    </div>
-                                    <div style="text-align: right;">
-                                        ${opt.minutes_until !== undefined ? `<span style="font-weight: 600;">${opt.minutes_until} min</span>` : ''}
-                                        ${opt.is_delayed ? `<span style="color: #f59e0b; font-size: 11px; margin-left: 6px;">+${opt.delay_minutes}m</span>` : ''}
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    ` : ''}
-                </div>
-            `;
-        }
-
-        // ========== ROUTE PLANNER FUNCTIONS (LEGACY/ADVANCED) ==========
-
-        // Calculate smart route
-        async function calculateRoute() {
-            const homeAddress = document.getElementById('homeAddress').value;
-            const coffeeAddress = document.getElementById('coffeeAddress').value;
-            const workAddress = document.getElementById('workAddress').value;
-            const arrivalTime = document.getElementById('arrivalTime').value;
-
-            // If fields are empty, we'll use saved preferences
-            // Server will fall back to saved preferences automatically
-            if (!homeAddress && !workAddress && !arrivalTime) {
-                alert('Please fill in addresses and arrival time, or configure them in User Preferences above');
-                return;
-            }
-
-            const btn = document.getElementById('calculateRouteBtn');
-            btn.disabled = true;
-            btn.textContent = '⏳ Calculating...';
-
-            try {
-                const response = await fetch('/admin/route/calculate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        homeAddress,
-                        coffeeAddress,
-                        workAddress,
-                        arrivalTime
-                    })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    displayRoute(data.route);
-                    await loadPTVConnections();
-                } else {
-                    alert('Failed to calculate route: ' + (data.error || 'Unknown error'));
-                }
-            } catch (error) {
-                alert('Error calculating route: ' + error.message);
-            } finally {
-                btn.disabled = false;
-                btn.textContent = '🗺️ Calculate Route';
-            }
-        }
-
-        // Display calculated route
-        function displayRoute(route) {
-            const routeResult = document.getElementById('routeResult');
-
-            const html = `
-                <div style="background: #f7fafc; border-radius: 8px; padding: 15px; border-left: 4px solid #667eea;">
-                    <h3 style="margin: 0 0 10px 0; color: #2d3748; font-size: 16px;">
-                        📍 Route Calculated
-                    </h3>
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
-                        <div>
-                            <div style="font-size: 11px; color: #718096; text-transform: uppercase; margin-bottom: 4px;">
-                                Leave Home
-                            </div>
-                            <div style="font-size: 24px; font-weight: bold; color: #2d3748;">
-                                ${route.must_leave_home}
-                            </div>
-                        </div>
-                        <div>
-                            <div style="font-size: 11px; color: #718096; text-transform: uppercase; margin-bottom: 4px;">
-                                Arrive Work
-                            </div>
-                            <div style="font-size: 24px; font-weight: bold; color: #2d3748;">
-                                ${route.arrival_time}
-                            </div>
-                        </div>
-                    </div>
-
-                    ${route.journey ? `
-                        <div style="background: #e6fffa; border-radius: 6px; padding: 10px; margin-bottom: 10px; font-size: 12px;">
-                            <div style="font-weight: 600; color: #2d3748; margin-bottom: 6px;">
-                                🚉 Journey Configuration
-                            </div>
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">
-                                <div>
-                                    <span style="color: #718096;">Transit Modes:</span>
-                                    <span style="font-weight: 600; color: #2d3748; margin-left: 4px;">
-                                        ${route.journey.transit_modes.join(' + ')} (${route.journey.number_of_transit_modes} mode${route.journey.number_of_transit_modes > 1 ? 's' : ''})
-                                    </span>
-                                </div>
-                                ${route.journey.cafe_location ? `
-                                    <div>
-                                        <span style="color: #718096;">Cafe Location:</span>
-                                        <span style="font-weight: 600; color: #2d3748; margin-left: 4px;">
-                                            ${route.journey.cafe_location === 'before-transit-1' ? 'Before first transit' :
-                                              route.journey.cafe_location === 'between-transits' ? 'During connection' :
-                                              route.journey.cafe_location === 'after-last-transit' ? 'After last transit' : 'N/A'}
-                                        </span>
-                                    </div>
-                                ` : ''}
-                                ${route.journey.has_connection ? `
-                                    <div style="grid-column: 1 / -1; padding: 8px; background: #fff3cd; border-radius: 4px; border-left: 3px solid #f59e0b;">
-                                        <span style="color: #2d3748; font-weight: 600;">🔄 Connection:</span>
-                                        <span style="color: #4a5568; margin-left: 4px;">
-                                            ${route.journey.connection_info.from} → ${route.journey.connection_info.to}
-                                        </span>
-                                        ${route.journey.connection_info.coffee_during_connection ? `
-                                            <span style="color: #48bb78; margin-left: 8px; font-weight: 600;">☕ Coffee stop included during connection</span>
-                                        ` : ''}
-                                    </div>
-                                ` : ''}
-                            </div>
-                        </div>
-                    ` : ''}
-
-                    <div style="background: white; border-radius: 6px; padding: 12px; margin-bottom: 10px;">
-                        <div style="font-size: 12px; font-weight: 600; color: #2d3748; margin-bottom: 8px;">
-                            Journey Segments
-                        </div>
-                        ${route.segments.map((seg, idx) => {
-                            const icons = {
-                                'walk': '🚶',
-                                'coffee': '☕',
-                                'train': '🚆',
-                                'tram': '🚊',
-                                'bus': '🚌',
-                                'vline': '🚄',
-                                'wait': '⏱️'
-                            };
-                            const icon = icons[seg.type] || '📍';
-
-                            return `
-                                <div style="display: flex; align-items: center; padding: 6px 0; border-bottom: 1px solid #e2e8f0;">
-                                    <span style="margin-right: 8px;">${icon}</span>
-                                    <div style="flex: 1;">
-                                        <div style="font-size: 13px; color: #2d3748;">
-                                            ${seg.type === 'walk' ? `${seg.from} → ${seg.to}${seg.isConnection ? ' (connection)' : ''}` :
-                                              seg.type === 'coffee' ? `Get Coffee ${seg.busyIcon || ''}` :
-                                              ['train', 'tram', 'bus', 'vline'].includes(seg.type) ? `${seg.from} → ${seg.to}` :
-                                              seg.type === 'wait' ? `Wait at ${seg.location}` :
-                                              'Travel'}
-                                        </div>
-                                        ${seg.type === 'coffee' && seg.busyText ? `
-                                            <div style="font-size: 11px; color: ${seg.busyLevel === 'high' ? '#e53e3e' : seg.busyLevel === 'medium' ? '#ed8936' : '#48bb78'}; font-weight: 600;">
-                                                ${seg.busyText} - ${seg.busyDetails?.reason || seg.busyDetails?.peakName || 'Estimated wait'}
-                                            </div>
-                                        ` : ''}
-                                        ${seg.departure && seg.arrival ? `
-                                            <div style="font-size: 11px; color: #718096;">
-                                                ${seg.departure} → ${seg.arrival}
-                                            </div>
-                                        ` : ''}
-                                    </div>
-                                    <div style="font-size: 13px; font-weight: 600; color: ${seg.type === 'coffee' ? (seg.busyLevel === 'high' ? '#e53e3e' : seg.busyLevel === 'medium' ? '#ed8936' : '#667eea') : '#667eea'};">
-                                        ${seg.duration} min
-                                    </div>
-                                </div>
-                            `;
-                        }).join('')}
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; font-size: 12px; margin-bottom: 10px;">
-                        <div style="text-align: center; padding: 8px; background: white; border-radius: 6px;">
-                            <div style="color: #718096;">Total</div>
-                            <div style="font-weight: 600; color: #2d3748;">${route.summary.total_duration} min</div>
-                        </div>
-                        <div style="text-align: center; padding: 8px; background: white; border-radius: 6px;">
-                            <div style="color: #718096;">Walking</div>
-                            <div style="font-weight: 600; color: #2d3748;">${route.summary.walking_time} min</div>
-                        </div>
-                        <div style="text-align: center; padding: 8px; background: white; border-radius: 6px;">
-                            <div style="color: #718096;">Coffee</div>
-                            <div style="font-weight: 600; color: ${route.summary.can_get_coffee ? '#48bb78' : '#f56565'};">
-                                ${route.summary.can_get_coffee ? '✅ Yes' : '❌ No'}
-                            </div>
-                        </div>
-                        <div style="text-align: center; padding: 8px; background: white; border-radius: 6px;">
-                            <div style="color: #718096;">Wait Time</div>
-                            <div style="font-weight: 600; color: ${route.summary.cafe_busy?.level === 'high' ? '#e53e3e' : route.summary.cafe_busy?.level === 'medium' ? '#ed8936' : '#48bb78'};">
-                                ${route.summary.coffee_time} min ${route.summary.cafe_busy?.icon || ''}
-                            </div>
-                        </div>
-                    </div>
-
-                    ${route.summary.cafe_busy ? `
-                        <div style="background: white; border-radius: 6px; padding: 10px; font-size: 12px; border-left: 3px solid ${route.summary.cafe_busy.level === 'high' ? '#e53e3e' : route.summary.cafe_busy.level === 'medium' ? '#ed8936' : '#48bb78'};">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                                <span style="color: #718096;">Cafe Busy-ness:</span>
-                                <span style="font-weight: 600; color: #2d3748;">${route.summary.cafe_busy.icon} ${route.summary.cafe_busy.text}</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                                <span style="color: #718096;">Data Source:</span>
-                                <span style="font-weight: 600; color: #2d3748;">${route.summary.cafe_busy.source}</span>
-                            </div>
-                            ${route.summary.cafe_busy.details?.peakName ? `
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span style="color: #718096;">Peak Status:</span>
-                                    <span style="font-weight: 600; color: #2d3748;">${route.summary.cafe_busy.details.peakName}</span>
-                                </div>
-                            ` : ''}
-                            ${route.summary.cafe_busy.details?.reason ? `
-                                <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e2e8f0; color: #4a5568; font-size: 11px;">
-                                    💡 ${route.summary.cafe_busy.details.reason}
-                                </div>
-                            ` : ''}
-                        </div>
-                    ` : ''}
-                </div>
-            `;
-
-            routeResult.innerHTML = html;
-            routeResult.style.display = 'block';
-        }
-
-        // Load PTV connections for the calculated route
-        async function loadPTVConnections() {
-            try {
-                // Try multi-modal endpoint first (trains, trams, buses, V/Line)
-                const response = await fetch('/admin/route/multi-modal');
-                const data = await response.json();
-
-                if (data.success && data.options && data.options.length > 0) {
-                    displayMultiModalConnections(data);
-                } else if (data.error && data.error.includes('API credentials')) {
-                    // Show API configuration error
-                    document.getElementById('ptvConnections').innerHTML = `
-                        <div style="background: #fff3cd; border-radius: 8px; padding: 15px; border-left: 4px solid #ffc107;">
-                            <div style="font-weight: 600; color: #856404; margin-bottom: 5px;">
-                                ⚠️ API Credentials Not Configured
-                            </div>
-                            <div style="font-size: 13px; color: #856404;">
-                                Please configure your PTV API credentials in the User Preferences section above.
-                            </div>
-                        </div>
-                    `;
-                    document.getElementById('ptvConnections').style.display = 'block';
-                } else {
-                    // No transit options found
-                    document.getElementById('ptvConnections').innerHTML = `
-                        <div style="background: #fff3cd; border-radius: 8px; padding: 15px; border-left: 4px solid #ffc107;">
-                            <div style="font-weight: 600; color: #856404; margin-bottom: 5px;">
-                                ⚠️ No Transit Options Found
-                            </div>
-                            <div style="font-size: 13px; color: #856404;">
-                                No trains, trams, buses, or V/Line services available in the required time window. Try adjusting your arrival time.
-                            </div>
-                        </div>
-                    `;
-                    document.getElementById('ptvConnections').style.display = 'block';
-                }
-            } catch (error) {
-                console.error('Error loading transit connections:', error);
-                document.getElementById('ptvConnections').innerHTML = `
-                    <div style="background: #fee; border-radius: 8px; padding: 15px; border-left: 4px solid #f56565;">
-                        <div style="font-weight: 600; color: #c53030; margin-bottom: 5px;">
-                            ❌ Error Loading Transit Options
-                        </div>
-                        <div style="font-size: 13px; color: #c53030;">
-                            ${error.message}
-                        </div>
-                    </div>
-                `;
-                document.getElementById('ptvConnections').style.display = 'block';
-            }
-        }
-
-        // Display multi-modal transit connections
-        function displayMultiModalConnections(data) {
-            const ptvDiv = document.getElementById('ptvConnections');
-
-            const modesText = data.modesSearched
-                ? data.modesSearched.map(m => m.icon + ' ' + m.name).join(', ')
-                : 'All modes';
-
-            const html = `
-                <div style="background: #f7fafc; border-radius: 8px; padding: 15px; border-left: 4px solid #48bb78;">
-                    <h3 style="margin: 0 0 10px 0; color: #2d3748; font-size: 16px;">
-                        🚆 Best Transit Options (Max 2)
-                    </h3>
-                    <div style="font-size: 12px; color: #718096; margin-bottom: 15px;">
-                        Searched: ${modesText}
-                    </div>
-
-                    ${data.options.map((option, idx) => `
-                        <div style="background: white; border-radius: 6px; padding: 12px; margin-bottom: 10px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                <div>
-                                    <div style="font-size: 16px; font-weight: 600; color: #2d3748;">
-                                        ${option.icon} Option ${idx + 1}: ${option.mode}
-                                    </div>
-                                    <div style="font-size: 12px; color: #718096; margin-top: 2px;">
-                                        ${option.routeName} → ${option.direction}
-                                    </div>
-                                    <div style="font-size: 13px; color: #2d3748; margin-top: 4px;">
-                                        Departs: <strong>${option.departureTime}</strong> (${option.minutesUntil} min)
-                                    </div>
-                                    <div style="font-size: 12px; color: #718096;">
-                                        Est. arrival: ${option.estimatedArrival} (${option.estimatedDuration} min journey)
-                                    </div>
-                                </div>
-                                <div style="text-align: right;">
-                                    ${option.canGetCoffee ? `
-                                        <div style="font-size: 24px;">☕</div>
-                                        <div style="font-size: 11px; color: #48bb78; font-weight: 600;">
-                                            COFFEE TIME
-                                        </div>
-                                    ` : `
-                                        <div style="font-size: 24px;">⚡</div>
-                                        <div style="font-size: 11px; color: #ed8936; font-weight: 600;">
-                                            DIRECT
-                                        </div>
-                                    `}
-                                </div>
-                            </div>
-
-                            <div style="background: #f7fafc; border-radius: 4px; padding: 8px; font-size: 12px;">
-                                <div style="color: #2d3748;">
-                                    <strong>Recommendation:</strong> ${option.recommendation}
-                                </div>
-                                <div style="color: #718096; margin-top: 4px;">
-                                    Time available: ${option.timeAvailable} min | Time needed: ${option.timeNeeded} min
-                                </div>
-                            </div>
-                        </div>
-                    `).join('')}
-
-                    <div style="font-size: 11px; color: #718096; margin-top: 10px; padding: 8px; background: white; border-radius: 4px;">
-                        💡 <strong>Tip:</strong> Choose the option that best fits your schedule. Coffee time means you have enough time to stop for coffee on the way.
-                    </div>
-                </div>
-            `;
-
-            ptvDiv.innerHTML = html;
-            ptvDiv.style.display = 'block';
-        }
-
-        // Display PTV connections overlay
-        function displayPTVConnections(connections) {
-            const ptvDiv = document.getElementById('ptvConnections');
-
-            const html = `
-                <div style="background: #f7fafc; border-radius: 8px; padding: 15px; border-left: 4px solid #48bb78;">
-                    <h3 style="margin: 0 0 10px 0; color: #2d3748; font-size: 16px;">
-                        🚆 Available Trains (Max 2 Options)
-                    </h3>
-
-                    ${connections.connections.map((conn, idx) => `
-                        <div style="background: white; border-radius: 6px; padding: 12px; margin-bottom: 10px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                <div>
-                                    <div style="font-size: 14px; font-weight: 600; color: #2d3748;">
-                                        Option ${idx + 1}: ${conn.train.minutes} minutes
-                                    </div>
-                                    <div style="font-size: 12px; color: #718096;">
-                                        Departure: ${conn.train.departure_time}
-                                    </div>
-                                </div>
-                                <div style="text-align: right;">
-                                    ${conn.can_get_coffee ? `
-                                        <div style="font-size: 16px;">☕</div>
-                                        <div style="font-size: 11px; color: #48bb78; font-weight: 600;">
-                                            COFFEE TIME
-                                        </div>
-                                    ` : `
-                                        <div style="font-size: 16px;">⚡</div>
-                                        <div style="font-size: 11px; color: #ed8936; font-weight: 600;">
-                                            DIRECT
-                                        </div>
-                                    `}
-                                </div>
-                            </div>
-
-                            <div style="background: #f7fafc; border-radius: 4px; padding: 8px; font-size: 12px;">
-                                <div style="color: #2d3748;">
-                                    <strong>Recommendation:</strong> ${conn.recommendation}
-                                </div>
-                                <div style="color: #718096; margin-top: 4px;">
-                                    Time available: ${conn.time_available} min | Time needed: ${conn.time_needed} min
-                                </div>
-                            </div>
-                        </div>
-                    `).join('')}
-
-                    <div style="font-size: 11px; color: #718096; margin-top: 10px; padding: 8px; background: white; border-radius: 4px;">
-                        💡 <strong>Tip:</strong> Choose the first option if you want coffee, or the fastest train if you're in a hurry.
-                    </div>
-                </div>
-            `;
-
-            ptvDiv.innerHTML = html;
-            ptvDiv.style.display = 'block';
+        function showMessage(id, msg, type) {
+            document.getElementById(id).innerHTML = `<div class="message message-${type}">${msg}</div>`;
+            setTimeout(() => document.getElementById(id).innerHTML = '', 3000);
         }
     </script>
-
-    <!-- Buy Me a Coffee Widget -->
-    <script data-name="BMC-Widget" data-cfasync="false" src="https://cdnjs.buymeacoffee.com/1.0.0/widget.prod.min.js" data-id="angusbergman" data-description="Support me on Buy me a coffee!" data-message="From conception to execution, I have put many, weeks, hours and all-nighters into this project that I am so passionate about. Thank you for supporting me. Your support helps me allocate my time to this project and make the best experience for you possible. " data-color="#40DCA5" data-position="Right" data-x_margin="18" data-y_margin="18"></script>
 </body>
 </html>

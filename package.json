@@ -2,7 +2,7 @@
 {
   "name": "ptv-trmnl-new",
   "version": "1.0.0",
-  "description": "Melbourne PT Dashboard for TRMNL e-ink display",
+  "description": "Smart Transit Dashboard for TRMNL e-ink display",
   "type": "module",
   "main": "server.js",
   "engines": {
@@ -21,8 +21,7 @@
     "express": "4.18.2",
     "gtfs-realtime-bindings": "^1.1.1",
     "node-fetch": "^3.3.2",
-    "rss-parser": "3.13.0",
-    "sharp": "0.33.0"
+    "rss-parser": "3.13.0"
   },
   "keywords": [
     "trmnl",

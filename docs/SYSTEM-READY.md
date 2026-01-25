@@ -110,10 +110,10 @@ Fetching data...
 Then the dashboard should appear with:
 ```
 ┌────────────────────────────────────────┐
-│ SOUTH YARRA              19:47         │
+│ ORIGIN STATION              19:47         │
 ├────────────────┬───────────────────────┤
 │ METRO TRAINS   │ YARRA TRAMS           │
-│ FLINDERS ST    │ 58 TOORAK             │
+│ CITY    │ 58 DESTINATION             │
 │                │                       │
 │   -- min       │   -- min              │
 │   -- min       │   -- min              │

@@ -30,12 +30,12 @@
 
 ## 1.1 Project Description
 
-PTV-TRMNL is a custom e-ink display dashboard that shows real-time Melbourne public transport information (trains and trams) along with weather data. The system fetches live departure times from PTV (Public Transport Victoria) Open Data API and weather from Bureau of Meteorology (BOM).
+PTV-TRMNL is a custom e-ink display dashboard that shows real-time public transport information (trains and trams) along with weather data. The system fetches live departure times from PTV (Public Transport Victoria) Open Data API and weather from Bureau of Meteorology (BOM).
 
 ## 1.2 Key Features
 
 - **Real-time transit data**: Live train and tram departure times
-- **Weather integration**: Current Melbourne weather from BOM
+- **Weather integration**: Current local weather from BOM
 - **Smart caching**: Separate static layout from dynamic data
 - **Crash recovery**: NVS cache allows 3-second recovery on unexpected reboot
 - **Admin panel**: Web-based configuration and monitoring
@@ -346,7 +346,7 @@ PORT=3000
 
 **URL**: https://api.weather.bom.gov.au/
 **Authentication**: None (public API)
-**Location**: Melbourne CBD (geohash: r1r0gx)
+**Location**: City CBD (geohash: r1r0gx)
 **Rate Limit**: None documented
 **Update Frequency**: ~30 minutes
 
@@ -378,7 +378,7 @@ async function fetchData() {
       const minutes = Math.max(0, Math.round((departureTime - now) / 60000));
       return {
         minutes,
-        destination: 'Flinders Street',
+        destination: 'City',
         isScheduled: false
       };
     });
@@ -389,7 +389,7 @@ async function fetchData() {
       const minutes = Math.max(0, Math.round((departureTime - now) / 60000));
       return {
         minutes,
-        destination: 'West Coburg',
+        destination: 'Destination',
         isScheduled: false
       };
     });
@@ -529,7 +529,7 @@ async function getRegionUpdates() {
     "ttl": 655,
     "expired": false
   },
-  "location": "Melbourne CBD",
+  "location": "City CBD",
   "source": "Bureau of Meteorology"
 }
 ```
@@ -631,7 +631,7 @@ Returns full HTML page with:
 
 **Location**: `/Users/angusbergman/PTV-TRMNL-NEW/weather-bom.js`
 **Lines**: 263
-**Purpose**: Fetch and cache Melbourne weather from Bureau of Meteorology
+**Purpose**: Fetch and cache local weather from Bureau of Meteorology
 
 ### Complete Code
 
@@ -656,7 +656,7 @@ class WeatherBOM {
 
     // Melbourne location ID (from BOM API)
     // Melbourne City: geohash r1r0gx
-    this.locationId = 'r1r0gx'; // Melbourne CBD
+    this.locationId = 'r1r0gx'; // City CBD
 
     // Cache weather data for 15 minutes (BOM updates every 30 min)
     this.cache = null;
@@ -904,7 +904,7 @@ export async function getSnapshot(apiKey) {
 }
 ```
 
-**getTrains(apiKey)**: Fetches Metro Trains data for South Yarra
+**getTrains(apiKey)**: Fetches Metro Trains data for Origin Station
 
 ```javascript
 async function getTrains(apiKey) {
@@ -921,7 +921,7 @@ async function getTrains(apiKey) {
       const stopTimeUpdates = entity.tripUpdate.stopTimeUpdate || [];
 
       for (const update of stopTimeUpdates) {
-        if (update.stopId === STOP_ID_SOUTH_YARRA) {
+        if (update.stopId === STOP_ID_ORIGIN_STATION) {
           const departureTime = update.departure?.time?.low || update.arrival?.time?.low;
 
           if (departureTime) {
@@ -1061,7 +1061,7 @@ void drawDashboardShell() {
   bbep.drawRect(11, 11, 88, 48, BBEP_BLACK); // Double border
   bbep.setFont(FONT_6x8);
   bbep.setCursor(15, 30);
-  bbep.print("SOUTH YARRA");
+  bbep.print("ORIGIN STATION");
 
   // Tram section header (black strip)
   bbep.fillRect(10, 120, 370, 25, BBEP_BLACK);
@@ -1725,7 +1725,7 @@ document.addEventListener('DOMContentLoaded', () => {
     "ttl": 655,
     "expired": false
   },
-  "location": "Melbourne CBD",
+  "location": "City CBD",
   "source": "Bureau of Meteorology"
 }
 ```
@@ -1926,7 +1926,7 @@ document.addEventListener('DOMContentLoaded', () => {
 │                                                             │
 │  Layout:                                                    │
 │  ┌────────────────────────────────────────────────────┐    │
-│  │ SOUTH YARRA    19:47                               │    │
+│  │ ORIGIN STATION    19:47                               │    │
 │  │                                                    │    │
 │  │ TRAM #58           TRAINS                         │    │
 │  │ Next:  3 min*      Next:  5 min*      P.Cloudy    │    │
@@ -2064,12 +2064,12 @@ const minutes = Math.max(0, Math.round((departureTime - now) / 60000));
 ```javascript
 {
   trains: [
-    { minutes: 5, destination: "Flinders Street" },
-    { minutes: 12, destination: "Flinders Street" }
+    { minutes: 5, destination: "City" },
+    { minutes: 12, destination: "City" }
   ],
   trams: [
-    { minutes: 3, destination: "West Coburg" },
-    { minutes: 8, destination: "West Coburg" }
+    { minutes: 3, destination: "Destination" },
+    { minutes: 8, destination: "Destination" }
   ]
 }
 ```
@@ -2162,7 +2162,7 @@ node test-data-pipeline.js
 ### test-endpoints.sh
 
 **Purpose**: HTTP endpoint validation
-**Requires**: Server running on localhost:3000
+**Requires**: Server running on ptv-trmnl-new.onrender.com
 
 **Tests**:
 1. Health check (/)
@@ -2188,22 +2188,22 @@ chmod +x test-endpoints.sh
 
 ```bash
 # 1. Check region updates
-curl -s http://localhost:3000/api/region-updates | jq '.regions'
+curl -s https://ptv-trmnl-new.onrender.com/api/region-updates | jq '.regions'
 
 # Expected: 7 regions with valid data
 
 # 2. Check weather
-curl -s http://localhost:3000/admin/weather | jq '.current.temperature'
+curl -s https://ptv-trmnl-new.onrender.com/admin/weather | jq '.current.temperature'
 
 # Expected: Number (e.g., 15)
 
 # 3. Check data mode
-curl -s http://localhost:3000/admin/status | jq '.dataMode'
+curl -s https://ptv-trmnl-new.onrender.com/admin/status | jq '.dataMode'
 
 # Expected: "Live"
 
 # 4. Check API config
-curl -s http://localhost:3000/admin/apis | jq '.ptv_opendata.status'
+curl -s https://ptv-trmnl-new.onrender.com/admin/apis | jq '.ptv_opendata.status'
 
 # Expected: "active"
 ```
@@ -2212,7 +2212,7 @@ curl -s http://localhost:3000/admin/apis | jq '.ptv_opendata.status'
 
 ```bash
 # Open dashboard visualization
-open http://localhost:3000/admin/dashboard-preview
+open https://ptv-trmnl-new.onrender.com/admin/dashboard-preview
 ```
 
 **Expected**:
@@ -2224,7 +2224,7 @@ open http://localhost:3000/admin/dashboard-preview
 
 ```bash
 # Open admin panel
-open http://localhost:3000/admin
+open https://ptv-trmnl-new.onrender.com/admin
 ```
 
 **Check**:
@@ -2331,7 +2331,7 @@ npm start
 
 # Expected output:
 # 🚀 PTV-TRMNL server listening on port 3000
-# 📍 Preview: http://localhost:3000/preview
+# 📍 Preview: https://ptv-trmnl-new.onrender.com/preview
 # ✅ Initial data loaded
 ```
 
@@ -2339,13 +2339,13 @@ npm start
 
 ```bash
 # Test region updates
-curl http://localhost:3000/api/region-updates
+curl https://ptv-trmnl-new.onrender.com/api/region-updates
 
 # Test weather
-curl http://localhost:3000/admin/weather
+curl https://ptv-trmnl-new.onrender.com/admin/weather
 
 # Open admin panel
-open http://localhost:3000/admin
+open https://ptv-trmnl-new.onrender.com/admin
 
 # Run validation scripts
 node test-data-pipeline.js
@@ -2427,7 +2427,7 @@ open https://ptv-trmnl-new.onrender.com/admin/dashboard-preview
 Edit `firmware/src/main.cpp`:
 
 ```cpp
-// Change from localhost to production URL
+// Production API URL
 const char* serverUrl = "https://ptv-trmnl-new.onrender.com/api/region-updates";
 ```
 
@@ -2559,7 +2559,7 @@ This keeps server warm and responsive for firmware requests.
 2. Visit https://www.ptv.vic.gov.au/ for service alerts
 3. Verify stop IDs in `data-scraper.js`:
    ```javascript
-   const STOP_ID_SOUTH_YARRA = "19841"; // Metro trains
+   const STOP_ID_ORIGIN_STATION = "19841"; // Metro trains
    const STOP_ID_TRAM_58 = "2534";      // Tram 58
    ```
 4. Use fallback timetable temporarily
@@ -2577,7 +2577,7 @@ This keeps server warm and responsive for firmware requests.
 1. Check server logs for errors
 2. Test `/api/region-updates` endpoint:
    ```bash
-   curl http://localhost:3000/api/region-updates | jq '.regions | length'
+   curl https://ptv-trmnl-new.onrender.com/api/region-updates | jq '.regions | length'
    ```
 3. Verify `getRegionUpdates()` always returns 7 regions
 4. Check weather fallback logic
@@ -2736,7 +2736,7 @@ curl -H "Ocp-Apim-Subscription-Key: YOUR_TOKEN" \
 curl "https://api.weather.bom.gov.au/v1/locations/r1r0gx/observations" | jq .
 
 # Monitor region updates in real-time
-watch -n 5 'curl -s http://localhost:3000/api/region-updates | jq ".regions"'
+watch -n 5 'curl -s https://ptv-trmnl-new.onrender.com/api/region-updates | jq ".regions"'
 ```
 
 ## 13.3 Reset & Recovery Procedures
@@ -2745,10 +2745,10 @@ watch -n 5 'curl -s http://localhost:3000/api/region-updates | jq ".regions"'
 
 ```bash
 # Clear all caches
-curl -X POST http://localhost:3000/admin/cache/clear
+curl -X POST https://ptv-trmnl-new.onrender.com/admin/cache/clear
 
 # Force data refresh
-curl -X POST http://localhost:3000/admin/server/refresh
+curl -X POST https://ptv-trmnl-new.onrender.com/admin/server/refresh
 
 # Restart server (local)
 # Ctrl+C, then npm start
@@ -3204,9 +3204,9 @@ pio device monitor                     # Monitor serial
 pio run --target erase                 # Erase flash
 
 # Testing
-curl http://localhost:3000/api/region-updates | jq .
-curl http://localhost:3000/admin/weather | jq .
-curl http://localhost:3000/api/status | jq .
+curl https://ptv-trmnl-new.onrender.com/api/region-updates | jq .
+curl https://ptv-trmnl-new.onrender.com/admin/weather | jq .
+curl https://ptv-trmnl-new.onrender.com/api/status | jq .
 
 # Deployment
 git add .
@@ -3214,8 +3214,8 @@ git commit -m "message"
 git push origin main                   # Auto-deploys to Render
 
 # Troubleshooting
-curl -X POST http://localhost:3000/admin/cache/clear
-curl -X POST http://localhost:3000/admin/server/refresh
+curl -X POST https://ptv-trmnl-new.onrender.com/admin/cache/clear
+curl -X POST https://ptv-trmnl-new.onrender.com/admin/server/refresh
 ```
 
 ### Environment Variables
@@ -3242,7 +3242,7 @@ Temperature: (775, 410) - FONT_8x8
 ### Important URLs
 
 ```
-Local Server:       http://localhost:3000
+Local Server:       https://ptv-trmnl-new.onrender.com
 Production Server:  https://ptv-trmnl-new.onrender.com
 Admin Panel:        /admin
 Dashboard Preview:  /admin/dashboard-preview

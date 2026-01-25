@@ -32,16 +32,16 @@ npm start
 ### Step 2: Open Admin Panel
 
 ```bash
-open http://localhost:3000/admin
+open https://ptv-trmnl-new.onrender.com/admin
 ```
 
 ### Step 3: Use Route Planner
 
 1. Scroll down to **Smart Route Planner** card
 2. Fill in:
-   - **Home**: `123 Main St, South Yarra`
-   - **Coffee**: `Market Lane Coffee, Prahran`
-   - **Work**: `456 Collins St, Melbourne`
+   - **Home**: `123 Main St, Your Suburb`
+   - **Coffee**: `Your Favorite Cafe`
+   - **Work**: `456 Central Ave, Your City`
    - **Arrival Time**: `09:00`
 3. Click **Calculate Route**
 4. View results:
@@ -63,13 +63,13 @@ open http://localhost:3000/admin
 Leave Home: 08:12     Arrive Work: 09:00
 
 Journey Segments:
-🚶 Home → South Yarra Station    5 min (08:12 → 08:17)
+🚶 Home → Origin Station    5 min (08:12 → 08:17)
 ⏱️ Wait at station               2 min (08:17 → 08:19)
 🚶 Station → Coffee Shop         3 min (08:19 → 08:22)
 ☕ Get Coffee                     3 min (08:22 → 08:25)
 🚶 Coffee → Station              3 min (08:25 → 08:28)
 ⏱️ Wait at station               2 min (08:28 → 08:30)
-🚆 South Yarra → Flinders St    20 min (08:30 → 08:50)
+🚆 Origin Station → City    20 min (08:30 → 08:50)
 🚶 Station → Work                8 min (08:51 → 09:00)
 
 Total: 48 min | Walking: 16 min | Coffee: ✅ Yes
@@ -133,29 +133,29 @@ Time available: 8 min | Time needed: 11 min
 
 ### Calculate Route
 ```bash
-curl -X POST http://localhost:3000/admin/route/calculate \
+curl -X POST https://ptv-trmnl-new.onrender.com/admin/route/calculate \
   -H "Content-Type: application/json" \
   -d '{
-    "homeAddress": "123 Main St, South Yarra",
-    "coffeeAddress": "Market Lane Coffee, Prahran",
-    "workAddress": "456 Collins St, Melbourne",
+    "homeAddress": "123 Main St, Your Suburb",
+    "coffeeAddress": "Your Favorite Cafe",
+    "workAddress": "456 Central Ave, Your City",
     "arrivalTime": "09:00"
   }'
 ```
 
 ### Get Cached Route
 ```bash
-curl http://localhost:3000/admin/route
+curl https://ptv-trmnl-new.onrender.com/admin/route
 ```
 
 ### Get PTV Connections
 ```bash
-curl http://localhost:3000/admin/route/connections
+curl https://ptv-trmnl-new.onrender.com/admin/route/connections
 ```
 
 ### Clear Cache
 ```bash
-curl -X DELETE http://localhost:3000/admin/route
+curl -X DELETE https://ptv-trmnl-new.onrender.com/admin/route
 ```
 
 ---
@@ -167,7 +167,7 @@ curl -X DELETE http://localhost:3000/admin/route
 Converts addresses to coordinates using **OpenStreetMap Nominatim** (free, no API key):
 
 ```
-"123 Main St, South Yarra" → (lat: -37.8408, lon: 145.0002)
+"123 Main St, Your Suburb" → (lat: -37.8408, lon: 145.0002)
 ```
 
 Results cached forever (addresses don't move!).
@@ -229,8 +229,8 @@ ROUTE_CACHE_DURATION = 5 * 60;   // 5 minutes
 ```
 
 Hardcoded stations (will be dynamic in future):
-- **Origin**: South Yarra Station (-37.8408, 145.0002)
-- **Destination**: Flinders Street (-37.8530, 144.9560)
+- **Origin**: Origin Station (-37.8408, 145.0002)
+- **Destination**: City (-37.8530, 144.9560)
 - **Train time**: 20 minutes
 
 ---
@@ -242,7 +242,7 @@ Hardcoded stations (will be dynamic in future):
 
 ### "Address not found"
 → Be more specific with suburb
-→ Example: "123 Main Street, South Yarra VIC 3141"
+→ Example: "123 Main Street, Origin Station VIC 3141"
 
 ### "No suitable trains found"
 → Adjust arrival time (earlier or later)
@@ -327,7 +327,7 @@ Hardcoded stations (will be dynamic in future):
 
 Start the server and visit:
 ```
-http://localhost:3000/admin
+https://ptv-trmnl-new.onrender.com/admin
 ```
 
 Enjoy your coffee! ☕

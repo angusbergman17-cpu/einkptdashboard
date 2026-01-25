@@ -53,18 +53,18 @@ You can now enter your home, cafe, and work addresses **just once** with intelli
 ### As You Type
 
 ```
-You type: "123 chapel"
+You type: "123 main"
 ↓
 Autocomplete shows:
 ┌─────────────────────────────────────┐
-│ 123 Chapel St                       │
-│ Chapel St, South Yarra VIC 3141     │
+│ 123 Main St                       │
+│ Main St, Your Suburb     │
 ├─────────────────────────────────────┤
-│ 123 Chapel St                       │
-│ Chapel St, Windsor VIC 3181         │
+│ 123 Main St                       │
+│ Main St, Nearby Suburb         │
 ├─────────────────────────────────────┤
-│ Chapel Street Mall                  │
-│ Chapel St, Prahran VIC 3181         │
+│ Main Street Mall                  │
+│ Main St, Nearby Suburb         │
 └─────────────────────────────────────┘
 ```
 
@@ -106,9 +106,9 @@ Once addresses are saved, they automatically appear in:
 ```
 ✨ Auto-Populated: Fields below are filled with your saved preferences
 
-Home Address:    [123 Chapel St, South Yarra]  (readonly)
-Coffee Shop:     [Market Lane Coffee, Prahran] (readonly)
-Work Address:    [456 Collins St, Melbourne]   (readonly)
+Home Address:    [123 Main St, Your Suburb]  (readonly)
+Coffee Shop:     [Your Favorite Cafe] (readonly)
+Work Address:    [456 Central Ave, Your City]   (readonly)
 Arrival Time:    [09:00]                       (readonly)
 
 [🗺️ Calculate Route]
@@ -132,7 +132,7 @@ No need to enter addresses again - just click "Calculate Route"!
 ### API Endpoint
 
 ```
-GET /admin/address/search?query=123+Chapel+St
+GET /admin/address/search?query=123+Main+St
 ```
 
 **Response**:
@@ -141,9 +141,9 @@ GET /admin/address/search?query=123+Chapel+St
   "success": true,
   "results": [
     {
-      "display_name": "123 Chapel St, South Yarra VIC 3141, Australia",
-      "address": "Chapel St",
-      "full_address": "123 Chapel St, South Yarra VIC 3141, Australia",
+      "display_name": "123 Main St, Your Suburb VIC 3141, Australia",
+      "address": "Main St",
+      "full_address": "123 Main St, Your Suburb VIC 3141, Australia",
       "lat": -37.8408,
       "lon": 145.0002,
       "type": "house",
@@ -161,9 +161,9 @@ Addresses are stored in `user-preferences.json`:
 ```json
 {
   "addresses": {
-    "home": "123 Chapel St, South Yarra VIC 3141, Australia",
-    "cafe": "Market Lane Coffee, Prahran VIC 3181, Australia",
-    "work": "456 Collins St, Melbourne VIC 3000, Australia"
+    "home": "123 Main St, Your Suburb VIC 3141, Australia",
+    "cafe": "Your Favorite Cafe VIC 3181, Australia",
+    "work": "456 Central Ave, Your City VIC 3000, Australia"
   }
 }
 ```
@@ -196,7 +196,7 @@ Addresses are stored in `user-preferences.json`:
 
 1. Open admin panel
 2. Click in "Home Address" field
-3. Type: `south yarra`
+3. Type: `your suburb`
 4. See suggestions appear
 5. Click any suggestion
 6. Verify green ✅ checkmark appears
@@ -248,11 +248,11 @@ Addresses are stored in `user-preferences.json`:
 ```
 1. User opens admin panel
    ↓
-2. User types "123 chapel" in Home Address
+2. User types "123 main" in Home Address
    ↓
 3. Autocomplete shows suggestions
    ↓
-4. User clicks "123 Chapel St, South Yarra"
+4. User clicks "123 Main St, Your Suburb"
    ↓
 5. Green ✅ appears
    ↓

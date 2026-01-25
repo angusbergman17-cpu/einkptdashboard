@@ -100,10 +100,10 @@ Fetching data...   (10, 110)
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│ SOUTH YARRA                              19:43           │ (header)
+│ ORIGIN STATION                              19:43           │ (header)
 ├──────────────────────┬───────────────────────────────────┤
 │ METRO TRAINS         │ YARRA TRAMS                       │
-│ FLINDERS ST (LOOP)   │ 58 TOORAK (DOMAIN)                │
+│ CITY (LOOP)   │ 58 DESTINATION (DOMAIN)                │
 │                      │                                   │
 │   -- min             │   -- min                          │
 │   -- min             │   -- min                          │
@@ -209,7 +209,7 @@ HTTP GET /api/region-updates
 
 **Features**:
 - Calls opendata.js functions with API key
-- Filters for South Yarra station (all platforms)
+- Filters for origin station (all platforms)
 - Prioritizes Platform 5 within 2-minute window
 - City-bound filtering (checks downstream stops)
 - Returns formatted snapshot
@@ -420,7 +420,7 @@ cd /Users/angusbergman/PTV-TRMNL-NEW/firmware
 │  ┌────────────────────────────────────────────────┐     │
 │  │ data-scraper.js                                │     │
 │  │ - Fetches from PTV Open Data API              │     │
-│  │ - Filters for South Yarra                     │     │
+│  │ - Filters for Origin Station                     │     │
 │  │ - City-bound detection                        │     │
 │  └────────────────────────────────────────────────┘     │
 │  ┌────────────────────────────────────────────────┐     │

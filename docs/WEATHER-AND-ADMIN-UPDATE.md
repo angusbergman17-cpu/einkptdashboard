@@ -14,7 +14,7 @@
 
 **Features**:
 - Fetches weather from **Bureau of Meteorology (BOM)** official API
-- Location: Melbourne CBD (geohash: r1r0gx)
+- Location: City CBD (geohash: r1r0gx)
 - Caches data for 15 minutes (BOM updates every 30 min)
 - Automatic fallback if API unavailable
 - Simple text format for e-ink display
@@ -94,7 +94,7 @@ https://api.weather.bom.gov.au/v1/locations/r1r0gx/observations
     "ttl": 655,
     "expired": false
   },
-  "location": "Melbourne CBD",
+  "location": "City CBD",
   "source": "Bureau of Meteorology"
 }
 ```
@@ -149,7 +149,7 @@ https://api.weather.bom.gov.au/v1/locations/r1r0gx/observations
 │ Wind: 12 km/h           │
 │ Rain: 0 mm              │
 │                         │
-│ Location: Melbourne CBD │
+│ Location: City CBD │
 │ Cache Age: 245s         │
 │                         │
 │ [🔄 Refresh Weather]    │
@@ -261,7 +261,7 @@ bbep.print((char)248);    // ° symbol
 **Dashboard Layout**:
 ```
 ┌────────────────────────────────────────────────────────┐
-│ SOUTH YARRA        23:20                               │
+│ ORIGIN STATION        23:20                               │
 │                                                        │
 │ TRAM #58           TRAINS                             │
 │ ────────           ───────                            │

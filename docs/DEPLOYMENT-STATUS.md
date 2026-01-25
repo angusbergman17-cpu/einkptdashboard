@@ -56,8 +56,8 @@
    - Minimal partial refreshes
 
 2. **Dashboard Display**
-   - PIDS-style Melbourne Metro design
-   - SOUTH YARRA header
+   - PIDS-style Metro design
+   - ORIGIN STATION header
    - METRO TRAINS section
    - YARRA TRAMS section
    - SERVICE STATUS footer

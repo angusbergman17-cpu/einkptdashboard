@@ -4,9 +4,9 @@
 # Tests all server endpoints and displays data in text format
 #
 # Usage: ./test-endpoints.sh
-# Note: Server must be running on localhost:3000
+# Note: Server must be running on ptv-trmnl-new.onrender.com
 
-BASE_URL="http://localhost:3000"
+BASE_URL="https://ptv-trmnl-new.onrender.com"
 TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
 
 echo "╔══════════════════════════════════════════════════════════════╗"

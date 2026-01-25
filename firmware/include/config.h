@@ -71,7 +71,10 @@
 #define SLEEP_BETWEEN_PARTIALS_MS 55000  // Light sleep between partial updates
 
 // Memory safety limits (ESP32-C3 has ~238KB free RAM)
-#define MAX_PNG_SIZE 81920  // 80KB maximum PNG file size
 #define MIN_FREE_HEAP 100000  // Require 100KB free heap before allocating
+#define MAX_PNG_SIZE 81920    // Legacy: 80KB max (kept for compilation)
+
+// JSON buffer size for API responses
+#define JSON_BUFFER_SIZE 4096  // 4KB for region-updates JSON
 
 #endif // CONFIG_H

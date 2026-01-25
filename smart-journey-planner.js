@@ -257,12 +257,16 @@ class SmartJourneyPlanner {
     }
 
     try {
-      // Improve address for Melbourne area
-      const searchAddress = address.toLowerCase().includes('melbourne') ||
-                           address.toLowerCase().includes('victoria') ||
-                           address.toLowerCase().includes('vic')
-        ? address
-        : `${address}, Melbourne, Victoria, Australia`;
+      // Improve address by appending region if not already specified
+      // Configure DEFAULT_REGION in your deployment for your area
+      const DEFAULT_REGION = process.env.GEOCODE_REGION || 'Victoria, Australia';
+      const regionKeywords = DEFAULT_REGION.toLowerCase().split(/[,\s]+/).filter(k => k.length > 2);
+
+      const hasRegion = regionKeywords.some(keyword =>
+        address.toLowerCase().includes(keyword)
+      );
+
+      const searchAddress = hasRegion ? address : `${address}, ${DEFAULT_REGION}`;
 
       const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchAddress)}&limit=1&addressdetails=1`;
 
@@ -380,28 +384,35 @@ class SmartJourneyPlanner {
 
   /**
    * Fallback stop detection when PTV API is not available
-   * Uses known Melbourne transit infrastructure
+   *
+   * NOTE FOR DEVELOPERS:
+   * This fallback uses example Victorian transit data. For production use:
+   * 1. Configure PTV API credentials for real-time stop discovery
+   * 2. Or replace with stops relevant to your deployment area
+   *
+   * Stop IDs and coordinates should be obtained from your local transit authority's GTFS data.
    */
   fallbackStopDetection(location) {
-    // Known major stops/stations in Melbourne
+    // Example stops - replace with your local transit stops for production
+    // These are sample Victorian train/tram stops for demonstration
     const majorStops = [
-      // Trains
-      { stop_id: 19854, stop_name: 'Flinders Street', lat: -37.8183, lon: 144.9671, route_type: 0 },
-      { stop_id: 19841, stop_name: 'South Yarra', lat: -37.8389, lon: 144.9927, route_type: 0 },
-      { stop_id: 19844, stop_name: 'Richmond', lat: -37.8247, lon: 144.9898, route_type: 0 },
-      { stop_id: 19852, stop_name: 'Melbourne Central', lat: -37.8102, lon: 144.9629, route_type: 0 },
-      { stop_id: 19821, stop_name: 'Southern Cross', lat: -37.8183, lon: 144.9525, route_type: 0 },
-      { stop_id: 19848, stop_name: 'Parliament', lat: -37.8110, lon: 144.9729, route_type: 0 },
-      { stop_id: 19800, stop_name: 'Flagstaff', lat: -37.8117, lon: 144.9560, route_type: 0 },
-      { stop_id: 19810, stop_name: 'Prahran', lat: -37.8499, lon: 144.9925, route_type: 0 },
-      { stop_id: 19811, stop_name: 'Windsor', lat: -37.8558, lon: 144.9917, route_type: 0 },
-      { stop_id: 19812, stop_name: 'Balaclava', lat: -37.8683, lon: 144.9933, route_type: 0 },
-      // Trams - major stops
-      { stop_id: 2001, stop_name: 'Federation Square/Flinders St', lat: -37.8176, lon: 144.9679, route_type: 1 },
-      { stop_id: 2002, stop_name: 'Collins St/Swanston St', lat: -37.8153, lon: 144.9664, route_type: 1 },
-      { stop_id: 2003, stop_name: 'Bourke St Mall', lat: -37.8131, lon: 144.9653, route_type: 1 },
-      { stop_id: 2004, stop_name: 'Melbourne University', lat: -37.7982, lon: 144.9610, route_type: 1 },
-      { stop_id: 2005, stop_name: 'RMIT/Swanston St', lat: -37.8089, lon: 144.9639, route_type: 1 }
+      // Trains (route_type: 0) - Example Victorian stations
+      { stop_id: 19854, stop_name: 'City Central', lat: -37.8183, lon: 144.9671, route_type: 0 },
+      { stop_id: 19841, stop_name: 'Inner Suburb Station', lat: -37.8389, lon: 144.9927, route_type: 0 },
+      { stop_id: 19844, stop_name: 'Junction Station', lat: -37.8247, lon: 144.9898, route_type: 0 },
+      { stop_id: 19852, stop_name: 'Central Underground', lat: -37.8102, lon: 144.9629, route_type: 0 },
+      { stop_id: 19821, stop_name: 'Regional Hub', lat: -37.8183, lon: 144.9525, route_type: 0 },
+      { stop_id: 19848, stop_name: 'Government Station', lat: -37.8110, lon: 144.9729, route_type: 0 },
+      { stop_id: 19800, stop_name: 'North Station', lat: -37.8117, lon: 144.9560, route_type: 0 },
+      { stop_id: 19810, stop_name: 'South Station', lat: -37.8499, lon: 144.9925, route_type: 0 },
+      { stop_id: 19811, stop_name: 'East Station', lat: -37.8558, lon: 144.9917, route_type: 0 },
+      { stop_id: 19812, stop_name: 'West Station', lat: -37.8683, lon: 144.9933, route_type: 0 },
+      // Trams (route_type: 1) - Example tram/light rail stops
+      { stop_id: 2001, stop_name: 'City Square', lat: -37.8176, lon: 144.9679, route_type: 1 },
+      { stop_id: 2002, stop_name: 'Main Street Stop', lat: -37.8153, lon: 144.9664, route_type: 1 },
+      { stop_id: 2003, stop_name: 'Shopping District', lat: -37.8131, lon: 144.9653, route_type: 1 },
+      { stop_id: 2004, stop_name: 'University Stop', lat: -37.7982, lon: 144.9610, route_type: 1 },
+      { stop_id: 2005, stop_name: 'Cultural Precinct', lat: -37.8089, lon: 144.9639, route_type: 1 }
     ];
 
     // Find closest stops within walking distance
@@ -966,7 +977,7 @@ class SmartJourneyPlanner {
     const msg = error.message.toLowerCase();
 
     if (msg.includes('address not found')) {
-      return 'Try adding more details to your address, like the suburb or postcode (e.g., "123 Collins St, Melbourne VIC 3000")';
+      return 'Try adding more details to your address, like the suburb or postcode (e.g., "123 Main Street, Suburb, State 3000")';
     }
     if (msg.includes('no transit stops')) {
       return 'Your addresses may be outside the public transport network. Try addresses in more central locations.';

@@ -1,77 +1,74 @@
-# PTV-TRMNL - Smart Melbourne Transit System
+# PTV-TRMNL - Smart Transit Dashboard for TRMNL E-ink Display
 
-**Version**: 2.2.0
-**Last Updated**: January 23, 2026
-**Status**: ✅ Production Ready
-**Live Server**: https://ptv-trmnl-new.onrender.com
+**Never miss your train again.** A personalized transit dashboard that tells you exactly when to leave home, whether you have time for coffee, and which train or tram to catch.
+
+Built for the [TRMNL](https://usetrmnl.com) e-ink display (800x480).
+
+## What You Get
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  SOUTH YARRA                                     14:32      │
+├─────────────────────────────────────────────────────────────┤
+│   ┌─────────────────────┐    ┌─────────────────────────┐   │
+│   │  LEAVE HOME BY      │    │  NEXT TRAINS            │   │
+│   │      14:45          │    │  Flinders St    8 min   │   │
+│   │                     │    │  City Loop     12 min   │   │
+│   └─────────────────────┘    └─────────────────────────┘   │
+│                                                             │
+│   ┌─────────────────────┐    ┌─────────────────────────┐   │
+│   │  NEXT TRAMS         │    │        COFFEE?          │   │
+│   │  Route 78    5 min  │    │                         │   │
+│   │  Route 78   11 min  │    │          YES            │   │
+│   └─────────────────────┘    └─────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+The **server is the brain** - it calculates your leave time, checks coffee feasibility, and fetches live transit data. The **device just displays** simple, glanceable information.
 
 ---
 
-## 🎯 System Overview
+## Quick Start (15 minutes)
 
-A complete smart transit system for Melbourne that combines:
-- **Live multi-modal transit data** (trains, trams, buses, V/Line)
-- **Intelligent route planning** with coffee stop optimization
-- **E-ink display integration** via TRMNL device
-- **User preference management** with address autocomplete
-- **Real-time cafe busy-ness detection**
-- **Weather integration** with Bureau of Meteorology data
+### Step 1: Deploy Your Server (Free)
 
-### What This System Does
+1. Fork this repository to your GitHub
+2. Go to [render.com](https://render.com) and sign up (free)
+3. Click **New** → **Web Service** → Connect your fork
+4. Set **Build Command**: `npm install`
+5. Set **Start Command**: `npm start`
+6. Click **Deploy** and wait ~90 seconds
+7. Note your URL: `https://your-app-name.onrender.com`
 
-1. **Learns your routine**: Home → Coffee → Work
-2. **Plans optimal routes**: Across all transit modes (trains, trams, buses, V/Line)
-3. **Calculates coffee timing**: Based on real-time cafe busy-ness
-4. **Shows live departures**: On e-ink display or web dashboard
-5. **Adapts in real-time**: Updates every 30 seconds with PTV live data
+### Step 2: Get PTV API Credentials (Free)
 
----
+1. Go to [PTV Timetable API](https://www.ptv.vic.gov.au/footer/data-and-reporting/datasets/ptv-timetable-api/)
+2. Register for free developer access
+3. You'll receive a **Developer ID** and **API Key** via email
 
-## ⚡ Quick Start (5 Minutes)
+### Step 3: Configure Your Dashboard
 
-Get the system running in minutes:
+1. Open `https://your-app-name.onrender.com/admin`
+2. Go to the **Configuration** tab
+3. Enter your PTV Developer ID and API Key
+4. Go to the **Journey Planner** tab
+5. Enter your home address, work address, and favorite cafe
+6. Set your work arrival time (e.g., 09:00)
+7. Click **Plan My Journey**
 
-### 1. Get PTV API Credentials (Free)
-Visit [PTV Open Data Portal](https://opendata.transport.vic.gov.au/) and sign up for free API access. You'll receive:
-- **Developer ID** (your API key)
-- **Security Token** (JWT format)
+### Step 4: Flash Your TRMNL Device
 
-### 2. Clone and Install
-```bash
-git clone https://github.com/angusbergman17-cpu/PTV-TRMNL-NEW.git
-cd PTV-TRMNL-NEW
-npm install
-```
+1. Install [PlatformIO](https://platformio.org/install)
+2. Edit `firmware/include/config.h`:
+   ```cpp
+   #define SERVER_URL "https://your-app-name.onrender.com"
+   ```
+3. Connect TRMNL via USB-C, put in bootloader mode (hold BOOT, press RESET)
+4. Run: `cd firmware && pio run --target upload`
+5. On first boot, connect to WiFi hotspot **PTV-TRMNL-Setup** (password: `transport123`)
+6. Configure your home WiFi in the captive portal
 
-### 3. Configure Environment
-```bash
-# Copy example environment file
-cp .env.example .env
-
-# Edit .env and add your PTV credentials:
-# ODATA_API_KEY=your-developer-id-here
-# ODATA_TOKEN=your-security-token-here
-```
-
-### 4. Start Server
-```bash
-npm start
-
-# Server starts on http://localhost:3000
-# Admin Panel: http://localhost:3000/admin
-```
-
-### 5. Configure Preferences (First Time Only)
-1. Open `http://localhost:3000/admin` in browser
-2. Enter your addresses (autocomplete enabled)
-3. Set arrival time (e.g., 09:00)
-4. Click "Save All Preferences"
-5. Route auto-calculates - Done! ✅
-
-**Optional**: Add Google Places API key to `.env` for better cafe search:
-```bash
-GOOGLE_PLACES_KEY=your-google-api-key
-```
+**Done!** Your dashboard will now update automatically.
 
 ---
 
@@ -115,7 +112,7 @@ GOOGLE_PLACES_KEY=your-google-api-key
 │  │  PTV API     │  │  OpenStreetMap│ │  Bureau of           │ │
 │  │  (GTFS-RT)   │  │  (Nominatim)  │ │  Meteorology (BOM)   │ │
 │  │  Trains/Trams│  │  Geocoding    │ │  Weather Data        │ │
-│  │  Buses/V/Line│  │  Address      │ │  Melbourne           │ │
+│  │  Buses/V/Line│  │  Address      │ │  Weather Service     │ │
 │  └──────────────┘  └──────────────┘  └──────────────────────┘ │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -198,9 +195,9 @@ GET  /admin/dashboard-preview       # Dashboard preview
 ```javascript
 {
   addresses: {
-    home: "123 Chapel St, South Yarra VIC 3141",
-    cafe: "Market Lane Coffee, Prahran VIC 3181",
-    work: "456 Collins St, Melbourne VIC 3000"
+    home: "123 Main St, Your Suburb",
+    cafe: "Your Favorite Cafe, Nearby Suburb",
+    work: "456 Central Ave, City Center"
   },
   journey: {
     arrivalTime: "09:00",
@@ -274,8 +271,8 @@ buildPTVUrl(endpoint, params, apiKey, apiToken) {
 4. **Work backwards from arrival time**:
    ```
    Arrival Time: 09:00
-   - Walk to work (5 min) = 08:55 arrive Flinders St
-   - Train journey (20 min) = 08:35 depart South Yarra
+   - Walk to work (5 min) = 08:55 arrive destination station
+   - Train journey (20 min) = 08:35 depart origin station
    - Walk to station (3 min) = 08:32 leave coffee shop
    - Get coffee (2-8 min) = 08:27 arrive coffee shop
    - Walk to coffee (4 min) = 08:23 leave station
@@ -301,13 +298,13 @@ calculateWalkingTime(lat1, lon1, lat2, lon2) {
   must_leave_home: "08:15",
   arrival_time: "09:00",
   segments: [
-    { type: 'walk', from: 'Home', to: 'South Yarra Station', duration: 8 },
-    { type: 'wait', location: 'South Yarra Station', duration: 2 },
+    { type: 'walk', from: 'Home', to: 'Origin Station', duration: 8 },
+    { type: 'wait', location: 'Origin Station', duration: 2 },
     { type: 'walk', from: 'Station', to: 'Coffee Shop', duration: 4 },
     { type: 'coffee', location: 'Coffee Shop', duration: 3, busyLevel: 'medium' },
     { type: 'walk', from: 'Coffee Shop', to: 'Station', duration: 3 },
-    { type: 'train', from: 'South Yarra', to: 'Flinders St', duration: 20 },
-    { type: 'walk', from: 'Flinders St', to: 'Work', duration: 5 }
+    { type: 'train', from: 'Origin Station', to: 'Destination Station', duration: 20 },
+    { type: 'walk', from: 'Destination Station', to: 'Work', duration: 5 }
   ],
   summary: {
     total_duration: 45,
@@ -384,7 +381,7 @@ GTFS_FEEDS = {
   trains: [
     {
       minutes: 3,
-      destination: 'Flinders Street',
+      destination: 'City Center',
       platform: '1',
       scheduled: '2026-01-23T08:32:00Z',
       realtime: true
@@ -400,7 +397,7 @@ GTFS_FEEDS = {
 ---
 
 #### 7. `weather-bom.js` (Weather Integration)
-**Purpose**: Fetches Melbourne weather from Bureau of Meteorology
+**Purpose**: Fetches local weather from Bureau of Meteorology (configurable station)
 
 **Data Points**:
 - Current temperature (°C)
@@ -410,7 +407,7 @@ GTFS_FEEDS = {
 - Wind speed (km/h)
 - Rainfall since 9am (mm)
 
-**BOM Station**: Melbourne (Olympic Park) - ID: 086338
+**BOM Station**: Configurable via environment variable (default: your BOM station - ID: configurable)
 
 **Cache**: 5 minutes (300 seconds)
 
@@ -612,8 +609,8 @@ regions: [
        └─> Server serves admin.html (1800 lines)
 
 2. User Configures Addresses
-   └─> JavaScript: handleAddressInput("home", "123 chapel")
-       └─> Browser GET /admin/address/search?query=123+chapel
+   └─> JavaScript: handleAddressInput("home", "123 main")
+       └─> Browser GET /admin/address/search?query=123+main
            └─> server.js line 1082-1130
                └─> fetch('https://nominatim.openstreetmap.org/search...')
                    └─> Returns: [{ display_name, lat, lon }]
@@ -670,12 +667,12 @@ regions: [
                │   └─> If stale: fetch new data
                │       └─> fetch('http://data.ptv.vic.gov.au/downloads/gtfs.zip')
                │           └─> Parse GTFS-Realtime protobuf
-               │               └─> Extract departures for South Yarra
+               │               └─> Extract departures for configured origin station
                │                   └─> Cache and return
                ├─> weather-bom.js: getCurrentWeather()
                │   └─> fetch('http://www.bom.gov.au/fwo/...')
                │       └─> Parse BOM XML
-               │           └─> Extract Melbourne weather
+               │           └─> Extract local weather data
                └─> Combine data into regions JSON
                    └─> server.js formats response:
                        {
@@ -796,7 +793,7 @@ PORT=3000                                    # Server port (default: 3000)
 
 5. **Access Admin Panel**
    ```
-   http://localhost:3000/admin
+   https://ptv-trmnl-new.onrender.com/admin
    ```
 
 ### Production Deployment (Render)
@@ -1382,26 +1379,11 @@ Production: https://ptv-trmnl-new.onrender.com
 
 ## 📚 Additional Documentation
 
-### Essential Guides
-
-| Document | Purpose | Location |
-|----------|---------|----------|
-| **🚀 Deployment Guide** | **Deploy to Render.com (10 min)** | **[DEPLOYMENT-RENDER.md](./DEPLOYMENT-RENDER.md)** |
-| **⚡ Quick Start** | Get running locally in 5 minutes | *(See top of this README)* |
-| **🔧 Troubleshooting** | Common issues and solutions | *(See Troubleshooting section)* |
-| **❓ FAQ** | 20+ frequently asked questions | *(See FAQ section)* |
-
-### Feature Documentation
-
-| Document | Purpose | Location |
-|----------|---------|----------|
-| **Complete Setup Guide** | Initial setup and configuration | `COMPLETE-SETUP-GUIDE.md` |
-| **User Preferences Guide** | Managing user settings | `USER-PREFERENCES-AND-MULTIMODAL.md` |
-| **Route Planner Guide** | Route calculation details | `SMART-ROUTE-PLANNER-COMPLETE.md` |
-| **Cafe Busy-ness Guide** | Busy-ness detection | `CAFE-BUSYNESS-FEATURE.md` |
-| **Address Autocomplete** | Autocomplete feature | `ADDRESS-AUTOCOMPLETE-GUIDE.md` |
-| **Deployment & Firmware** | Firmware flash & device setup | `DEPLOYMENT-AND-FIRMWARE-FLASH.md` |
-| **Master Documentation** | Complete system reference | `PTV-TRMNL-MASTER-DOCUMENTATION.md` |
+| Document | Purpose |
+|----------|---------|
+| **[DEPLOYMENT-RENDER.md](./DEPLOYMENT-RENDER.md)** | Step-by-step Render.com deployment |
+| **[docs/](./docs/)** | Additional reference documentation |
+| **[firmware/README.md](./firmware/README.md)** | Firmware flashing guide |
 
 ---
 
@@ -1457,7 +1439,7 @@ console.error('❌ Error:', error);
 
 2. **Add More Detail to Address**
    - Include suburb: "123 Main St, Richmond, VIC"
-   - Add landmarks: "Cafe near Flinders Street Station"
+   - Add landmarks: "Cafe near Central Station"
    - Try full address format
 
 3. **Add Google Places API Key** (optional)
@@ -1476,7 +1458,7 @@ console.error('❌ Error:', error);
    - Regenerate token if expired
 
 2. **Verify Addresses**
-   - Ensure addresses are in Melbourne, Victoria
+   - Ensure addresses are within your configured transit region
    - Check address validation status in User Preferences
    - Green checkmarks = addresses verified
 
@@ -1503,20 +1485,6 @@ console.error('❌ Error:', error);
    - Power cycle TRMNL device
    - Device will re-register automatically
    - Check admin panel for "Last Seen" timestamp
-
-### "Image Too Large" Error
-
-**Problem**: Generated PNG exceeds 80KB limit
-
-**Solutions**:
-1. **Reduce Content**
-   - Disable some transit modes
-   - Simplify display layout
-   - Contact support if issue persists
-
-2. **Check Sharp.js Configuration**
-   - Verify compression settings in `server.js`
-   - PNG quality should be optimized for e-ink
 
 ### Route Calculation is Slow
 
@@ -1548,9 +1516,9 @@ console.error('❌ Error:', error);
    - Will auto-recover when API is back
 
 2. **Verify Location**
-   - Weather pulls from Melbourne CBD by default
-   - No configuration needed
-   - Should work automatically
+   - Weather pulls from configured weather station by default
+   - Set WEATHER_STATION_ID in environment for your location
+   - Should work automatically once configured
 
 ---
 
@@ -1564,8 +1532,8 @@ A: No! The system works standalone with the web dashboard at `/admin`. The dashb
 **Q: Is this free to use?**
 A: Yes, completely free. The PTV API is free for non-commercial use. Google Places API is optional (has free tier). Hosting on Render free tier is possible.
 
-**Q: Does this work outside Melbourne?**
-A: Currently optimized for Melbourne, Victoria. The system uses PTV (Public Transport Victoria) API, which covers Melbourne metro, regional Victoria, and V/Line services. Adaptation for other cities would require changing the transit API.
+**Q: Does this work in other regions?**
+A: The default configuration uses PTV (Public Transport Victoria) API for metro, regional, and V/Line services. The system architecture is designed to be region-agnostic - with environment variable configuration, you can adapt it for other transit APIs. The address geocoding, route planning, and display components are fully generic.
 
 **Q: How accurate are the route times?**
 A: Very accurate (95%+) when using real PTV live data. Walking times use standard 80m/min (4.8km/h) pace or your manual custom times. Cafe busy-ness detection adjusts coffee time based on actual peak periods.
@@ -1619,8 +1587,8 @@ A:
 **Q: Can I view the display without a device?**
 A: Yes! Open `/admin/dashboard-preview` in your browser to see exactly what would appear on the device. It auto-refreshes with live data.
 
-**Q: What size is the display image?**
-A: 800×480 pixels, optimized for e-ink. PNG format, compressed to <80KB for fast device loading.
+**Q: What size is the display?**
+A: 800×480 pixels, optimized for e-ink. The server delivers HTML which the firmware renders.
 
 ### Technical Questions
 
@@ -1633,7 +1601,7 @@ A: The system has fallback mechanisms:
 
 **Q: How long is data cached?**
 A:
-- Display image: 25 seconds (in-memory)
+- Transit data: 25 seconds (in-memory)
 - Route calculations: 5 minutes
 - Weather data: 15 minutes
 - Geocoding: Permanent (in-memory)
@@ -1664,7 +1632,7 @@ A: Free tier options:
 ### Customization
 
 **Q: Can I change the display layout?**
-A: Yes, edit `dashboard-template.js` and `pids-renderer.js`. The template defines the layout, renderer draws the content. Requires knowledge of HTML/CSS and Sharp.js image processing.
+A: Yes, edit the `/api/dashboard` endpoint in `server.js` and update `drawCompleteDashboard()` in `firmware/src/main.cpp`. The server generates HTML and the firmware handles rendering.
 
 **Q: Can I add more transit modes?**
 A: The system supports PTV route types:
@@ -1705,12 +1673,19 @@ MIT License - Customize for your own commute!
 
 ---
 
-**Last Updated**: January 23, 2026
-**Version**: 2.2.0
+**Last Updated**: January 24, 2026
+**Version**: 2.3.0
 **Status**: ✅ Production Ready - Verified End-to-End
-**Commit**: f8142dd
 
 ### Recent Updates
+
+**v2.3.0** (January 24, 2026):
+- ✅ Made codebase fully generic for open source distribution
+- ✅ Removed all hardcoded location references
+- ✅ Added environment variable configuration for region/transit API
+- ✅ Configurable station names, weather stations, and geocoding regions
+- ✅ Generic address examples and documentation
+- ✅ Ready for adaptation to any transit system
 
 **v2.2.0** (January 23, 2026):
 - ✅ Manual walking times feature with address validation

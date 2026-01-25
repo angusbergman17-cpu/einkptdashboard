@@ -145,15 +145,15 @@ GET /admin/route/transit-modes
 
 2. **Open Admin Panel**:
    ```bash
-   open http://localhost:3000/admin
+   open https://ptv-trmnl-new.onrender.com/admin
    ```
 
 3. **Fill in User Preferences** (top section):
 
    **Addresses**:
-   - Home Address: `123 Main St, South Yarra`
-   - Preferred Cafe: `Market Lane Coffee, Prahran`
-   - Work Address: `456 Collins St, Melbourne`
+   - Home Address: `123 Main St, Your Suburb`
+   - Preferred Cafe: `Your Favorite Cafe`
+   - Work Address: `456 Central Ave, Your City`
 
    **PTV API Credentials**:
    - API Key: Your developer ID from PTV
@@ -254,9 +254,9 @@ After calculating a route, the system automatically:
 
 | Mode | Icon | Type | Average Speed | Coverage |
 |------|------|------|---------------|----------|
-| **Train** | 🚆 | Metro trains | 60 km/h | Metropolitan Melbourne |
-| **Tram** | 🚊 | Trams | 20 km/h | Inner Melbourne |
-| **Bus** | 🚌 | Buses | 25 km/h | Entire Melbourne |
+| **Train** | 🚆 | Metro trains | 60 km/h | Metropolitan area |
+| **Tram** | 🚊 | Trams | 20 km/h | Inner city |
+| **Bus** | 🚌 | Buses | 25 km/h | Entire city area |
 | **V/Line** | 🚄 | Regional trains/coaches | 80 km/h | Regional Victoria |
 
 ### Selection Algorithm
@@ -283,7 +283,7 @@ After calculating a route, the system automatically:
 
 ```
 Option 1: 🚆 Train
-  Sandringham Line → Flinders Street
+  Train Line → City
   Departs: 08:27 (15 min)
   Est. arrival: 08:47 (20 min journey)
   ☕ COFFEE TIME
@@ -291,7 +291,7 @@ Option 1: 🚆 Train
   Time available: 15 min | Time needed: 11 min
 
 Option 2: 🚊 Tram
-  Route 58 → West Coburg
+  Route 58 → Destination
   Departs: 08:20 (8 min)
   Est. arrival: 08:35 (15 min journey)
   ⚡ DIRECT
@@ -308,9 +308,9 @@ Option 2: 🚊 Tram
 ```json
 {
   "addresses": {
-    "home": "123 Main St, South Yarra",
-    "cafe": "Market Lane Coffee, Prahran",
-    "work": "456 Collins St, Melbourne"
+    "home": "123 Main St, Your Suburb",
+    "cafe": "Your Favorite Cafe",
+    "work": "456 Central Ave, Your City"
   },
   "journey": {
     "arrivalTime": "09:00",
@@ -435,7 +435,7 @@ Get best transit options across all modes.
       "mode": "Train",
       "icon": "🚆",
       "routeName": "Sandringham Line",
-      "direction": "Flinders Street",
+      "direction": "City",
       "minutesUntil": 15,
       "departureTime": "08:27",
       "estimatedArrival": "08:47",
@@ -474,9 +474,9 @@ Get all supported transit modes.
 
 1. **Save Test Data**:
    ```
-   Home: 123 Main St, South Yarra
-   Cafe: Market Lane Coffee
-   Work: 456 Collins St, Melbourne
+   Home: 123 Main St, Your Suburb
+   Cafe: Your Favorite Cafe
+   Work: 456 Central Ave, Your City
    API Key: (your key)
    API Token: (your token)
    Arrival: 09:00
@@ -723,7 +723,7 @@ npm start
 **Next Action**: Configure preferences and test multi-modal routing
 
 ```bash
-npm start && open http://localhost:3000/admin
+npm start && open https://ptv-trmnl-new.onrender.com/admin
 ```
 
 **Scroll to User Preferences → Fill in details → Save → Calculate Route → View multi-modal options! 🚆🚊🚌🚄**

@@ -13,7 +13,6 @@ import fs from 'fs/promises';
 import path from 'path';
 import config from './config.js';
 import { getSnapshot } from './data-scraper.js';
-import PidsRenderer from './pids-renderer.js';
 import CoffeeDecision from './coffee-decision.js';
 import WeatherBOM from './weather-bom.js';
 import RoutePlanner from './route-planner.js';
@@ -29,7 +28,6 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 
 // Initialize all modules
-const renderer = new PidsRenderer();
 const coffeeEngine = new CoffeeDecision();
 const weather = new WeatherBOM();
 const routePlanner = new RoutePlanner();
@@ -44,18 +42,24 @@ preferences.load().then(() => {
   const status = preferences.getStatus();
   if (!status.configured) {
     console.log('⚠️  User preferences not fully configured');
-    console.log('   Please configure via admin panel: http://localhost:3000/admin');
+    console.log('   Please configure via admin panel: /admin');
   }
 });
 
 /**
- * Fallback timetable - typical weekday schedule for South Yarra
+ * Fallback timetable - typical weekday schedule
  * Used when API is unavailable
+ * Destinations are configurable via user preferences
  */
 function getFallbackTimetable() {
   const now = new Date();
   const localNow = new Date(now.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
   const currentMinutes = localNow.getHours() * 60 + localNow.getMinutes();
+
+  // Get configured destinations from preferences, or use generic defaults
+  const prefs = preferences.get();
+  const trainDest = prefs?.journey?.transitRoute?.mode1?.destinationStation?.name || 'City';
+  const tramDest = prefs?.journey?.transitRoute?.mode2?.destinationStation?.name || 'City';
 
   // Typical weekday schedule (minutes from midnight)
   const trainSchedule = []; // Every 5-10 minutes during peak
@@ -75,21 +79,20 @@ function getFallbackTimetable() {
   // Find next departures
   const nextTrains = trainSchedule.filter(t => t > currentMinutes).slice(0, 3).map(t => ({
     minutes: Math.max(1, t - currentMinutes),
-    destination: 'Flinders Street',
+    destination: trainDest,
     isScheduled: true
   }));
 
   const nextTrams = tramSchedule.filter(t => t > currentMinutes).slice(0, 3).map(t => ({
     minutes: Math.max(1, t - currentMinutes),
-    destination: 'Toorak',
+    destination: tramDest,
     isScheduled: true
   }));
 
   return { trains: nextTrains, trams: nextTrams };
 }
 
-// Cache for image and data
-let cachedImage = null;
+// Cache for data
 let cachedData = null;
 let lastUpdate = 0;
 const CACHE_MS = 25 * 1000; // 25 seconds (device refreshes every 30s)
@@ -121,9 +124,6 @@ setInterval(() => {
 
 // Persistent storage paths
 const DEVICES_FILE = path.join(process.cwd(), 'devices.json');
-const CACHE_DIR = path.join(process.cwd(), 'cache');
-const PNG_CACHE_FILE = path.join(CACHE_DIR, 'display.png');
-const TEMPLATE_FILE = path.join(CACHE_DIR, 'base-template.png');
 
 /**
  * Load devices from persistent storage
@@ -154,17 +154,6 @@ async function saveDevices() {
 }
 
 /**
- * Ensure cache directory exists
- */
-async function ensureCacheDir() {
-  try {
-    await fs.mkdir(CACHE_DIR, { recursive: true });
-  } catch (err) {
-    console.error('⚠️  Error creating cache directory:', err.message);
-  }
-}
-
-/**
  * Fetch fresh data from all sources
  */
 async function fetchData() {
@@ -176,12 +165,17 @@ async function fetchData() {
     const now = new Date();
 
     // Process trains
+    // Get configured destinations from preferences
+    const prefs = preferences.get();
+    const defaultTrainDest = prefs?.journey?.transitRoute?.mode1?.destinationStation?.name || 'City';
+    const defaultTramDest = prefs?.journey?.transitRoute?.mode2?.destinationStation?.name || 'City';
+
     const trains = (snapshot.trains || []).slice(0, 5).map(train => {
       const departureTime = new Date(train.when);
       const minutes = Math.max(0, Math.round((departureTime - now) / 60000));
       return {
         minutes,
-        destination: 'Flinders Street',
+        destination: train.destination || defaultTrainDest,
         isScheduled: false
       };
     });
@@ -192,7 +186,7 @@ async function fetchData() {
       const minutes = Math.max(0, Math.round((departureTime - now) / 60000));
       return {
         minutes,
-        destination: 'West Coburg',
+        destination: tram.destination || defaultTramDest,
         isScheduled: false
       };
     });
@@ -253,52 +247,12 @@ async function getData() {
 }
 
 /**
- * Generate base template (static layout) - called once
- */
-async function getBaseTemplate() {
-  try {
-    // Check if template exists
-    const stats = await fs.stat(TEMPLATE_FILE);
-    const template = await fs.readFile(TEMPLATE_FILE);
-    console.log(`✅ Loaded cached template: ${template.length} bytes`);
-    return template;
-  } catch (err) {
-    // Generate new template
-    console.log('📝 Generating base template...');
-
-    // Create static data with placeholders
-    const templateData = {
-      trains: [
-        { minutes: 0, destination: 'Flinders Street', isScheduled: false },
-        { minutes: 0, destination: 'Flinders Street', isScheduled: false },
-        { minutes: 0, destination: 'Flinders Street', isScheduled: false }
-      ],
-      trams: [
-        { minutes: 0, destination: 'West Coburg', isScheduled: false },
-        { minutes: 0, destination: 'West Coburg', isScheduled: false },
-        { minutes: 0, destination: 'West Coburg', isScheduled: false }
-      ],
-      weather: { temp: '--', condition: 'Loading...', icon: '☁️' },
-      news: null,
-      coffee: { canGet: false, decision: 'LOADING', subtext: 'Please wait', urgent: false },
-      meta: { generatedAt: new Date().toISOString() }
-    };
-
-    const template = await renderer.render(templateData, templateData.coffee);
-
-    // Save template
-    await fs.writeFile(TEMPLATE_FILE, template);
-    console.log(`✅ Template saved: ${template.length} bytes`);
-
-    return template;
-  }
-}
-
-/**
- * Get region updates (dynamic data with coordinates)
+ * Get region updates (dynamic data for firmware)
+ * Server does ALL calculation - firmware just displays these values
  */
 async function getRegionUpdates() {
   const data = await getData();
+  const prefs = preferences.get();
   const now = new Date();
   const timeFormatter = new Intl.DateTimeFormat('en-AU', {
     timeZone: 'Australia/Melbourne',
@@ -311,19 +265,40 @@ async function getRegionUpdates() {
     weatherData = await weather.getCurrentWeather();
   } catch (error) {
     console.error('Weather fetch failed:', error.message);
-    // Continue without weather data
+  }
+
+  // Get station names from preferences
+  const stationName = prefs?.journey?.transitRoute?.mode1?.originStation?.name || 'STATION';
+  const destName = prefs?.journey?.transitRoute?.mode1?.destinationStation?.name || 'CITY';
+
+  // Calculate "leave by" time (server does the math!)
+  const nextTrain = data.trains[0];
+  const walkBuffer = 5; // 5 min walk to station
+  let leaveTime = '--:--';
+  if (nextTrain) {
+    const leaveInMins = Math.max(0, nextTrain.minutes - walkBuffer);
+    leaveTime = new Date(now.getTime() + leaveInMins * 60000).toLocaleTimeString('en-AU', {
+      timeZone: 'Australia/Melbourne',
+      hour: '2-digit', minute: '2-digit', hour12: false
+    });
   }
 
   // Define regions for firmware (simple format: id + text only)
   const regions = [];
 
-  // Time region (HH:MM format)
-  regions.push({
-    id: 'time',
-    text: timeFormatter.format(now)
-  });
+  // Station name
+  regions.push({ id: 'station', text: stationName.toUpperCase() });
 
-  // Train times (always send 2 departures, use "--" if not available)
+  // Current time
+  regions.push({ id: 'time', text: timeFormatter.format(now) });
+
+  // LEAVE BY time (most important - server calculates this!)
+  regions.push({ id: 'leaveTime', text: leaveTime });
+
+  // Coffee decision (server decides!)
+  regions.push({ id: 'coffee', text: data.coffee.canGet ? 'YES' : 'NO' });
+
+  // Train times (2 departures)
   for (let i = 0; i < 2; i++) {
     regions.push({
       id: `train${i + 1}`,
@@ -331,7 +306,7 @@ async function getRegionUpdates() {
     });
   }
 
-  // Tram times (always send 2 departures, use "--" if not available)
+  // Tram times (2 departures)
   for (let i = 0; i < 2; i++) {
     regions.push({
       id: `tram${i + 1}`,
@@ -368,44 +343,6 @@ async function getRegionUpdates() {
     regions,
     weather: weatherData // Include full weather data for admin/debugging
   };
-}
-
-/**
- * Get cached or fresh image
- */
-async function getImage() {
-  const now = Date.now();
-
-  // Check in-memory cache first
-  if (cachedImage && (now - lastUpdate) < CACHE_MS) {
-    return cachedImage;
-  }
-
-  // Try to load from file cache if within cache window
-  try {
-    const stats = await fs.stat(PNG_CACHE_FILE);
-    const fileAge = Date.now() - stats.mtimeMs;
-
-    if (fileAge < CACHE_MS) {
-      cachedImage = await fs.readFile(PNG_CACHE_FILE);
-      lastUpdate = stats.mtimeMs;
-      return cachedImage;
-    }
-  } catch (err) {
-    // File doesn't exist or error reading - will regenerate
-  }
-
-  // Generate fresh image
-  const data = await getData();
-  cachedImage = await renderer.render(data, data.coffee);
-  lastUpdate = now;
-
-  // Save to file cache (async, don't wait)
-  fs.writeFile(PNG_CACHE_FILE, cachedImage).catch(err =>
-    console.error('Error caching PNG:', err.message)
-  );
-
-  return cachedImage;
 }
 
 /* =========================================================
@@ -458,16 +395,21 @@ app.get('/api/screen', async (req, res) => {
   try {
     const data = await getData();
 
+    // Get station names from preferences
+    const prefs = preferences.get();
+    const trainStation = prefs?.journey?.transitRoute?.mode1?.originStation?.name || 'TRAINS';
+    const tramStation = prefs?.journey?.transitRoute?.mode2?.originStation?.name || 'TRAMS';
+
     // Build TRMNL markup
     const markup = [
       `**${new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: false })}** | ${data.weather.icon} ${data.weather.temp}°C`,
       '',
       data.coffee.canGet ? '☕ **YOU HAVE TIME FOR COFFEE!**' : '⚡ **NO COFFEE - GO DIRECT**',
       '',
-      '**METRO TRAINS - SOUTH YARRA**',
+      `**${trainStation.toUpperCase()}**`,
       data.trains.length > 0 ? data.trains.slice(0, 3).map(t => `→ ${t.minutes} min`).join('\n') : '→ No departures',
       '',
-      '**YARRA TRAMS - ROUTE 58**',
+      `**${tramStation.toUpperCase()}**`,
       data.trams.length > 0 ? data.trams.slice(0, 3).map(t => `→ ${t.minutes} min`).join('\n') : '→ No departures',
       '',
       data.news ? `⚠️ ${data.news}` : '✓ Good service on all lines'
@@ -484,22 +426,6 @@ app.get('/api/screen', async (req, res) => {
         screen_text: `⚠️ Error: ${error.message}`
       }
     });
-  }
-});
-
-// Base template endpoint - static layout (downloaded once every 10 min)
-app.get('/api/base-template.png', async (req, res) => {
-  try {
-    const template = await getBaseTemplate();
-
-    res.set('Content-Type', 'image/png');
-    res.set('Content-Length', template.length);
-    res.set('Cache-Control', 'public, max-age=600'); // Cache for 10 minutes
-    res.set('X-Template-Size', template.length);
-    res.send(template);
-  } catch (error) {
-    console.error('Error generating template:', error);
-    res.status(500).send('Error generating template');
   }
 });
 
@@ -522,31 +448,234 @@ app.get('/api/region-updates', async (req, res) => {
 });
 
 // Live PNG image endpoint (legacy - for compatibility)
-app.get('/api/live-image.png', async (req, res) => {
+// HTML Dashboard endpoint (for TRMNL device - 800x480)
+// Server does ALL the thinking - display just shows simple info
+// Design based on user's template
+app.get('/api/dashboard', async (req, res) => {
   try {
-    const image = await getImage();
+    const data = await getData();
+    const prefs = preferences.get();
+    const stationName = prefs?.journey?.transitRoute?.mode1?.originStation?.name || 'STATION';
+    const destName = prefs?.journey?.transitRoute?.mode1?.destinationStation?.name || 'CITY';
 
-    // Safety check: Verify image size
-    const MAX_SIZE = 80 * 1024; // 80KB
-    if (image.length > MAX_SIZE) {
-      console.error(`❌ PNG too large: ${image.length} bytes (max ${MAX_SIZE})`);
-      return res.status(500).send('Image too large for device');
+    // Get current time
+    const now = new Date();
+    const currentTime = now.toLocaleTimeString('en-AU', {
+      timeZone: 'Australia/Melbourne',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+
+    // Calculate "leave by" time based on next good train
+    const nextTrain = data.trains[0];
+    const walkBuffer = prefs?.manualWalkingTimes?.homeToStation || 5; // Use configured walk time or 5 min default
+    const leaveInMins = nextTrain ? Math.max(0, nextTrain.minutes - walkBuffer) : null;
+    const leaveTime = leaveInMins !== null ? new Date(now.getTime() + leaveInMins * 60000).toLocaleTimeString('en-AU', {
+      timeZone: 'Australia/Melbourne',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }) : '--:--';
+
+    // Get weather data
+    let weatherText = 'N/A';
+    let tempText = '--';
+    try {
+      const weatherData = await weather.getCurrentWeather();
+      if (weatherData) {
+        weatherText = weatherData.condition?.short || 'N/A';
+        tempText = weatherData.temperature !== null ? weatherData.temperature + '°' : '--';
+      }
+    } catch (e) {
+      // Weather unavailable
     }
 
-    res.set('Content-Type', 'image/png');
-    res.set('Content-Length', image.length);
-    res.set('Cache-Control', `public, max-age=${Math.round(CACHE_MS / 1000)}`);
-    res.set('X-Image-Size', image.length); // Debug header
-    res.send(image);
-  } catch (error) {
-    console.error('Error generating image:', error);
-    res.status(500).send('Error generating image');
-  }
-});
+    // Train/tram times with fallback
+    const train1 = data.trains[0] ? data.trains[0].minutes + ' min' : '-- min';
+    const train2 = data.trains[1] ? data.trains[1].minutes + ' min' : '-- min';
+    const tram1 = data.trams[0] ? data.trams[0].minutes + ' min' : '-- min';
+    const tram2 = data.trams[1] ? data.trams[1].minutes + ' min' : '-- min';
 
-// Legacy endpoint for compatibility
-app.get('/trmnl.png', async (req, res) => {
-  res.redirect(301, '/api/live-image.png');
+    // Dashboard HTML matching user's template design (800x480)
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=800, height=480">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      background: white;
+      color: black;
+      width: 800px;
+      height: 480px;
+      overflow: hidden;
+      position: relative;
+    }
+    /* Station Name Box (Top Left) - matches template */
+    .station-box {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      width: 90px;
+      height: 50px;
+      border: 2px solid black;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: bold;
+      text-align: center;
+      padding: 5px;
+    }
+    /* Large Time Display (Top Center) */
+    .time {
+      position: absolute;
+      top: 15px;
+      left: 140px;
+      font-size: 36px;
+      font-weight: bold;
+      letter-spacing: 2px;
+    }
+    /* LEAVE BY Box (Top Right) - KEY FEATURE */
+    .leave-box {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 200px;
+      height: 50px;
+      background: black;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+    }
+    .leave-label { font-size: 10px; }
+    .leave-time { font-size: 24px; letter-spacing: 1px; }
+    /* Section Headers (Black Strips) - matches template */
+    .section-header {
+      position: absolute;
+      height: 25px;
+      background: black;
+      color: white;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      font-size: 11px;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+    }
+    .tram-header { top: 80px; left: 10px; width: 370px; }
+    .train-header { top: 80px; left: 400px; width: 360px; }
+    /* Departure Labels */
+    .departure-label {
+      position: absolute;
+      font-size: 12px;
+      color: #666;
+      font-weight: 500;
+    }
+    /* Departure Times (Large Numbers) */
+    .departure {
+      position: absolute;
+      font-size: 28px;
+      font-weight: bold;
+    }
+    /* Weather (Right Sidebar) */
+    .weather {
+      position: absolute;
+      right: 15px;
+      top: 280px;
+      font-size: 11px;
+      text-align: right;
+    }
+    .temperature {
+      position: absolute;
+      right: 15px;
+      top: 300px;
+      font-size: 20px;
+      font-weight: bold;
+      text-align: right;
+    }
+    /* Coffee Strip (Bottom) */
+    .coffee-strip {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: bold;
+      border-top: 3px solid black;
+    }
+    .coffee-yes { background: black; color: white; }
+    .coffee-no { background: white; color: black; }
+    /* Status indicator */
+    .status {
+      position: absolute;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <!-- Station Name Box -->
+  <div class="station-box">${stationName.toUpperCase()}</div>
+
+  <!-- Large Time -->
+  <div class="time">${currentTime}</div>
+
+  <!-- LEAVE BY Box (Key Feature!) -->
+  <div class="leave-box">
+    <div class="leave-label">LEAVE BY</div>
+    <div class="leave-time">${leaveTime}</div>
+  </div>
+
+  <!-- Tram Section -->
+  <div class="section-header tram-header">TRAMS</div>
+  <div class="departure-label" style="top: 112px; left: 20px;">Next:</div>
+  <div class="departure" style="top: 130px; left: 20px;">${tram1}</div>
+  <div class="departure-label" style="top: 182px; left: 20px;">Then:</div>
+  <div class="departure" style="top: 200px; left: 20px;">${tram2}</div>
+
+  <!-- Train Section -->
+  <div class="section-header train-header">TRAINS → ${destName.toUpperCase()}</div>
+  <div class="departure-label" style="top: 112px; left: 410px;">Next:</div>
+  <div class="departure" style="top: 130px; left: 410px;">${train1}</div>
+  <div class="departure-label" style="top: 182px; left: 410px;">Then:</div>
+  <div class="departure" style="top: 200px; left: 410px;">${train2}</div>
+
+  <!-- Weather -->
+  <div class="weather">${weatherText}</div>
+  <div class="temperature">${tempText}</div>
+
+  <!-- Status -->
+  <div class="status">GOOD SERVICE</div>
+
+  <!-- Coffee Strip -->
+  <div class="coffee-strip ${data.coffee.canGet ? 'coffee-yes' : 'coffee-no'}">
+    ${data.coffee.canGet ? '☕ TIME FOR COFFEE' : '⚡ GO DIRECT - NO COFFEE'}
+  </div>
+</body>
+</html>`;
+
+    res.set('Content-Type', 'text/html');
+    res.send(html);
+  } catch (error) {
+    console.error('Error generating dashboard:', error);
+    res.status(500).send('Error generating dashboard');
+  }
 });
 
 // ========== BYOS API ENDPOINTS ==========
@@ -591,8 +720,8 @@ app.get('/api/setup', async (req, res) => {
     status: 200,
     api_key: device.apiKey,
     friendly_id: device.friendlyID,
-    image_url: `https://${req.get('host')}/api/live-image.png`,
-    filename: 'ptv_display'
+    screen_url: `https://${req.get('host')}/api/screen`,
+    dashboard_url: `https://${req.get('host')}/api/dashboard`
   });
 });
 
@@ -635,14 +764,14 @@ app.get('/api/display', (req, res) => {
     });
   }
 
-  // Return display content
+  // Return display content (TRMNL uses screen_url for markup-based displays)
   res.json({
     status: 0,
-    image_url: `https://${req.get('host')}/api/live-image.png`,
-    filename: `ptv_${Date.now()}`,
+    screen_url: `https://${req.get('host')}/api/screen`,
+    dashboard_url: `https://${req.get('host')}/api/dashboard`,
+    refresh_rate: refreshRate,
     update_firmware: false,
     firmware_url: null,
-    refresh_rate: refreshRate,
     reset_firmware: false
   });
 });
@@ -893,10 +1022,14 @@ app.get('/admin/weather', async (req, res) => {
     const weatherData = await weather.getCurrentWeather();
     const cacheStatus = weather.getCacheStatus();
 
+    // Get location from preferences or use default
+    const prefs = preferences.get();
+    const location = prefs?.weather?.location || 'Configured Location';
+
     res.json({
       current: weatherData,
       cache: cacheStatus,
-      location: 'Melbourne CBD',
+      location: location,
       source: 'Bureau of Meteorology'
     });
   } catch (error) {
@@ -1256,6 +1389,7 @@ app.post('/admin/route/calculate', async (req, res) => {
     }
 
     // Extract journey configuration from preferences
+    // No hardcoded defaults - users must configure their own stations via journey planner
     const journeyConfig = {
       coffeeEnabled: savedJourney.coffeeEnabled !== false,
       cafeLocation: savedJourney.cafeLocation || 'before-transit-1',
@@ -1264,16 +1398,16 @@ app.post('/admin/route/calculate', async (req, res) => {
         mode1: {
           type: 0,
           originStation: {
-            name: 'South Yarra',
-            lat: -37.8408,
-            lon: 145.0002
+            name: null,  // Must be configured by user
+            lat: null,
+            lon: null
           },
           destinationStation: {
-            name: 'Flinders Street',
-            lat: -37.8530,
-            lon: 144.9560
+            name: null,  // Must be configured by user
+            lat: null,
+            lon: null
           },
-          estimatedDuration: 20
+          estimatedDuration: null
         },
         mode2: null
       }
@@ -1366,7 +1500,7 @@ app.post('/admin/route/calculate', async (req, res) => {
  * Request body:
  * {
  *   homeAddress: "123 Smith St, Richmond" (required)
- *   workAddress: "456 Collins St, Melbourne" (required)
+ *   workAddress: "456 Central Ave, City" (required)
  *   cafeAddress: "Some Cafe, Suburb" (optional - auto-finds if not provided)
  *   arrivalTime: "09:00" (required)
  *   includeCoffee: true (optional, default true)
@@ -1396,7 +1530,7 @@ app.post('/admin/route/auto-plan', async (req, res) => {
         error: 'Missing required addresses',
         required: ['homeAddress', 'workAddress'],
         message: 'Please provide your home and work addresses. You can save them in preferences or include them in the request.',
-        tip: 'Example: { "homeAddress": "123 Smith St, Richmond VIC", "workAddress": "456 Collins St, Melbourne VIC", "arrivalTime": "09:00" }'
+        tip: 'Example: { "homeAddress": "123 Main St, Your Suburb", "workAddress": "456 Central Ave, City", "arrivalTime": "09:00" }'
       });
     }
 
@@ -1617,11 +1751,17 @@ app.get('/admin/route/multi-modal', async (req, res) => {
     // Get enabled transit modes (default to all)
     const enabledModes = journey.preferredTransitModes || [0, 1, 2, 3];
 
-    // Find best multi-modal options
-    // TODO: Use actual stop IDs from geocoding
-    // For now, using hardcoded South Yarra (19841) and Flinders St (19854)
-    const originStopId = 19841; // South Yarra
-    const destStopId = 19854;   // Flinders Street
+    // Get stop IDs from user's configured transit route
+    const transitRoute = journey.transitRoute || {};
+    const originStopId = transitRoute.mode1?.originStation?.id;
+    const destStopId = transitRoute.mode1?.destinationStation?.id;
+
+    if (!originStopId || !destStopId) {
+      return res.status(400).json({
+        error: 'Transit stations not configured',
+        message: 'Please use the Journey Planner to configure your route with origin and destination stations'
+      });
+    }
 
     const options = await multiModalRouter.findBestOptions(
       originStopId,
@@ -1759,6 +1899,11 @@ app.get('/admin/cafe/peak-times', (req, res) => {
 app.get('/admin/dashboard-preview', async (req, res) => {
   try {
     const updates = await getRegionUpdates();
+    const prefs = preferences.get();
+
+    // Get station names from preferences
+    const trainStationName = (prefs?.journey?.transitRoute?.mode1?.originStation?.name || 'STATION').toUpperCase();
+    const tramDestination = prefs?.journey?.transitRoute?.mode2?.destinationStation?.name || 'CITY';
 
     // Create HTML preview of dashboard
     const html = `
@@ -1883,13 +2028,13 @@ app.get('/admin/dashboard-preview', async (req, res) => {
 
     <div class="dashboard">
       <!-- Station Name -->
-      <div class="station-box">SOUTH YARRA</div>
+      <div class="station-box">${trainStationName}</div>
 
       <!-- Large Time -->
       <div class="time">${updates.regions.find(r => r.id === 'time')?.text || '00:00'}</div>
 
       <!-- Tram Section -->
-      <div class="section-header tram-header">TRAM #58 TO WEST COBURG</div>
+      <div class="section-header tram-header">TRAM TO ${tramDestination.toUpperCase()}</div>
       <div class="departure-label" style="top: 152px; left: 20px;">Next:</div>
       <div class="departure" style="top: 170px; left: 20px;">${updates.regions.find(r => r.id === 'tram1')?.text || '--'} min*</div>
       <div class="departure-label" style="top: 222px; left: 20px;">Then:</div>
@@ -1946,7 +2091,7 @@ function buildDepartureRows(departures, type) {
   return departures.slice(0, 4).map(dep => `
     <div class="departure-row">
       <div class="departure-info">
-        <span class="departure-dest">${dep.destination || (type === 'train' ? 'Flinders Street' : 'West Coburg')}</span>
+        <span class="departure-dest">${dep.destination || 'City'}</span>
         <span class="departure-status">${dep.isScheduled ? '📅 Scheduled' : '⚡ Live'}</span>
       </div>
       <div class="departure-time">
@@ -2011,6 +2156,10 @@ app.get('/admin/live-display', async (req, res) => {
         cafeData = { level: 'unknown', coffeeTime: 3 };
       }
     }
+
+    // Get configured station names or use generic defaults
+    const trainStationName = prefs?.journey?.transitRoute?.mode1?.originStation?.name || 'Train Station';
+    const tramStationName = prefs?.journey?.transitRoute?.mode2?.originStation?.name || 'Tram Stop';
 
     // Pre-build dynamic HTML parts
     const trainRows = buildDepartureRows(data.trains, 'train');
@@ -2092,6 +2241,23 @@ app.get('/admin/live-display', async (req, res) => {
         .header h1 {
             font-size: 32px;
             margin-bottom: 10px;
+        }
+
+        .back-btn {
+            display: inline-block;
+            background: rgba(99, 102, 241, 0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            margin-bottom: 15px;
+            transition: all 0.2s;
+        }
+
+        .back-btn:hover {
+            background: rgba(99, 102, 241, 1);
+            transform: translateY(-1px);
         }
 
         .live-indicator {
@@ -2381,7 +2547,7 @@ app.get('/admin/live-display', async (req, res) => {
             <div class="card">
                 <div class="card-header">
                     <span class="card-icon">🚆</span>
-                    <h2>Metro Trains - South Yarra</h2>
+                    <h2>Metro Trains - ${trainStationName}</h2>
                 </div>
                 ${trainRows}
             </div>
@@ -2390,7 +2556,7 @@ app.get('/admin/live-display', async (req, res) => {
             <div class="card">
                 <div class="card-header">
                     <span class="card-icon">🚊</span>
-                    <h2>Yarra Trams - Route 58</h2>
+                    <h2>Trams - ${tramStationName}</h2>
                 </div>
                 ${tramRows}
             </div>
@@ -2399,7 +2565,7 @@ app.get('/admin/live-display', async (req, res) => {
             <div class="card">
                 <div class="card-header">
                     <span class="card-icon">🌤️</span>
-                    <h2>Weather - Melbourne</h2>
+                    <h2>Weather</h2>
                 </div>
                 <div class="weather-display">
                     <div class="weather-temp">${weatherData?.temperature || '--'}°</div>
@@ -2585,25 +2751,10 @@ app.get('/admin/live-display', async (req, res) => {
 app.post('/admin/cache/clear', async (req, res) => {
   try {
     // Clear in-memory caches
-    cachedImage = null;
     cachedData = null;
     lastUpdate = 0;
 
-    // Clear cached files
-    try {
-      await fs.unlink(PNG_CACHE_FILE);
-      console.log('🗑️  Cleared PNG cache');
-    } catch (err) {
-      // File might not exist
-    }
-
-    try {
-      await fs.unlink(TEMPLATE_FILE);
-      console.log('🗑️  Cleared template cache');
-    } catch (err) {
-      // File might not exist
-    }
-
+    console.log('🗑️  Cleared data cache');
     res.json({ success: true, message: 'Caches cleared successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -2652,28 +2803,32 @@ app.get('/preview', (req, res) => {
         .endpoints li { margin: 10px 0; }
         .endpoints a { color: #0066cc; text-decoration: none; }
         .endpoints a:hover { text-decoration: underline; }
-        img { max-width: 100%; border: 1px solid #ddd; margin-top: 20px; }
+        iframe { width: 820px; height: 500px; border: 2px solid #333; margin-top: 20px; }
       </style>
       <script>
         setInterval(() => {
-          document.getElementById('live-image').src = '/api/live-image.png?t=' + Date.now();
+          document.getElementById('live-dashboard').src = '/api/dashboard?t=' + Date.now();
         }, 30000);
       </script>
     </head>
     <body>
-      <h1>🚊 PTV-TRMNL Preview</h1>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h1 style="margin: 0;">🚊 PTV-TRMNL Preview</h1>
+        <a href="/admin" style="background: #6366f1; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 500;">← Back to Admin</a>
+      </div>
       <div class="info">
         <h2>Available Endpoints:</h2>
         <ul class="endpoints">
           <li><a href="/admin">/admin</a> - <strong>Admin Panel</strong> (Manage APIs & Configuration)</li>
           <li><a href="/api/status">/api/status</a> - Server status and data summary</li>
-          <li><a href="/api/screen">/api/screen</a> - TRMNL JSON markup</li>
-          <li><a href="/api/live-image.png">/api/live-image.png</a> - Live PNG image</li>
+          <li><a href="/api/screen">/api/screen</a> - TRMNL JSON markup (for TRMNL devices)</li>
+          <li><a href="/api/dashboard">/api/dashboard</a> - HTML Dashboard (800x480)</li>
+          <li><a href="/api/region-updates">/api/region-updates</a> - JSON data updates</li>
         </ul>
       </div>
-      <h2>Live Display:</h2>
-      <img id="live-image" src="/api/live-image.png" alt="Live TRMNL Display">
-      <p style="color: #666; font-size: 14px;">Image refreshes every 30 seconds</p>
+      <h2>Live Dashboard Preview:</h2>
+      <iframe id="live-dashboard" src="/api/dashboard" title="Live Dashboard"></iframe>
+      <p style="color: #666; font-size: 14px;">Dashboard refreshes every 30 seconds</p>
     </body>
     </html>
   `);
@@ -2683,14 +2838,16 @@ app.get('/preview', (req, res) => {
    START SERVER
    ========================================================= */
 
+const HOST = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
+
 app.listen(PORT, async () => {
   console.log(`🚀 PTV-TRMNL server listening on port ${PORT}`);
-  console.log(`📍 Preview: http://localhost:${PORT}/preview`);
-  console.log(`🔗 TRMNL endpoint: http://localhost:${PORT}/api/screen`);
-  console.log(`💚 Keep-alive: http://localhost:${PORT}/api/keepalive`);
+  console.log(`📍 Preview: ${HOST}/preview`);
+  console.log(`🔗 TRMNL endpoint: ${HOST}/api/screen`);
+  console.log(`💚 Keep-alive: ${HOST}/api/keepalive`);
+  console.log(`🔧 Admin Panel: ${HOST}/admin`);
 
   // Initialize persistent storage
-  await ensureCacheDir();
   await loadDevices();
 
   // Pre-warm cache

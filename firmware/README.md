@@ -138,13 +138,23 @@ pio device monitor --baud 115200
 
 ## API Endpoints
 
-The firmware expects these server endpoints:
+The firmware communicates with these server endpoints:
 
 | Endpoint | Purpose |
 |----------|---------|
-| `/api/partial` | JSON with departure times for partial update |
-| `/api/live-image.png` | Full 800x480 PNG for complete refresh |
-| `/api/config` | Refresh timing configuration |
+| `/api/setup` | Device registration and configuration |
+| `/api/display` | Dashboard data for display refresh |
+| `/api/region-updates` | JSON with departure times and leave-by info |
+
+## How It Works
+
+1. Device wakes up every minute
+2. Fetches JSON data from `/api/region-updates`
+3. Server calculates everything: leave time, coffee decision, next trains/trams
+4. Device renders the simple dashboard
+5. Goes back to sleep
+
+The server is the brain - the device just displays what it's told.
 
 ## License
 

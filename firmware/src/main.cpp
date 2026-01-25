@@ -375,7 +375,8 @@ void drawDashboardShell() {
 
     bbep.setFont(FONT_8x8);
     bbep.setCursor(15, 30);
-    bbep.print("SOUTH YARRA");
+    // Station name placeholder (actual name comes from API in drawCompleteDashboard)
+    bbep.print("STATION");
 
     // ========================================================================
     // 2. TRAM SECTION (Left Column)
@@ -383,10 +384,10 @@ void drawDashboardShell() {
     // Header strip (black background)
     bbep.fillRect(10, 120, 370, 25, BBEP_BLACK);
 
-    // Header text (draw above black strip for visibility)
+    // Header text
     bbep.setFont(FONT_8x8);
     bbep.setCursor(15, 110);
-    bbep.print("TRAM #58 TO WEST COBURG");
+    bbep.print("TRAMS");
 
     // Departure labels (static)
     bbep.setFont(FONT_8x8);
@@ -533,25 +534,37 @@ void restoreDashboardFromCache() {
 }
 
 // COMBINED: Draw complete dashboard from live data
+// Server does ALL the calculation - we just display what it tells us
+// Layout matches user's dashboard template design
 void drawCompleteDashboard(JsonDocument& doc) {
     Serial.println("Drawing complete dashboard from live data...");
 
-    // Extract data from JSON
+    // Extract data from JSON (server calculates everything!)
     JsonArray regions = doc["regions"].as<JsonArray>();
+    const char* station = "STATION";
     const char* timeText = "00:00";
-    const char* tram1 = "--";
-    const char* tram2 = "--";
+    const char* leaveTime = "--:--";
+    const char* coffee = "NO";
     const char* train1 = "--";
     const char* train2 = "--";
+    const char* tram1 = "--";
+    const char* tram2 = "--";
+    const char* weather = "N/A";
+    const char* temperature = "--";
 
     if (!regions.isNull()) {
         for (JsonObject region : regions) {
             const char* id = region["id"] | "";
-            if (strcmp(id, "time") == 0) timeText = region["text"] | "00:00";
-            else if (strcmp(id, "tram1") == 0) tram1 = region["text"] | "--";
-            else if (strcmp(id, "tram2") == 0) tram2 = region["text"] | "--";
+            if (strcmp(id, "station") == 0) station = region["text"] | "STATION";
+            else if (strcmp(id, "time") == 0) timeText = region["text"] | "00:00";
+            else if (strcmp(id, "leaveTime") == 0) leaveTime = region["text"] | "--:--";
+            else if (strcmp(id, "coffee") == 0) coffee = region["text"] | "NO";
             else if (strcmp(id, "train1") == 0) train1 = region["text"] | "--";
             else if (strcmp(id, "train2") == 0) train2 = region["text"] | "--";
+            else if (strcmp(id, "tram1") == 0) tram1 = region["text"] | "--";
+            else if (strcmp(id, "tram2") == 0) tram2 = region["text"] | "--";
+            else if (strcmp(id, "weather") == 0) weather = region["text"] | "N/A";
+            else if (strcmp(id, "temperature") == 0) temperature = region["text"] | "--";
         }
     }
 
@@ -562,11 +575,122 @@ void drawCompleteDashboard(JsonDocument& doc) {
     strncpy(prevTrain1, train1, sizeof(prevTrain1) - 1);
     strncpy(prevTrain2, train2, sizeof(prevTrain2) - 1);
 
-    // Draw shell
-    drawDashboardShell();
+    // Clear screen
+    bbep.fillScreen(BBEP_WHITE);
 
-    // Draw dynamic data
-    drawDynamicData(timeText, tram1, tram2, train1, train2);
+    // =====================================================
+    // DASHBOARD LAYOUT MATCHING USER'S TEMPLATE (800x480)
+    // Server is the BRAIN - we just display!
+    // =====================================================
+
+    // 1. STATION BOX (Top Left - bordered box)
+    bbep.drawRect(10, 10, 90, 50, BBEP_BLACK);
+    bbep.drawRect(11, 11, 88, 48, BBEP_BLACK); // Double border
+    bbep.setFont(FONT_8x8);
+    bbep.setCursor(15, 30);
+    bbep.print(station);
+
+    // 2. LARGE TIME (Top Center)
+    bbep.setFont(FONT_12x16);
+    // Bold effect by drawing multiple times
+    bbep.setCursor(140, 25);
+    bbep.print(timeText);
+    bbep.setCursor(141, 25);
+    bbep.print(timeText);
+
+    // 3. LEAVE BY BOX (Top Right - inverted/black background)
+    bbep.fillRect(590, 10, 200, 50, BBEP_BLACK);
+    bbep.setTextColor(BBEP_WHITE);
+    bbep.setFont(FONT_8x8);
+    bbep.setCursor(650, 18);
+    bbep.print("LEAVE BY");
+    bbep.setFont(FONT_12x16);
+    bbep.setCursor(640, 38);
+    bbep.print(leaveTime);
+    bbep.setTextColor(BBEP_BLACK);
+
+    // 4. TRAM SECTION (Left side)
+    // Black header strip
+    bbep.fillRect(10, 80, 370, 25, BBEP_BLACK);
+    bbep.setTextColor(BBEP_WHITE);
+    bbep.setFont(FONT_8x8);
+    bbep.setCursor(15, 88);
+    bbep.print("TRAMS");
+    bbep.setTextColor(BBEP_BLACK);
+
+    // Tram departures
+    bbep.setFont(FONT_8x8);
+    bbep.setCursor(20, 115);
+    bbep.print("Next:");
+    bbep.setFont(FONT_12x16);
+    bbep.setCursor(20, 135);
+    bbep.print(tram1);
+    bbep.setFont(FONT_8x8);
+    bbep.print(" min");
+
+    bbep.setCursor(20, 175);
+    bbep.print("Then:");
+    bbep.setFont(FONT_12x16);
+    bbep.setCursor(20, 195);
+    bbep.print(tram2);
+    bbep.setFont(FONT_8x8);
+    bbep.print(" min");
+
+    // 5. TRAIN SECTION (Right side)
+    // Black header strip
+    bbep.fillRect(400, 80, 360, 25, BBEP_BLACK);
+    bbep.setTextColor(BBEP_WHITE);
+    bbep.setFont(FONT_8x8);
+    bbep.setCursor(405, 88);
+    bbep.print("TRAINS");
+    bbep.setTextColor(BBEP_BLACK);
+
+    // Train departures
+    bbep.setFont(FONT_8x8);
+    bbep.setCursor(410, 115);
+    bbep.print("Next:");
+    bbep.setFont(FONT_12x16);
+    bbep.setCursor(410, 135);
+    bbep.print(train1);
+    bbep.setFont(FONT_8x8);
+    bbep.print(" min");
+
+    bbep.setCursor(410, 175);
+    bbep.print("Then:");
+    bbep.setFont(FONT_12x16);
+    bbep.setCursor(410, 195);
+    bbep.print(train2);
+    bbep.setFont(FONT_8x8);
+    bbep.print(" min");
+
+    // 6. WEATHER (Right sidebar)
+    bbep.setFont(FONT_8x8);
+    bbep.setCursor(720, 280);
+    bbep.print(weather);
+    bbep.setFont(FONT_12x16);
+    bbep.setCursor(720, 300);
+    bbep.print(temperature);
+
+    // 7. STATUS BAR
+    bbep.setFont(FONT_8x8);
+    bbep.setCursor(340, 350);
+    bbep.print("GOOD SERVICE");
+
+    // 8. COFFEE STRIP (Bottom)
+    int coffeeY = 380;
+    if (strcmp(coffee, "YES") == 0) {
+        bbep.fillRect(0, coffeeY, 800, 100, BBEP_BLACK);
+        bbep.setTextColor(BBEP_WHITE);
+        bbep.setFont(FONT_12x16);
+        bbep.setCursor(280, coffeeY + 40);
+        bbep.print("TIME FOR COFFEE!");
+    } else {
+        bbep.drawRect(0, coffeeY, 800, 100, BBEP_BLACK);
+        bbep.setTextColor(BBEP_BLACK);
+        bbep.setFont(FONT_12x16);
+        bbep.setCursor(240, coffeeY + 40);
+        bbep.print("GO DIRECT - NO COFFEE");
+    }
 
     // Cache the data for recovery
     cacheDynamicData(timeText, tram1, tram2, train1, train2);

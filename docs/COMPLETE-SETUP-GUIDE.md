@@ -35,10 +35,10 @@ npm start
 ### Step 2: Open Admin Panel
 
 ```bash
-open http://localhost:3000/admin
+open https://ptv-trmnl-new.onrender.com/admin
 ```
 
-Or visit: `http://localhost:3000/admin` in your browser
+Or visit: `https://ptv-trmnl-new.onrender.com/admin` in your browser
 
 ### Step 3: Configure User Preferences
 
@@ -46,9 +46,9 @@ Or visit: `http://localhost:3000/admin` in your browser
 
 **Fill in Addresses**:
 ```
-Home Address:    123 Main St, South Yarra
-Preferred Cafe:  Market Lane Coffee, Prahran
-Work Address:    456 Collins St, Melbourne
+Home Address:    123 Main St, Your Suburb
+Preferred Cafe:  Your Favorite Cafe
+Work Address:    456 Central Ave, Your City
 ```
 
 **Fill in PTV API Credentials**:
@@ -137,7 +137,7 @@ Wait Time: 3 min 😊  ← Adjusted for cafe busy-ness
 Searched: 🚆 Train, 🚊 Tram, 🚌 Bus, 🚄 V/Line
 
 Option 1: 🚆 Train
-  Sandringham Line → Flinders Street
+  Train Line → City
   Departs: 08:27 (15 min)
   Est. arrival: 08:47 (20 min journey)
   ☕ COFFEE TIME
@@ -145,7 +145,7 @@ Option 1: 🚆 Train
   Time available: 15 min | Time needed: 11 min
 
 Option 2: 🚊 Tram
-  Route 58 → West Coburg
+  Route 58 → Destination
   Departs: 08:20 (8 min)
   Est. arrival: 08:35 (15 min journey)
   ⚡ DIRECT
@@ -342,10 +342,10 @@ After using a few times:
 
 ```bash
 # Via browser
-GET http://localhost:3000/admin/preferences/export
+GET https://ptv-trmnl-new.onrender.com/admin/preferences/export
 
 # Or via terminal
-curl http://localhost:3000/admin/preferences/export > backup.json
+curl https://ptv-trmnl-new.onrender.com/admin/preferences/export > backup.json
 ```
 
 ---
@@ -543,7 +543,7 @@ PTV-TRMNL-NEW/
 **Ready to go!** 🎉
 
 ```bash
-npm start && open http://localhost:3000/admin
+npm start && open https://ptv-trmnl-new.onrender.com/admin
 ```
 
 **Your perfect morning**: Leave home at exactly the right time, get your coffee, catch the best transit option, and arrive at work on time. Every day. ☕🚆😊

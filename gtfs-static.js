@@ -37,28 +37,37 @@ export function tryLoadStops() {
   }
 }
 
-/** Resolve South Yarra parent + Platform 5 stop_id list using stops.txt */
-export function resolveSouthYarraIds(cfg, gtfs) {
-  const preferredPlatformCode = cfg?.stations?.southYarra?.preferredPlatformCode || "5";
-  let parentStopId = cfg?.stations?.southYarra?.parentStopId || null;
+/**
+ * Resolve user's origin station parent + preferred platform stop_id list using stops.txt
+ * Station name should be configured via admin panel Journey Planner
+ */
+export function resolveOriginStationIds(cfg, gtfs) {
+  const preferredPlatformCode = cfg?.stations?.origin?.preferredPlatformCode || null;
+  const stationName = cfg?.stations?.origin?.name || null;
+  let parentStopId = cfg?.stations?.origin?.parentStopId || null;
 
   // If parentStopId not configured, look up by station name (no parent)
-  if (!parentStopId && gtfs?.stops?.length) {
+  if (!parentStopId && stationName && gtfs?.stops?.length) {
     const station = gtfs.stops.find(s =>
-      (s.stop_name || "").toLowerCase() === "south yarra" && !s.parent_station
+      (s.stop_name || "").toLowerCase() === stationName.toLowerCase() && !s.parent_station
     );
     parentStopId = station?.stop_id || null;
   }
 
   const platforms = parentStopId ? (gtfs.platformsByParent.get(parentStopId) || []) : [];
-  const platform5 = platforms.find(p => (p.platform_code || "").trim() === preferredPlatformCode);
+  const preferredPlatform = preferredPlatformCode
+    ? platforms.find(p => (p.platform_code || "").trim() === preferredPlatformCode)
+    : null;
 
   return {
     parentStopId,
-    platform5StopId: platform5?.stop_id || null,
+    preferredPlatformStopId: preferredPlatform?.stop_id || null,
     allPlatformStopIds: platforms.map(p => p.stop_id)
   };
 }
+
+// Alias for backward compatibility
+export const resolveSouthYarraIds = resolveOriginStationIds;
 
 /** Build a set of stop_ids representing CBD targets (names → ids) */
 export function buildTargetStopIdSet(gtfs, names = []) {

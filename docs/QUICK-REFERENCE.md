@@ -13,7 +13,7 @@ cd /Users/angusbergman/PTV-TRMNL-NEW
 npm start
 
 # Open admin panel
-open http://localhost:3000/admin
+open https://ptv-trmnl-new.onrender.com/admin
 
 # Scroll to "Smart Route Planner" card
 # Fill in addresses and time → Click "Calculate Route"
@@ -44,9 +44,9 @@ open http://localhost:3000/admin
 ## 📝 Input Fields
 
 ```
-Home Address:    123 Main St, South Yarra
-Coffee Address:  Market Lane Coffee, Prahran
-Work Address:    456 Collins St, Melbourne
+Home Address:    123 Main St, Your Suburb
+Coffee Address:  Your Favorite Cafe
+Work Address:    456 Central Ave, Your City
 Arrival Time:    09:00
 ```
 
@@ -204,7 +204,7 @@ PEAK_TIMES = [
 | Problem | Solution |
 |---------|----------|
 | Coffee time always 3 min | Check console logs, verify busy detector initialized |
-| "Address not found" | Be more specific with suburb (e.g., "South Yarra VIC 3141") |
+| "Address not found" | Be more specific with suburb (e.g., "Your Suburb") |
 | "No suitable trains" | Adjust arrival time or check if outside service hours |
 | Google API error | Verify API key or remove (will use time-based) |
 | Peak times seem wrong | Check Melbourne timezone is correct |
@@ -231,20 +231,20 @@ PTV-TRMNL-NEW/
 npm start
 
 # Open admin panel
-open http://localhost:3000/admin
+open https://ptv-trmnl-new.onrender.com/admin
 
 # Test API directly
-curl -X POST http://localhost:3000/admin/route/calculate \
+curl -X POST https://ptv-trmnl-new.onrender.com/admin/route/calculate \
   -H "Content-Type: application/json" \
-  -d '{"homeAddress":"123 Main St, South Yarra","coffeeAddress":"Market Lane Coffee","workAddress":"456 Collins St","arrivalTime":"09:00"}'
+  -d '{"homeAddress":"123 Main St, Your Suburb","coffeeAddress":"Your Favorite Cafe","workAddress":"456 Central Ave","arrivalTime":"09:00"}'
 
 # Check cafe busy-ness
-curl -X POST http://localhost:3000/admin/cafe/busyness \
+curl -X POST https://ptv-trmnl-new.onrender.com/admin/cafe/busyness \
   -H "Content-Type: application/json" \
-  -d '{"address":"Market Lane Coffee, Prahran"}'
+  -d '{"address":"Your Favorite Cafe"}'
 
 # Get peak times
-curl http://localhost:3000/admin/cafe/peak-times
+curl https://ptv-trmnl-new.onrender.com/admin/cafe/peak-times
 ```
 
 ---
@@ -311,9 +311,9 @@ curl http://localhost:3000/admin/cafe/peak-times
 
 | Resource | Location |
 |----------|----------|
-| Admin Panel | http://localhost:3000/admin |
-| Dashboard Preview | http://localhost:3000/admin/dashboard-preview |
-| API Status | http://localhost:3000/api/status |
+| Admin Panel | https://ptv-trmnl-new.onrender.com/admin |
+| Dashboard Preview | https://ptv-trmnl-new.onrender.com/admin/dashboard-preview |
+| API Status | https://ptv-trmnl-new.onrender.com/api/status |
 | Server Logs | Terminal window |
 | Documentation | `/Users/angusbergman/PTV-TRMNL-NEW/*.md` |
 
@@ -333,7 +333,7 @@ curl http://localhost:3000/admin/cafe/peak-times
 
 ```bash
 # Just run:
-npm start && open http://localhost:3000/admin
+npm start && open https://ptv-trmnl-new.onrender.com/admin
 ```
 
 **Scroll down → Find "Smart Route Planner" → Enter addresses → Click "Calculate Route"**
