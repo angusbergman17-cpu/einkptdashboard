@@ -24,7 +24,9 @@ import SmartJourneyPlanner from './smart-journey-planner.js';
 import GeocodingService from './geocoding-service.js';
 import DecisionLogger from './decision-logger.js';
 import { getPrimaryCityForState } from './australian-cities.js';
+import fallbackTimetables from './fallback-timetables.js';
 import { readFileSync } from 'fs';
+import nodemailer from 'nodemailer';
 
 // Read version from package.json
 const packageJson = JSON.parse(readFileSync('./package.json', 'utf-8'));
@@ -32,6 +34,25 @@ const VERSION = packageJson.version;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Email configuration (using environment variables)
+let emailTransporter = null;
+
+if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+  emailTransporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: process.env.SMTP_PORT || 587,
+    secure: process.env.SMTP_PORT == 465, // true for 465, false for other ports
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS
+    }
+  });
+  console.log('✅ Email service configured');
+} else {
+  console.log('⚠️  Email service not configured (SMTP credentials missing)');
+  console.log('   Feedback will be logged to console only');
+}
 
 // Middleware
 app.use(express.json());
@@ -58,6 +79,20 @@ console.log('   Available services:', global.geocodingService.getAvailableServic
 // Initialize decision logger (global for transparency and troubleshooting)
 global.decisionLogger = new DecisionLogger();
 console.log('✅ Decision logger initialized for full transparency');
+
+// Test the decision logger immediately
+if (global.decisionLogger) {
+  global.decisionLogger.log({
+    category: 'System',
+    decision: 'Server started',
+    details: {
+      version: VERSION,
+      timestamp: new Date().toISOString(),
+      nodeVersion: process.version
+    }
+  });
+  console.log('✅ Decision logger test: Initial log created');
+}
 
 // Journey calculation cache (automatically updated in background)
 let cachedJourney = null;
@@ -717,6 +752,97 @@ app.get('/api/attributions', (req, res) => {
   }
 });
 
+/**
+ * Get Fallback Transit Stops for a State
+ * Returns default stops/stations when live API is unavailable
+ */
+app.get('/api/fallback-stops/:stateCode', (req, res) => {
+  try {
+    const { stateCode } = req.params;
+    const { mode, search, lat, lon } = req.query;
+
+    if (search) {
+      // Search for stops by name
+      const results = fallbackTimetables.searchStops(stateCode, search);
+      return res.json({
+        success: true,
+        stateCode,
+        query: search,
+        results,
+        count: results.length
+      });
+    }
+
+    if (lat && lon) {
+      // Find nearest stop
+      const nearest = fallbackTimetables.findNearestStop(
+        stateCode,
+        parseFloat(lat),
+        parseFloat(lon),
+        mode || null
+      );
+      return res.json({
+        success: true,
+        stateCode,
+        nearest
+      });
+    }
+
+    if (mode) {
+      // Get stops for specific mode
+      const stops = fallbackTimetables.getStopsByMode(stateCode, mode);
+      return res.json({
+        success: true,
+        stateCode,
+        mode,
+        stops,
+        count: stops.length
+      });
+    }
+
+    // Get all stops for state
+    const stateData = fallbackTimetables.getFallbackStops(stateCode);
+    if (!stateData) {
+      return res.status(404).json({
+        success: false,
+        error: `No fallback data available for state: ${stateCode}`
+      });
+    }
+
+    res.json({
+      success: true,
+      stateCode,
+      name: stateData.name,
+      authority: stateData.authority,
+      modes: stateData.modes
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+/**
+ * Get All States with Fallback Data
+ */
+app.get('/api/fallback-stops', (req, res) => {
+  try {
+    const states = fallbackTimetables.getAllStates();
+    res.json({
+      success: true,
+      states,
+      count: states.length
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // Decision log endpoints (transparency and troubleshooting)
 app.get('/api/decisions', (req, res) => {
   try {
@@ -807,22 +933,67 @@ app.post('/api/feedback', async (req, res) => {
       });
     }
 
-    // TODO: Implement email sending using nodemailer
-    // For now, feedback is logged to console and decision log
-    // To enable email: install nodemailer and configure SMTP settings
-    // Example:
-    // const transporter = nodemailer.createTransport({...});
-    // await transporter.sendMail({
-    //   from: 'noreply@ptv-trmnl.com',
-    //   to: 'angusbergman17@gmail.com',
-    //   subject: `PTV-TRMNL Feedback: ${type}`,
-    //   text: `From: ${name} (${email})\nType: ${type}\n\n${message}`
-    // });
+    // Send email if transporter is configured
+    if (emailTransporter) {
+      try {
+        await emailTransporter.sendMail({
+          from: `"PTV-TRMNL System" <${process.env.SMTP_USER}>`,
+          to: process.env.FEEDBACK_EMAIL || 'angusbergman17@gmail.com',
+          subject: `PTV-TRMNL Feedback: ${type}`,
+          text: `New feedback received from PTV-TRMNL system:
 
-    res.json({
-      success: true,
-      message: 'Feedback received and logged. Thank you for your input!'
-    });
+From: ${feedbackLog.from}
+Email: ${feedbackLog.email}
+Type: ${feedbackLog.type}
+Timestamp: ${feedbackLog.timestamp}
+
+Message:
+${feedbackLog.message}
+
+---
+Sent via PTV-TRMNL Admin Panel`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #667eea;">New PTV-TRMNL Feedback</h2>
+              <div style="background: #f7fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <p><strong>From:</strong> ${feedbackLog.from}</p>
+                <p><strong>Email:</strong> ${feedbackLog.email}</p>
+                <p><strong>Type:</strong> ${feedbackLog.type}</p>
+                <p><strong>Timestamp:</strong> ${feedbackLog.timestamp}</p>
+              </div>
+              <div style="background: white; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+                <h3>Message:</h3>
+                <p style="white-space: pre-wrap;">${feedbackLog.message}</p>
+              </div>
+              <p style="color: #718096; font-size: 12px; margin-top: 20px;">
+                Sent via PTV-TRMNL Admin Panel
+              </p>
+            </div>
+          `
+        });
+
+        console.log('✅ Feedback email sent successfully');
+
+        res.json({
+          success: true,
+          message: 'Feedback received and emailed. Thank you for your input!'
+        });
+      } catch (emailError) {
+        console.error('❌ Email sending failed:', emailError.message);
+
+        // Still return success since feedback was logged
+        res.json({
+          success: true,
+          message: 'Feedback received and logged (email delivery failed). Thank you for your input!'
+        });
+      }
+    } else {
+      // No email configured - just log
+      res.json({
+        success: true,
+        message: 'Feedback received and logged. Thank you for your input!'
+      });
+    }
 
   } catch (error) {
     console.error('Feedback submission error:', error);
@@ -840,14 +1011,17 @@ app.get('/api/status', async (req, res) => {
     res.json({
       status: 'ok',
       timestamp: new Date().toISOString(),
+      dataMode: data.meta?.mode === 'fallback' ? 'Fallback' : 'Live',
       cache: {
         age: Math.round((Date.now() - lastUpdate) / 1000),
         maxAge: Math.round(CACHE_MS / 1000)
       },
       data: {
-        trains: data.trains.length,
-        trams: data.trams.length,
-        alerts: data.news ? 1 : 0
+        trains: data.trains,  // Return full array, not just length
+        trams: data.trams,    // Return full array, not just length
+        alerts: data.news ? 1 : 0,
+        coffee: data.coffee,
+        weather: data.weather
       },
       meta: data.meta
     });
@@ -2346,6 +2520,37 @@ app.get('/api/journey-cache', (req, res) => {
 });
 
 /**
+ * Get journey cache status
+ * Returns information about the auto-calculated journey cache
+ */
+app.get('/api/journey-cache', (req, res) => {
+  try {
+    if (cachedJourney) {
+      res.json({
+        cached: true,
+        calculatedAt: cachedJourney.calculatedAt,
+        autoCalculated: cachedJourney.autoCalculated,
+        journey: {
+          arrivalTime: cachedJourney.arrivalTime,
+          startTime: cachedJourney.startTime,
+          legs: cachedJourney.route?.legs || []
+        }
+      });
+    } else {
+      res.json({
+        cached: false,
+        message: 'No journey calculated yet. Please configure your addresses and API credentials.'
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      cached: false,
+      error: error.message
+    });
+  }
+});
+
+/**
  * Force journey recalculation
  * Triggers an immediate calculation instead of waiting for next scheduled run
  */
@@ -3734,10 +3939,18 @@ app.post('/admin/setup/complete', async (req, res) => {
     console.log(`   Location: ${cityData?.name}, ${cityData?.stateName}`);
     console.log(`   Coordinates: ${cityData?.lat}, ${cityData?.lon}`);
 
+    // Mark system as configured
+    isConfigured = true;
+
+    // Start automatic journey calculation now that setup is complete
+    console.log('🔄 Starting automatic journey calculation...');
+    startAutomaticJourneyCalculation();
+
     res.json({
       success: true,
       message: 'Setup completed successfully',
-      location: prefs.location
+      location: prefs.location,
+      journeyCalculationStarted: true
     });
   } catch (error) {
     console.error('Setup completion error:', error);
