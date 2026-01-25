@@ -23,6 +23,7 @@ import MultiModalRouter from './multi-modal-router.js';
 import SmartJourneyPlanner from './smart-journey-planner.js';
 import GeocodingService from './geocoding-service.js';
 import DecisionLogger from './decision-logger.js';
+import DataValidator from './data-validator.js';
 import { getPrimaryCityForState } from './australian-cities.js';
 import fallbackTimetables from './fallback-timetables.js';
 import { readFileSync } from 'fs';
@@ -2081,7 +2082,14 @@ app.post('/admin/smart-setup', async (req, res) => {
     await preferences.update(configData);
     console.log('  ✅ Configuration saved');
 
-    // Step 7: Start automatic journey calculation
+    // Step 7: Validate selected transit stops
+    const homeStopValidation = DataValidator.validateTransitStop(bestHomeStop, homeLocation);
+    const workStopValidation = DataValidator.validateTransitStop(bestWorkStop, workLocation);
+
+    console.log(`🎯 Home stop confidence: ${homeStopValidation.score}% (${homeStopValidation.level})`);
+    console.log(`🎯 Work stop confidence: ${workStopValidation.score}% (${workStopValidation.level})`);
+
+    // Step 8: Start automatic journey calculation
     startAutomaticJourneyCalculation();
     console.log('  🔄 Auto-calculation started');
 
@@ -2093,7 +2101,19 @@ app.post('/admin/smart-setup', async (req, res) => {
       routeMode: bestHomeStop.route_type_name,
       homeStop: bestHomeStop.stop_name,
       workStop: bestWorkStop.stop_name,
-      message: 'Journey planning configured successfully'
+      message: 'Journey planning configured successfully',
+      validation: {
+        homeStop: {
+          confidence: homeStopValidation.score,
+          level: homeStopValidation.level,
+          checks: homeStopValidation.checks
+        },
+        workStop: {
+          confidence: workStopValidation.score,
+          level: workStopValidation.level,
+          checks: workStopValidation.checks
+        }
+      }
     });
 
   } catch (error) {
@@ -2369,12 +2389,34 @@ app.get('/admin/address/search', async (req, res) => {
       });
     }
 
+    // Calculate geocoding confidence for results
+    const topResults = uniqueResults.slice(0, 10);
+    const geocodingConfidence = DataValidator.calculateGeocodingConfidence(topResults);
+    const crossValidation = DataValidator.crossValidateGeocoding(topResults);
+
+    console.log(`🎯 Geocoding confidence: ${geocodingConfidence.score}% (${geocodingConfidence.level})`);
+    console.log(`🔍 Cross-validation: ${crossValidation.agreement} agreement`);
+
     res.json({
       success: true,
-      results: uniqueResults.slice(0, 10), // Top 10 results
+      results: topResults,
       count: uniqueResults.length,
       sources: [...new Set(combinedResults.map(r => r.source))],
-      message: `Found ${uniqueResults.length} result(s)`
+      message: `Found ${uniqueResults.length} result(s)`,
+      validation: {
+        confidence: {
+          score: geocodingConfidence.score,
+          level: geocodingConfidence.level,
+          message: geocodingConfidence.message,
+          sourceCount: geocodingConfidence.sourceCount,
+          sources: geocodingConfidence.sources
+        },
+        crossValidation: {
+          agreement: crossValidation.agreement,
+          isValid: crossValidation.isValid,
+          message: crossValidation.message
+        }
+      }
     });
 
   } catch (error) {
