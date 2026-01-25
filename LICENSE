@@ -1,0 +1,77 @@
+Creative Commons Attribution-NonCommercial 4.0 International
+
+Copyright (c) 2026 Angus Bergman
+
+PTV-TRMNL is licensed under the Creative Commons Attribution-NonCommercial 4.0 International License.
+
+You are free to:
+
+  * Share — copy and redistribute the material in any medium or format
+  * Adapt — remix, transform, and build upon the material
+
+Under the following terms:
+
+  * Attribution — You must give appropriate credit, provide a link to the license, and indicate if changes were made. You may do so in any reasonable manner, but not in any way that suggests the licensor endorses you or your use.
+
+  * NonCommercial — You may not use the material for commercial purposes.
+
+  * No additional restrictions — You may not apply legal terms or technological measures that legally restrict others from doing anything the license permits.
+
+Notices:
+
+  * You do not have to comply with the license for elements of the material in the public domain or where your use is permitted by an applicable exception or limitation.
+
+  * No warranties are given. The license may not give you all of the permissions necessary for your intended use. For example, other rights such as publicity, privacy, or moral rights may limit how you use the material.
+
+For the full legal text of this license, see:
+https://creativecommons.org/licenses/by-nc/4.0/legalcode
+
+---
+
+ATTRIBUTION REQUIREMENTS:
+
+When using, redistributing, or adapting this software, you must:
+
+1. Retain this license notice
+2. Provide clear attribution to "Angus Bergman - PTV-TRMNL"
+3. Include a link to the original repository: https://github.com/angusbergman17-cpu/PTV-TRMNL-NEW
+4. Indicate if you made modifications
+5. Include all data source attributions as specified in ATTRIBUTION.md
+
+COMMERCIAL USE:
+
+Commercial use is NOT permitted under this license. For commercial licensing inquiries, please contact the copyright holder.
+
+Commercial use includes but is not limited to:
+- Selling the software or access to it
+- Using the software to provide paid services
+- Including the software in commercial products
+- Generating revenue directly or indirectly from the software
+
+NON-COMMERCIAL USE:
+
+Permitted non-commercial uses include:
+- Personal use for your own transit information
+- Educational purposes
+- Research and development
+- Sharing with friends and family
+- Community projects without monetary gain
+- Open-source contributions
+
+---
+
+THIRD-PARTY DATA SOURCES:
+
+This software uses data from third-party providers, each with their own terms:
+- Transport for Victoria (CC BY 4.0)
+- OpenStreetMap (ODbL)
+- Bureau of Meteorology (CC BY 4.0)
+- And others (see ATTRIBUTION.md)
+
+You must comply with all third-party terms in addition to this license.
+
+---
+
+WARRANTY DISCLAIMER:
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

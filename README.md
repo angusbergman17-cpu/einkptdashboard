@@ -4,6 +4,8 @@
 
 Built for the [TRMNL](https://usetrmnl.com) e-ink display (800x480).
 
+**⚖️ License**: CC BY-NC 4.0 (Creative Commons Attribution-NonCommercial 4.0) - Free for non-commercial use with attribution. See [LICENSE](LICENSE) for details.
+
 ## 📚 Documentation
 
 **New to PTV-TRMNL?** Here's where to start:
@@ -1870,7 +1872,23 @@ GET /api/fallback-stops
 
 ## 📄 License
 
-MIT License - Customize for your own commute!
+**Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)**
+
+Copyright © 2026 Angus Bergman
+
+This software is licensed under CC BY-NC 4.0. You are free to:
+- ✅ **Use** for personal, non-commercial purposes
+- ✅ **Modify** and adapt the code
+- ✅ **Share** with attribution
+
+**With these requirements**:
+- 📝 **Attribution**: Credit "Angus Bergman - PTV-TRMNL" with link to repository
+- ❌ **NonCommercial**: No commercial use, sales, or paid services
+- 📋 **Include License**: Keep LICENSE file with any distribution
+
+**Commercial licensing available** - Contact for inquiries.
+
+See [LICENSE](LICENSE) for full legal text.
 
 ---
 
