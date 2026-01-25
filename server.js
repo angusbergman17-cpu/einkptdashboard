@@ -1353,11 +1353,6 @@ app.get('/journey', (req, res) => {
   res.sendFile(path.join(process.cwd(), 'public', 'journey-display.html'));
 });
 
-// Setup wizard
-app.get('/setup', (req, res) => {
-  res.sendFile(path.join(process.cwd(), 'public', 'setup-wizard.html'));
-});
-
 // Dashboard template
 app.get('/dashboard', (req, res) => {
   res.sendFile(path.join(process.cwd(), 'public', 'dashboard-template.html'));
@@ -1557,6 +1552,23 @@ app.get('/admin/preferences', (req, res) => {
 
 // Update preferences (full or partial)
 app.put('/admin/preferences', async (req, res) => {
+  try {
+    const updates = req.body;
+
+    const updated = await preferences.update(updates);
+
+    res.json({
+      success: true,
+      preferences: updated,
+      message: 'Preferences updated successfully'
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST endpoint for preferences (for backward compatibility)
+app.post('/admin/preferences', async (req, res) => {
   try {
     const updates = req.body;
 
@@ -3594,43 +3606,37 @@ app.post('/admin/setup/complete', async (req, res) => {
     // Get location data for the state (from australian-cities.js)
     const cityData = location?.city ? getPrimaryCityForState(authority) : getPrimaryCityForState(authority);
 
-    // Save configuration to preferences
-    const prefs = preferences.get();
-    prefs.addresses = addresses;
-
-    // Save complete location data for state-agnostic operation
-    prefs.location = {
-      state: authority,
-      stateCode: authority,
-      stateName: cityData?.stateName || null,
-      city: location?.city || cityData?.name || null,
-      transitAuthority: authority,
-      authorityName: location?.authorityName || null,
-      centerLat: cityData?.lat || null,
-      centerLon: cityData?.lon || null,
-      timezone: cityData?.timezone || 'Australia/Sydney'
-    };
-
-    prefs.journey = {
-      ...prefs.journey,
-      arrivalTime,
-      coffeeEnabled: includeCoffee
-    };
-
-    prefs.api = {
-      key: credentials.devId || credentials.apiKey || '',
-      token: credentials.apiKey || credentials.devId || '',
-      baseUrl: '' // Set based on transit authority
-    };
-
     // Set API base URL based on transit authority
     const authorityConfig = await import('./transit-authorities.js').then(m => m.getAuthorityByState(authority));
-    if (authorityConfig) {
-      prefs.api.baseUrl = authorityConfig.baseUrl;
-      prefs.location.authorityName = authorityConfig.name;
-    }
 
-    await preferences.save(prefs);
+    // Build preferences update object
+    const updates = {
+      addresses: addresses,
+      location: {
+        state: authority,
+        stateCode: authority,
+        stateName: cityData?.stateName || null,
+        city: location?.city || cityData?.name || null,
+        transitAuthority: authority,
+        authorityName: authorityConfig?.name || location?.authorityName || null,
+        centerLat: cityData?.lat || null,
+        centerLon: cityData?.lon || null,
+        timezone: cityData?.timezone || 'Australia/Sydney'
+      },
+      journey: {
+        ...preferences.getSection('journey'),
+        arrivalTime,
+        coffeeEnabled: includeCoffee
+      },
+      api: {
+        key: credentials.devId || credentials.apiKey || '',
+        token: credentials.apiKey || credentials.devId || '',
+        baseUrl: authorityConfig?.baseUrl || ''
+      }
+    };
+
+    // Update preferences using the proper API
+    const prefs = await preferences.update(updates);
 
     console.log(`✅ Setup completed for ${authority} (${cityData?.name || 'Unknown City'})`);
     console.log(`   Location: ${cityData?.name}, ${cityData?.stateName}`);

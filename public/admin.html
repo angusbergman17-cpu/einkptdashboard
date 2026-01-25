@@ -1853,7 +1853,8 @@
                 // Load from server preferences
                 const response = await fetch(BASE_URL + '/admin/preferences');
                 if (response.ok) {
-                    const prefs = await response.json();
+                    const data = await response.json();
+                    const prefs = data.preferences || data;
 
                     // Load addresses
                     if (prefs.addresses) {
@@ -2035,15 +2036,16 @@
             try {
                 // Get current preferences
                 const prefsResponse = await fetch(BASE_URL + '/admin/preferences');
-                const prefs = await prefsResponse.json();
+                const prefsData = await prefsResponse.json();
+                const prefs = prefsData.preferences || prefsData;
 
                 // Update the specific field
                 if (!prefs[section]) prefs[section] = {};
                 prefs[section][fieldName] = value;
 
-                // Save back to server
+                // Save back to server using PUT method
                 const saveResponse = await fetch(BASE_URL + '/admin/preferences', {
-                    method: 'POST',
+                    method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(prefs)
                 });
