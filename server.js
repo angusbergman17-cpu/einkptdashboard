@@ -24,6 +24,11 @@ import SmartJourneyPlanner from './smart-journey-planner.js';
 import GeocodingService from './geocoding-service.js';
 import DecisionLogger from './decision-logger.js';
 import { getPrimaryCityForState } from './australian-cities.js';
+import { readFileSync } from 'fs';
+
+// Read version from package.json
+const packageJson = JSON.parse(readFileSync('./package.json', 'utf-8'));
+const VERSION = packageJson.version;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -51,6 +56,100 @@ console.log('   Available services:', global.geocodingService.getAvailableServic
 global.decisionLogger = new DecisionLogger();
 console.log('✅ Decision logger initialized for full transparency');
 
+// Journey calculation cache (automatically updated in background)
+let cachedJourney = null;
+let journeyCalculationInterval = null;
+const JOURNEY_CALC_INTERVAL = 10 * 60 * 1000; // 10 minutes
+
+/**
+ * Automatic Journey Calculation
+ * Runs in background to keep transit data up-to-date without manual admin login
+ */
+async function calculateAndCacheJourney() {
+  try {
+    const prefs = preferences.get();
+
+    // Check if preferences are configured
+    if (!prefs.addresses?.home || !prefs.addresses?.work || !prefs.journey?.arrivalTime) {
+      console.log('⏭️  Skipping journey calculation - preferences not configured');
+      return null;
+    }
+
+    if (!prefs.api?.key || !prefs.api?.token) {
+      console.log('⏭️  Skipping journey calculation - API credentials not configured');
+      return null;
+    }
+
+    console.log('🔄 Auto-calculating journey...');
+
+    const journey = await smartPlanner.planJourney({
+      homeAddress: prefs.addresses.home,
+      workAddress: prefs.addresses.work,
+      cafeAddress: prefs.addresses.cafe,
+      arrivalTime: prefs.journey.arrivalTime,
+      includeCoffee: prefs.journey.coffeeEnabled,
+      api: prefs.api
+    });
+
+    cachedJourney = {
+      ...journey,
+      calculatedAt: new Date().toISOString(),
+      autoCalculated: true
+    };
+
+    console.log(`✅ Journey auto-calculated at ${new Date().toLocaleTimeString()}`);
+
+    // Log the calculation
+    if (global.decisionLogger) {
+      global.decisionLogger.log({
+        category: 'Journey Planning',
+        decision: 'Automatic journey calculation completed',
+        details: {
+          arrivalTime: prefs.journey.arrivalTime,
+          coffeeIncluded: prefs.journey.coffeeEnabled,
+          timestamp: cachedJourney.calculatedAt
+        }
+      });
+    }
+
+    return cachedJourney;
+  } catch (error) {
+    console.error('❌ Auto journey calculation failed:', error.message);
+
+    // Log the failure
+    if (global.decisionLogger) {
+      global.decisionLogger.log({
+        category: 'Journey Planning',
+        decision: 'Automatic journey calculation failed',
+        details: {
+          error: error.message,
+          timestamp: new Date().toISOString()
+        }
+      });
+    }
+
+    return null;
+  }
+}
+
+/**
+ * Start automatic journey calculation
+ */
+function startAutomaticJourneyCalculation() {
+  // Clear any existing interval
+  if (journeyCalculationInterval) {
+    clearInterval(journeyCalculationInterval);
+  }
+
+  // Calculate immediately
+  calculateAndCacheJourney();
+
+  // Schedule recurring calculations
+  journeyCalculationInterval = setInterval(calculateAndCacheJourney, JOURNEY_CALC_INTERVAL);
+
+  console.log(`✅ Automatic journey calculation started (every ${JOURNEY_CALC_INTERVAL / 60000} minutes)`);
+}
+
 // Load preferences on startup
 preferences.load().then(() => {
   console.log('✅ User preferences loaded');
@@ -58,6 +157,9 @@ preferences.load().then(() => {
   if (!status.configured) {
     console.log('⚠️  User preferences not fully configured');
     console.log('   Please configure via admin panel: /admin');
+  } else {
+    // Start automatic journey calculation if configured
+    startAutomaticJourneyCalculation();
   }
 });
 
@@ -382,21 +484,18 @@ app.get('/api/keepalive', (req, res) => {
 // Version control endpoint
 app.get('/api/version', (req, res) => {
   try {
-    const hash = execSync('git rev-parse --short HEAD', { encoding: 'utf-8' }).trim();
     const date = execSync('git log -1 --format="%ci"', { encoding: 'utf-8' }).trim().split(' ')[0];
     res.json({
-      hash,
+      version: `v${VERSION}`,
       date,
-      fullHash: execSync('git rev-parse HEAD', { encoding: 'utf-8' }).trim(),
-      message: execSync('git log -1 --format="%s"', { encoding: 'utf-8' }).trim()
+      build: execSync('git rev-parse --short HEAD', { encoding: 'utf-8' }).trim()
     });
   } catch (error) {
     // Fallback if not in a git repository
     res.json({
-      hash: 'dev',
+      version: `v${VERSION}`,
       date: new Date().toISOString().split('T')[0],
-      fullHash: 'development',
-      message: 'Development build'
+      build: 'dev'
     });
   }
 });
@@ -1903,8 +2002,8 @@ app.get('/admin/route', (req, res) => {
  */
 app.get('/api/journey-status', async (req, res) => {
   try {
-    // Get the cached journey plan
-    const journey = smartPlanner.getCachedJourney();
+    // Get the cached journey plan (try auto-calculated first, then smart planner)
+    let journey = cachedJourney || smartPlanner.getCachedJourney();
 
     if (!journey || !journey.success) {
       // Return fallback journey status
@@ -1912,7 +2011,8 @@ app.get('/api/journey-status', async (req, res) => {
         status: 'no-journey',
         message: 'No journey planned. Configure your journey in the admin panel.',
         arrivalTime: '--:--',
-        legs: []
+        legs: [],
+        autoCalculated: false
       });
     }
 
@@ -1969,7 +2069,9 @@ app.get('/api/journey-status', async (req, res) => {
       arrivalTime: actualArrival,
       plannedArrival,
       totalDelay,
-      lastUpdate: new Date().toISOString()
+      lastUpdate: new Date().toISOString(),
+      autoCalculated: journey.autoCalculated || false,
+      calculatedAt: journey.calculatedAt || null
     });
 
   } catch (error) {
@@ -1979,6 +2081,67 @@ app.get('/api/journey-status', async (req, res) => {
       error: error.message,
       arrivalTime: '--:--',
       legs: []
+    });
+  }
+});
+
+/**
+ * Get cached journey info
+ * Returns information about the automatically calculated journey
+ */
+app.get('/api/journey-cache', (req, res) => {
+  try {
+    if (!cachedJourney) {
+      return res.json({
+        cached: false,
+        message: 'No journey calculated yet',
+        nextCalculation: null
+      });
+    }
+
+    res.json({
+      cached: true,
+      calculatedAt: cachedJourney.calculatedAt,
+      autoCalculated: cachedJourney.autoCalculated,
+      journey: {
+        arrivalTime: cachedJourney.arrivalTime,
+        departureTime: cachedJourney.departureTime,
+        success: cachedJourney.success
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: error.message
+    });
+  }
+});
+
+/**
+ * Force journey recalculation
+ * Triggers an immediate calculation instead of waiting for next scheduled run
+ */
+app.post('/api/journey-recalculate', async (req, res) => {
+  try {
+    console.log('🔄 Manual journey recalculation requested');
+    const journey = await calculateAndCacheJourney();
+
+    if (!journey) {
+      return res.status(400).json({
+        success: false,
+        message: 'Journey calculation failed. Check preferences configuration.'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Journey recalculated successfully',
+      calculatedAt: journey.calculatedAt,
+      arrivalTime: journey.arrivalTime
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
     });
   }
 });
