@@ -23,6 +23,7 @@ import MultiModalRouter from './multi-modal-router.js';
 import SmartJourneyPlanner from './smart-journey-planner.js';
 import GeocodingService from './geocoding-service.js';
 import DecisionLogger from './decision-logger.js';
+import { getPrimaryCityForState } from './australian-cities.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -30,12 +31,14 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(express.json());
 
-// Initialize all modules
-const coffeeEngine = new CoffeeDecision();
-const weather = new WeatherBOM();
-const routePlanner = new RoutePlanner();
-const busyDetector = new CafeBusyDetector();
+// Initialize preferences first (needed by other modules for state-agnostic operation)
 const preferences = new PreferencesManager();
+
+// Initialize all modules (pass preferences where needed for state awareness)
+const coffeeEngine = new CoffeeDecision();
+const weather = new WeatherBOM(preferences);
+const routePlanner = new RoutePlanner(preferences);
+const busyDetector = new CafeBusyDetector();
 const multiModalRouter = new MultiModalRouter();
 const smartPlanner = new SmartJourneyPlanner();
 
@@ -3206,28 +3209,57 @@ app.get('/setup', (req, res) => {
  */
 app.post('/admin/setup/complete', async (req, res) => {
   try {
-    const { addresses, authority, arrivalTime, includeCoffee, credentials } = req.body;
+    const { addresses, authority, arrivalTime, includeCoffee, credentials, location } = req.body;
+
+    // Get location data for the state (from australian-cities.js)
+    const cityData = location?.city ? getPrimaryCityForState(authority) : getPrimaryCityForState(authority);
 
     // Save configuration to preferences
     const prefs = preferences.get();
     prefs.addresses = addresses;
-    prefs.authority = authority;
+
+    // Save complete location data for state-agnostic operation
+    prefs.location = {
+      state: authority,
+      stateCode: authority,
+      stateName: cityData?.stateName || null,
+      city: location?.city || cityData?.name || null,
+      transitAuthority: authority,
+      authorityName: location?.authorityName || null,
+      centerLat: cityData?.lat || null,
+      centerLon: cityData?.lon || null,
+      timezone: cityData?.timezone || 'Australia/Sydney'
+    };
+
     prefs.journey = {
+      ...prefs.journey,
       arrivalTime,
       coffeeEnabled: includeCoffee
     };
+
     prefs.api = {
-      key: credentials.devId,
-      token: credentials.apiKey
+      key: credentials.devId || credentials.apiKey || '',
+      token: credentials.apiKey || credentials.devId || '',
+      baseUrl: '' // Set based on transit authority
     };
 
-    preferences.save(prefs);
+    // Set API base URL based on transit authority
+    const authorityConfig = await import('./transit-authorities.js').then(m => m.getAuthorityByState(authority));
+    if (authorityConfig) {
+      prefs.api.baseUrl = authorityConfig.baseUrl;
+      prefs.location.authorityName = authorityConfig.name;
+    }
 
-    console.log(`✅ Setup completed for ${authority}`);
+    await preferences.save(prefs);
+
+    console.log(`✅ Setup completed for ${authority} (${cityData?.name || 'Unknown City'})`);
+    console.log(`   Location: ${cityData?.name}, ${cityData?.stateName}`);
+    console.log(`   Coordinates: ${cityData?.lat}, ${cityData?.lon}`);
 
     res.json({
       success: true,
-      message: 'Setup completed successfully'
+      message: 'Setup completed successfully',
+      location: prefs.location
     });
   } catch (error) {
     console.error('Setup completion error:', error);

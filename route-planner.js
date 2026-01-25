@@ -11,7 +11,7 @@ import fetch from 'node-fetch';
 import CafeBusyDetector from './cafe-busy-detector.js';
 
 class RoutePlanner {
-  constructor() {
+  constructor(preferences = null) {
     // Default walking speeds (meters per minute)
     this.WALKING_SPEED = 80; // 80 m/min = 4.8 km/h (average)
     this.BASE_COFFEE_PURCHASE_TIME = 3; // Base minutes to order and get coffee (adjusted dynamically)
@@ -27,6 +27,9 @@ class RoutePlanner {
     this.routeCache = null;
     this.routeCacheExpiry = null;
     this.routeCacheDuration = 5 * 60 * 1000; // 5 minutes
+
+    // Store preferences reference for state-agnostic operations
+    this.preferences = preferences;
   }
 
   /**
@@ -224,10 +227,19 @@ class RoutePlanner {
     try {
       // Use global geocoding service if available (multi-tier fallback)
       if (global.geocodingService) {
+        // Get location bias from preferences (state-agnostic)
+        let bias = null;
+        if (this.preferences?.location?.centerLat && this.preferences?.location?.centerLon) {
+          bias = {
+            lat: this.preferences.location.centerLat,
+            lon: this.preferences.location.centerLon
+          };
+        }
+
         const result = await global.geocodingService.geocode(address, {
           country: 'AU',
           type: type,
-          bias: { lat: -37.8136, lon: 144.9631 } // Melbourne CBD bias
+          bias: bias  // Use configured city center or no bias
         });
 
         const cachedResult = {
@@ -385,22 +397,26 @@ class RoutePlanner {
         locations.work = await this.geocodeAddress(workAddress);
 
         // Get station coordinates (use provided or geocode)
+        // Use configured city from preferences, fallback to state name, or just use station name
+        const cityName = this.preferences?.location?.city || this.preferences?.location?.stateName || '';
+        const locationSuffix = cityName ? `, ${cityName}` : '';
+
         locations.transit1Origin = transitRoute.mode1.originStation.lat
           ? { lat: transitRoute.mode1.originStation.lat, lon: transitRoute.mode1.originStation.lon }
-          : await this.geocodeAddress(`${transitRoute.mode1.originStation.name} Station, Melbourne`);
+          : await this.geocodeAddress(`${transitRoute.mode1.originStation.name} Station${locationSuffix}`);
 
         locations.transit1Dest = transitRoute.mode1.destinationStation.lat
           ? { lat: transitRoute.mode1.destinationStation.lat, lon: transitRoute.mode1.destinationStation.lon }
-          : await this.geocodeAddress(`${transitRoute.mode1.destinationStation.name} Station, Melbourne`);
+          : await this.geocodeAddress(`${transitRoute.mode1.destinationStation.name} Station${locationSuffix}`);
 
         if (hasConnection && transitRoute.mode2) {
           locations.transit2Origin = transitRoute.mode2.originStation.lat
             ? { lat: transitRoute.mode2.originStation.lat, lon: transitRoute.mode2.originStation.lon }
-            : await this.geocodeAddress(`${transitRoute.mode2.originStation.name} Station, Melbourne`);
+            : await this.geocodeAddress(`${transitRoute.mode2.originStation.name} Station${locationSuffix}`);
 
           locations.transit2Dest = transitRoute.mode2.destinationStation.lat
             ? { lat: transitRoute.mode2.destinationStation.lat, lon: transitRoute.mode2.destinationStation.lon }
-            : await this.geocodeAddress(`${transitRoute.mode2.destinationStation.name} Station, Melbourne`);
+            : await this.geocodeAddress(`${transitRoute.mode2.destinationStation.name} Station${locationSuffix}`);
         }
       } else {
         // Dummy locations for manual mode

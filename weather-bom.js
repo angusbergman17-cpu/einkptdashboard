@@ -10,20 +10,57 @@
 import fetch from 'node-fetch';
 
 /**
- * BOM Weather Client for Melbourne
+ * BOM Weather Station Map
+ * Maps Australian cities to their BOM observation stations
+ */
+const BOM_STATIONS = {
+  // Victoria
+  'Melbourne': { stationId: '95936', productId: 'IDV60901', name: 'Melbourne (Olympic Park)' },
+  'Geelong': { stationId: '95866', productId: 'IDV60901', name: 'Geelong Racecourse' },
+  'Ballarat': { stationId: '95822', productId: 'IDV60901', name: 'Ballarat Airport' },
+  'Bendigo': { stationId: '95834', productId: 'IDV60901', name: 'Bendigo Airport' },
+
+  // New South Wales
+  'Sydney': { stationId: '94768', productId: 'IDN60901', name: 'Sydney (Observatory Hill)' },
+  'Newcastle': { stationId: '61055', productId: 'IDN60901', name: 'Newcastle (Nobbys Signal Station)' },
+  'Wollongong': { stationId: '68228', productId: 'IDN60901', name: 'Wollongong (University)' },
+
+  // Queensland
+  'Brisbane': { stationId: '94576', productId: 'IDQ60901', name: 'Brisbane' },
+  'Gold Coast': { stationId: '40764', productId: 'IDQ60901', name: 'Gold Coast Seaway' },
+  'Sunshine Coast': { stationId: '40908', productId: 'IDQ60901', name: 'Sunshine Coast Airport' },
+
+  // Western Australia
+  'Perth': { stationId: '94608', productId: 'IDW60901', name: 'Perth Airport' },
+  'Fremantle': { stationId: '94608', productId: 'IDW60901', name: 'Perth Airport' }, // Use Perth for Fremantle
+
+  // South Australia
+  'Adelaide': { stationId: '94672', productId: 'IDS60901', name: 'Adelaide (West Terrace)' },
+
+  // Tasmania
+  'Hobart': { stationId: '94970', productId: 'IDT60901', name: 'Hobart (Ellerslie Road)' },
+  'Launceston': { stationId: '91104', productId: 'IDT60901', name: 'Launceston (Ti Tree Bend)' },
+
+  // ACT
+  'Canberra': { stationId: '94926', productId: 'IDN60901', name: 'Canberra Airport' },
+
+  // Northern Territory
+  'Darwin': { stationId: '94120', productId: 'IDD60901', name: 'Darwin Airport' }
+};
+
+/**
+ * BOM Weather Client (State-Agnostic)
  * Uses official BOM JSON observation feeds
+ * Automatically selects correct weather station based on configured city
  */
 class WeatherBOM {
-  constructor() {
-    // Official BOM JSON feed for Melbourne (Olympic Park)
-    // Station ID: 95936
-    // Product: IDV60901 (Capital City Observations)
-    // Reference: http://www.bom.gov.au/catalogue/data-feeds.shtml
-    this.observationUrl = 'http://www.bom.gov.au/fwo/IDV60901/IDV60901.95936.json';
+  constructor(preferences = null) {
+    this.preferences = preferences;
 
-    // Melbourne Olympic Park station
-    this.stationId = '95936';
-    this.stationName = 'Melbourne (Olympic Park)';
+    // Will be set based on configured city
+    this.observationUrl = null;
+    this.stationId = null;
+    this.stationName = null;
 
     // Cache weather data for 10 minutes (BOM updates every 30 min)
     this.cache = null;
@@ -32,13 +69,58 @@ class WeatherBOM {
   }
 
   /**
-   * Get current weather for Melbourne
+   * Get the correct weather station based on configured city
+   */
+  getWeatherStation() {
+    // Get city from preferences
+    const city = this.preferences?.location?.city;
+
+    if (!city) {
+      console.warn('⚠️  No city configured in preferences, using Melbourne as fallback');
+      return BOM_STATIONS['Melbourne'];
+    }
+
+    // Find matching station (case-insensitive)
+    const station = BOM_STATIONS[city] || Object.entries(BOM_STATIONS).find(([key]) =>
+      key.toLowerCase() === city.toLowerCase()
+    )?.[1];
+
+    if (!station) {
+      console.warn(`⚠️  No BOM station found for ${city}, using Melbourne as fallback`);
+      return BOM_STATIONS['Melbourne'];
+    }
+
+    return station;
+  }
+
+  /**
+   * Build the BOM observation URL for the configured city
+   */
+  buildObservationUrl() {
+    const station = this.getWeatherStation();
+    this.stationId = station.stationId;
+    this.stationName = station.name;
+
+    // BOM URL format: http://www.bom.gov.au/fwo/{PRODUCT_ID}/{PRODUCT_ID}.{STATION_ID}.json
+    this.observationUrl = `http://www.bom.gov.au/fwo/${station.productId}/${station.productId}.${station.stationId}.json`;
+
+    console.log(`🌤️  Using BOM station: ${station.name} (${station.stationId})`);
+    return this.observationUrl;
+  }
+
+  /**
+   * Get current weather for configured city
    * Returns: { condition, temperature, icon }
    */
   async getCurrentWeather() {
     // Check cache first
     if (this.cache && this.cacheExpiry && Date.now() < this.cacheExpiry) {
       return this.cache;
+    }
+
+    // Build observation URL based on configured city
+    if (!this.observationUrl) {
+      this.buildObservationUrl();
     }
 
     try {
