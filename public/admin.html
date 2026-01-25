@@ -473,6 +473,72 @@
             padding: 30px;
             opacity: 0.6;
         }
+
+        /* Address Autocomplete */
+        .autocomplete-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #2d3748;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            margin-top: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .autocomplete-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            transition: background 0.2s;
+        }
+
+        .autocomplete-item:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .autocomplete-item:last-child {
+            border-bottom: none;
+        }
+
+        .form-group {
+            position: relative;
+        }
+
+        /* System Architecture Viz */
+        .arch-node {
+            background: rgba(99, 102, 241, 0.2);
+            border: 2px solid #6366f1;
+            border-radius: 12px;
+            padding: 15px;
+            margin: 10px 0;
+            position: relative;
+        }
+
+        .arch-node-title {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: #c7d2fe;
+        }
+
+        .arch-node-desc {
+            font-size: 13px;
+            opacity: 0.85;
+            line-height: 1.5;
+        }
+
+        .arch-arrow {
+            text-align: center;
+            font-size: 24px;
+            margin: 5px 0;
+            opacity: 0.6;
+        }
     </style>
 </head>
 <body>
@@ -490,9 +556,10 @@
 
         <!-- Navigation -->
         <div class="nav-tabs">
-            <button class="nav-tab active" onclick="showTab('live')">Live Data</button>
-            <button class="nav-tab" onclick="showTab('journey')">Journey Planner</button>
-            <button class="nav-tab" onclick="showTab('config')">Configuration</button>
+            <button class="nav-tab active" onclick="showTab('live')">🚊 Live Data</button>
+            <button class="nav-tab" onclick="showTab('journey')">🗺️ Journey Planner</button>
+            <button class="nav-tab" onclick="showTab('config')">⚙️ Configuration</button>
+            <button class="nav-tab" onclick="showTab('system')">🧠 System & Support</button>
         </div>
 
         <!-- Live Data Tab -->
@@ -556,108 +623,65 @@
 
         <!-- Journey Planner Tab -->
         <div id="tab-journey" class="tab-content">
-            <div class="card">
+            <!-- Step 1: Addresses -->
+            <div class="card" id="address-card">
                 <div class="card-header">
-                    <span class="card-icon">🚀</span>
-                    <h2>Plan Your Commute</h2>
+                    <span class="card-icon">📍</span>
+                    <h2>Your Journey Addresses</h2>
                 </div>
+                <p style="margin-bottom: 20px; opacity: 0.9;">
+                    Enter your daily commute addresses. The system will intelligently plan your route.
+                </p>
 
                 <div id="planner-message"></div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Home Address</label>
-                        <input type="text" id="home-address" class="form-input" placeholder="123 Main Street, Suburb">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Work Address</label>
-                        <input type="text" id="work-address" class="form-input" placeholder="456 Office Ave, City">
-                    </div>
+                <div class="form-group">
+                    <label class="form-label">🏠 Home Address</label>
+                    <input type="text" id="home-address" class="form-input" placeholder="Start typing your address..." autocomplete="off">
+                    <div id="home-suggestions" class="autocomplete-dropdown"></div>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Cafe Address (optional)</label>
-                    <input type="text" id="cafe-address" class="form-input" placeholder="Your favorite coffee shop">
+                    <label class="form-label">☕ Cafe Address (optional)</label>
+                    <input type="text" id="cafe-address" class="form-input" placeholder="Your favorite coffee shop..." autocomplete="off">
+                    <div id="cafe-suggestions" class="autocomplete-dropdown"></div>
                 </div>
 
-                <!-- Transit Route -->
-                <div class="transit-mode" id="transit-mode-1">
-                    <div class="transit-mode-header">
-                        <span style="font-weight: 600;">Transit Leg 1</span>
-                        <select id="mode1-type" class="form-input" style="width: 120px;">
-                            <option value="0">Train</option>
-                            <option value="1">Tram</option>
-                            <option value="2">Bus</option>
-                        </select>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">From Station</label>
-                            <input type="text" id="mode1-origin" class="form-input" placeholder="e.g., South Yarra">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">To Station</label>
-                            <input type="text" id="mode1-destination" class="form-input" placeholder="e.g., Flinders Street">
-                        </div>
-                    </div>
+                <div class="form-group">
+                    <label class="form-label">💼 Work Address</label>
+                    <input type="text" id="work-address" class="form-input" placeholder="Your workplace address..." autocomplete="off">
+                    <div id="work-suggestions" class="autocomplete-dropdown"></div>
                 </div>
 
-                <div class="transit-mode" id="transit-mode-2" style="display: none;">
-                    <div class="transit-mode-header">
-                        <span style="font-weight: 600;">Transit Leg 2</span>
-                        <div style="display: flex; gap: 10px;">
-                            <select id="mode2-type" class="form-input" style="width: 120px;">
-                                <option value="0">Train</option>
-                                <option value="1">Tram</option>
-                                <option value="2">Bus</option>
-                            </select>
-                            <button class="btn btn-secondary" onclick="removeTransitLeg()" style="padding: 8px 16px;">Remove</button>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">From Station</label>
-                            <input type="text" id="mode2-origin" class="form-input" placeholder="e.g., Fed Square">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">To Station</label>
-                            <input type="text" id="mode2-destination" class="form-input" placeholder="e.g., Melbourne Central">
-                        </div>
-                    </div>
+                <div class="form-group">
+                    <label class="form-label">🕐 Arrival Time at Work</label>
+                    <input type="time" id="arrival-time" class="form-input" value="09:00">
                 </div>
 
-                <button class="add-mode-btn" id="add-mode-btn" onclick="addTransitLeg()">
-                    + Add Another Transit Leg
-                </button>
-
-                <div class="form-row" style="margin-top: 15px;">
-                    <div class="form-group">
-                        <label class="form-label">Arrival Time at Work</label>
-                        <input type="time" id="arrival-time" class="form-input" value="09:00">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Coffee Time (mins)</label>
-                        <input type="number" id="coffee-time" class="form-input" value="5" min="0" max="30">
-                    </div>
-                </div>
-
-                <div class="checkbox-group">
-                    <input type="checkbox" id="include-coffee" checked>
-                    <label for="include-coffee">Include coffee stop</label>
-                </div>
-
-                <button class="btn btn-success btn-block" onclick="planJourney()">
-                    <span id="plan-btn-text">Plan My Journey</span>
+                <button class="btn btn-success btn-block" onclick="calculateSimpleRoute()">
+                    <span id="calc-btn-text">🗺️ Calculate Route</span>
                 </button>
             </div>
 
-            <!-- Journey Result -->
+            <!-- Step 2: Route Options (shown after calculation) -->
+            <div class="card" id="route-options-card" style="display: none; margin-top: 20px;">
+                <div class="card-header">
+                    <span class="card-icon">🚆</span>
+                    <h2>Transit Options</h2>
+                </div>
+                <div id="route-options-content"></div>
+            </div>
+
+            <!-- Step 3: Selected Journey Details -->
             <div class="card" id="journey-result" style="display: none; margin-top: 20px;">
                 <div class="card-header">
-                    <span class="card-icon">📋</span>
-                    <h2>Your Journey</h2>
+                    <span class="card-icon">✅</span>
+                    <h2>Your Journey Plan</h2>
                 </div>
                 <div id="journey-result-content"></div>
+                <button class="btn btn-secondary" onclick="showAddressEditor()" style="margin-top: 15px;">
+                    ✏️ Edit Addresses
+                </button>
             </div>
         </div>
 
@@ -708,6 +732,86 @@
                     <div style="display: flex; flex-direction: column; gap: 10px;">
                         <button class="btn" onclick="refreshData()">Refresh Data</button>
                         <button class="btn btn-secondary" onclick="clearCache()">Clear Cache</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System & Support Tab -->
+        <div id="tab-system" class="tab-content">
+            <!-- System Architecture -->
+            <div class="card" style="margin-bottom: 20px;">
+                <div class="card-header">
+                    <span class="card-icon">🧠</span>
+                    <h2>How The System Works</h2>
+                </div>
+                <p style="margin-bottom: 15px; opacity: 0.9;">
+                    Understanding the intelligent data flow that powers your transit predictions
+                </p>
+                <button class="btn btn-success btn-block" onclick="showSystemArchitecture()" style="margin-bottom: 15px;">
+                    <span style="font-size: 18px;">🔍</span> View System Architecture
+                </button>
+                <div id="architecture-viz" style="display: none; margin-top: 20px;"></div>
+            </div>
+
+            <!-- Support Section -->
+            <div class="card" style="background: linear-gradient(135deg, #40DCA5 0%, #2ecc71 100%); color: white; border: none;">
+                <div class="card-header" style="border: none;">
+                    <span class="card-icon">☕</span>
+                    <h2 style="color: white;">Support This Project</h2>
+                </div>
+                <p style="margin-bottom: 20px; line-height: 1.6; opacity: 0.95;">
+                    From conception to execution, many weeks, hours, and all-nighters went into creating this intelligent transit system.
+                    Your support helps keep the project alive and improving.
+                </p>
+                <div style="background: rgba(255,255,255,0.15); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                    <div style="font-weight: 600; margin-bottom: 12px; font-size: 15px;">What your support enables:</div>
+                    <div style="display: grid; gap: 10px; font-size: 14px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="font-size: 20px;">🚀</span>
+                            <span>Continued development and new features</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="font-size: 20px;">🐛</span>
+                            <span>Bug fixes and performance improvements</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="font-size: 20px;">📚</span>
+                            <span>Better documentation and guides</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="font-size: 20px;">💻</span>
+                            <span>Server hosting and API costs</span>
+                        </div>
+                    </div>
+                </div>
+                <a href="https://buymeacoffee.com/angusbergman" target="_blank"
+                   class="btn btn-block"
+                   style="background: white; color: #40DCA5; font-weight: 600; font-size: 16px; text-decoration: none; display: block; text-align: center; padding: 15px;">
+                    ☕ Buy Me a Coffee
+                </a>
+                <div style="text-align: center; margin-top: 15px; font-size: 13px; opacity: 0.85;">
+                    Every contribution, big or small, is deeply appreciated 💚
+                </div>
+            </div>
+
+            <!-- About -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">ℹ️</span>
+                    <h2>About PTV-TRMNL</h2>
+                </div>
+                <p style="line-height: 1.6; margin-bottom: 15px;">
+                    An intelligent real-time Melbourne transit display system that learns your commute patterns
+                    and helps you decide: <strong>Can I get coffee, or should I go direct?</strong>
+                </p>
+                <div style="padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px; line-height: 1.6; font-size: 14px;">
+                    <div><strong>Data Sources:</strong></div>
+                    <div style="opacity: 0.9; margin-top: 5px;">
+                        • Bureau of Meteorology (Official JSON Feeds)<br>
+                        • PTV GTFS-Realtime API<br>
+                        • OpenStreetMap Nominatim<br>
+                        • Google Places API (Optional)
                     </div>
                 </div>
             </div>
@@ -953,6 +1057,315 @@
         function showMessage(id, msg, type) {
             document.getElementById(id).innerHTML = `<div class="message message-${type}">${msg}</div>`;
             setTimeout(() => document.getElementById(id).innerHTML = '', 3000);
+        }
+
+        // ============= ADDRESS AUTOCOMPLETE =============
+        let autocompleteDebounce = null;
+
+        function setupAddressAutocomplete(inputId, suggestionsId) {
+            const input = document.getElementById(inputId);
+            const suggestions = document.getElementById(suggestionsId);
+
+            input.addEventListener('input', function() {
+                clearTimeout(autocompleteDebounce);
+                const query = this.value.trim();
+
+                if (query.length < 3) {
+                    suggestions.style.display = 'none';
+                    return;
+                }
+
+                autocompleteDebounce = setTimeout(async () => {
+                    try {
+                        // Use Nominatim for geocoding (free, no API key)
+                        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}, Melbourne, Australia&limit=5`;
+                        const response = await fetch(url);
+                        const results = await response.json();
+
+                        if (results.length > 0) {
+                            suggestions.innerHTML = results.map(r => `
+                                <div class="autocomplete-item" onclick="selectAddress('${inputId}', '${suggestionsId}', '${r.display_name.replace(/'/g, "\\'")}', ${r.lat}, ${r.lon})">
+                                    ${r.display_name}
+                                </div>
+                            `).join('');
+                            suggestions.style.display = 'block';
+                        } else {
+                            suggestions.style.display = 'none';
+                        }
+                    } catch (e) {
+                        console.error('Autocomplete error:', e);
+                    }
+                }, 500);
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!input.contains(e.target) && !suggestions.contains(e.target)) {
+                    suggestions.style.display = 'none';
+                }
+            });
+        }
+
+        function selectAddress(inputId, suggestionsId, address, lat, lon) {
+            document.getElementById(inputId).value = address;
+            document.getElementById(inputId).dataset.lat = lat;
+            document.getElementById(inputId).dataset.lon = lon;
+            document.getElementById(suggestionsId).style.display = 'none';
+        }
+
+        // Initialize autocomplete on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            updateClock();
+            setInterval(updateClock, 1000);
+            loadAllData();
+            loadSavedPreferences();
+            refreshInterval = setInterval(loadAllData, 30000);
+
+            // Setup address autocomplete
+            setupAddressAutocomplete('home-address', 'home-suggestions');
+            setupAddressAutocomplete('cafe-address', 'cafe-suggestions');
+            setupAddressAutocomplete('work-address', 'work-suggestions');
+        });
+
+        // ============= SIMPLIFIED JOURNEY PLANNER =============
+        async function calculateSimpleRoute() {
+            const btn = document.getElementById('calc-btn-text');
+            btn.textContent = '⏳ Calculating...';
+
+            const homeAddr = document.getElementById('home-address').value;
+            const cafeAddr = document.getElementById('cafe-address').value;
+            const workAddr = document.getElementById('work-address').value;
+            const arrivalTime = document.getElementById('arrival-time').value;
+
+            if (!homeAddr || !workAddr) {
+                showMessage('planner-message', 'Please enter home and work addresses', 'error');
+                btn.textContent = '🗺️ Calculate Route';
+                return;
+            }
+
+            try {
+                // Save preferences
+                localStorage.setItem('ptv-journey-addresses', JSON.stringify({
+                    homeAddress: homeAddr,
+                    cafeAddress: cafeAddr,
+                    workAddress: workAddr,
+                    arrivalTime: arrivalTime
+                }));
+
+                // Call simplified route planning endpoint
+                const response = await fetch(BASE_URL + '/admin/route/quick-plan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        homeAddress: homeAddr,
+                        cafeAddress: cafeAddr,
+                        workAddress: workAddr,
+                        arrivalTime: arrivalTime
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage('planner-message', '✅ Route calculated!', 'success');
+                    displayRouteResult(result);
+                } else {
+                    showMessage('planner-message', result.error || 'Failed to calculate route', 'error');
+                }
+            } catch (e) {
+                showMessage('planner-message', 'Error: ' + e.message, 'error');
+            }
+
+            btn.textContent = '🗺️ Calculate Route';
+        }
+
+        function displayRouteResult(result) {
+            const journey = result.journey;
+
+            if (!journey) {
+                return;
+            }
+
+            // Show journey details
+            document.getElementById('journey-result').style.display = 'block';
+            document.getElementById('address-card').style.display = 'none';
+
+            let html = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                    <div style="background: rgba(34, 197, 94, 0.2); padding: 20px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 14px; opacity: 0.8; margin-bottom: 5px;">LEAVE HOME</div>
+                        <div style="font-size: 32px; font-weight: 700;">${journey.summary?.must_leave_home || '--:--'}</div>
+                    </div>
+                    <div style="background: rgba(99, 102, 241, 0.2); padding: 20px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 14px; opacity: 0.8; margin-bottom: 5px;">ARRIVE WORK</div>
+                        <div style="font-size: 32px; font-weight: 700;">${journey.summary?.arrival_at_work || '--:--'}</div>
+                    </div>
+                </div>
+            `;
+
+            // Coffee decision
+            if (journey.coffee_decision) {
+                const canGetCoffee = journey.coffee_decision.can_get_coffee;
+                html += `
+                    <div style="background: ${canGetCoffee ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)'}; padding: 20px; border-radius: 12px; margin-bottom: 20px; text-align: center;">
+                        <div style="font-size: 24px; font-weight: 700; margin-bottom: 10px;">
+                            ${canGetCoffee ? '☕ YES - YOU HAVE TIME FOR COFFEE!' : '⚡ NO - GO DIRECT TO WORK'}
+                        </div>
+                        <div style="opacity: 0.9;">${journey.coffee_decision.message || ''}</div>
+                    </div>
+                `;
+            }
+
+            // Journey segments
+            if (journey.segments && journey.segments.length > 0) {
+                html += '<div style="margin-top: 20px;"><div style="font-weight: 600; margin-bottom: 15px; font-size: 16px;">Journey Timeline:</div>';
+                journey.segments.forEach(seg => {
+                    const icon = seg.type === 'walk' ? '🚶' : seg.type === 'coffee' ? '☕' : seg.type === 'train' ? '🚆' : seg.type === 'tram' ? '🚊' : seg.type === 'bus' ? '🚌' : '⏱️';
+                    html += `
+                        <div style="display: flex; align-items: center; gap: 15px; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 10px;">
+                            <div style="font-size: 24px;">${icon}</div>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 500;">${seg.from || seg.location || ''} ${seg.to ? '→ ' + seg.to : ''}</div>
+                                <div style="font-size: 13px; opacity: 0.7;">${seg.type} · ${seg.duration} min ${seg.departure ? '· ' + seg.departure : ''}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            }
+
+            document.getElementById('journey-result-content').innerHTML = html;
+            window.scrollTo({ top: document.getElementById('journey-result').offsetTop - 20, behavior: 'smooth' });
+        }
+
+        function showAddressEditor() {
+            document.getElementById('address-card').style.display = 'block';
+            document.getElementById('journey-result').style.display = 'none';
+            window.scrollTo({ top: document.getElementById('address-card').offsetTop - 20, behavior: 'smooth' });
+        }
+
+        // ============= SYSTEM ARCHITECTURE VISUALIZATION =============
+        function showSystemArchitecture() {
+            const viz = document.getElementById('architecture-viz');
+
+            if (viz.style.display === 'block') {
+                viz.style.display = 'none';
+                return;
+            }
+
+            viz.style.display = 'block';
+            viz.innerHTML = `
+                <div style="padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px;">
+                    <h3 style="text-align: center; margin-bottom: 25px; font-size: 20px;">🧠 Intelligent Data Flow</h3>
+
+                    <div class="arch-node">
+                        <div class="arch-node-title">1️⃣ User Input</div>
+                        <div class="arch-node-desc">You configure your home, cafe, and work addresses along with your desired arrival time</div>
+                    </div>
+
+                    <div class="arch-arrow">↓</div>
+
+                    <div class="arch-node">
+                        <div class="arch-node-title">2️⃣ Address Geocoding</div>
+                        <div class="arch-node-desc">
+                            <strong>OpenStreetMap Nominatim</strong> converts your addresses to GPS coordinates<br>
+                            <em>Cached in memory for performance</em>
+                        </div>
+                    </div>
+
+                    <div class="arch-arrow">↓</div>
+
+                    <div class="arch-node">
+                        <div class="arch-node-title">3️⃣ Walking Distance Calculation</div>
+                        <div class="arch-node-desc">
+                            <strong>Haversine Formula</strong> calculates walking distances and times<br>
+                            Standard walking speed: 80m/min (4.8 km/h)
+                        </div>
+                    </div>
+
+                    <div class="arch-arrow">↓</div>
+
+                    <div class="arch-node">
+                        <div class="arch-node-title">4️⃣ Cafe Busy-ness Detection</div>
+                        <div class="arch-node-desc">
+                            <strong>Google Places API</strong> (if configured) provides real-time busy-ness<br>
+                            <strong>Fallback:</strong> Time-based inference (7-9am = 2× wait time, etc.)
+                        </div>
+                    </div>
+
+                    <div class="arch-arrow">↓</div>
+
+                    <div class="arch-node">
+                        <div class="arch-node-title">5️⃣ Transit Data Fetching</div>
+                        <div class="arch-node-desc">
+                            <strong>PTV GTFS-Realtime API</strong> provides live train/tram/bus departures<br>
+                            HMAC-SHA1 authentication · 25-second cache TTL
+                        </div>
+                    </div>
+
+                    <div class="arch-arrow">↓</div>
+
+                    <div class="arch-node">
+                        <div class="arch-node-title">6️⃣ Backward Time Calculation</div>
+                        <div class="arch-node-desc">
+                            System works <strong>backwards</strong> from your arrival time:<br>
+                            Arrival → subtract work walk → subtract transit → subtract cafe time → subtract walks → <strong>LEAVE HOME TIME</strong>
+                        </div>
+                    </div>
+
+                    <div class="arch-arrow">↓</div>
+
+                    <div class="arch-node">
+                        <div class="arch-node-title">7️⃣ Multi-Modal Route Optimization</div>
+                        <div class="arch-node-desc">
+                            <strong>Multi-Modal Router</strong> searches trains, trams, buses<br>
+                            Filters by ±10 min window · Returns best 2 options
+                        </div>
+                    </div>
+
+                    <div class="arch-arrow">↓</div>
+
+                    <div class="arch-node">
+                        <div class="arch-node-title">8️⃣ Coffee Decision</div>
+                        <div class="arch-node-desc">
+                            Compares available time vs required time (walk + coffee purchase + walk)<br>
+                            <strong>Result:</strong> ☕ YES or ⚡ NO
+                        </div>
+                    </div>
+
+                    <div class="arch-arrow">↓</div>
+
+                    <div class="arch-node">
+                        <div class="arch-node-title">9️⃣ Weather Integration</div>
+                        <div class="arch-node-desc">
+                            <strong>Bureau of Meteorology</strong> official JSON feeds<br>
+                            Updates every 30 min · 10-minute cache
+                        </div>
+                    </div>
+
+                    <div class="arch-arrow">↓</div>
+
+                    <div class="arch-node" style="border-color: #22c55e;">
+                        <div class="arch-node-title">🎯 Live Display</div>
+                        <div class="arch-node-desc">
+                            E-ink display shows:<br>
+                            • Current time & weather<br>
+                            • Coffee decision<br>
+                            • Next departures<br>
+                            • Service alerts<br>
+                            <br>
+                            <strong>Updates every 30 seconds</strong>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 25px; padding: 15px; background: rgba(99, 102, 241, 0.2); border-radius: 8px; text-align: center;">
+                        <strong>All data points work together intelligently to answer:</strong><br>
+                        <span style="font-size: 18px; display: block; margin-top: 10px;">
+                            ☕ "Can I get coffee, or should I go direct?"
+                        </span>
+                    </div>
+                </div>
+            `;
         }
     </script>
 </body>

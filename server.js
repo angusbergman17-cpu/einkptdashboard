@@ -1631,6 +1631,49 @@ app.get('/admin/route/quick-plan', async (req, res) => {
 });
 
 /**
+ * Quick Plan POST - accepts addresses directly
+ * POST /admin/route/quick-plan
+ */
+app.post('/admin/route/quick-plan', async (req, res) => {
+  try {
+    const { homeAddress, cafeAddress, workAddress, arrivalTime } = req.body;
+
+    if (!homeAddress || !workAddress) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required addresses',
+        message: 'Please provide home and work addresses'
+      });
+    }
+
+    // Get API credentials from preferences
+    const prefs = preferences.get();
+    const savedApi = prefs.api || {};
+
+    const plan = await smartPlanner.planJourney({
+      homeAddress,
+      workAddress,
+      cafeAddress: cafeAddress || null,
+      arrivalTime: arrivalTime || '09:00',
+      includeCoffee: !!cafeAddress,
+      api: {
+        key: savedApi.key,
+        token: savedApi.token
+      }
+    });
+
+    res.json(plan);
+
+  } catch (error) {
+    console.error('Quick plan POST error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+/**
  * Get the cached automatic journey plan
  * GET /admin/route/auto
  */
