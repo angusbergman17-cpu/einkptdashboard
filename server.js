@@ -11,6 +11,7 @@ import 'dotenv/config';
 import express from 'express';
 import fs from 'fs/promises';
 import path from 'path';
+import { execSync } from 'child_process';
 import config from './config.js';
 import { getSnapshot } from './data-scraper.js';
 import CoffeeDecision from './coffee-decision.js';
@@ -368,6 +369,28 @@ app.get('/api/keepalive', (req, res) => {
     timestamp: new Date().toISOString(),
     devices: devices.size
   });
+});
+
+// Version control endpoint
+app.get('/api/version', (req, res) => {
+  try {
+    const hash = execSync('git rev-parse --short HEAD', { encoding: 'utf-8' }).trim();
+    const date = execSync('git log -1 --format="%ci"', { encoding: 'utf-8' }).trim().split(' ')[0];
+    res.json({
+      hash,
+      date,
+      fullHash: execSync('git rev-parse HEAD', { encoding: 'utf-8' }).trim(),
+      message: execSync('git log -1 --format="%s"', { encoding: 'utf-8' }).trim()
+    });
+  } catch (error) {
+    // Fallback if not in a git repository
+    res.json({
+      hash: 'dev',
+      date: new Date().toISOString().split('T')[0],
+      fullHash: 'development',
+      message: 'Development build'
+    });
+  }
 });
 
 // Status endpoint

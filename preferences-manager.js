@@ -87,11 +87,11 @@ class PreferencesManager {
         }
       },
 
-      // PTV API credentials
+      // Transport Victoria API credentials
       api: {
         key: process.env.ODATA_API_KEY || '',
         token: process.env.ODATA_TOKEN || '',
-        baseUrl: 'https://timetableapi.ptv.vic.gov.au'
+        baseUrl: 'https://opendata.transport.vic.gov.au'
       },
 
       // Display preferences
@@ -286,10 +286,10 @@ class PreferencesManager {
     // Check API credentials
     const api = this.getApiCredentials();
     if (!api.key) {
-      errors.push('PTV API Key is required');
+      errors.push('Transport Victoria API Key is required');
     }
     if (!api.token) {
-      errors.push('PTV API Token is required');
+      errors.push('Transport Victoria API Token is required');
     }
 
     // Check journey preferences

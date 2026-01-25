@@ -1,7 +1,7 @@
 /**
  * Smart Route Planner
  * Calculates optimal multi-segment journey: Home → Coffee → Work
- * Uses real PTV data and walking times to ensure on-time arrival
+ * Uses real Transport Victoria data and walking times to ensure on-time arrival
  * Integrates live cafe busy-ness detection for accurate coffee wait times
  *
  * Copyright (c) 2026 Angus Bergman

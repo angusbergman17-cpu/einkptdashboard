@@ -544,6 +544,34 @@
             margin: 5px 0;
             opacity: 0.6;
         }
+
+        /* Version control footer */
+        .version-footer {
+            margin-top: 30px;
+            padding: 15px;
+            background: #f7fafc;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+            font-size: 11px;
+            color: #718096;
+            font-family: 'Courier New', monospace;
+        }
+
+        .version-footer .version-label {
+            font-weight: 600;
+            color: #4a5568;
+            margin-right: 8px;
+        }
+
+        .version-footer .version-value {
+            color: #2d3748;
+        }
+
+        .version-footer .separator {
+            margin: 0 10px;
+            color: #cbd5e0;
+        }
     </style>
 </head>
 <body>
@@ -814,7 +842,7 @@
                     <div><strong>Data Sources:</strong></div>
                     <div style="opacity: 0.9; margin-top: 5px;">
                         • Bureau of Meteorology (Official JSON Feeds)<br>
-                        • PTV GTFS-Realtime API<br>
+                        • Transport Victoria GTFS-Realtime API<br>
                         • OpenStreetMap Nominatim<br>
                         • Google Places API (Optional)
                     </div>
@@ -822,13 +850,54 @@
             </div>
         </div>
 
+        <!-- Version Control Footer -->
+        <div class="version-footer">
+            <span class="version-label">Version:</span>
+            <span class="version-value" id="versionHash">Loading...</span>
+            <span class="separator">•</span>
+            <span class="version-label">Build:</span>
+            <span class="version-value" id="buildDate">Loading...</span>
+            <span class="separator">•</span>
+            <span class="version-value">© 2026 Angus Bergman</span>
+        </div>
+
         <!-- Footer -->
         <div class="footer">
-            <p><a href="/admin/live-display" target="_blank">Live Display</a> · <a href="/preview" target="_blank">E-Ink Preview</a> · <a href="/api/dashboard" target="_blank">HTML Dashboard</a></p>
+            <p><a href="/admin/live-display" target="_blank">Live Display</a> · <a href="/preview" target="_blank">E-Ink Preview</a> · <a href="/api/dashboard" target="_blank">HTML Dashboard</a> · <a href="/journey" target="_blank">Journey Visualizer</a></p>
             <p style="margin-top: 15px; font-size: 12px; opacity: 0.7;">
                 © 2026 Angus Bergman. All rights reserved.<br>
                 PTV-TRMNL - Intelligent Transit Display System
             </p>
+            <div style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px; font-size: 12px; line-height: 1.7;">
+                <div style="font-weight: 600; margin-bottom: 8px; font-size: 13px;">📄 License Information</div>
+                <p style="margin-bottom: 10px;">
+                    This software, including all code, architecture, and documentation, is created by <strong>Angus Bergman</strong> and is licensed under:
+                </p>
+                <p style="margin-bottom: 10px;">
+                    <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" style="color: #667eea; text-decoration: none; font-weight: 600;">
+                        Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)
+                    </a>
+                </p>
+                <div style="padding: 10px; background: rgba(0,0,0,0.1); border-radius: 6px; margin-top: 10px;">
+                    <div style="font-weight: 600; margin-bottom: 6px;">✅ You ARE free to:</div>
+                    <ul style="margin-left: 20px; margin-bottom: 10px;">
+                        <li>Use this software for personal, non-commercial purposes</li>
+                        <li>Modify and adapt the code for your own use</li>
+                        <li>Share the software with proper attribution</li>
+                        <li>Study how it works and learn from it</li>
+                    </ul>
+                    <div style="font-weight: 600; margin-bottom: 6px;">❌ You are NOT allowed to:</div>
+                    <ul style="margin-left: 20px;">
+                        <li>Use this software for commercial purposes without permission</li>
+                        <li>Sell or profit from this software or derivatives</li>
+                        <li>Remove or obscure attribution to Angus Bergman</li>
+                        <li>Claim this work as your own</li>
+                    </ul>
+                </div>
+                <p style="margin-top: 10px; font-size: 11px; opacity: 0.8;">
+                    For commercial licensing inquiries, please contact the author.
+                </p>
+            </div>
         </div>
     </div>
 
@@ -841,8 +910,23 @@
             setInterval(updateClock, 1000);
             loadAllData();
             loadSavedPreferences();
+            loadVersionInfo();
             refreshInterval = setInterval(loadAllData, 30000);
         });
+
+        // Load version control info
+        function loadVersionInfo() {
+            fetch('/api/version')
+                .then(r => r.json())
+                .then(v => {
+                    document.getElementById('versionHash').textContent = v.hash || 'dev';
+                    document.getElementById('buildDate').textContent = v.date || new Date().toISOString().split('T')[0];
+                })
+                .catch(() => {
+                    document.getElementById('versionHash').textContent = 'dev';
+                    document.getElementById('buildDate').textContent = new Date().toISOString().split('T')[0];
+                });
+        }
 
         function showTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));

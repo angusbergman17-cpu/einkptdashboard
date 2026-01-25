@@ -24,7 +24,7 @@ export default {
   // These are example Victorian station names - configure for your network
   targetStopNames: [],
 
-  // PTV Open Data GTFS-R feed endpoints (Victorian public transport)
+  // Transport Victoria Open Data GTFS-R feed endpoints (Victorian public transport)
   // For other regions, replace with your local transit authority's GTFS feeds
   feeds: {
     metro: {

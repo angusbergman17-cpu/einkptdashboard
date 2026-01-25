@@ -71,20 +71,20 @@ try {
   console.log('');
 }
 
-// ========== PTV API TEST ==========
+// ========== Transport Victoria API TEST ==========
 console.log('═══════════════════════════════════════════════════════════════');
-console.log('3. PTV OPEN DATA API (GTFS Realtime)');
+console.log('3. TRANSPORT VICTORIA OPEN DATA API (GTFS Realtime)');
 console.log('═══════════════════════════════════════════════════════════════');
 console.log('');
 
 try {
-  console.log('Fetching transport data from PTV API...');
+  console.log('Fetching transport data from Transport Victoria API...');
   console.log(`Using token: ${apiToken.substring(0, 30)}...`);
   console.log('');
 
   const snapshot = await getSnapshot(apiToken);
 
-  console.log('✅ PTV API Fetch: SUCCESS');
+  console.log('✅ Transport Victoria API Fetch: SUCCESS');
   console.log('');
   console.log('─────────────────────────────────────────────────────────────');
   console.log('METRO TRAINS (Origin Station → City)');
@@ -348,7 +348,7 @@ try {
   console.log('');
 
 } catch (error) {
-  console.log('❌ PTV API Fetch: FAILED');
+  console.log('❌ Transport Victoria API Fetch: FAILED');
   console.log('');
   console.log('Error Details:');
   console.log(`  Message: ${error.message}`);
@@ -358,7 +358,7 @@ try {
   console.log('  1. Check ODATA_TOKEN is set correctly in .env');
   console.log('  2. Verify token is valid (not expired)');
   console.log('  3. Check internet connection');
-  console.log('  4. Verify PTV API endpoint is accessible');
+  console.log('  4. Verify Transport Victoria API endpoint is accessible');
   console.log('');
 }
 
@@ -369,7 +369,7 @@ console.log('══════════════════════�
 console.log('');
 console.log('Data Pipeline:');
 console.log('');
-console.log('  [PTV API]');
+console.log('  [Transport Victoria API]');
 console.log('      ↓ (HTTPS + JWT Token)');
 console.log('  [data-scraper.js]');
 console.log('      ↓ (GTFS Realtime Protobuf → JSON)');
@@ -400,7 +400,7 @@ console.log('  • Firmware polls:    Every 30 seconds');
 console.log('  • Server cache:      25 seconds');
 console.log('  • Weather cache:     15 minutes');
 console.log('  • BOM updates:       ~30 minutes');
-console.log('  • PTV GTFS updates:  Real-time (sub-minute)');
+console.log('  • Transport Victoria GTFS updates:  Real-time (sub-minute)');
 console.log('');
 console.log('═══════════════════════════════════════════════════════════════');
 console.log('END OF DATA PIPELINE VALIDATION REPORT');
