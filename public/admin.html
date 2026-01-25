@@ -620,17 +620,6 @@
             <div class="date-display" id="current-date">Loading...</div>
         </div>
 
-        <!-- Setup Wizard Link (Prominent) -->
-        <div style="margin: 0 20px 15px 20px; padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; text-align: center;">
-            <a href="/setup" style="color: white; text-decoration: none; display: block;">
-                <div style="font-size: 20px; font-weight: 700; margin-bottom: 5px;">
-                    🚀 First Time Setup / Configuration Wizard
-                </div>
-                <div style="font-size: 13px; opacity: 0.9;">
-                    Start here to configure your state, transit authority, and journey preferences
-                </div>
-            </a>
-        </div>
 
         <!-- Navigation -->
         <div class="nav-tabs">
@@ -646,164 +635,72 @@
             <div class="card" style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-left: 4px solid #667eea;">
                 <div class="card-header">
                     <span class="card-icon">🚀</span>
-                    <h2>Quick Setup Wizard</h2>
+                    <h2>Journey Setup</h2>
                 </div>
-                <p style="margin-bottom: 20px; opacity: 0.9; font-size: 14px;">
-                    Get started in 4 easy steps. Configure your location, addresses, transit routes, and API credentials.
+                <p style="margin-bottom: 25px; opacity: 0.9; font-size: 14px;">
+                    Enter your addresses and arrival time. We'll automatically detect nearby transit stops, select the best route, and start journey planning.
                 </p>
 
-                <!-- Setup Progress Indicator -->
-                <div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 30px;">
-                    <div id="setup-step-1" class="step" style="width: 40px; height: 40px; border-radius: 50%; background: #667eea; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600;">1</div>
-                    <div id="setup-step-2" class="step" style="width: 40px; height: 40px; border-radius: 50%; background: #e2e8f0; color: #2d3748; display: flex; align-items: center; justify-content: center; font-weight: 600;">2</div>
-                    <div id="setup-step-3" class="step" style="width: 40px; height: 40px; border-radius: 50%; background: #e2e8f0; color: #2d3748; display: flex; align-items: center; justify-content: center; font-weight: 600;">3</div>
-                    <div id="setup-step-4" class="step" style="width: 40px; height: 40px; border-radius: 50%; background: #e2e8f0; color: #2d3748; display: flex; align-items: center; justify-content: center; font-weight: 600;">4</div>
-                </div>
-
-                <!-- Step 1: Addresses -->
-                <div id="setup-content-1" class="setup-step-content">
-                    <h3 style="margin-bottom: 15px;">📍 Step 1: Your Addresses</h3>
-                    <p style="color: #718096; margin-bottom: 20px; font-size: 14px;">
-                        Enter your home and work addresses. We'll automatically detect your state and transit authority.
-                    </p>
-
+                <!-- Single-Step Form -->
+                <div style="max-width: 600px; margin: 0 auto;">
                     <div class="form-group" style="position: relative;">
-                        <label class="form-label">🏠 Home Address</label>
-                        <input type="text" id="setup-home-address" class="form-input" placeholder="Start typing your home address..." autocomplete="off">
+                        <label class="form-label">🏠 Home Address *</label>
+                        <input type="text" id="setup-home-address" class="form-input" placeholder="Start typing your home address..." autocomplete="off" required>
                         <div id="setup-home-suggestions" class="autocomplete-dropdown"></div>
+                        <small style="color: rgba(255,255,255,0.6); font-size: 11px; display: block; margin-top: 5px;">
+                            We'll detect your state and find nearby transit stops automatically
+                        </small>
                     </div>
 
                     <div class="form-group" style="position: relative;">
-                        <label class="form-label">💼 Work Address</label>
-                        <input type="text" id="setup-work-address" class="form-input" placeholder="Start typing your work address..." autocomplete="off">
+                        <label class="form-label">💼 Work Address *</label>
+                        <input type="text" id="setup-work-address" class="form-input" placeholder="Start typing your work address..." autocomplete="off" required>
                         <div id="setup-work-suggestions" class="autocomplete-dropdown"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">⏰ Arrival Time at Work *</label>
+                        <input type="time" id="setup-arrival-time" class="form-input" value="09:00" required>
                     </div>
 
                     <div class="form-group" style="position: relative;">
                         <label class="form-label">☕ Favorite Cafe (Optional)</label>
                         <input type="text" id="setup-cafe-address" class="form-input" placeholder="Start typing cafe name or address..." autocomplete="off">
                         <div id="setup-cafe-suggestions" class="autocomplete-dropdown"></div>
-                    </div>
-
-                    <div id="setup-step-1-message" class="message" style="display: none;"></div>
-                    <button class="btn btn-block" onclick="setupNextStep(2)">Next: Transit Routes →</button>
-                </div>
-
-                <!-- Step 2: Transit Routes -->
-                <div id="setup-content-2" class="setup-step-content" style="display: none;">
-                    <h3 style="margin-bottom: 15px;">🚆 Step 2: Transit Route</h3>
-                    <p style="color: #718096; margin-bottom: 20px; font-size: 14px;">
-                        Configure your primary transit route. Add a second leg if you need to transfer.
-                    </p>
-
-                    <div class="form-group">
-                        <label class="form-label">Transit Mode</label>
-                        <select id="setup-mode1-type" class="form-input">
-                            <option value="0">Train</option>
-                            <option value="1">Tram</option>
-                            <option value="2">Bus</option>
-                            <option value="3">V/Line</option>
-                        </select>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">From Station</label>
-                            <input type="text" id="setup-mode1-origin" class="form-input" placeholder="Origin station">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">To Station</label>
-                            <input type="text" id="setup-mode1-destination" class="form-input" placeholder="Destination station">
-                        </div>
+                        <small style="color: rgba(255,255,255,0.6); font-size: 11px; display: block; margin-top: 5px;">
+                            Include a coffee stop in your morning routine
+                        </small>
                     </div>
 
                     <div class="checkbox-group">
-                        <input type="checkbox" id="setup-add-mode2" onchange="toggleSetupMode2()">
-                        <label for="setup-add-mode2">Add a second transit leg (e.g., train then tram)</label>
+                        <input type="checkbox" id="setup-include-coffee" checked>
+                        <label for="setup-include-coffee">Factor coffee time into journey planning (5 minutes)</label>
                     </div>
 
-                    <div id="setup-mode2-section" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.2);">
-                        <div class="form-group">
-                            <label class="form-label">Second Transit Mode</label>
-                            <select id="setup-mode2-type" class="form-input">
-                                <option value="0">Train</option>
-                                <option value="1">Tram</option>
-                                <option value="2">Bus</option>
-                                <option value="3">V/Line</option>
-                            </select>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">From Station</label>
-                                <input type="text" id="setup-mode2-origin" class="form-input" placeholder="Transfer station">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">To Station</label>
-                                <input type="text" id="setup-mode2-destination" class="form-input" placeholder="Final destination">
-                            </div>
-                        </div>
+                    <div id="setup-message" class="message" style="display: none; margin-top: 20px;"></div>
+                    <div id="setup-progress" style="display: none; margin-top: 20px; padding: 15px; background: rgba(102, 126, 234, 0.2); border-radius: 8px; border-left: 3px solid #667eea;">
+                        <div style="font-weight: 600; margin-bottom: 10px;">🔄 Setting up your journey...</div>
+                        <div id="setup-progress-text" style="font-size: 13px; opacity: 0.9;"></div>
                     </div>
 
-                    <div style="display: flex; gap: 10px; margin-top: 20px;">
-                        <button class="btn btn-secondary" onclick="setupPrevStep(1)" style="flex: 1;">← Back</button>
-                        <button class="btn" onclick="setupNextStep(3)" style="flex: 2;">Next: Arrival Time →</button>
-                    </div>
-                </div>
+                    <button class="btn btn-block btn-success" onclick="startJourneyPlanning()" style="margin-top: 25px; font-size: 16px; padding: 15px;">
+                        ✨ Start Journey Planning
+                    </button>
 
-                <!-- Step 3: Journey Preferences -->
-                <div id="setup-content-3" class="setup-step-content" style="display: none;">
-                    <h3 style="margin-bottom: 15px;">⏰ Step 3: Journey Preferences</h3>
-                    <p style="color: #718096; margin-bottom: 20px; font-size: 14px;">
-                        When do you need to arrive at work? Should we include coffee stops?
-                    </p>
-
-                    <div class="form-group">
-                        <label class="form-label">Desired Arrival Time at Work</label>
-                        <input type="time" id="setup-arrival-time" class="form-input" value="09:00">
-                    </div>
-
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="setup-include-coffee" checked onchange="toggleSetupCoffeeTime()">
-                        <label for="setup-include-coffee">Include coffee stops in journey planning</label>
-                    </div>
-
-                    <div id="setup-coffee-time-section" class="form-group">
-                        <label class="form-label">Estimated Coffee Prep Time (minutes)</label>
-                        <input type="number" id="setup-coffee-time" class="form-input" value="5" min="2" max="15">
-                    </div>
-
-                    <div style="display: flex; gap: 10px; margin-top: 20px;">
-                        <button class="btn btn-secondary" onclick="setupPrevStep(2)" style="flex: 1;">← Back</button>
-                        <button class="btn" onclick="setupNextStep(4)" style="flex: 2;">Next: API Setup →</button>
-                    </div>
-                </div>
-
-                <!-- Step 4: API Configuration -->
-                <div id="setup-content-4" class="setup-step-content" style="display: none;">
-                    <h3 style="margin-bottom: 15px;">🔑 Step 4: API Credentials</h3>
-                    <p style="color: #718096; margin-bottom: 20px; font-size: 14px;">
-                        Enter your API credentials from <a href="https://data.vic.gov.au/data/dataset/ptv-timetable-api" target="_blank" style="color: #667eea;">OpenData Transport Victoria</a>
-                    </p>
-
-                    <div id="setup-detected-authority" class="message message-info" style="display: none;"></div>
-
-                    <div class="form-group">
-                        <label class="form-label">API Key</label>
-                        <input type="text" id="setup-api-key" class="form-input" placeholder="Your API Key from OpenData Transport Victoria">
-                        <small style="color: rgba(255,255,255,0.6); font-size: 12px;">Previously called "Developer ID"</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">API Token</label>
-                        <input type="password" id="setup-api-token" class="form-input" placeholder="Your API Token">
-                    </div>
-
-                    <div id="setup-step-4-message" class="message" style="display: none;"></div>
-
-                    <div style="display: flex; gap: 10px; margin-top: 20px;">
-                        <button class="btn btn-secondary" onclick="setupPrevStep(3)" style="flex: 1;">← Back</button>
-                        <button class="btn btn-success" onclick="completeSetup()" style="flex: 2;">✓ Complete Setup</button>
+                    <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+                        <p style="font-size: 13px; opacity: 0.7; margin-bottom: 10px;">
+                            <strong>What happens next?</strong>
+                        </p>
+                        <ul style="text-align: left; font-size: 12px; opacity: 0.8; line-height: 1.8; max-width: 450px; margin: 0 auto;">
+                            <li>✅ Your state will be auto-detected from your address</li>
+                            <li>✅ Nearby transit stops will be identified automatically</li>
+                            <li>✅ Best route mode (train/tram/bus) will be selected</li>
+                            <li>✅ Journey calculation will start immediately</li>
+                            <li>✅ Live updates will begin (every 2 minutes)</li>
+                        </ul>
+                        <p style="font-size: 12px; opacity: 0.7; margin-top: 15px;">
+                            Need API credentials? Add them in the <strong>Configuration</strong> tab for live transit data.
+                        </p>
                     </div>
                 </div>
             </div>
@@ -811,13 +708,27 @@
 
         <!-- Live Data Tab -->
         <div id="tab-live" class="tab-content active">
-            <!-- Configuration Status Banner -->
-            <div id="config-status-banner" style="margin-bottom: 20px; padding: 15px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-radius: 12px; border-left: 4px solid #667eea;">
-                <div style="font-weight: 700; margin-bottom: 8px; font-size: 14px;">📡 Live Data Configuration</div>
-                <div id="config-summary" style="font-size: 13px; opacity: 0.9; line-height: 1.6;">Loading configuration...</div>
+            <!-- Unconfigured Placeholder (shown until setup complete) -->
+            <div id="live-data-unconfigured" style="display: none; text-align: center; padding: 60px 20px;">
+                <div style="font-size: 60px; margin-bottom: 20px; opacity: 0.3;">🚆</div>
+                <h2 style="margin-bottom: 15px; opacity: 0.9;">Live Data Not Available Yet</h2>
+                <p style="opacity: 0.7; margin-bottom: 30px; max-width: 500px; margin-left: auto; margin-right: auto; line-height: 1.6;">
+                    Complete the journey setup first to see live transit data, departure times, and journey recommendations.
+                </p>
+                <button class="btn btn-primary" onclick="showTab('setup')" style="padding: 12px 30px; font-size: 16px;">
+                    → Go to Setup
+                </button>
             </div>
 
-            <div class="grid">
+            <!-- Live Data Content (shown after configuration) -->
+            <div id="live-data-configured">
+                <!-- Configuration Status Banner -->
+                <div id="config-status-banner" style="margin-bottom: 20px; padding: 15px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-radius: 12px; border-left: 4px solid #667eea;">
+                    <div style="font-weight: 700; margin-bottom: 8px; font-size: 14px;">📡 Live Data Configuration</div>
+                    <div id="config-summary" style="font-size: 13px; opacity: 0.9; line-height: 1.6;">Loading configuration...</div>
+                </div>
+
+                <div class="grid">
                 <!-- Train Departures -->
                 <div class="card">
                     <div class="card-header">
@@ -886,6 +797,7 @@
                 </div>
                 <div id="journey-summary"></div>
             </div>
+            </div><!-- end live-data-configured -->
         </div>
 
         <!-- Journey Planner Tab -->
@@ -978,12 +890,49 @@
 
         <!-- Configuration Tab -->
         <div id="tab-config" class="tab-content">
+            <!-- Data Sources Overview -->
+            <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-left: 4px solid #667eea;">
+                <div class="card-header">
+                    <span class="card-icon">🌐</span>
+                    <h2>Active Data Sources</h2>
+                </div>
+                <p style="margin-bottom: 20px; opacity: 0.9; font-size: 14px;">
+                    All external APIs and data sources currently used by the system
+                </p>
+                <div id="data-sources-list" style="display: grid; gap: 12px;">
+                    <!-- Will be populated dynamically -->
+                    <div style="padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px; text-align: center; opacity: 0.6;">
+                        Loading data sources...
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Configuration -->
+            <div class="card" style="margin-bottom: 20px;">
+                <div class="card-header">
+                    <span class="card-icon">👤</span>
+                    <h2>Your Journey Configuration</h2>
+                </div>
+                <p style="margin-bottom: 20px; opacity: 0.9; font-size: 14px;">
+                    Addresses, stops, and preferences you've entered
+                </p>
+                <div id="user-config-display" style="display: grid; gap: 15px;">
+                    <!-- Will be populated dynamically -->
+                    <div style="padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px; text-align: center; opacity: 0.6;">
+                        No configuration yet. Complete setup first.
+                    </div>
+                </div>
+            </div>
+
             <div class="grid">
                 <div class="card">
                     <div class="card-header">
                         <span class="card-icon">🔑</span>
-                        <h2>PTV API</h2>
+                        <h2>PTV API Credentials</h2>
                     </div>
+                    <p style="margin-bottom: 15px; opacity: 0.8; font-size: 13px;">
+                        Add credentials from <a href="https://data.vic.gov.au/data/dataset/ptv-timetable-api" target="_blank" style="color: #667eea;">OpenData Transport Victoria</a> for live transit data
+                    </p>
                     <div id="api-message"></div>
                     <div class="form-group">
                         <label class="form-label">API Key</label>
@@ -1690,10 +1639,25 @@
         }
 
         function updateSystemStatus(status) {
+            const isConfigured = status.configured;
+
+            // Control Live Data tab visibility based on configuration status
+            const liveDataUnconfigured = document.getElementById('live-data-unconfigured');
+            const liveDataConfigured = document.getElementById('live-data-configured');
+
+            if (liveDataUnconfigured && liveDataConfigured) {
+                if (isConfigured) {
+                    liveDataUnconfigured.style.display = 'none';
+                    liveDataConfigured.style.display = 'block';
+                } else {
+                    liveDataUnconfigured.style.display = 'block';
+                    liveDataConfigured.style.display = 'none';
+                }
+            }
+
             // Update configuration banner
             const configSummary = document.getElementById('config-summary');
             if (configSummary) {
-                const isConfigured = status.configured;
                 configSummary.innerHTML = `
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; font-size: 12px;">
                         <div><strong>Location:</strong> ${status.location.city}, ${status.location.state}</div>
@@ -1703,6 +1667,12 @@
                     </div>
                 `;
             }
+
+            // Update data sources list in Configuration tab
+            updateDataSourcesList(status.apis, status.location.state);
+
+            // Update user configuration display
+            updateUserConfigDisplay(status);
 
             // Update station names in live data widgets
             if (status.transitStations.mode1.origin !== 'Not configured') {
@@ -1730,6 +1700,170 @@
 
             // Update status badges
             updateStatusBadges(status);
+        }
+
+        function updateDataSourcesList(apis, state) {
+            const dataSourcesList = document.getElementById('data-sources-list');
+            if (!dataSourcesList) return;
+
+            const sources = [];
+
+            // Transit Authority API
+            sources.push(`
+                <div style="padding: 15px; background: rgba(102, 126, 234, 0.1); border-radius: 8px; border-left: 3px solid ${apis.transitAuthority.configured ? '#48bb78' : '#fc8181'};">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <div style="font-weight: 600; font-size: 14px;">🚆 ${apis.transitAuthority.name}</div>
+                        <span style="padding: 4px 10px; background: ${apis.transitAuthority.configured ? 'rgba(72, 187, 120, 0.2)' : 'rgba(252, 129, 129, 0.2)'}; border-radius: 12px; font-size: 11px; font-weight: 600; color: ${apis.transitAuthority.configured ? '#48bb78' : '#fc8181'};">
+                            ${apis.transitAuthority.configured ? '✓ Active' : '✗ Not Configured'}
+                        </span>
+                    </div>
+                    <div style="font-size: 12px; opacity: 0.8; margin-bottom: 5px;">
+                        <strong>Purpose:</strong> Real-time transit departures & route planning
+                    </div>
+                    <div style="font-size: 11px; opacity: 0.6;">${apis.transitAuthority.baseUrl || 'Configure in API Credentials section'}</div>
+                </div>
+            `);
+
+            // Nominatim/OpenStreetMap (always active)
+            sources.push(`
+                <div style="padding: 15px; background: rgba(16, 185, 129, 0.1); border-radius: 8px; border-left: 3px solid #10b981;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <div style="font-weight: 600; font-size: 14px;">🗺️ OpenStreetMap / Nominatim</div>
+                        <span style="padding: 4px 10px; background: rgba(72, 187, 120, 0.2); border-radius: 12px; font-size: 11px; font-weight: 600; color: #48bb78;">
+                            ✓ Always Active
+                        </span>
+                    </div>
+                    <div style="font-size: 12px; opacity: 0.8; margin-bottom: 5px;">
+                        <strong>Purpose:</strong> Address geocoding & location search
+                    </div>
+                    <div style="font-size: 11px; opacity: 0.6;">https://nominatim.openstreetmap.org</div>
+                </div>
+            `);
+
+            // Google Places (if configured)
+            if (apis.googlePlaces && apis.googlePlaces.configured) {
+                sources.push(`
+                    <div style="padding: 15px; background: rgba(251, 191, 36, 0.1); border-radius: 8px; border-left: 3px solid #fbbf24;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <div style="font-weight: 600; font-size: 14px;">📍 Google Places API</div>
+                            <span style="padding: 4px 10px; background: rgba(72, 187, 120, 0.2); border-radius: 12px; font-size: 11px; font-weight: 600; color: #48bb78;">
+                                ✓ Active
+                            </span>
+                        </div>
+                        <div style="font-size: 12px; opacity: 0.8; margin-bottom: 5px;">
+                            <strong>Purpose:</strong> Enhanced geocoding, cafe busy-ness detection
+                        </div>
+                        <div style="font-size: 11px; opacity: 0.6;">Google Maps Platform</div>
+                    </div>
+                `);
+            }
+
+            // BOM Weather
+            if (apis.bom) {
+                sources.push(`
+                    <div style="padding: 15px; background: rgba(72, 187, 120, 0.1); border-radius: 8px; border-left: 3px solid #48bb78;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <div style="font-weight: 600; font-size: 14px;">🌤️ Bureau of Meteorology</div>
+                            <span style="padding: 4px 10px; background: rgba(72, 187, 120, 0.2); border-radius: 12px; font-size: 11px; font-weight: 600; color: #48bb78;">
+                                ✓ Active
+                            </span>
+                        </div>
+                        <div style="font-size: 12px; opacity: 0.8; margin-bottom: 5px;">
+                            <strong>Purpose:</strong> Local weather forecasts & conditions
+                        </div>
+                        <div style="font-size: 11px; opacity: 0.6;">http://www.bom.gov.au</div>
+                    </div>
+                `);
+            }
+
+            // Fallback Timetables
+            sources.push(`
+                <div style="padding: 15px; background: rgba(139, 92, 246, 0.1); border-radius: 8px; border-left: 3px solid #8b5cf6;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <div style="font-weight: 600; font-size: 14px;">🗃️ Fallback Timetables</div>
+                        <span style="padding: 4px 10px; background: rgba(72, 187, 120, 0.2); border-radius: 12px; font-size: 11px; font-weight: 600; color: #48bb78;">
+                            ✓ Ready
+                        </span>
+                    </div>
+                    <div style="font-size: 12px; opacity: 0.8; margin-bottom: 5px;">
+                        <strong>Purpose:</strong> Offline transit stop data for all Australian states
+                    </div>
+                    <div style="font-size: 11px; opacity: 0.6;">
+                        Current state: <strong>${state || 'Not detected'}</strong> • 80+ stops across VIC, NSW, QLD, SA, WA, TAS, ACT, NT
+                    </div>
+                </div>
+            `);
+
+            dataSourcesList.innerHTML = sources.join('');
+        }
+
+        function updateUserConfigDisplay(status) {
+            const userConfigDisplay = document.getElementById('user-config-display');
+            if (!userConfigDisplay) return;
+
+            if (!status.configured) {
+                userConfigDisplay.innerHTML = `
+                    <div style="padding: 30px; background: rgba(255,255,255,0.05); border-radius: 8px; text-align: center;">
+                        <div style="font-size: 40px; opacity: 0.3; margin-bottom: 15px;">⚙️</div>
+                        <div style="opacity: 0.7; margin-bottom: 15px;">No configuration yet</div>
+                        <button class="btn btn-primary" onclick="showTab('setup')">→ Go to Setup</button>
+                    </div>
+                `;
+                return;
+            }
+
+            const config = [];
+
+            // Addresses
+            config.push(`
+                <div style="padding: 15px; background: rgba(102, 126, 234, 0.1); border-radius: 8px;">
+                    <div style="font-weight: 600; margin-bottom: 10px; font-size: 14px;">📍 Addresses</div>
+                    <div style="font-size: 13px; line-height: 1.8;">
+                        <div><strong>Home:</strong> ${status.addresses.home || 'Not set'}</div>
+                        <div><strong>Work:</strong> ${status.addresses.work || 'Not set'}</div>
+                        ${status.addresses.cafe ? `<div><strong>Cafe:</strong> ${status.addresses.cafe}</div>` : ''}
+                    </div>
+                </div>
+            `);
+
+            // Transit Stops
+            config.push(`
+                <div style="padding: 15px; background: rgba(64, 220, 165, 0.1); border-radius: 8px;">
+                    <div style="font-weight: 600; margin-bottom: 10px; font-size: 14px;">🚉 Transit Stops</div>
+                    <div style="font-size: 13px; line-height: 1.8;">
+                        <div><strong>From:</strong> ${status.transitStations.mode1.origin || 'Not set'}</div>
+                        <div><strong>To:</strong> ${status.transitStations.mode1.destination || 'Not set'}</div>
+                        <div><strong>Mode:</strong> ${status.transitStations.mode1.type || 'Not set'}</div>
+                        ${status.transitStations.mode2 && status.transitStations.mode2.origin !== 'Not configured' ? `
+                            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1);">
+                                <strong>Transfer:</strong> ${status.transitStations.mode2.origin} → ${status.transitStations.mode2.destination} (${status.transitStations.mode2.type})
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `);
+
+            // Journey Preferences
+            config.push(`
+                <div style="padding: 15px; background: rgba(246, 173, 85, 0.1); border-radius: 8px;">
+                    <div style="font-weight: 600; margin-bottom: 10px; font-size: 14px;">⏰ Journey Preferences</div>
+                    <div style="font-size: 13px; line-height: 1.8;">
+                        <div><strong>Arrival Time:</strong> ${status.journey.arrivalTime || 'Not set'}</div>
+                        <div><strong>Coffee Stops:</strong> ${status.journey.coffeeEnabled ? '✓ Enabled' : '✗ Disabled'}</div>
+                        ${status.journey.walkingTimes ? `
+                            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1);">
+                                <strong>Walking Times:</strong><br>
+                                Home → Station: ${status.journey.walkingTimes.homeToStation || 'Calculating...'}<br>
+                                ${status.addresses.cafe ? `Home → Cafe: ${status.journey.walkingTimes.homeToCafe || 'Calculating...'}<br>` : ''}
+                                ${status.addresses.cafe ? `Cafe → Station: ${status.journey.walkingTimes.cafeToStation || 'Calculating...'}<br>` : ''}
+                                Station → Work: ${status.journey.walkingTimes.stationToWork || 'Calculating...'}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `);
+
+            userConfigDisplay.innerHTML = config.join('');
         }
 
         function updateApiStatusGrid(apis) {
@@ -2966,7 +3100,6 @@
             // Use defaults if not configured to show full architecture BEFORE user configuration
             const transitAuthority = preferences?.location?.transitAuthority || 'Auto-detected based on your state';
             const location = preferences?.location?.city ? `${preferences.location.city}, ${preferences.location.state}` : 'To be configured';
-            const hasGooglePlaces = !!process.env.GOOGLE_PLACES_API_KEY;
 
             vizDiv.innerHTML = `
                 <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px; border-radius: 12px; color: white;">
@@ -3140,62 +3273,99 @@
             section.style.display = checkbox.checked ? 'block' : 'none';
         }
 
-        async function completeSetup() {
-            const data = {
-                addresses: {
-                    home: document.getElementById('setup-home-address').value,
-                    work: document.getElementById('setup-work-address').value,
-                    cafe: document.getElementById('setup-cafe-address').value
-                },
-                journey: {
-                    arrivalTime: document.getElementById('setup-arrival-time').value,
-                    coffeeEnabled: document.getElementById('setup-include-coffee').checked,
-                    coffeeTime: parseInt(document.getElementById('setup-coffee-time').value) || 5,
-                    transitRoute: {
-                        numberOfModes: document.getElementById('setup-add-mode2').checked ? 2 : 1,
-                        mode1: {
-                            type: parseInt(document.getElementById('setup-mode1-type').value),
-                            originStation: { name: document.getElementById('setup-mode1-origin').value },
-                            destinationStation: { name: document.getElementById('setup-mode1-destination').value }
-                        }
-                    }
-                },
-                api: {
-                    key: document.getElementById('setup-api-key').value,
-                    token: document.getElementById('setup-api-token').value
-                }
-            };
+        async function startJourneyPlanning() {
+            // Validate required fields
+            const homeAddress = document.getElementById('setup-home-address').value.trim();
+            const workAddress = document.getElementById('setup-work-address').value.trim();
+            const arrivalTime = document.getElementById('setup-arrival-time').value;
+            const cafeAddress = document.getElementById('setup-cafe-address').value.trim();
+            const coffeeEnabled = document.getElementById('setup-include-coffee').checked;
 
-            // Add mode2 if enabled
-            if (data.journey.transitRoute.numberOfModes === 2) {
-                data.journey.transitRoute.mode2 = {
-                    type: parseInt(document.getElementById('setup-mode2-type').value),
-                    originStation: { name: document.getElementById('setup-mode2-origin').value },
-                    destinationStation: { name: document.getElementById('setup-mode2-destination').value }
-                };
+            if (!homeAddress) {
+                showMessage('setup-message', '❌ Please enter your home address', 'error');
+                return;
+            }
+            if (!workAddress) {
+                showMessage('setup-message', '❌ Please enter your work address', 'error');
+                return;
+            }
+            if (!arrivalTime) {
+                showMessage('setup-message', '❌ Please enter your arrival time', 'error');
+                return;
             }
 
+            // Hide any previous messages
+            document.getElementById('setup-message').style.display = 'none';
+
+            // Show progress indicator
+            const progressDiv = document.getElementById('setup-progress');
+            const progressText = document.getElementById('setup-progress-text');
+            progressDiv.style.display = 'block';
+            progressText.textContent = 'Validating addresses...';
+
             try {
-                const response = await fetch(BASE_URL + '/admin/preferences', {
+                // Prepare data for smart setup
+                const setupData = {
+                    addresses: {
+                        home: homeAddress,
+                        work: workAddress,
+                        cafe: cafeAddress || null
+                    },
+                    arrivalTime: arrivalTime,
+                    coffeeEnabled: coffeeEnabled
+                };
+
+                progressText.textContent = 'Detecting your state and nearby transit stops...';
+
+                // Call smart setup endpoint that will:
+                // 1. Geocode addresses
+                // 2. Detect state
+                // 3. Find nearby transit stops automatically
+                // 4. Select best route mode
+                // 5. Save configuration
+                // 6. Start auto-calculation
+                const response = await fetch(BASE_URL + '/admin/smart-setup', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
+                    body: JSON.stringify(setupData)
                 });
 
                 const result = await response.json();
 
                 if (result.success) {
-                    showMessage('setup-step-4-message', '✅ Setup complete! Redirecting to Live Data...', 'success');
+                    progressText.textContent = 'Route configured! Starting journey calculation...';
+
                     setTimeout(() => {
-                        showTab('live');
-                        loadAllData();
-                    }, 2000);
+                        progressDiv.style.display = 'none';
+                        showMessage('setup-message',
+                            `✅ Journey planning configured!<br>` +
+                            `📍 State: ${result.state || 'Detected'}<br>` +
+                            `🚉 Stops found: ${result.stopsFound || 'Auto-detected'}<br>` +
+                            `🚆 Route mode: ${result.routeMode || 'Optimized'}<br>` +
+                            `Redirecting to Live Data...`,
+                            'success'
+                        );
+
+                        setTimeout(() => {
+                            showTab('live');
+                            loadAllData();
+                        }, 3000);
+                    }, 1000);
                 } else {
-                    showMessage('setup-step-4-message', '❌ ' + (result.message || 'Setup failed'), 'error');
+                    progressDiv.style.display = 'none';
+                    showMessage('setup-message', '❌ ' + (result.message || 'Setup failed. Please try again.'), 'error');
                 }
             } catch (error) {
-                showMessage('setup-step-4-message', '❌ Error: ' + error.message, 'error');
+                progressDiv.style.display = 'none';
+                showMessage('setup-message', '❌ Error: ' + error.message, 'error');
+                console.error('Setup error:', error);
             }
+        }
+
+        // Legacy function for backward compatibility (no longer used in UI)
+        async function completeSetup() {
+            console.warn('completeSetup() is deprecated, use startJourneyPlanning() instead');
+            await startJourneyPlanning();
         }
 
         // ===== ADDRESS AUTOCOMPLETE FUNCTIONS =====

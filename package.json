@@ -1,7 +1,7 @@
 
 {
   "name": "ptv-trmnl-new",
-  "version": "2.5.0",
+  "version": "2.5.1",
   "description": "Smart Transit Dashboard for TRMNL e-ink display",
   "type": "module",
   "main": "server.js",

@@ -11,6 +11,7 @@
 import fetch from 'node-fetch';
 import crypto from 'crypto';
 import CafeBusyDetector from './cafe-busy-detector.js';
+import fallbackTimetables from './fallback-timetables.js';
 
 class SmartJourneyPlanner {
   constructor() {
@@ -383,6 +384,37 @@ class SmartJourneyPlanner {
   }
 
   /**
+   * Detect Australian state from coordinates using geographic bounding boxes
+   *
+   * @param {number} lat - Latitude
+   * @param {number} lon - Longitude
+   * @returns {string} State code (VIC, NSW, QLD, SA, WA, TAS, ACT, NT)
+   */
+  detectStateFromCoordinates(lat, lon) {
+    // Approximate bounding boxes for Australian states
+    const stateBounds = {
+      'VIC': { minLat: -39.2, maxLat: -34.0, minLon: 140.9, maxLon: 150.0 },
+      'NSW': { minLat: -37.5, maxLat: -28.2, minLon: 141.0, maxLon: 154.0 },
+      'QLD': { minLat: -29.0, maxLat: -9.0, minLon: 138.0, maxLon: 154.0 },
+      'SA': { minLat: -38.1, maxLat: -26.0, minLon: 129.0, maxLon: 141.0 },
+      'WA': { minLat: -35.1, maxLat: -13.7, minLon: 113.0, maxLon: 129.0 },
+      'TAS': { minLat: -43.7, maxLat: -39.6, minLon: 143.8, maxLon: 148.5 },
+      'NT': { minLat: -26.0, maxLat: -10.9, minLon: 129.0, maxLon: 138.0 },
+      'ACT': { minLat: -35.9, maxLat: -35.1, minLon: 148.7, maxLon: 149.4 }
+    };
+
+    for (const [state, bounds] of Object.entries(stateBounds)) {
+      if (lat >= bounds.minLat && lat <= bounds.maxLat &&
+          lon >= bounds.minLon && lon <= bounds.maxLon) {
+        return state;
+      }
+    }
+
+    console.log(`  ⚠️  Unable to determine state from coordinates (${lat}, ${lon}), defaulting to VIC`);
+    return 'VIC';
+  }
+
+  /**
    * Fallback stop detection when PTV API is not available
    *
    * NOTE FOR DEVELOPERS:
@@ -393,30 +425,52 @@ class SmartJourneyPlanner {
    * Stop IDs and coordinates should be obtained from your local transit authority's GTFS data.
    */
   fallbackStopDetection(location) {
-    // Example stops - replace with your local transit stops for production
-    // These are sample Victorian train/tram stops for demonstration
-    const majorStops = [
-      // Trains (route_type: 0) - Example Victorian stations
-      { stop_id: 19854, stop_name: 'City Central', lat: -37.8183, lon: 144.9671, route_type: 0 },
-      { stop_id: 19841, stop_name: 'Inner Suburb Station', lat: -37.8389, lon: 144.9927, route_type: 0 },
-      { stop_id: 19844, stop_name: 'Junction Station', lat: -37.8247, lon: 144.9898, route_type: 0 },
-      { stop_id: 19852, stop_name: 'Central Underground', lat: -37.8102, lon: 144.9629, route_type: 0 },
-      { stop_id: 19821, stop_name: 'Regional Hub', lat: -37.8183, lon: 144.9525, route_type: 0 },
-      { stop_id: 19848, stop_name: 'Government Station', lat: -37.8110, lon: 144.9729, route_type: 0 },
-      { stop_id: 19800, stop_name: 'North Station', lat: -37.8117, lon: 144.9560, route_type: 0 },
-      { stop_id: 19810, stop_name: 'South Station', lat: -37.8499, lon: 144.9925, route_type: 0 },
-      { stop_id: 19811, stop_name: 'East Station', lat: -37.8558, lon: 144.9917, route_type: 0 },
-      { stop_id: 19812, stop_name: 'West Station', lat: -37.8683, lon: 144.9933, route_type: 0 },
-      // Trams (route_type: 1) - Example tram/light rail stops
-      { stop_id: 2001, stop_name: 'City Square', lat: -37.8176, lon: 144.9679, route_type: 1 },
-      { stop_id: 2002, stop_name: 'Main Street Stop', lat: -37.8153, lon: 144.9664, route_type: 1 },
-      { stop_id: 2003, stop_name: 'Shopping District', lat: -37.8131, lon: 144.9653, route_type: 1 },
-      { stop_id: 2004, stop_name: 'University Stop', lat: -37.7982, lon: 144.9610, route_type: 1 },
-      { stop_id: 2005, stop_name: 'Cultural Precinct', lat: -37.8089, lon: 144.9639, route_type: 1 }
-    ];
+    // Detect state from coordinates
+    const state = this.detectStateFromCoordinates(location.lat, location.lon);
+    console.log(`  🗺️  Detected state: ${state} from coordinates (${location.lat}, ${location.lon})`);
+
+    // Get real stops for the detected state from fallback-timetables.js
+    const stateStops = fallbackTimetables.getFallbackStops(state);
+
+    if (!stateStops) {
+      console.log(`  ⚠️  No fallback stops available for state: ${state}`);
+      return [];
+    }
+
+    console.log(`  ✅ Using ${state} fallback stops from fallback-timetables.js`);
+
+    // Collect all stops from all available modes
+    const allStops = [];
+
+    // Mode name to route_type mapping
+    const modeToRouteType = {
+      'train': 0,
+      'tram': 1,
+      'bus': 2,
+      'lightrail': 1, // Light rail uses same route_type as tram
+      'ferry': 4
+    };
+
+    // Iterate through all available modes in this state
+    for (const [modeName, stops] of Object.entries(stateStops.modes || {})) {
+      const route_type = modeToRouteType[modeName] || 2; // Default to bus if unknown
+
+      for (const stop of stops) {
+        allStops.push({
+          stop_id: stop.id,
+          stop_name: stop.name,
+          lat: stop.lat,
+          lon: stop.lon,
+          route_type: route_type,
+          mode: modeName
+        });
+      }
+    }
+
+    console.log(`  📍 Found ${allStops.length} real stops across all modes in ${state}`);
 
     // Find closest stops within walking distance
-    const nearbyStops = majorStops
+    const nearbyStops = allStops
       .map(stop => {
         const walkingData = this.calculateWalkingTime(
           location.lat, location.lon,
@@ -424,20 +478,21 @@ class SmartJourneyPlanner {
         );
         return {
           ...stop,
-          route_type_name: this.ROUTE_TYPES[stop.route_type].name,
-          icon: this.ROUTE_TYPES[stop.route_type].icon,
+          route_type_name: this.ROUTE_TYPES[stop.route_type]?.name || stop.mode,
+          icon: this.ROUTE_TYPES[stop.route_type]?.icon || '🚏',
           distance: walkingData.distance,
           walking_time: walkingData.walkingTime,
-          priority: this.ROUTE_TYPES[stop.route_type].priority
+          priority: this.ROUTE_TYPES[stop.route_type]?.priority || 3
         };
       })
       .filter(stop => stop.distance <= this.MAX_WALKING_DISTANCE)
       .sort((a, b) => {
+        // Sort by priority first (train > tram > bus), then by distance
         if (a.priority !== b.priority) return a.priority - b.priority;
         return a.distance - b.distance;
       });
 
-    console.log(`  Found ${nearbyStops.length} stops (fallback mode)`);
+    console.log(`  ✅ Found ${nearbyStops.length} nearby stops within ${this.MAX_WALKING_DISTANCE}m (fallback mode)`);
 
     return nearbyStops;
   }

@@ -1841,6 +1841,161 @@ app.get('/admin/preferences/status', (req, res) => {
   }
 });
 
+// Smart Setup - Auto-detect stops and configure journey
+app.post('/admin/smart-setup', async (req, res) => {
+  try {
+    const { addresses, arrivalTime, coffeeEnabled } = req.body;
+
+    console.log('🚀 Smart setup initiated:', { addresses, arrivalTime, coffeeEnabled });
+
+    // Validate required fields
+    if (!addresses?.home || !addresses?.work || !arrivalTime) {
+      return res.status(400).json({
+        success: false,
+        message: 'Home address, work address, and arrival time are required'
+      });
+    }
+
+    // Step 1: Geocode addresses to get coordinates
+    console.log('  📍 Geocoding addresses...');
+    const homeGeocode = await geocodingService.geocode(addresses.home);
+    const workGeocode = await geocodingService.geocode(addresses.work);
+
+    if (!homeGeocode.success || !homeGeocode.location) {
+      return res.status(400).json({
+        success: false,
+        message: 'Could not geocode home address'
+      });
+    }
+
+    if (!workGeocode.success || !workGeocode.location) {
+      return res.status(400).json({
+        success: false,
+        message: 'Could not geocode work address'
+      });
+    }
+
+    const homeLocation = homeGeocode.location;
+    const workLocation = workGeocode.location;
+
+    console.log(`  ✅ Home: ${homeLocation.lat}, ${homeLocation.lon}`);
+    console.log(`  ✅ Work: ${workLocation.lat}, ${workLocation.lon}`);
+
+    // Step 2: Detect state from coordinates (using home address)
+    const state = smartJourneyPlanner.detectStateFromCoordinates(homeLocation.lat, homeLocation.lon);
+    console.log(`  🗺️  Detected state: ${state}`);
+
+    // Step 3: Find nearby stops using smart journey planner
+    console.log('  🔍 Finding nearby transit stops...');
+    const nearbyStopsHome = await smartJourneyPlanner.findNearbyStops(homeLocation);
+    const nearbyStopsWork = await smartJourneyPlanner.findNearbyStops(workLocation);
+
+    if (!nearbyStopsHome || nearbyStopsHome.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No transit stops found near your home address'
+      });
+    }
+
+    if (!nearbyStopsWork || nearbyStopsWork.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No transit stops found near your work address'
+      });
+    }
+
+    console.log(`  ✅ Found ${nearbyStopsHome.length} stops near home`);
+    console.log(`  ✅ Found ${nearbyStopsWork.length} stops near work`);
+
+    // Step 4: Auto-select best stops (highest priority = train, then tram, then bus)
+    const bestHomeStop = nearbyStopsHome[0]; // Already sorted by priority + distance
+    const bestWorkStop = nearbyStopsWork[0];
+
+    console.log(`  🚉 Selected home stop: ${bestHomeStop.stop_name} (${bestHomeStop.route_type_name})`);
+    console.log(`  🚉 Selected work stop: ${bestWorkStop.stop_name} (${bestWorkStop.route_type_name})`);
+
+    // Step 5: Determine transit route configuration
+    const transitRoute = {
+      numberOfModes: 1, // Start with single mode
+      mode1: {
+        type: bestHomeStop.route_type,
+        originStation: {
+          stop_id: bestHomeStop.stop_id,
+          name: bestHomeStop.stop_name,
+          lat: bestHomeStop.lat,
+          lon: bestHomeStop.lon
+        },
+        destinationStation: {
+          stop_id: bestWorkStop.stop_id,
+          name: bestWorkStop.stop_name,
+          lat: bestWorkStop.lat,
+          lon: bestWorkStop.lon
+        }
+      }
+    };
+
+    // Step 6: Save all configuration to preferences
+    const configData = {
+      addresses: {
+        home: addresses.home,
+        work: addresses.work,
+        cafe: addresses.cafe || ''
+      },
+      location: {
+        state: state,
+        city: homeLocation.city || '',
+        transitAuthority: getTransitAuthorityForState(state)
+      },
+      journey: {
+        arrivalTime: arrivalTime,
+        coffeeEnabled: coffeeEnabled,
+        coffeeTime: 5,
+        transitRoute: transitRoute
+      }
+    };
+
+    await preferences.update(configData);
+    console.log('  ✅ Configuration saved');
+
+    // Step 7: Start automatic journey calculation
+    startAutomaticJourneyCalculation();
+    console.log('  🔄 Auto-calculation started');
+
+    // Return success with details
+    res.json({
+      success: true,
+      state: state,
+      stopsFound: nearbyStopsHome.length + nearbyStopsWork.length,
+      routeMode: bestHomeStop.route_type_name,
+      homeStop: bestHomeStop.stop_name,
+      workStop: bestWorkStop.stop_name,
+      message: 'Journey planning configured successfully'
+    });
+
+  } catch (error) {
+    console.error('❌ Smart setup error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Helper function to get transit authority for state
+function getTransitAuthorityForState(state) {
+  const authorities = {
+    'VIC': 'Public Transport Victoria (PTV)',
+    'NSW': 'Transport for NSW',
+    'QLD': 'TransLink',
+    'SA': 'Adelaide Metro',
+    'WA': 'Transperth',
+    'TAS': 'Metro Tasmania',
+    'ACT': 'Transport Canberra',
+    'NT': 'Transport NT'
+  };
+  return authorities[state] || 'Local Transit Authority';
+}
+
 // Validate preferences
 app.get('/admin/preferences/validate', (req, res) => {
   try {
@@ -1905,7 +2060,7 @@ app.post('/admin/preferences/import', async (req, res) => {
   }
 });
 
-// Address autocomplete search
+// Address autocomplete search - PARALLEL MULTI-SOURCE SEARCH
 app.get('/admin/address/search', async (req, res) => {
   try {
     const { query } = req.query;
@@ -1917,102 +2072,171 @@ app.get('/admin/address/search', async (req, res) => {
       });
     }
 
-    console.log(`🔍 Address search: "${query}"`);
+    console.log(`🔍 Parallel address search: "${query}"`);
 
-    // Try Google Places Autocomplete first (much better for cafes and addresses)
+    // Query ALL services in PARALLEL
+    const searchPromises = [];
+
+    // 1. Google Places (if API key available)
     const googleApiKey = process.env.GOOGLE_PLACES_KEY || process.env.GOOGLE_API_KEY;
-
     if (googleApiKey) {
-      try {
-        console.log('  Using Google Places Autocomplete API');
+      searchPromises.push(
+        (async () => {
+          try {
+            console.log('  → Querying Google Places...');
+            // NO location bias - let Google find matches anywhere in Australia
+            const autocompleteUrl = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(query)}&components=country:au&key=${googleApiKey}`;
+            const response = await fetch(autocompleteUrl);
+            const data = await response.json();
 
-        // Google Places Autocomplete API
-        const autocompleteUrl = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(query)}&components=country:au&location=-37.8136,144.9631&radius=50000&key=${googleApiKey}`;
+            if (data.status === 'OK' && data.predictions) {
+              // Get details for top 3 predictions
+              const detailsPromises = data.predictions.slice(0, 3).map(async (prediction) => {
+                const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${prediction.place_id}&fields=name,formatted_address,geometry,types,address_components&key=${googleApiKey}`;
+                const detailsResponse = await fetch(detailsUrl);
+                const detailsData = await detailsResponse.json();
 
-        const autocompleteResponse = await fetch(autocompleteUrl);
-        const autocompleteData = await autocompleteResponse.json();
+                if (detailsData.status === 'OK' && detailsData.result) {
+                  const place = detailsData.result;
+                  // Extract state from address components
+                  const stateComponent = place.address_components?.find(c => c.types.includes('administrative_area_level_1'));
+                  return {
+                    display_name: place.name,
+                    address: place.name,
+                    full_address: place.formatted_address,
+                    lat: place.geometry.location.lat,
+                    lon: place.geometry.location.lng,
+                    type: place.types?.[0] || 'place',
+                    state: stateComponent?.short_name || null,
+                    importance: 1.0,
+                    source: 'google'
+                  };
+                }
+                return null;
+              });
 
-        if (autocompleteData.status === 'OK' && autocompleteData.predictions) {
-          console.log(`  ✅ Found ${autocompleteData.predictions.length} Google Places results`);
-
-          // Get details for top 5 predictions
-          const detailsPromises = autocompleteData.predictions.slice(0, 5).map(async (prediction) => {
-            const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${prediction.place_id}&fields=name,formatted_address,geometry,types&key=${googleApiKey}`;
-
-            const detailsResponse = await fetch(detailsUrl);
-            const detailsData = await detailsResponse.json();
-
-            if (detailsData.status === 'OK' && detailsData.result) {
-              const place = detailsData.result;
-              return {
-                display_name: place.name,
-                address: place.name,
-                full_address: place.formatted_address,
-                lat: place.geometry.location.lat,
-                lon: place.geometry.location.lng,
-                type: place.types?.[0] || 'place',
-                importance: 1.0,
-                source: 'google'
-              };
+              const results = (await Promise.all(detailsPromises)).filter(r => r !== null);
+              console.log(`  ✅ Google: ${results.length} results`);
+              return results;
             }
-            return null;
-          });
-
-          const results = (await Promise.all(detailsPromises)).filter(r => r !== null);
-
-          return res.json({
-            success: true,
-            results,
-            count: results.length,
-            source: 'google'
-          });
-        } else {
-          console.log(`  ⚠️ Google Places returned status: ${autocompleteData.status}`);
-        }
-      } catch (googleError) {
-        console.error('  ❌ Google Places error:', googleError.message);
-        // Fall through to Nominatim
-      }
-    } else {
-      console.log('  No Google API key, using Nominatim');
+          } catch (error) {
+            console.log(`  ❌ Google error: ${error.message}`);
+          }
+          return [];
+        })()
+      );
     }
 
-    // Fallback to Nominatim (OpenStreetMap) for address search
-    console.log('  Using OpenStreetMap Nominatim API');
+    // 2. Nominatim (OpenStreetMap) - always available, no API key
+    searchPromises.push(
+      (async () => {
+        try {
+          console.log('  → Querying Nominatim/OSM...');
+          // NO location bias - search all of Australia
+          const nominatimQuery = encodeURIComponent(query + ', Australia');
+          const url = `https://nominatim.openstreetmap.org/search?format=json&q=${nominatimQuery}&countrycodes=au&limit=5&addressdetails=1`;
 
-    // Improve Nominatim query for better results
-    const nominatimQuery = encodeURIComponent(query + ', Melbourne, Victoria, Australia');
-    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${nominatimQuery}&limit=5&addressdetails=1&bounded=1&viewbox=144.5937,-38.4339,145.5126,-37.5113`;
+          const response = await fetch(url, {
+            headers: { 'User-Agent': 'PTV-TRMNL/2.5 (Smart Transit System)' }
+          });
 
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'PTV-TRMNL/2.0 (Educational Project)'
+          if (!response.ok) {
+            throw new Error(`Status ${response.status}`);
+          }
+
+          const data = await response.json();
+          const results = data.map(place => ({
+            display_name: place.display_name,
+            address: place.address?.road || place.address?.suburb || place.name,
+            full_address: place.display_name,
+            lat: parseFloat(place.lat),
+            lon: parseFloat(place.lon),
+            type: place.type,
+            state: place.address?.state || null,
+            importance: place.importance || 0.5,
+            source: 'nominatim'
+          }));
+
+          console.log(`  ✅ Nominatim: ${results.length} results`);
+          return results;
+        } catch (error) {
+          console.log(`  ❌ Nominatim error: ${error.message}`);
+          return [];
+        }
+      })()
+    );
+
+    // 3. Mapbox (if API key available)
+    const mapboxToken = process.env.MAPBOX_TOKEN;
+    if (mapboxToken) {
+      searchPromises.push(
+        (async () => {
+          try {
+            console.log('  → Querying Mapbox...');
+            const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?country=au&limit=3&access_token=${mapboxToken}`;
+            const response = await fetch(url);
+            const data = await response.json();
+
+            if (data.features && data.features.length > 0) {
+              const results = data.features.map(feature => ({
+                display_name: feature.place_name,
+                address: feature.text,
+                full_address: feature.place_name,
+                lat: feature.geometry.coordinates[1],
+                lon: feature.geometry.coordinates[0],
+                type: feature.place_type?.[0] || 'place',
+                state: feature.context?.find(c => c.id.startsWith('region'))?.text || null,
+                importance: feature.relevance || 0.5,
+                source: 'mapbox'
+              }));
+
+              console.log(`  ✅ Mapbox: ${results.length} results`);
+              return results;
+            }
+          } catch (error) {
+            console.log(`  ❌ Mapbox error: ${error.message}`);
+          }
+          return [];
+        })()
+      );
+    }
+
+    // Wait for ALL services to respond (or timeout after 3 seconds each)
+    const allResults = await Promise.all(searchPromises);
+
+    // Combine and deduplicate results
+    const combinedResults = allResults.flat();
+
+    // Remove duplicates (same lat/lon within 50m)
+    const uniqueResults = [];
+    for (const result of combinedResults) {
+      const isDuplicate = uniqueResults.some(existing => {
+        const distance = Math.sqrt(
+          Math.pow((existing.lat - result.lat) * 111000, 2) +
+          Math.pow((existing.lon - result.lon) * 111000, 2)
+        );
+        return distance < 50; // Within 50 meters
+      });
+
+      if (!isDuplicate) {
+        uniqueResults.push(result);
       }
+    }
+
+    // Sort by importance (Google results first, then by relevance)
+    uniqueResults.sort((a, b) => {
+      if (a.source === 'google' && b.source !== 'google') return -1;
+      if (b.source === 'google' && a.source !== 'google') return 1;
+      return (b.importance || 0) - (a.importance || 0);
     });
 
-    if (!response.ok) {
-      throw new Error(`Geocoding failed: ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log(`  ✅ Found ${data.length} Nominatim results`);
-
-    const results = data.map(place => ({
-      display_name: place.display_name,
-      address: place.address?.road || place.address?.suburb || place.name,
-      full_address: place.display_name,
-      lat: parseFloat(place.lat),
-      lon: parseFloat(place.lon),
-      type: place.type,
-      importance: place.importance,
-      source: 'nominatim'
-    }));
+    console.log(`✅ Combined results: ${uniqueResults.length} unique locations`);
 
     res.json({
       success: true,
-      results,
-      count: results.length,
-      source: 'nominatim'
+      results: uniqueResults.slice(0, 10), // Top 10 results
+      count: uniqueResults.length,
+      sources: [...new Set(combinedResults.map(r => r.source))]
     });
 
   } catch (error) {
