@@ -12,28 +12,36 @@ import fetch from "node-fetch";
 import * as GtfsRealtimeBindings from "gtfs-realtime-bindings";
 
 /** Build URL and include ?subscription-key=... for OpenAPI variant */
-function makeUrl(base, path, key) {
+function makeUrl(base, path, subscriptionKey) {
   const url = new URL(path, base);
-  if (key) url.searchParams.set("subscription-key", key);
+  if (subscriptionKey) url.searchParams.set("subscription-key", subscriptionKey);
   return url.toString();
 }
 
-/** Send key in both documented header names for compatibility */
-function makeHeaders(key) {
-  return {
-    "KeyID": key,                          // dataset page variant
-    "Ocp-Apim-Subscription-Key": key,      // OpenAPI variant
+/**
+ * Send subscription key in headers for OpenData Transport Victoria authentication
+ * The subscription key can be either UUID format or JWT format depending on portal configuration
+ */
+function makeHeaders(subscriptionKey) {
+  const headers = {
     "Accept": "application/x-protobuf"
   };
+
+  // Add subscription key if provided (per OpenAPI spec)
+  if (subscriptionKey) {
+    headers["Ocp-Apim-Subscription-Key"] = subscriptionKey;
+  }
+
+  return headers;
 }
 
-async function fetchGtfsR({ base, path, key, timeoutMs = 10000 }) {
-  const url = makeUrl(base, path, key);
+async function fetchGtfsR({ base, path, subscriptionKey, timeoutMs = 10000 }) {
+  const url = makeUrl(base, path, subscriptionKey);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const res = await fetch(url, { headers: makeHeaders(key), signal: controller.signal });
+    const res = await fetch(url, { headers: makeHeaders(subscriptionKey), signal: controller.signal });
     if (!res.ok) {
       const text = await res.text().catch(() => "");
       throw new Error(`OpenData ${path} ${res.status} ${res.statusText} :: ${text}`);
@@ -48,12 +56,12 @@ async function fetchGtfsR({ base, path, key, timeoutMs = 10000 }) {
   }
 }
 
-// Metro (Train)
-export const getMetroTripUpdates     = (key, base) => fetchGtfsR({ base, path: "/trip-updates",     key });
-export const getMetroVehiclePositions= (key, base) => fetchGtfsR({ base, path: "/vehicle-positions", key });
-export const getMetroServiceAlerts   = (key, base) => fetchGtfsR({ base, path: "/service-alerts",    key });
+// Metro (Train) - Accepts subscription key (can be UUID or JWT format)
+export const getMetroTripUpdates     = (subscriptionKey, base) => fetchGtfsR({ base, path: "/trip-updates",     subscriptionKey });
+export const getMetroVehiclePositions= (subscriptionKey, base) => fetchGtfsR({ base, path: "/vehicle-positions", subscriptionKey });
+export const getMetroServiceAlerts   = (subscriptionKey, base) => fetchGtfsR({ base, path: "/service-alerts",    subscriptionKey });
 
-// Tram (Yarra Trams)
-export const getTramTripUpdates      = (key, base) => fetchGtfsR({ base, path: "/trip-updates",     key });
-export const getTramVehiclePositions = (key, base) => fetchGtfsR({ base, path: "/vehicle-positions", key });
-export const getTramServiceAlerts    = (key, base) => fetchGtfsR({ base, path: "/service-alerts",    key });
+// Tram (Yarra Trams) - Accepts subscription key (can be UUID or JWT format)
+export const getTramTripUpdates      = (subscriptionKey, base) => fetchGtfsR({ base, path: "/trip-updates",     subscriptionKey });
+export const getTramVehiclePositions = (subscriptionKey, base) => fetchGtfsR({ base, path: "/vehicle-positions", subscriptionKey });
+export const getTramServiceAlerts    = (subscriptionKey, base) => fetchGtfsR({ base, path: "/service-alerts",    subscriptionKey });
