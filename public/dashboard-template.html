@@ -344,11 +344,11 @@
     fetch('/api/version')
       .then(r => r.json())
       .then(v => {
-        document.getElementById('versionHash').textContent = v.version || 'v2.0.0';
+        document.getElementById('versionHash').textContent = v.version || 'v2.5.0';
         document.getElementById('buildDate').textContent = v.date || new Date().toISOString().split('T')[0];
       })
       .catch(() => {
-        document.getElementById('versionHash').textContent = 'v2.0.0';
+        document.getElementById('versionHash').textContent = 'v2.5.0';
         document.getElementById('buildDate').textContent = new Date().toISOString().split('T')[0];
       });
 
