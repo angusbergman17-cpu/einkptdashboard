@@ -1,29 +1,34 @@
 /**
  * Weather BOM (Bureau of Meteorology) API Client
- * Fetches Australian weather data from BOM's official API
+ * Fetches Australian weather data from BOM's official JSON feeds
  *
  * Copyright (c) 2026 Angus Bergman
- * Based on weather-au Python library by Tony Allan
+ * Uses official BOM observation feeds
+ * Reference: http://www.bom.gov.au/catalogue/data-feeds.shtml
  */
 
 import fetch from 'node-fetch';
 
 /**
- * BOM API Weather Client for Melbourne
+ * BOM Weather Client for Melbourne
+ * Uses official BOM JSON observation feeds
  */
 class WeatherBOM {
   constructor() {
-    // BOM API endpoint (public, no auth required)
-    this.baseUrl = 'https://api.weather.bom.gov.au/v1';
+    // Official BOM JSON feed for Melbourne (Olympic Park)
+    // Station ID: 95936
+    // Product: IDV60901 (Capital City Observations)
+    // Reference: http://www.bom.gov.au/catalogue/data-feeds.shtml
+    this.observationUrl = 'http://www.bom.gov.au/fwo/IDV60901/IDV60901.95936.json';
 
-    // Melbourne location ID (from BOM API)
-    // Melbourne City: geohash r1r0gx
-    this.locationId = 'r1r0gx'; // Melbourne CBD
+    // Melbourne Olympic Park station
+    this.stationId = '95936';
+    this.stationName = 'Melbourne (Olympic Park)';
 
-    // Cache weather data for 15 minutes (BOM updates every 30 min)
+    // Cache weather data for 10 minutes (BOM updates every 30 min)
     this.cache = null;
     this.cacheExpiry = null;
-    this.cacheDuration = 15 * 60 * 1000; // 15 minutes
+    this.cacheDuration = 10 * 60 * 1000; // 10 minutes
   }
 
   /**
@@ -37,17 +42,14 @@ class WeatherBOM {
     }
 
     try {
-      // Fetch observations from BOM API
-      const url = `${this.baseUrl}/locations/${this.locationId}/observations`;
+      console.log(`Fetching weather from BOM: ${this.observationUrl}`);
 
-      console.log(`Fetching weather from BOM: ${url}`);
-
-      const response = await fetch(url, {
+      const response = await fetch(this.observationUrl, {
         headers: {
-          'User-Agent': 'PTV-TRMNL/1.0 (Educational Project)',
+          'User-Agent': 'Mozilla/5.0 (compatible; PTV-TRMNL/1.0; Educational)',
           'Accept': 'application/json'
         },
-        timeout: 10000 // 10 second timeout
+        timeout: 15000 // 15 second timeout
       });
 
       if (!response.ok) {
@@ -63,7 +65,7 @@ class WeatherBOM {
       this.cache = weather;
       this.cacheExpiry = Date.now() + this.cacheDuration;
 
-      console.log('✅ Weather fetched:', weather);
+      console.log('✅ Weather fetched successfully');
       return weather;
 
     } catch (error) {
@@ -71,11 +73,12 @@ class WeatherBOM {
 
       // Return cached data if available (even if expired)
       if (this.cache) {
-        console.log('Using stale weather cache');
+        console.log('⚠️  Using stale weather cache');
         return this.cache;
       }
 
       // Return fallback weather
+      console.log('⚠️  Using fallback weather data');
       return this.getFallbackWeather();
     }
   }
@@ -84,34 +87,86 @@ class WeatherBOM {
    * Parse BOM observations data
    */
   parseObservations(data) {
-    // BOM API structure (as of 2025):
-    // data.data.temp - temperature in celsius
-    // data.data.temp_feels_like - feels like temperature
-    // data.data.weather - condition description
-    // data.data.rain_since_9am - rain amount
-    // data.data.wind.speed_kilometre - wind speed
+    // BOM JSON feed structure:
+    // observations.data[] - array of observations (most recent first)
+    // Each observation has:
+    //   - air_temp: temperature in celsius
+    //   - apparent_t: feels like temperature
+    //   - weather: condition description (may be null or "-")
+    //   - rain_trace: rainfall
+    //   - rel_hum: relative humidity
+    //   - wind_spd_kmh: wind speed
 
-    const obs = data.data || {};
+    if (!data.observations || !data.observations.data || data.observations.data.length === 0) {
+      throw new Error('Invalid BOM data structure');
+    }
+
+    // Get the most recent observation (first in array)
+    const obs = data.observations.data[0];
 
     // Extract temperature (round to nearest degree)
-    const temperature = obs.temp ? Math.round(obs.temp) : null;
+    const temperature = obs.air_temp !== null && obs.air_temp !== undefined
+      ? Math.round(obs.air_temp)
+      : null;
 
     // Extract condition (simplify for display)
-    const condition = this.simplifyCondition(obs.weather || 'Unknown');
+    // BOM sometimes doesn't provide weather condition in observations or uses "-"
+    const weatherText = (obs.weather && obs.weather !== '-')
+      ? obs.weather
+      : this.inferWeatherFromData(obs);
+    const condition = this.simplifyCondition(weatherText);
 
     // Extract icon code (for future use)
     const icon = this.getWeatherIcon(condition);
 
     return {
-      temperature,      // e.g., 15
-      condition,        // e.g., "Partly Cloudy"
-      conditionShort,   // e.g., "P.Cloudy"
-      icon,            // e.g., "partly-cloudy"
-      feelsLike: obs.temp_feels_like ? Math.round(obs.temp_feels_like) : null,
-      humidity: obs.humidity,
-      windSpeed: obs.wind?.speed_kilometre,
-      rainSince9am: obs.rain_since_9am
+      temperature,           // e.g., 15
+      condition,            // e.g., { full: "Partly Cloudy", short: "P.Cloudy" }
+      icon,                 // e.g., "partly-cloudy"
+      feelsLike: obs.apparent_t !== null ? Math.round(obs.apparent_t) : null,
+      humidity: obs.rel_hum,
+      windSpeed: obs.wind_spd_kmh,
+      windDir: obs.wind_dir,
+      rainSince9am: obs.rain_trace,
+      station: obs.name || this.stationName,
+      timestamp: obs.local_date_time_full
     };
+  }
+
+  /**
+   * Infer weather condition from observation data when not explicitly provided
+   */
+  inferWeatherFromData(obs) {
+    // If rain detected
+    if (obs.rain_trace && parseFloat(obs.rain_trace) > 0) {
+      return 'Showers';
+    }
+
+    // Based on cloud cover if available
+    if (obs.cloud) {
+      const cloud = obs.cloud.toLowerCase();
+      if (cloud.includes('clear')) return 'Clear';
+      if (cloud.includes('few')) return 'Mostly Sunny';
+      if (cloud.includes('scattered') || cloud.includes('broken')) return 'Partly Cloudy';
+      if (cloud.includes('overcast')) return 'Cloudy';
+    }
+
+    // Infer from humidity and time of day
+    const hour = new Date().getHours();
+    const humidity = obs.rel_hum;
+
+    // High humidity suggests cloudy/rain
+    if (humidity && humidity > 80) {
+      return 'Cloudy';
+    }
+
+    // Low humidity during day suggests clear
+    if (humidity && humidity < 50 && hour >= 6 && hour <= 20) {
+      return 'Clear';
+    }
+
+    // Default to partly cloudy
+    return 'Partly Cloudy';
   }
 
   /**
@@ -185,7 +240,6 @@ class WeatherBOM {
     return {
       temperature: temp,
       condition: { full: 'Unavailable', short: 'N/A' },
-      conditionShort: 'N/A',
       icon: 'unknown',
       feelsLike: null,
       humidity: null,
@@ -226,12 +280,12 @@ class WeatherBOM {
 // Alternative: Simple fetch function without class
 export async function getWeatherSimple() {
   try {
-    // Fetch from BOM's public observations for Melbourne
-    const url = 'https://api.weather.bom.gov.au/v1/locations/r1r0gx/observations';
+    // Fetch from BOM's official observations for Melbourne
+    const url = 'http://www.bom.gov.au/fwo/IDV60901/IDV60901.95936.json';
 
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'PTV-TRMNL/1.0',
+        'User-Agent': 'Mozilla/5.0 (compatible; PTV-TRMNL/1.0; Educational)',
         'Accept': 'application/json'
       },
       timeout: 10000
@@ -242,10 +296,10 @@ export async function getWeatherSimple() {
     }
 
     const data = await response.json();
-    const obs = data.data || {};
+    const obs = data.observations?.data?.[0] || {};
 
     return {
-      temperature: obs.temp ? Math.round(obs.temp) : null,
+      temperature: obs.air_temp ? Math.round(obs.air_temp) : null,
       condition: obs.weather || 'Unknown',
       timestamp: new Date().toISOString()
     };
