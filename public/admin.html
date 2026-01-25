@@ -725,8 +725,14 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">☕ Cafe Address (optional)</label>
-                    <input type="text" id="cafe-address" class="form-input" placeholder="Your favorite coffee shop..." autocomplete="off">
+                    <label class="form-label">☕ Cafe Name (optional)</label>
+                    <input type="text" id="cafe-name" class="form-input" placeholder="e.g., Seven Seeds Coffee" autocomplete="off">
+                    <div style="font-size: 11px; opacity: 0.7; margin-top: 5px;">Enter the cafe business name. System will search for it near your route.</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">☕ Cafe Address (optional - or let us find it)</label>
+                    <input type="text" id="cafe-address" class="form-input" placeholder="Or enter full address if name search doesn't work..." autocomplete="off">
                     <div id="cafe-suggestions" class="autocomplete-dropdown"></div>
                 </div>
 
@@ -823,16 +829,16 @@
         <!-- System & Support Tab -->
         <div id="tab-system" class="tab-content">
             <!-- System Architecture -->
-            <div class="card" style="margin-bottom: 20px;">
+            <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%); border-left: 4px solid #667eea;">
                 <div class="card-header">
                     <span class="card-icon">🧠</span>
-                    <h2>How The System Works</h2>
+                    <h2>Complete System Architecture Map</h2>
                 </div>
-                <p style="margin-bottom: 15px; opacity: 0.9;">
-                    Understanding the intelligent data flow that powers your transit predictions
+                <p style="margin-bottom: 15px; opacity: 0.9; font-size: 14px;">
+                    Visual mind map showing data flow from setup wizard through server to TRMNL device
                 </p>
-                <button class="btn btn-success btn-block" onclick="showSystemArchitecture()" style="margin-bottom: 15px;">
-                    <span style="font-size: 18px;">🔍</span> View System Architecture
+                <button class="btn btn-primary btn-block" onclick="toggleSystemArchitecture()" id="arch-toggle-btn" style="margin-bottom: 15px; font-size: 16px; font-weight: 600;">
+                    <span style="font-size: 20px;">🔍</span> Show Full Architecture Map
                 </button>
                 <div id="architecture-viz" style="display: none; margin-top: 20px;"></div>
             </div>
@@ -1842,26 +1848,72 @@
             document.getElementById('plan-btn-text').textContent = 'Plan My Journey';
         }
 
-        function loadSavedPreferences() {
-            const saved = localStorage.getItem('ptv-journey-prefs');
-            if (saved) {
-                const p = JSON.parse(saved);
-                document.getElementById('home-address').value = p.homeAddress || '';
-                document.getElementById('work-address').value = p.workAddress || '';
-                document.getElementById('cafe-address').value = p.cafeAddress || '';
-                document.getElementById('arrival-time').value = p.arrivalTime || '09:00';
-                document.getElementById('include-coffee').checked = p.includeCoffee !== false;
-                document.getElementById('coffee-time').value = p.coffeeTime || 5;
-                if (p.transitRoute?.mode1) {
-                    document.getElementById('mode1-type').value = p.transitRoute.mode1.type || 0;
-                    document.getElementById('mode1-origin').value = p.transitRoute.mode1.originStation?.name || '';
-                    document.getElementById('mode1-destination').value = p.transitRoute.mode1.destinationStation?.name || '';
+        async function loadSavedPreferences() {
+            try {
+                // Load from server preferences
+                const response = await fetch(BASE_URL + '/admin/preferences');
+                if (response.ok) {
+                    const prefs = await response.json();
+
+                    // Load addresses
+                    if (prefs.addresses) {
+                        if (document.getElementById('home-address')) {
+                            document.getElementById('home-address').value = prefs.addresses.home || '';
+                        }
+                        if (document.getElementById('cafe-address')) {
+                            document.getElementById('cafe-address').value = prefs.addresses.cafe || '';
+                        }
+                        if (document.getElementById('cafe-name')) {
+                            document.getElementById('cafe-name').value = prefs.addresses.cafeName || '';
+                        }
+                        if (document.getElementById('work-address')) {
+                            document.getElementById('work-address').value = prefs.addresses.work || '';
+                        }
+                    }
+
+                    // Load journey preferences
+                    if (prefs.journey) {
+                        if (document.getElementById('arrival-time')) {
+                            document.getElementById('arrival-time').value = prefs.journey.arrivalTime || '09:00';
+                        }
+
+                        // Load transit route if configured
+                        if (prefs.journey.transitRoute?.mode1) {
+                            if (document.getElementById('mode1-type')) {
+                                document.getElementById('mode1-type').value = prefs.journey.transitRoute.mode1.type || 0;
+                            }
+                            if (document.getElementById('mode1-origin')) {
+                                document.getElementById('mode1-origin').value = prefs.journey.transitRoute.mode1.originStation?.name || '';
+                            }
+                            if (document.getElementById('mode1-destination')) {
+                                document.getElementById('mode1-destination').value = prefs.journey.transitRoute.mode1.destinationStation?.name || '';
+                            }
+                        }
+                    }
+
+                    // Load API credentials
+                    if (prefs.api) {
+                        if (document.getElementById('ptv-dev-id')) {
+                            document.getElementById('ptv-dev-id').value = prefs.api.key || '';
+                        }
+                        if (document.getElementById('ptv-api-key')) {
+                            document.getElementById('ptv-api-key').value = prefs.api.token || '';
+                        }
+                    }
+
+                    console.log('✅ Preferences loaded from server');
                 }
-                if (p.transitRoute?.numberOfModes === 2 && p.transitRoute.mode2) {
-                    addTransitLeg();
-                    document.getElementById('mode2-type').value = p.transitRoute.mode2.type || 0;
-                    document.getElementById('mode2-origin').value = p.transitRoute.mode2.originStation?.name || '';
-                    document.getElementById('mode2-destination').value = p.transitRoute.mode2.destinationStation?.name || '';
+            } catch (error) {
+                console.error('Failed to load preferences from server:', error);
+
+                // Fallback to localStorage
+                const saved = localStorage.getItem('ptv-journey-prefs');
+                if (saved) {
+                    const p = JSON.parse(saved);
+                    if (document.getElementById('home-address')) document.getElementById('home-address').value = p.homeAddress || '';
+                    if (document.getElementById('work-address')) document.getElementById('work-address').value = p.workAddress || '';
+                    if (document.getElementById('cafe-address')) document.getElementById('cafe-address').value = p.cafeAddress || '';
+                    if (document.getElementById('arrival-time')) document.getElementById('arrival-time').value = p.arrivalTime || '09:00';
                 }
             }
         }
@@ -1953,6 +2005,85 @@
             document.getElementById(suggestionsId).style.display = 'none';
         }
 
+        // Auto-save mechanism for fields
+        let autoSaveTimeout = null;
+        let saveIndicator = null;
+
+        function createSaveIndicator() {
+            if (!saveIndicator) {
+                saveIndicator = document.createElement('div');
+                saveIndicator.id = 'save-indicator';
+                saveIndicator.style.cssText = 'position: fixed; top: 20px; right: 20px; padding: 10px 20px; background: #48bb78; color: white; border-radius: 8px; font-size: 13px; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.15); opacity: 0; transition: opacity 0.3s; z-index: 10000;';
+                document.body.appendChild(saveIndicator);
+            }
+            return saveIndicator;
+        }
+
+        function showSaveIndicator(message, success = true) {
+            const indicator = createSaveIndicator();
+            indicator.textContent = message;
+            indicator.style.background = success ? '#48bb78' : '#fc8181';
+            indicator.style.opacity = '1';
+            setTimeout(() => {
+                indicator.style.opacity = '0';
+            }, 2000);
+        }
+
+        async function autoSaveField(fieldId, section, fieldName) {
+            const value = document.getElementById(fieldId)?.value || '';
+
+            try {
+                // Get current preferences
+                const prefsResponse = await fetch(BASE_URL + '/admin/preferences');
+                const prefs = await prefsResponse.json();
+
+                // Update the specific field
+                if (!prefs[section]) prefs[section] = {};
+                prefs[section][fieldName] = value;
+
+                // Save back to server
+                const saveResponse = await fetch(BASE_URL + '/admin/preferences', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(prefs)
+                });
+
+                if (saveResponse.ok) {
+                    showSaveIndicator('✓ Saved', true);
+                    console.log(`Auto-saved ${fieldName}:`, value);
+                } else {
+                    console.error('Failed to auto-save:', await saveResponse.text());
+                }
+            } catch (error) {
+                console.error('Auto-save error:', error);
+            }
+        }
+
+        function setupAutoSave(fieldId, section, fieldName) {
+            const field = document.getElementById(fieldId);
+            if (!field) return;
+
+            field.addEventListener('input', () => {
+                // Clear existing timeout
+                if (autoSaveTimeout) {
+                    clearTimeout(autoSaveTimeout);
+                }
+
+                // Set new timeout (debounce)
+                autoSaveTimeout = setTimeout(() => {
+                    autoSaveField(fieldId, section, fieldName);
+                }, 1500); // Save 1.5 seconds after user stops typing
+            });
+
+            // Also save on blur (when field loses focus)
+            field.addEventListener('blur', () => {
+                if (autoSaveTimeout) {
+                    clearTimeout(autoSaveTimeout);
+                }
+                autoSaveField(fieldId, section, fieldName);
+            });
+        }
+
         // Initialize autocomplete on page load
         document.addEventListener('DOMContentLoaded', () => {
             updateClock();
@@ -1965,6 +2096,13 @@
             setupAddressAutocomplete('home-address', 'home-suggestions');
             setupAddressAutocomplete('cafe-address', 'cafe-suggestions');
             setupAddressAutocomplete('work-address', 'work-suggestions');
+
+            // Setup auto-save for address fields
+            setupAutoSave('home-address', 'addresses', 'home');
+            setupAutoSave('cafe-name', 'addresses', 'cafeName');
+            setupAutoSave('cafe-address', 'addresses', 'cafe');
+            setupAutoSave('work-address', 'addresses', 'work');
+            setupAutoSave('arrival-time', 'journey', 'arrivalTime');
         });
 
         // ============= SIMPLIFIED JOURNEY PLANNER =============
@@ -2386,11 +2524,13 @@
         }
 
         // System Architecture Visualization
-        async function showSystemArchitecture() {
+        async function toggleSystemArchitecture() {
             const vizDiv = document.getElementById('architecture-viz');
+            const toggleBtn = document.getElementById('arch-toggle-btn');
 
             if (vizDiv.style.display === 'block') {
                 vizDiv.style.display = 'none';
+                toggleBtn.innerHTML = '<span style="font-size: 20px;">🔍</span> Show Full Architecture Map';
                 return;
             }
 
@@ -2532,6 +2672,7 @@
             `;
 
             vizDiv.style.display = 'block';
+            toggleBtn.innerHTML = '<span style="font-size: 20px;">🔼</span> Hide Architecture Map';
         }
     </script>
 </body>
