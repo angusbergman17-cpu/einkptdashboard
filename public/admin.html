@@ -695,7 +695,7 @@
                     <h2>Automatic Journey Calculation</h2>
                 </div>
                 <p style="margin-bottom: 15px; opacity: 0.9; font-size: 14px;">
-                    Your journey is automatically calculated every 10 minutes to keep transit data up-to-date.
+                    Your journey is automatically calculated every 2 minutes to keep transit data up-to-date.
                     No need to manually refresh - your display always shows the latest information.
                 </p>
                 <div id="auto-calc-status" style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 15px;">
@@ -989,7 +989,7 @@
                             ↓<br>
                             Smart Journey Planner (combines all data)<br>
                             ↓<br>
-                            Automatic Background Calculation (every 10 min)<br>
+                            Automatic Background Calculation (every 2 min)<br>
                             ↓<br>
                             Journey Status API + Delay Detection<br>
                             ↓<br>
@@ -1201,6 +1201,67 @@
                         <br>
                         <strong>The software creator (Angus Bergman) is not responsible for your use of external APIs.</strong>
                     </p>
+                </div>
+            </div>
+
+            <!-- System Reset & Cache Management -->
+            <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(252, 129, 129, 0.1) 0%, rgba(239, 68, 68, 0.1) 100%); border-left: 4px solid #fc8181;">
+                <div class="card-header">
+                    <span class="card-icon">⚠️</span>
+                    <h2>System Reset & Cache Management</h2>
+                </div>
+                <p style="margin-bottom: 20px; opacity: 0.9; font-size: 14px; line-height: 1.6;">
+                    Advanced system controls for managing data and restarting the server. Use these tools carefully.
+                </p>
+
+                <!-- Cache Clear -->
+                <div style="background: rgba(255,255,255,0.05); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                        <span style="font-size: 24px;">🗑️</span>
+                        <div>
+                            <div style="font-weight: 600; font-size: 15px;">Clear All Caches</div>
+                            <div style="font-size: 12px; opacity: 0.8;">Clears geocoding, weather, and journey calculation caches</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary btn-block" onclick="clearAllCaches()" id="clear-cache-btn">
+                        🗑️ Clear Caches Only
+                    </button>
+                </div>
+
+                <!-- Full System Reset -->
+                <div style="background: linear-gradient(135deg, rgba(252, 129, 129, 0.15) 0%, rgba(239, 68, 68, 0.15) 100%); border-radius: 8px; padding: 20px; border: 2px solid #fc8181;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                        <span style="font-size: 28px;">🔄</span>
+                        <div>
+                            <div style="font-weight: 700; font-size: 16px; color: #e53e3e;">Complete System Reset</div>
+                            <div style="font-size: 12px; opacity: 0.9; margin-top: 4px;">⚠️ This will delete ALL user data and restart the server</div>
+                        </div>
+                    </div>
+
+                    <div style="background: rgba(255,255,255,0.1); border-radius: 6px; padding: 12px; margin-bottom: 15px; font-size: 13px; line-height: 1.6;">
+                        <strong>What gets deleted:</strong><br>
+                        • All addresses (home, cafe, work)<br>
+                        • Journey preferences and transit routes<br>
+                        • API credentials<br>
+                        • All cached data (geocoding, weather, journey)<br>
+                        • Location and state configuration<br>
+                        <br>
+                        <strong>What happens after:</strong><br>
+                        • Server restarts automatically (10 second delay)<br>
+                        • You'll need to run Setup Wizard again<br>
+                        • All data will be fresh and empty
+                    </div>
+
+                    <button class="btn btn-block" onclick="confirmFullSystemReset()" id="full-reset-btn"
+                            style="background: linear-gradient(135deg, #fc8181 0%, #e53e3e 100%);
+                                   color: white;
+                                   font-weight: 700;
+                                   font-size: 16px;
+                                   padding: 15px;
+                                   border: none;
+                                   box-shadow: 0 4px 12px rgba(252, 129, 129, 0.3);">
+                        ⚠️ WIPE ALL DATA & RESTART SERVER
+                    </button>
                 </div>
             </div>
 
@@ -2525,6 +2586,151 @@
             }
         }
 
+        // ============= SYSTEM RESET & CACHE MANAGEMENT =============
+
+        /**
+         * Clear all caches without resetting user data
+         */
+        async function clearAllCaches() {
+            const btn = document.getElementById('clear-cache-btn');
+            const originalText = btn.innerHTML;
+
+            if (!confirm('Clear all caches? This will remove cached geocoding, weather, and journey data.\n\nYour preferences and configuration will NOT be deleted.\n\nClick OK to proceed.')) {
+                return;
+            }
+
+            btn.innerHTML = '⏳ Clearing caches...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch(BASE_URL + '/admin/cache/clear', {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    btn.innerHTML = '✅ Caches Cleared!';
+                    btn.style.background = '#48bb78';
+
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                        btn.style.background = '';
+                        btn.disabled = false;
+                    }, 3000);
+
+                    showMessage('system-reset-message', 'All caches cleared successfully. Data will refresh on next request.', 'success');
+                } else {
+                    throw new Error(result.error || 'Failed to clear caches');
+                }
+            } catch (error) {
+                btn.innerHTML = '❌ Error';
+                btn.style.background = '#fc8181';
+
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.style.background = '';
+                    btn.disabled = false;
+                }, 3000);
+
+                alert('Error clearing caches: ' + error.message);
+            }
+        }
+
+        /**
+         * Complete system reset - confirmation step
+         */
+        function confirmFullSystemReset() {
+            const confirmed = confirm(
+                '⚠️ COMPLETE SYSTEM RESET ⚠️\n\n' +
+                'This action will:\n' +
+                '• DELETE ALL user data (addresses, preferences, API keys)\n' +
+                '• CLEAR ALL caches\n' +
+                '• RESTART the server\n\n' +
+                'You will need to run the Setup Wizard again.\n\n' +
+                'This action CANNOT be undone!\n\n' +
+                'Are you ABSOLUTELY SURE you want to proceed?'
+            );
+
+            if (!confirmed) {
+                return;
+            }
+
+            // Second confirmation for safety
+            const finalConfirm = confirm(
+                '⚠️ FINAL WARNING ⚠️\n\n' +
+                'This is your last chance to cancel.\n\n' +
+                'All your data will be permanently deleted.\n\n' +
+                'Type exactly "DELETE" in the next prompt to proceed, or click Cancel to abort.'
+            );
+
+            if (!finalConfirm) {
+                return;
+            }
+
+            // Require typing DELETE
+            const userInput = prompt('Type "DELETE" in capital letters to confirm system reset:');
+
+            if (userInput !== 'DELETE') {
+                alert('System reset cancelled. You must type "DELETE" exactly to proceed.');
+                return;
+            }
+
+            // Proceed with reset
+            performFullSystemReset();
+        }
+
+        /**
+         * Execute the full system reset
+         */
+        async function performFullSystemReset() {
+            const btn = document.getElementById('full-reset-btn');
+            btn.innerHTML = '⏳ Wiping data and restarting server...';
+            btn.disabled = true;
+            btn.style.opacity = '0.6';
+
+            try {
+                const response = await fetch(BASE_URL + '/admin/system/reset-all', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Show success message
+                    btn.innerHTML = '✅ Reset Complete! Server Restarting...';
+                    btn.style.background = '#48bb78';
+
+                    // Show countdown and redirect
+                    let countdown = 10;
+                    const countdownInterval = setInterval(() => {
+                        countdown--;
+                        if (countdown > 0) {
+                            btn.innerHTML = `✅ Server restarting... Redirecting to Setup in ${countdown}s`;
+                        } else {
+                            clearInterval(countdownInterval);
+                            window.location.href = '/setup';
+                        }
+                    }, 1000);
+                } else {
+                    throw new Error(result.error || 'Reset failed');
+                }
+            } catch (error) {
+                btn.innerHTML = '❌ Error: ' + error.message;
+                btn.style.background = '#fc8181';
+
+                setTimeout(() => {
+                    btn.innerHTML = '⚠️ WIPE ALL DATA & RESTART SERVER';
+                    btn.style.background = '';
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                }, 5000);
+
+                alert('System reset failed: ' + error.message + '\n\nPlease try again or contact support.');
+            }
+        }
+
         // System Architecture Visualization
         async function toggleSystemArchitecture() {
             const vizDiv = document.getElementById('architecture-viz');
@@ -2623,7 +2829,7 @@
                             <div style="text-align: center;">
                                 <div style="padding: 10px; background: rgba(102, 126, 234, 0.3); border-radius: 6px; display: inline-block;">
                                     <div style="font-weight: 600; font-size: 12px;">Background Process</div>
-                                    <div style="font-size: 10px; opacity: 0.9; margin-top: 3px;">Runs every 10 minutes</div>
+                                    <div style="font-size: 10px; opacity: 0.9; margin-top: 3px;">Runs every 2 minutes</div>
                                     <div style="font-size: 10px; opacity: 0.9;">Keeps data always current</div>
                                 </div>
                             </div>
@@ -2657,7 +2863,7 @@
                                     <strong>Weather Data:</strong> Cached for 10 minutes
                                 </div>
                                 <div style="padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px;">
-                                    <strong>Journey Calc:</strong> Auto-updates every 10 minutes
+                                    <strong>Journey Calc:</strong> Auto-updates every 2 minutes
                                 </div>
                                 <div style="padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px;">
                                     <strong>Geocoding:</strong> Cached for 24 hours

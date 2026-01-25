@@ -62,7 +62,7 @@ console.log('✅ Decision logger initialized for full transparency');
 // Journey calculation cache (automatically updated in background)
 let cachedJourney = null;
 let journeyCalculationInterval = null;
-const JOURNEY_CALC_INTERVAL = 10 * 60 * 1000; // 10 minutes
+const JOURNEY_CALC_INTERVAL = 2 * 60 * 1000; // 2 minutes
 
 /**
  * Automatic Journey Calculation
@@ -602,7 +602,7 @@ app.get('/api/system-status', (req, res) => {
         autoCalculation: {
           active: !!journeyCalculationInterval,
           lastCalculated: cachedJourney?.calculatedAt || null,
-          nextCalculation: journeyCalculationInterval ? 'In 10 minutes' : 'Not active'
+          nextCalculation: journeyCalculationInterval ? 'In 2 minutes' : 'Not active'
         }
       },
       transitStations: {
@@ -3504,9 +3504,31 @@ app.post('/admin/cache/clear', async (req, res) => {
     // Clear in-memory caches
     cachedData = null;
     lastUpdate = 0;
+    cachedJourney = null;
 
-    console.log('🗑️  Cleared data cache');
-    res.json({ success: true, message: 'Caches cleared successfully' });
+    // Clear geocoding cache if available
+    if (global.geocodingService && global.geocodingService.clearCache) {
+      global.geocodingService.clearCache();
+      console.log('🗑️  Cleared geocoding cache');
+    }
+
+    // Clear weather cache if available
+    if (weather && weather.clearCache) {
+      weather.clearCache();
+      console.log('🗑️  Cleared weather cache');
+    }
+
+    console.log('🗑️  Cleared all server caches');
+    res.json({
+      success: true,
+      message: 'All caches cleared successfully',
+      cleared: {
+        dataCache: true,
+        geocodingCache: !!global.geocodingService,
+        weatherCache: !!weather,
+        journeyCache: true
+      }
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -3537,6 +3559,76 @@ app.post('/admin/server/restart', (req, res) => {
     console.log('🔄 Server restarting...');
     process.exit(0);
   }, 1000);
+});
+
+/**
+ * Complete System Reset
+ * Wipes all user data, clears all caches, and restarts the server
+ * DESTRUCTIVE ACTION - Cannot be undone
+ */
+app.post('/admin/system/reset-all', async (req, res) => {
+  try {
+    console.log('⚠️  SYSTEM RESET INITIATED - Wiping all user data...');
+
+    // 1. Reset preferences to defaults
+    await preferences.reset();
+    console.log('✅ Preferences reset to defaults');
+
+    // 2. Clear all in-memory caches
+    cachedData = null;
+    lastUpdate = 0;
+    cachedJourney = null;
+    console.log('✅ In-memory caches cleared');
+
+    // 3. Clear geocoding cache
+    if (global.geocodingService && global.geocodingService.clearCache) {
+      global.geocodingService.clearCache();
+      console.log('✅ Geocoding cache cleared');
+    }
+
+    // 4. Clear weather cache
+    if (weather && weather.clearCache) {
+      weather.clearCache();
+      console.log('✅ Weather cache cleared');
+    }
+
+    // 5. Stop journey calculation interval if running
+    if (journeyCalculationInterval) {
+      clearInterval(journeyCalculationInterval);
+      journeyCalculationInterval = null;
+      console.log('✅ Journey calculation stopped');
+    }
+
+    // 6. Reset configuration flags
+    isConfigured = false;
+    console.log('✅ Configuration flags reset');
+
+    // Send success response
+    res.json({
+      success: true,
+      message: 'System reset complete. Server will restart in 10 seconds.',
+      actions: {
+        preferencesReset: true,
+        cachesCleared: true,
+        journeyCalculationStopped: true,
+        serverRestart: 'pending'
+      }
+    });
+
+    // 7. Restart server after 10 second delay
+    console.log('⏳ Server will restart in 10 seconds...');
+    setTimeout(() => {
+      console.log('🔄 SYSTEM RESET COMPLETE - Server restarting...');
+      process.exit(0);
+    }, 10000);
+
+  } catch (error) {
+    console.error('❌ System reset error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
 });
 
 // Preview HTML page
