@@ -5,382 +5,176 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PTV-TRMNL Admin</title>
     <style>
-        :root {
-            --bg-primary: #0f172a;
-            --bg-secondary: #1e293b;
-            --bg-card: #334155;
-            --accent: #6366f1;
-            --accent-hover: #818cf8;
-            --success: #22c55e;
-            --warning: #f59e0b;
-            --error: #ef4444;
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --border: #475569;
-        }
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: var(--bg-primary);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             min-height: 100vh;
-            color: var(--text-primary);
+            color: white;
+            padding: 20px;
         }
 
-        /* Layout */
-        .app {
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(34, 197, 94, 0.2);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        .live-dot {
+            width: 10px;
+            height: 10px;
+            background: #22c55e;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        .time-display {
+            font-size: 48px;
+            font-weight: 700;
+            margin: 15px 0 5px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .date-display {
+            font-size: 16px;
+            opacity: 0.8;
+        }
+
+        /* Navigation tabs */
+        .nav-tabs {
             display: flex;
-            min-height: 100vh;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
         }
 
-        /* Sidebar */
-        .sidebar {
-            width: 240px;
-            background: var(--bg-secondary);
-            border-right: 1px solid var(--border);
-            padding: 20px 0;
-            position: fixed;
-            height: 100vh;
-            overflow-y: auto;
+        .nav-tab {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
         }
 
-        .logo {
-            padding: 0 20px 20px;
-            border-bottom: 1px solid var(--border);
+        .nav-tab:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .nav-tab.active {
+            background: rgba(99, 102, 241, 0.8);
+        }
+
+        /* Tab content */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Grid layout */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
             margin-bottom: 20px;
         }
 
-        .logo h1 {
-            font-size: 20px;
-            font-weight: 700;
+        /* Cards */
+        .card {
+            background: rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .card-header {
             display: flex;
             align-items: center;
             gap: 10px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
         }
 
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 20px;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: all 0.2s;
-            border-left: 3px solid transparent;
-        }
-
-        .nav-item:hover {
-            background: rgba(255,255,255,0.05);
-            color: var(--text-primary);
-        }
-
-        .nav-item.active {
-            background: rgba(99, 102, 241, 0.1);
-            color: var(--accent);
-            border-left-color: var(--accent);
-        }
-
-        .nav-item svg {
-            width: 20px;
-            height: 20px;
-        }
-
-        /* Main Content */
-        .main {
-            flex: 1;
-            margin-left: 240px;
-            padding: 30px;
-        }
-
-        /* Header */
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-        }
-
-        .header h2 {
-            font-size: 24px;
+        .card-header h2 {
+            font-size: 18px;
             font-weight: 600;
         }
 
-        .header-meta {
-            display: flex;
-            align-items: center;
-            gap: 20px;
+        .card-icon {
+            font-size: 24px;
         }
 
-        .status-pill {
+        /* Departure rows */
+        .departure-row {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 13px;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .departure-row:last-child {
+            border-bottom: none;
+        }
+
+        .departure-dest {
             font-weight: 500;
+            font-size: 15px;
         }
 
-        .status-pill.live {
-            background: rgba(34, 197, 94, 0.15);
-            color: var(--success);
+        .departure-status {
+            font-size: 12px;
+            opacity: 0.7;
         }
 
-        .status-pill.offline {
-            background: rgba(239, 68, 68, 0.15);
-            color: var(--error);
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
-
-        .status-pill.live .status-dot { background: var(--success); }
-        .status-pill.offline .status-dot { background: var(--error); }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        .clock {
+        .departure-time {
             font-size: 28px;
             font-weight: 700;
             font-variant-numeric: tabular-nums;
         }
 
-        /* Grid */
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 24px;
-        }
-
-        .grid-full {
-            grid-column: 1 / -1;
-        }
-
-        /* Cards */
-        .card {
-            background: var(--bg-secondary);
-            border-radius: 16px;
-            border: 1px solid var(--border);
-            overflow: hidden;
-        }
-
-        .card-header {
-            padding: 20px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .card-header h3 {
-            font-size: 16px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .card-body {
-            padding: 20px;
-        }
-
-        /* Forms */
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group:last-child {
-            margin-bottom: 0;
-        }
-
-        .form-label {
-            display: block;
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--text-secondary);
-            margin-bottom: 8px;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 12px 16px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            color: var(--text-primary);
-            font-size: 14px;
-            transition: all 0.2s;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-        }
-
-        .form-input::placeholder {
-            color: var(--text-secondary);
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 16px;
-        }
-
-        /* Autocomplete dropdown */
-        .autocomplete-wrapper {
-            position: relative;
-        }
-
-        .autocomplete-dropdown {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            margin-top: 4px;
-            z-index: 100;
-            max-height: 200px;
-            overflow-y: auto;
-            display: none;
-        }
-
-        .autocomplete-dropdown.show {
-            display: block;
-        }
-
-        .autocomplete-item {
-            padding: 12px 16px;
-            cursor: pointer;
-            border-bottom: 1px solid var(--border);
-            transition: background 0.2s;
-        }
-
-        .autocomplete-item:last-child {
-            border-bottom: none;
-        }
-
-        .autocomplete-item:hover {
-            background: rgba(255,255,255,0.05);
-        }
-
-        .autocomplete-item .name {
-            font-weight: 500;
-            margin-bottom: 2px;
-        }
-
-        .autocomplete-item .address {
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-
-        /* Buttons */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 12px 24px;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            border: none;
-        }
-
-        .btn-primary {
-            background: var(--accent);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: var(--accent-hover);
-            transform: translateY(-1px);
-        }
-
-        .btn-secondary {
-            background: var(--bg-card);
-            color: var(--text-primary);
-            border: 1px solid var(--border);
-        }
-
-        .btn-secondary:hover {
-            background: rgba(255,255,255,0.1);
-        }
-
-        .btn-success {
-            background: var(--success);
-            color: white;
-        }
-
-        .btn-success:hover {
-            background: #16a34a;
-        }
-
-        .btn-block {
-            width: 100%;
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        /* Departures */
-        .departure-list {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .departure-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 0;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .departure-item:last-child {
-            border-bottom: none;
-            padding-bottom: 0;
-        }
-
-        .departure-item:first-child {
-            padding-top: 0;
-        }
-
-        .departure-dest {
-            font-weight: 500;
-            margin-bottom: 4px;
-        }
-
-        .departure-meta {
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-
-        .departure-time {
-            font-size: 24px;
-            font-weight: 700;
-        }
-
         .departure-time span {
-            font-size: 12px;
+            font-size: 14px;
             font-weight: 400;
-            color: var(--text-secondary);
+            opacity: 0.7;
         }
 
         /* Weather */
@@ -395,328 +189,277 @@
             font-weight: 700;
         }
 
-        .weather-info {
-            color: var(--text-secondary);
-        }
-
         .weather-condition {
-            font-size: 16px;
-            color: var(--text-primary);
+            font-size: 18px;
             margin-bottom: 4px;
         }
 
-        /* Journey segments */
-        .journey-timeline {
-            position: relative;
-            padding-left: 30px;
-        }
-
-        .journey-timeline::before {
-            content: '';
-            position: absolute;
-            left: 10px;
-            top: 0;
-            bottom: 0;
-            width: 2px;
-            background: var(--border);
-        }
-
-        .segment {
-            position: relative;
-            padding: 16px 0;
-        }
-
-        .segment::before {
-            content: '';
-            position: absolute;
-            left: -24px;
-            top: 20px;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: var(--accent);
-            border: 2px solid var(--bg-secondary);
-        }
-
-        .segment.walk::before { background: var(--success); }
-        .segment.train::before { background: #3b82f6; }
-        .segment.tram::before { background: #f59e0b; }
-        .segment.bus::before { background: #8b5cf6; }
-        .segment.coffee::before { background: #ec4899; }
-
-        .segment-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 4px;
-        }
-
-        .segment-title {
-            font-weight: 600;
-        }
-
-        .segment-duration {
+        .weather-extra {
             font-size: 13px;
-            color: var(--text-secondary);
+            opacity: 0.7;
         }
 
-        .segment-detail {
+        /* Form elements */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
             font-size: 13px;
-            color: var(--text-secondary);
+            font-weight: 500;
+            margin-bottom: 6px;
+            opacity: 0.9;
         }
 
-        /* Transit route builder */
-        .transit-route-builder {
-            background: var(--bg-card);
-            border-radius: 12px;
-            padding: 20px;
-            margin-top: 20px;
-        }
-
-        .transit-mode {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 16px;
-        }
-
-        .transit-mode-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-        }
-
-        .transit-mode-title {
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .mode-badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 4px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .mode-badge.train { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
-        .mode-badge.tram { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
-        .mode-badge.bus { background: rgba(139, 92, 246, 0.2); color: #a78bfa; }
-
-        .add-transit-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 16px;
-            border: 2px dashed var(--border);
-            border-radius: 12px;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: all 0.2s;
-            background: transparent;
-            width: 100%;
-        }
-
-        .add-transit-btn:hover {
-            border-color: var(--accent);
-            color: var(--accent);
-        }
-
-        /* Select */
-        .form-select {
+        .form-input {
             width: 100%;
             padding: 12px 16px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
+            border: 1px solid rgba(255,255,255,0.2);
             border-radius: 10px;
-            color: var(--text-primary);
-            font-size: 14px;
-            cursor: pointer;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 15px;
+            transition: all 0.2s;
         }
 
-        .form-select:focus {
+        .form-input:focus {
             outline: none;
-            border-color: var(--accent);
+            border-color: rgba(99, 102, 241, 0.8);
+            background: rgba(255,255,255,0.15);
+        }
+
+        .form-input::placeholder {
+            color: rgba(255,255,255,0.4);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        @media (max-width: 600px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Buttons */
+        .btn {
+            background: rgba(99, 102, 241, 0.8);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background: rgba(99, 102, 241, 1);
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: rgba(34, 197, 94, 0.8);
+        }
+
+        .btn-success:hover {
+            background: rgba(34, 197, 94, 1);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .btn-block {
+            width: 100%;
+            justify-content: center;
         }
 
         /* Checkbox */
-        .checkbox-wrapper {
+        .checkbox-group {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 12px 0;
+            gap: 10px;
+            padding: 10px 0;
         }
 
-        .checkbox-wrapper input[type="checkbox"] {
+        .checkbox-group input[type="checkbox"] {
             width: 20px;
             height: 20px;
-            accent-color: var(--accent);
+            accent-color: #6366f1;
         }
 
         /* Messages */
         .message {
-            padding: 14px 18px;
+            padding: 12px 16px;
             border-radius: 10px;
-            margin-bottom: 16px;
+            margin-bottom: 15px;
             font-size: 14px;
         }
 
         .message-success {
-            background: rgba(34, 197, 94, 0.15);
-            border: 1px solid rgba(34, 197, 94, 0.3);
-            color: var(--success);
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid rgba(34, 197, 94, 0.4);
         }
 
         .message-error {
-            background: rgba(239, 68, 68, 0.15);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            color: var(--error);
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.4);
         }
 
         .message-info {
-            background: rgba(59, 130, 246, 0.15);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-            color: #60a5fa;
-        }
-
-        /* Summary boxes */
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-            margin-bottom: 20px;
-        }
-
-        .summary-box {
-            background: var(--bg-card);
-            border-radius: 12px;
-            padding: 16px;
-            text-align: center;
-        }
-
-        .summary-value {
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 4px;
-        }
-
-        .summary-label {
-            font-size: 12px;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-        }
-
-        /* Tab content */
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        /* Loading */
-        .loading {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 40px;
-            color: var(--text-secondary);
-        }
-
-        .spinner {
-            width: 32px;
-            height: 32px;
-            border: 3px solid var(--border);
-            border-top-color: var(--accent);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 12px;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.4);
         }
 
         /* Coffee decision */
-        .coffee-display {
+        .coffee-decision {
             text-align: center;
             padding: 20px;
         }
 
         .coffee-icon {
             font-size: 48px;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
 
         .coffee-text {
-            font-size: 20px;
+            font-size: 22px;
             font-weight: 700;
-            margin-bottom: 8px;
         }
 
         .coffee-subtext {
-            color: var(--text-secondary);
+            font-size: 14px;
+            opacity: 0.8;
+            margin-top: 5px;
         }
 
-        /* API status */
-        .api-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 14px 0;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .api-item:last-child {
-            border-bottom: none;
-        }
-
-        .api-name {
-            font-weight: 500;
-        }
-
-        .api-status {
+        /* Status badges */
+        .status-badge {
+            display: inline-block;
             padding: 4px 12px;
-            border-radius: 6px;
+            border-radius: 12px;
             font-size: 12px;
             font-weight: 600;
         }
 
-        .api-status.active {
-            background: rgba(34, 197, 94, 0.15);
-            color: var(--success);
+        .status-live {
+            background: rgba(34, 197, 94, 0.3);
+            color: #4ade80;
         }
 
-        .api-status.inactive {
-            background: rgba(245, 158, 11, 0.15);
-            color: var(--warning);
+        .status-fallback {
+            background: rgba(251, 191, 36, 0.3);
+            color: #fbbf24;
         }
 
-        .api-status.error {
-            background: rgba(239, 68, 68, 0.15);
-            color: var(--error);
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            opacity: 0.7;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255,255,255,0.2);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Route summary */
+        .route-summary {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .route-time {
+            text-align: center;
+            padding: 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+        }
+
+        .route-time-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            opacity: 0.7;
+            margin-bottom: 5px;
+        }
+
+        .route-time-value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        /* Transit mode selector */
+        .transit-mode {
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .transit-mode-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .add-mode-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 15px;
+            border: 2px dashed rgba(255,255,255,0.3);
+            border-radius: 10px;
+            background: transparent;
+            color: rgba(255,255,255,0.6);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .add-mode-btn:hover {
+            border-color: rgba(99, 102, 241, 0.8);
+            color: white;
         }
 
         /* Footer */
         .footer {
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid var(--border);
             text-align: center;
-            color: var(--text-secondary);
+            padding: 20px;
+            margin-top: 20px;
+            opacity: 0.6;
             font-size: 13px;
         }
 
         .footer a {
-            color: var(--accent);
+            color: white;
             text-decoration: none;
         }
 
@@ -724,453 +467,287 @@
             text-decoration: underline;
         }
 
-        /* Responsive */
-        @media (max-width: 1024px) {
-            .sidebar {
-                display: none;
-            }
-            .main {
-                margin-left: 0;
-            }
-            .grid {
-                grid-template-columns: 1fr;
-            }
-            .summary-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        /* Quick links */
-        .quick-links {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .quick-link {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 16px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text-primary);
-            text-decoration: none;
-            font-size: 13px;
-            transition: all 0.2s;
-        }
-
-        .quick-link:hover {
-            background: rgba(255,255,255,0.1);
-            border-color: var(--accent);
+        /* No data */
+        .no-data {
+            text-align: center;
+            padding: 30px;
+            opacity: 0.6;
         }
     </style>
 </head>
 <body>
-    <div class="app">
-        <!-- Sidebar -->
-        <nav class="sidebar">
-            <div class="logo">
-                <h1>PTV-TRMNL</h1>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>PTV-TRMNL Admin</h1>
+            <div class="live-indicator">
+                <div class="live-dot"></div>
+                <span id="data-mode">Loading...</span>
             </div>
-            <div class="nav-item active" onclick="showTab('dashboard')">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
-                Dashboard
-            </div>
-            <div class="nav-item" onclick="showTab('journey')">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
-                Journey Planner
-            </div>
-            <div class="nav-item" onclick="showTab('settings')">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                Settings
-            </div>
-            <div class="nav-item" onclick="showTab('system')">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                System
-            </div>
-        </nav>
+            <div class="time-display" id="current-time">--:--:--</div>
+            <div class="date-display" id="current-date">Loading...</div>
+        </div>
 
-        <!-- Main Content -->
-        <main class="main">
-            <!-- Dashboard Tab -->
-            <div id="tab-dashboard" class="tab-content active">
-                <div class="header">
-                    <h2>Dashboard</h2>
-                    <div class="header-meta">
-                        <div class="status-pill live" id="status-pill">
-                            <span class="status-dot"></span>
-                            <span id="data-mode">Loading...</span>
-                        </div>
-                        <div class="clock" id="clock">--:--:--</div>
+        <!-- Navigation -->
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showTab('live')">Live Data</button>
+            <button class="nav-tab" onclick="showTab('journey')">Journey Planner</button>
+            <button class="nav-tab" onclick="showTab('config')">Configuration</button>
+        </div>
+
+        <!-- Live Data Tab -->
+        <div id="tab-live" class="tab-content active">
+            <div class="grid">
+                <!-- Train Departures -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-icon">🚆</span>
+                        <h2>Train Departures</h2>
+                    </div>
+                    <div id="train-departures">
+                        <div class="loading"><div class="spinner"></div>Loading...</div>
                     </div>
                 </div>
 
-                <div class="grid">
-                    <!-- Train Departures -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>Train Departures</h3>
-                        </div>
-                        <div class="card-body">
-                            <div id="train-departures" class="departure-list">
-                                <div class="loading"><div class="spinner"></div>Loading...</div>
-                            </div>
-                        </div>
+                <!-- Tram Departures -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-icon">🚊</span>
+                        <h2>Tram Departures</h2>
                     </div>
-
-                    <!-- Tram Departures -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>Tram Departures</h3>
-                        </div>
-                        <div class="card-body">
-                            <div id="tram-departures" class="departure-list">
-                                <div class="loading"><div class="spinner"></div>Loading...</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Weather -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>Weather</h3>
-                            <span class="api-status active" id="weather-source">BOM</span>
-                        </div>
-                        <div class="card-body">
-                            <div id="weather-display" class="weather-display">
-                                <div class="loading"><div class="spinner"></div>Loading...</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Coffee Decision -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>Coffee Decision</h3>
-                        </div>
-                        <div class="card-body">
-                            <div id="coffee-decision" class="coffee-display">
-                                <div class="loading"><div class="spinner"></div>Loading...</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Journey Summary -->
-                    <div class="card grid-full" id="journey-summary-card" style="display: none;">
-                        <div class="card-header">
-                            <h3>Today's Journey</h3>
-                        </div>
-                        <div class="card-body" id="journey-summary"></div>
+                    <div id="tram-departures">
+                        <div class="loading"><div class="spinner"></div>Loading...</div>
                     </div>
                 </div>
 
-                <div class="quick-links" style="margin-top: 24px;">
-                    <a href="/admin/live-display" target="_blank" class="quick-link">Live Display</a>
-                    <a href="/preview" target="_blank" class="quick-link">E-Ink Preview</a>
-                    <a href="/api/dashboard" target="_blank" class="quick-link">HTML Dashboard</a>
-                    <a href="/api/region-updates" target="_blank" class="quick-link">JSON Data</a>
-                </div>
-            </div>
-
-            <!-- Journey Planner Tab -->
-            <div id="tab-journey" class="tab-content">
-                <div class="header">
-                    <h2>Journey Planner</h2>
-                </div>
-
-                <div class="grid">
-                    <div class="card grid-full">
-                        <div class="card-header">
-                            <h3>Plan Your Commute</h3>
-                        </div>
-                        <div class="card-body">
-                            <div id="planner-message"></div>
-
-                            <!-- Addresses -->
-                            <div class="form-row">
-                                <div class="form-group autocomplete-wrapper">
-                                    <label class="form-label">Home Address</label>
-                                    <input type="text" id="home-address" class="form-input" placeholder="Start typing your address..." autocomplete="off">
-                                    <div class="autocomplete-dropdown" id="home-dropdown"></div>
-                                </div>
-                                <div class="form-group autocomplete-wrapper">
-                                    <label class="form-label">Work Address</label>
-                                    <input type="text" id="work-address" class="form-input" placeholder="Start typing your address..." autocomplete="off">
-                                    <div class="autocomplete-dropdown" id="work-dropdown"></div>
-                                </div>
-                            </div>
-
-                            <div class="form-group autocomplete-wrapper">
-                                <label class="form-label">Cafe Address (optional)</label>
-                                <input type="text" id="cafe-address" class="form-input" placeholder="Your favorite coffee shop..." autocomplete="off">
-                                <div class="autocomplete-dropdown" id="cafe-dropdown"></div>
-                            </div>
-
-                            <!-- Transit Routes -->
-                            <div class="transit-route-builder">
-                                <label class="form-label" style="margin-bottom: 16px;">Transit Route</label>
-
-                                <div id="transit-modes">
-                                    <!-- Transit Mode 1 -->
-                                    <div class="transit-mode" id="transit-mode-1">
-                                        <div class="transit-mode-header">
-                                            <span class="transit-mode-title">Leg 1</span>
-                                            <select class="form-select" id="mode1-type" style="width: 120px;">
-                                                <option value="0">Train</option>
-                                                <option value="1">Tram</option>
-                                                <option value="2">Bus</option>
-                                                <option value="3">V/Line</option>
-                                            </select>
-                                        </div>
-                                        <div class="form-row">
-                                            <div class="form-group autocomplete-wrapper">
-                                                <label class="form-label">From Station/Stop</label>
-                                                <input type="text" id="mode1-origin" class="form-input" placeholder="e.g., South Yarra" autocomplete="off">
-                                                <div class="autocomplete-dropdown" id="mode1-origin-dropdown"></div>
-                                            </div>
-                                            <div class="form-group autocomplete-wrapper">
-                                                <label class="form-label">To Station/Stop</label>
-                                                <input type="text" id="mode1-destination" class="form-input" placeholder="e.g., Flinders Street" autocomplete="off">
-                                                <div class="autocomplete-dropdown" id="mode1-destination-dropdown"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Transit Mode 2 (optional) -->
-                                    <div class="transit-mode" id="transit-mode-2" style="display: none;">
-                                        <div class="transit-mode-header">
-                                            <span class="transit-mode-title">Leg 2</span>
-                                            <div style="display: flex; gap: 8px;">
-                                                <select class="form-select" id="mode2-type" style="width: 120px;">
-                                                    <option value="0">Train</option>
-                                                    <option value="1">Tram</option>
-                                                    <option value="2">Bus</option>
-                                                    <option value="3">V/Line</option>
-                                                </select>
-                                                <button class="btn btn-secondary" onclick="removeTransitLeg()" style="padding: 8px 12px;">Remove</button>
-                                            </div>
-                                        </div>
-                                        <div class="form-row">
-                                            <div class="form-group autocomplete-wrapper">
-                                                <label class="form-label">From Station/Stop</label>
-                                                <input type="text" id="mode2-origin" class="form-input" placeholder="e.g., Federation Square" autocomplete="off">
-                                                <div class="autocomplete-dropdown" id="mode2-origin-dropdown"></div>
-                                            </div>
-                                            <div class="form-group autocomplete-wrapper">
-                                                <label class="form-label">To Station/Stop</label>
-                                                <input type="text" id="mode2-destination" class="form-input" placeholder="e.g., Melbourne Central" autocomplete="off">
-                                                <div class="autocomplete-dropdown" id="mode2-destination-dropdown"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <button class="add-transit-btn" id="add-transit-btn" onclick="addTransitLeg()">
-                                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                                    Add Another Transit Leg (e.g., tram connection)
-                                </button>
-                            </div>
-
-                            <!-- Journey Options -->
-                            <div class="form-row" style="margin-top: 20px;">
-                                <div class="form-group">
-                                    <label class="form-label">Arrival Time at Work</label>
-                                    <input type="time" id="arrival-time" class="form-input" value="09:00">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Coffee Time (mins)</label>
-                                    <input type="number" id="coffee-time" class="form-input" value="5" min="0" max="30">
-                                </div>
-                            </div>
-
-                            <div class="checkbox-wrapper">
-                                <input type="checkbox" id="include-coffee" checked>
-                                <label for="include-coffee">Include coffee stop in journey calculation</label>
-                            </div>
-
-                            <button class="btn btn-success btn-block" onclick="planJourney()" style="margin-top: 20px;">
-                                <span id="plan-btn-text">Plan My Journey</span>
-                            </button>
-                        </div>
+                <!-- Weather -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-icon">🌤️</span>
+                        <h2>Weather</h2>
+                        <span class="status-badge status-live" id="weather-source">BOM</span>
                     </div>
+                    <div id="weather-display">
+                        <div class="loading"><div class="spinner"></div>Loading...</div>
+                    </div>
+                </div>
 
-                    <!-- Journey Result -->
-                    <div class="card grid-full" id="journey-result" style="display: none;">
-                        <div class="card-header">
-                            <h3>Your Journey Plan</h3>
-                        </div>
-                        <div class="card-body" id="journey-result-content"></div>
+                <!-- Coffee Decision -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-icon">☕</span>
+                        <h2>Coffee Decision</h2>
+                    </div>
+                    <div id="coffee-decision" class="coffee-decision">
+                        <div class="loading"><div class="spinner"></div>Loading...</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Settings Tab -->
-            <div id="tab-settings" class="tab-content">
-                <div class="header">
-                    <h2>Settings</h2>
+            <!-- Journey Summary -->
+            <div class="card" id="journey-summary-card" style="display: none;">
+                <div class="card-header">
+                    <span class="card-icon">🗺️</span>
+                    <h2>Today's Journey</h2>
+                </div>
+                <div id="journey-summary"></div>
+            </div>
+        </div>
+
+        <!-- Journey Planner Tab -->
+        <div id="tab-journey" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">🚀</span>
+                    <h2>Plan Your Commute</h2>
                 </div>
 
-                <div class="grid">
-                    <!-- PTV API Config -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>PTV API Configuration</h3>
+                <div id="planner-message"></div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Home Address</label>
+                        <input type="text" id="home-address" class="form-input" placeholder="123 Main Street, Suburb">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Work Address</label>
+                        <input type="text" id="work-address" class="form-input" placeholder="456 Office Ave, City">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Cafe Address (optional)</label>
+                    <input type="text" id="cafe-address" class="form-input" placeholder="Your favorite coffee shop">
+                </div>
+
+                <!-- Transit Route -->
+                <div class="transit-mode" id="transit-mode-1">
+                    <div class="transit-mode-header">
+                        <span style="font-weight: 600;">Transit Leg 1</span>
+                        <select id="mode1-type" class="form-input" style="width: 120px;">
+                            <option value="0">Train</option>
+                            <option value="1">Tram</option>
+                            <option value="2">Bus</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">From Station</label>
+                            <input type="text" id="mode1-origin" class="form-input" placeholder="e.g., South Yarra">
                         </div>
-                        <div class="card-body">
-                            <div id="api-message"></div>
-
-                            <div class="form-group">
-                                <label class="form-label">Developer ID</label>
-                                <input type="text" id="ptv-dev-id" class="form-input" placeholder="Your PTV Developer ID">
-                            </div>
-
-                            <div class="form-group">
-                                <label class="form-label">API Key</label>
-                                <input type="password" id="ptv-api-key" class="form-input" placeholder="Your PTV API Key">
-                            </div>
-
-                            <div style="display: flex; gap: 12px;">
-                                <button class="btn btn-primary" onclick="savePtvConfig()">Save Config</button>
-                                <button class="btn btn-secondary" onclick="testPtvApi()">Test Connection</button>
-                            </div>
-
-                            <div class="message message-info" style="margin-top: 16px;">
-                                Get your free PTV API key at <a href="https://www.ptv.vic.gov.au/footer/data-and-reporting/datasets/ptv-timetable-api/" target="_blank" style="color: inherit;">ptv.vic.gov.au</a>
-                            </div>
+                        <div class="form-group">
+                            <label class="form-label">To Station</label>
+                            <input type="text" id="mode1-destination" class="form-input" placeholder="e.g., Flinders Street">
                         </div>
                     </div>
+                </div>
 
-                    <!-- Display Settings -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>Display Settings</h3>
+                <div class="transit-mode" id="transit-mode-2" style="display: none;">
+                    <div class="transit-mode-header">
+                        <span style="font-weight: 600;">Transit Leg 2</span>
+                        <div style="display: flex; gap: 10px;">
+                            <select id="mode2-type" class="form-input" style="width: 120px;">
+                                <option value="0">Train</option>
+                                <option value="1">Tram</option>
+                                <option value="2">Bus</option>
+                            </select>
+                            <button class="btn btn-secondary" onclick="removeTransitLeg()" style="padding: 8px 16px;">Remove</button>
                         </div>
-                        <div class="card-body">
-                            <div class="checkbox-wrapper">
-                                <input type="checkbox" id="use-24-hour" checked>
-                                <label for="use-24-hour">Use 24-hour time format</label>
-                            </div>
-
-                            <div class="checkbox-wrapper">
-                                <input type="checkbox" id="show-walking-times" checked>
-                                <label for="show-walking-times">Show walking times</label>
-                            </div>
-
-                            <div class="checkbox-wrapper">
-                                <input type="checkbox" id="show-cafe-busyness" checked>
-                                <label for="show-cafe-busyness">Show cafe busyness</label>
-                            </div>
-
-                            <button class="btn btn-primary" onclick="saveDisplaySettings()" style="margin-top: 12px;">Save Settings</button>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">From Station</label>
+                            <input type="text" id="mode2-origin" class="form-input" placeholder="e.g., Fed Square">
                         </div>
+                        <div class="form-group">
+                            <label class="form-label">To Station</label>
+                            <input type="text" id="mode2-destination" class="form-input" placeholder="e.g., Melbourne Central">
+                        </div>
+                    </div>
+                </div>
+
+                <button class="add-mode-btn" id="add-mode-btn" onclick="addTransitLeg()">
+                    + Add Another Transit Leg
+                </button>
+
+                <div class="form-row" style="margin-top: 15px;">
+                    <div class="form-group">
+                        <label class="form-label">Arrival Time at Work</label>
+                        <input type="time" id="arrival-time" class="form-input" value="09:00">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Coffee Time (mins)</label>
+                        <input type="number" id="coffee-time" class="form-input" value="5" min="0" max="30">
+                    </div>
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="include-coffee" checked>
+                    <label for="include-coffee">Include coffee stop</label>
+                </div>
+
+                <button class="btn btn-success btn-block" onclick="planJourney()">
+                    <span id="plan-btn-text">Plan My Journey</span>
+                </button>
+            </div>
+
+            <!-- Journey Result -->
+            <div class="card" id="journey-result" style="display: none; margin-top: 20px;">
+                <div class="card-header">
+                    <span class="card-icon">📋</span>
+                    <h2>Your Journey</h2>
+                </div>
+                <div id="journey-result-content"></div>
+            </div>
+        </div>
+
+        <!-- Configuration Tab -->
+        <div id="tab-config" class="tab-content">
+            <div class="grid">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-icon">🔑</span>
+                        <h2>PTV API</h2>
+                    </div>
+                    <div id="api-message"></div>
+                    <div class="form-group">
+                        <label class="form-label">Developer ID</label>
+                        <input type="text" id="ptv-dev-id" class="form-input" placeholder="Your Developer ID">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">API Key</label>
+                        <input type="password" id="ptv-api-key" class="form-input" placeholder="Your API Key">
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn" onclick="savePtvConfig()">Save</button>
+                        <button class="btn btn-secondary" onclick="testPtvApi()">Test</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-icon">⚙️</span>
+                        <h2>Display Settings</h2>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="use-24-hour" checked>
+                        <label for="use-24-hour">24-hour time</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="show-walking-times" checked>
+                        <label for="show-walking-times">Show walking times</label>
+                    </div>
+                    <button class="btn" onclick="saveDisplaySettings()">Save Settings</button>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-icon">🛠️</span>
+                        <h2>Actions</h2>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <button class="btn" onclick="refreshData()">Refresh Data</button>
+                        <button class="btn btn-secondary" onclick="clearCache()">Clear Cache</button>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- System Tab -->
-            <div id="tab-system" class="tab-content">
-                <div class="header">
-                    <h2>System</h2>
-                </div>
-
-                <div class="grid">
-                    <!-- System Status -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>System Status</h3>
-                        </div>
-                        <div class="card-body">
-                            <div id="system-status">
-                                <div class="loading"><div class="spinner"></div>Loading...</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- API Status -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>API Status</h3>
-                        </div>
-                        <div class="card-body">
-                            <div id="api-status">
-                                <div class="loading"><div class="spinner"></div>Loading...</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Actions -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>Actions</h3>
-                        </div>
-                        <div class="card-body">
-                            <div style="display: flex; flex-direction: column; gap: 12px;">
-                                <button class="btn btn-primary" onclick="refreshData()">Refresh All Data</button>
-                                <button class="btn btn-secondary" onclick="clearCache()">Clear Cache</button>
-                                <button class="btn btn-secondary" onclick="exportConfig()">Export Configuration</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Region Data -->
-                    <div class="card grid-full">
-                        <div class="card-header">
-                            <h3>TRMNL Region Data</h3>
-                        </div>
-                        <div class="card-body">
-                            <pre id="region-data" style="font-family: monospace; font-size: 12px; background: var(--bg-card); padding: 16px; border-radius: 8px; overflow-x: auto; max-height: 300px;">
-                                <div class="loading"><div class="spinner"></div>Loading...</div>
-                            </pre>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <footer class="footer">
-                <p>PTV-TRMNL v1.0 | <a href="/admin/live-display" target="_blank">Live Display</a> | <a href="/preview" target="_blank">E-Ink Preview</a> | <a href="/api/dashboard" target="_blank">HTML Dashboard</a></p>
-            </footer>
-        </main>
+        <!-- Footer -->
+        <div class="footer">
+            <p><a href="/admin/live-display" target="_blank">Live Display</a> · <a href="/preview" target="_blank">E-Ink Preview</a> · <a href="/api/dashboard" target="_blank">HTML Dashboard</a></p>
+        </div>
     </div>
 
     <script>
         const BASE_URL = window.location.origin;
         let refreshInterval;
-        let autocompleteTimeout = null;
 
-        // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             updateClock();
             setInterval(updateClock, 1000);
             loadAllData();
             loadSavedPreferences();
-            setupAutocomplete();
             refreshInterval = setInterval(loadAllData, 30000);
         });
 
-        // Tab navigation
         function showTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
             document.getElementById('tab-' + tabId).classList.add('active');
-            event.target.closest('.nav-item').classList.add('active');
+            event.target.classList.add('active');
         }
 
-        // Update clock
         function updateClock() {
             const now = new Date();
-            const timeStr = now.toLocaleTimeString('en-AU', {
-                timeZone: 'Australia/Melbourne',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: false
+            document.getElementById('current-time').textContent = now.toLocaleTimeString('en-AU', {
+                timeZone: 'Australia/Melbourne', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
             });
-            document.getElementById('clock').textContent = timeStr;
+            document.getElementById('current-date').textContent = now.toLocaleDateString('en-AU', {
+                timeZone: 'Australia/Melbourne', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+            });
         }
 
-        // Load all data
         async function loadAllData() {
             try {
                 const [status, weather, regions] = await Promise.all([
@@ -1181,302 +758,104 @@
 
                 if (status) {
                     updateDepartures(status);
-                    updateDataMode(status.dataMode);
-                    updateSystemStatus(status);
+                    document.getElementById('data-mode').textContent = status.dataMode === 'Live' ? 'Live Data' : 'Fallback';
                 }
-
-                if (weather) {
-                    updateWeather(weather);
-                }
-
-                if (regions) {
-                    updateRegionData(regions);
-                }
-
+                if (weather) updateWeather(weather);
                 loadJourneySummary();
                 loadCoffeeDecision();
-                loadApiStatus();
-
             } catch (error) {
-                console.error('Error loading data:', error);
+                console.error('Error:', error);
             }
         }
 
-        // Update departures
         function updateDepartures(data) {
-            const trainHtml = renderDepartures(data.data?.trains || []);
-            const tramHtml = renderDepartures(data.data?.trams || []);
+            const trains = data.data?.trains || [];
+            const trams = data.data?.trams || [];
 
-            document.getElementById('train-departures').innerHTML = trainHtml || '<div style="text-align: center; padding: 20px; color: var(--text-secondary);">No departures available</div>';
-            document.getElementById('tram-departures').innerHTML = tramHtml || '<div style="text-align: center; padding: 20px; color: var(--text-secondary);">No departures available</div>';
-        }
-
-        function renderDepartures(departures) {
-            if (!departures || departures.length === 0) return '';
-
-            return departures.slice(0, 4).map(dep => {
-                const mins = dep.minutes || dep.minutesToDeparture || '--';
-                const dest = dep.destination || dep.direction || 'Unknown';
-                const scheduled = dep.scheduledTime || dep.scheduled || '';
-
-                return `
-                    <div class="departure-item">
-                        <div>
-                            <div class="departure-dest">${dest}</div>
-                            <div class="departure-meta">${scheduled ? 'Scheduled: ' + scheduled : 'Live data'}</div>
-                        </div>
-                        <div class="departure-time">${mins}<span> min</span></div>
+            document.getElementById('train-departures').innerHTML = trains.length ?
+                trains.slice(0, 4).map(d => `
+                    <div class="departure-row">
+                        <div><div class="departure-dest">${d.destination || d.direction || 'Unknown'}</div></div>
+                        <div class="departure-time">${d.minutes || d.minutesToDeparture || '--'}<span> min</span></div>
                     </div>
-                `;
-            }).join('');
+                `).join('') : '<div class="no-data">No departures</div>';
+
+            document.getElementById('tram-departures').innerHTML = trams.length ?
+                trams.slice(0, 4).map(d => `
+                    <div class="departure-row">
+                        <div><div class="departure-dest">${d.destination || d.direction || 'Unknown'}</div></div>
+                        <div class="departure-time">${d.minutes || d.minutesToDeparture || '--'}<span> min</span></div>
+                    </div>
+                `).join('') : '<div class="no-data">No departures</div>';
         }
 
-        // Update data mode
-        function updateDataMode(mode) {
-            const pill = document.getElementById('status-pill');
-            const modeText = document.getElementById('data-mode');
-
-            if (mode === 'Live') {
-                pill.className = 'status-pill live';
-                modeText.textContent = 'Live Data';
-            } else {
-                pill.className = 'status-pill offline';
-                modeText.textContent = 'Fallback Data';
-            }
-        }
-
-        // Update weather
         function updateWeather(data) {
             const temp = data.current?.temperature || data.temperature || '--';
-            const condition = data.current?.condition?.full || data.current?.condition || data.condition || 'Unknown';
-            const source = data.source || 'Unknown';
+            const condition = data.current?.condition?.full || data.condition || 'Unknown';
             const humidity = data.current?.humidity || data.humidity || '--';
-
-            document.getElementById('weather-source').textContent = source;
+            document.getElementById('weather-source').textContent = data.source || 'BOM';
             document.getElementById('weather-display').innerHTML = `
-                <div class="weather-temp">${temp}°</div>
-                <div class="weather-info">
-                    <div class="weather-condition">${condition}</div>
-                    <div>Humidity: ${humidity}%</div>
+                <div class="weather-display">
+                    <div class="weather-temp">${temp}°</div>
+                    <div><div class="weather-condition">${condition}</div><div class="weather-extra">Humidity ${humidity}%</div></div>
                 </div>
             `;
         }
 
-        // Coffee decision
         async function loadCoffeeDecision() {
             try {
-                const response = await fetch(BASE_URL + '/admin/route');
-                const route = await response.json();
-
-                if (route && route.coffee_decision) {
-                    const decision = route.coffee_decision;
+                const route = await fetch(BASE_URL + '/admin/route').then(r => r.json());
+                if (route?.coffee_decision) {
                     document.getElementById('coffee-decision').innerHTML = `
-                        <div class="coffee-icon">${decision.can_get_coffee ? '☕' : '⏰'}</div>
-                        <div class="coffee-text">${decision.can_get_coffee ? 'Time for Coffee!' : 'Skip Coffee Today'}</div>
-                        <div class="coffee-subtext">${decision.message || ''}</div>
+                        <div class="coffee-icon">${route.coffee_decision.can_get_coffee ? '☕' : '⏰'}</div>
+                        <div class="coffee-text">${route.coffee_decision.can_get_coffee ? 'Time for Coffee!' : 'Skip Coffee'}</div>
+                        <div class="coffee-subtext">${route.coffee_decision.message || ''}</div>
                     `;
                 } else {
                     document.getElementById('coffee-decision').innerHTML = `
                         <div class="coffee-icon">☕</div>
                         <div class="coffee-text">Plan a Journey</div>
-                        <div class="coffee-subtext">Configure your journey to get coffee recommendations</div>
+                        <div class="coffee-subtext">Configure your route first</div>
                     `;
                 }
-            } catch (error) {
+            } catch (e) {
                 document.getElementById('coffee-decision').innerHTML = `
-                    <div class="coffee-icon">☕</div>
-                    <div class="coffee-text">Plan a Journey</div>
-                    <div class="coffee-subtext">Configure your journey to get coffee recommendations</div>
+                    <div class="coffee-icon">☕</div><div class="coffee-text">Plan a Journey</div>
                 `;
             }
         }
 
-        // Journey summary
         async function loadJourneySummary() {
             try {
-                const response = await fetch(BASE_URL + '/admin/route/auto');
-                const journey = await response.json();
-
-                if (journey && journey.summary) {
+                const journey = await fetch(BASE_URL + '/admin/route/auto').then(r => r.json());
+                if (journey?.summary) {
                     document.getElementById('journey-summary-card').style.display = 'block';
-                    document.getElementById('journey-summary').innerHTML = renderJourneySummary(journey);
+                    document.getElementById('journey-summary').innerHTML = `
+                        <div class="route-summary">
+                            <div class="route-time"><div class="route-time-label">Leave Home</div><div class="route-time-value">${journey.summary.must_leave_home || '--:--'}</div></div>
+                            <div class="route-time"><div class="route-time-label">Arrive Work</div><div class="route-time-value">${journey.summary.arrival_at_work || '--:--'}</div></div>
+                        </div>
+                    `;
                 }
-            } catch (error) {
+            } catch (e) {
                 document.getElementById('journey-summary-card').style.display = 'none';
             }
         }
 
-        function renderJourneySummary(journey) {
-            const summary = journey.summary || {};
-            const segments = journey.segments || [];
-
-            let segmentsHtml = segments.map(seg => {
-                const type = seg.type || 'walk';
-                const icon = type === 'walk' ? '🚶' : type === 'train' ? '🚆' : type === 'tram' ? '🚊' : type === 'coffee' ? '☕' : '📍';
-                return `
-                    <div class="segment ${type}">
-                        <div class="segment-header">
-                            <span class="segment-title">${icon} ${seg.description || seg.name || type}</span>
-                            <span class="segment-duration">${seg.duration || seg.time || '--'} min</span>
-                        </div>
-                        <div class="segment-detail">${seg.from || ''} ${seg.to ? '→ ' + seg.to : ''}</div>
-                    </div>
-                `;
-            }).join('');
-
-            return `
-                <div class="summary-grid">
-                    <div class="summary-box">
-                        <div class="summary-value">${summary.must_leave_home || '--:--'}</div>
-                        <div class="summary-label">Leave Home</div>
-                    </div>
-                    <div class="summary-box">
-                        <div class="summary-value">${summary.arrival_at_work || '--:--'}</div>
-                        <div class="summary-label">Arrive Work</div>
-                    </div>
-                    <div class="summary-box">
-                        <div class="summary-value">${summary.total_duration || '--'}</div>
-                        <div class="summary-label">Total (min)</div>
-                    </div>
-                    <div class="summary-box">
-                        <div class="summary-value">${summary.coffee_time || '0'}</div>
-                        <div class="summary-label">Coffee (min)</div>
-                    </div>
-                </div>
-                <div class="journey-timeline">${segmentsHtml}</div>
-            `;
-        }
-
-        // Region data
-        function updateRegionData(data) {
-            document.getElementById('region-data').textContent = JSON.stringify(data, null, 2);
-        }
-
-        // System status
-        function updateSystemStatus(data) {
-            document.getElementById('system-status').innerHTML = `
-                <div class="summary-grid" style="grid-template-columns: repeat(2, 1fr);">
-                    <div class="summary-box">
-                        <div class="summary-value">${data.dataMode || 'Unknown'}</div>
-                        <div class="summary-label">Data Mode</div>
-                    </div>
-                    <div class="summary-box">
-                        <div class="summary-value">30s</div>
-                        <div class="summary-label">Refresh Rate</div>
-                    </div>
-                    <div class="summary-box">
-                        <div class="summary-value">${data.data?.trains?.length || 0}</div>
-                        <div class="summary-label">Trains</div>
-                    </div>
-                    <div class="summary-box">
-                        <div class="summary-value">${data.data?.trams?.length || 0}</div>
-                        <div class="summary-label">Trams</div>
-                    </div>
-                </div>
-            `;
-        }
-
-        // API status
-        async function loadApiStatus() {
-            try {
-                const response = await fetch(BASE_URL + '/admin/apis');
-                const apis = await response.json();
-
-                let html = '';
-                for (const [key, api] of Object.entries(apis)) {
-                    const statusClass = api.status === 'active' ? 'active' : api.status === 'unconfigured' ? 'inactive' : 'error';
-                    html += `
-                        <div class="api-item">
-                            <span class="api-name">${api.name || key}</span>
-                            <span class="api-status ${statusClass}">${api.status || 'Unknown'}</span>
-                        </div>
-                    `;
-                }
-                document.getElementById('api-status').innerHTML = html || '<div style="text-align: center; padding: 20px; color: var(--text-secondary);">No API data</div>';
-            } catch (error) {
-                document.getElementById('api-status').innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-secondary);">Could not load API status</div>';
-            }
-        }
-
-        // Address autocomplete
-        function setupAutocomplete() {
-            const fields = [
-                { input: 'home-address', dropdown: 'home-dropdown' },
-                { input: 'work-address', dropdown: 'work-dropdown' },
-                { input: 'cafe-address', dropdown: 'cafe-dropdown' },
-                { input: 'mode1-origin', dropdown: 'mode1-origin-dropdown' },
-                { input: 'mode1-destination', dropdown: 'mode1-destination-dropdown' },
-                { input: 'mode2-origin', dropdown: 'mode2-origin-dropdown' },
-                { input: 'mode2-destination', dropdown: 'mode2-destination-dropdown' }
-            ];
-
-            fields.forEach(({ input, dropdown }) => {
-                const inputEl = document.getElementById(input);
-                const dropdownEl = document.getElementById(dropdown);
-
-                inputEl.addEventListener('input', () => {
-                    clearTimeout(autocompleteTimeout);
-                    const query = inputEl.value.trim();
-
-                    if (query.length < 3) {
-                        dropdownEl.classList.remove('show');
-                        return;
-                    }
-
-                    autocompleteTimeout = setTimeout(async () => {
-                        try {
-                            const response = await fetch(BASE_URL + '/admin/address/search?q=' + encodeURIComponent(query));
-                            const data = await response.json();
-
-                            if (data.results && data.results.length > 0) {
-                                dropdownEl.innerHTML = data.results.map(r => `
-                                    <div class="autocomplete-item" data-address="${r.address || r.name}">
-                                        <div class="name">${r.name}</div>
-                                        <div class="address">${r.address || ''}</div>
-                                    </div>
-                                `).join('');
-                                dropdownEl.classList.add('show');
-
-                                dropdownEl.querySelectorAll('.autocomplete-item').forEach(item => {
-                                    item.addEventListener('click', () => {
-                                        inputEl.value = item.dataset.address;
-                                        dropdownEl.classList.remove('show');
-                                    });
-                                });
-                            } else {
-                                dropdownEl.classList.remove('show');
-                            }
-                        } catch (error) {
-                            console.error('Autocomplete error:', error);
-                        }
-                    }, 300);
-                });
-
-                inputEl.addEventListener('blur', () => {
-                    setTimeout(() => dropdownEl.classList.remove('show'), 200);
-                });
-            });
-        }
-
-        // Transit leg management
         function addTransitLeg() {
             document.getElementById('transit-mode-2').style.display = 'block';
-            document.getElementById('add-transit-btn').style.display = 'none';
+            document.getElementById('add-mode-btn').style.display = 'none';
         }
 
         function removeTransitLeg() {
             document.getElementById('transit-mode-2').style.display = 'none';
-            document.getElementById('add-transit-btn').style.display = 'flex';
-            // Clear mode 2 inputs
+            document.getElementById('add-mode-btn').style.display = 'flex';
             document.getElementById('mode2-origin').value = '';
             document.getElementById('mode2-destination').value = '';
         }
 
-        // Plan journey
         async function planJourney() {
-            const btn = document.getElementById('plan-btn-text');
-            btn.textContent = 'Planning...';
-
+            document.getElementById('plan-btn-text').textContent = 'Planning...';
             const hasMode2 = document.getElementById('transit-mode-2').style.display !== 'none';
 
             const data = {
@@ -1488,165 +867,92 @@
                 coffeeTime: parseInt(document.getElementById('coffee-time').value) || 5,
                 transitRoute: {
                     numberOfModes: hasMode2 ? 2 : 1,
-                    mode1: {
-                        type: parseInt(document.getElementById('mode1-type').value),
-                        originStation: { name: document.getElementById('mode1-origin').value },
-                        destinationStation: { name: document.getElementById('mode1-destination').value }
-                    },
-                    mode2: hasMode2 ? {
-                        type: parseInt(document.getElementById('mode2-type').value),
-                        originStation: { name: document.getElementById('mode2-origin').value },
-                        destinationStation: { name: document.getElementById('mode2-destination').value }
-                    } : null
+                    mode1: { type: parseInt(document.getElementById('mode1-type').value), originStation: { name: document.getElementById('mode1-origin').value }, destinationStation: { name: document.getElementById('mode1-destination').value } },
+                    mode2: hasMode2 ? { type: parseInt(document.getElementById('mode2-type').value), originStation: { name: document.getElementById('mode2-origin').value }, destinationStation: { name: document.getElementById('mode2-destination').value } } : null
                 }
             };
 
             try {
-                const response = await fetch(BASE_URL + '/admin/route/auto-plan', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-
-                const result = await response.json();
+                const result = await fetch(BASE_URL + '/admin/route/auto-plan', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+                }).then(r => r.json());
 
                 if (result.success) {
-                    showMessage('planner-message', 'Journey planned successfully!', 'success');
+                    showMessage('planner-message', 'Journey planned!', 'success');
                     document.getElementById('journey-result').style.display = 'block';
-                    document.getElementById('journey-result-content').innerHTML = renderJourneySummary(result.journey);
-                    savePreferences(data);
+                    document.getElementById('journey-result-content').innerHTML = `
+                        <div class="route-summary">
+                            <div class="route-time"><div class="route-time-label">Leave Home</div><div class="route-time-value">${result.journey?.summary?.must_leave_home || '--:--'}</div></div>
+                            <div class="route-time"><div class="route-time-label">Arrive Work</div><div class="route-time-value">${result.journey?.summary?.arrival_at_work || '--:--'}</div></div>
+                        </div>
+                    `;
+                    localStorage.setItem('ptv-journey-prefs', JSON.stringify(data));
                     loadJourneySummary();
                     loadCoffeeDecision();
                 } else {
-                    showMessage('planner-message', result.error || 'Failed to plan journey', 'error');
+                    showMessage('planner-message', result.error || 'Failed', 'error');
                 }
-            } catch (error) {
-                showMessage('planner-message', 'Error: ' + error.message, 'error');
+            } catch (e) {
+                showMessage('planner-message', 'Error: ' + e.message, 'error');
             }
-
-            btn.textContent = 'Plan My Journey';
-        }
-
-        // Save/load preferences
-        function savePreferences(data) {
-            localStorage.setItem('ptv-journey-prefs', JSON.stringify(data));
+            document.getElementById('plan-btn-text').textContent = 'Plan My Journey';
         }
 
         function loadSavedPreferences() {
             const saved = localStorage.getItem('ptv-journey-prefs');
             if (saved) {
-                const prefs = JSON.parse(saved);
-                document.getElementById('home-address').value = prefs.homeAddress || '';
-                document.getElementById('work-address').value = prefs.workAddress || '';
-                document.getElementById('cafe-address').value = prefs.cafeAddress || '';
-                document.getElementById('arrival-time').value = prefs.arrivalTime || '09:00';
-                document.getElementById('include-coffee').checked = prefs.includeCoffee !== false;
-                document.getElementById('coffee-time').value = prefs.coffeeTime || 5;
-
-                if (prefs.transitRoute) {
-                    if (prefs.transitRoute.mode1) {
-                        document.getElementById('mode1-type').value = prefs.transitRoute.mode1.type || 0;
-                        document.getElementById('mode1-origin').value = prefs.transitRoute.mode1.originStation?.name || '';
-                        document.getElementById('mode1-destination').value = prefs.transitRoute.mode1.destinationStation?.name || '';
-                    }
-                    if (prefs.transitRoute.numberOfModes === 2 && prefs.transitRoute.mode2) {
-                        addTransitLeg();
-                        document.getElementById('mode2-type').value = prefs.transitRoute.mode2.type || 0;
-                        document.getElementById('mode2-origin').value = prefs.transitRoute.mode2.originStation?.name || '';
-                        document.getElementById('mode2-destination').value = prefs.transitRoute.mode2.destinationStation?.name || '';
-                    }
+                const p = JSON.parse(saved);
+                document.getElementById('home-address').value = p.homeAddress || '';
+                document.getElementById('work-address').value = p.workAddress || '';
+                document.getElementById('cafe-address').value = p.cafeAddress || '';
+                document.getElementById('arrival-time').value = p.arrivalTime || '09:00';
+                document.getElementById('include-coffee').checked = p.includeCoffee !== false;
+                document.getElementById('coffee-time').value = p.coffeeTime || 5;
+                if (p.transitRoute?.mode1) {
+                    document.getElementById('mode1-type').value = p.transitRoute.mode1.type || 0;
+                    document.getElementById('mode1-origin').value = p.transitRoute.mode1.originStation?.name || '';
+                    document.getElementById('mode1-destination').value = p.transitRoute.mode1.destinationStation?.name || '';
+                }
+                if (p.transitRoute?.numberOfModes === 2 && p.transitRoute.mode2) {
+                    addTransitLeg();
+                    document.getElementById('mode2-type').value = p.transitRoute.mode2.type || 0;
+                    document.getElementById('mode2-origin').value = p.transitRoute.mode2.originStation?.name || '';
+                    document.getElementById('mode2-destination').value = p.transitRoute.mode2.destinationStation?.name || '';
                 }
             }
         }
 
-        // PTV config
         async function savePtvConfig() {
-            const devId = document.getElementById('ptv-dev-id').value;
-            const apiKey = document.getElementById('ptv-api-key').value;
-
             try {
-                const response = await fetch(BASE_URL + '/admin/apis', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        ptv_opendata: {
-                            api_key: devId,
-                            token: apiKey
-                        }
-                    })
+                await fetch(BASE_URL + '/admin/apis', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ptv_opendata: { api_key: document.getElementById('ptv-dev-id').value, token: document.getElementById('ptv-api-key').value } })
                 });
-
-                await response.json();
-                showMessage('api-message', 'PTV API configuration saved!', 'success');
-                loadApiStatus();
-            } catch (error) {
-                showMessage('api-message', 'Error saving config: ' + error.message, 'error');
+                showMessage('api-message', 'Saved!', 'success');
+            } catch (e) {
+                showMessage('api-message', 'Error', 'error');
             }
         }
 
         async function testPtvApi() {
-            try {
-                const response = await fetch(BASE_URL + '/api/status');
-                const data = await response.json();
-
-                if (data.dataMode === 'Live') {
-                    showMessage('api-message', 'PTV API connection successful! Live data active.', 'success');
-                } else {
-                    showMessage('api-message', 'PTV API not connected. Using fallback data.', 'error');
-                }
-            } catch (error) {
-                showMessage('api-message', 'Connection test failed: ' + error.message, 'error');
-            }
+            const data = await fetch(BASE_URL + '/api/status').then(r => r.json());
+            showMessage('api-message', data.dataMode === 'Live' ? 'Connected!' : 'Not connected', data.dataMode === 'Live' ? 'success' : 'error');
         }
 
-        // Display settings
         function saveDisplaySettings() {
-            const settings = {
+            localStorage.setItem('ptv-display-settings', JSON.stringify({
                 use24Hour: document.getElementById('use-24-hour').checked,
-                showWalkingTimes: document.getElementById('show-walking-times').checked,
-                showCafeBusyness: document.getElementById('show-cafe-busyness').checked
-            };
-            localStorage.setItem('ptv-display-settings', JSON.stringify(settings));
-            showMessage('api-message', 'Display settings saved!', 'success');
+                showWalkingTimes: document.getElementById('show-walking-times').checked
+            }));
+            showMessage('api-message', 'Saved!', 'success');
         }
 
-        // Actions
-        function refreshData() {
-            loadAllData();
-            showMessage('api-message', 'Data refreshed!', 'success');
-        }
+        function refreshData() { loadAllData(); }
+        async function clearCache() { await fetch(BASE_URL + '/admin/cache/clear', { method: 'POST' }); loadAllData(); }
 
-        async function clearCache() {
-            try {
-                await fetch(BASE_URL + '/admin/cache/clear', { method: 'POST' });
-                loadAllData();
-                showMessage('api-message', 'Cache cleared!', 'success');
-            } catch (error) {
-                showMessage('api-message', 'Error clearing cache', 'error');
-            }
-        }
-
-        async function exportConfig() {
-            try {
-                const response = await fetch(BASE_URL + '/admin/preferences/export');
-                const data = await response.json();
-
-                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'ptv-trmnl-config.json';
-                a.click();
-            } catch (error) {
-                showMessage('api-message', 'Error exporting config', 'error');
-            }
-        }
-
-        // Message helper
-        function showMessage(elementId, message, type) {
-            const el = document.getElementById(elementId);
-            el.innerHTML = `<div class="message message-${type}">${message}</div>`;
-            setTimeout(() => { el.innerHTML = ''; }, 5000);
+        function showMessage(id, msg, type) {
+            document.getElementById(id).innerHTML = `<div class="message message-${type}">${msg}</div>`;
+            setTimeout(() => document.getElementById(id).innerHTML = '', 3000);
         }
     </script>
 </body>
