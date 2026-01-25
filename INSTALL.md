@@ -371,34 +371,83 @@ You should see HTML markup with your journey information.
 
 **Prerequisites:**
 - Docker installed ([Get Docker](https://docs.docker.com/get-docker/))
+- Docker Compose (included with Docker Desktop)
 
-**Quick Start:**
+**Quick Start (Recommended):**
+
+```bash
+# 1. Clone repository
+git clone https://github.com/angusbergman17-cpu/PTV-TRMNL-NEW.git
+cd PTV-TRMNL-NEW
+
+# 2. Create .env file from template
+cp .env.example .env
+
+# 3. Edit .env with your API keys
+nano .env  # or use any text editor
+
+# 4. Start with Docker Compose
+docker-compose up -d
+
+# 5. Check logs
+docker-compose logs -f ptv-trmnl
+
+# 6. Access admin panel
+open http://localhost:3000/admin
+```
+
+**Docker Compose Commands:**
+
+```bash
+# Start services (detached)
+docker-compose up -d
+
+# View logs (live)
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+
+# Restart after code changes
+docker-compose down && docker-compose build && docker-compose up -d
+
+# Remove volumes (reset data)
+docker-compose down -v
+```
+
+**Manual Docker (without Compose):**
 
 ```bash
 # Build image
 docker build -t ptv-trmnl .
 
-# Run container
+# Run container with environment variables
 docker run -d \
   -p 3000:3000 \
-  -v $(pwd)/data:/app/data \
-  -e TRMNL_API_KEY=your_key \
+  -v ptv-data:/app/data \
+  -e TRMNL_API_KEY=your_key_here \
+  -e TRANSPORT_VICTORIA_GTFS_KEY=your_key_here \
   --name ptv-trmnl \
+  --restart unless-stopped \
   ptv-trmnl
-```
-
-**Or use Docker Compose:**
-
-```bash
-# Start services
-docker-compose up -d
 
 # View logs
-docker-compose logs -f
+docker logs -f ptv-trmnl
 
-# Stop services
-docker-compose down
+# Stop container
+docker stop ptv-trmnl
+
+# Remove container
+docker rm ptv-trmnl
 ```
+
+**Features:**
+- ✅ Node.js 20 Alpine (minimal image ~150MB)
+- ✅ Health checks every 30 seconds
+- ✅ Persistent data storage via volumes
+- ✅ Non-root user for security
+- ✅ Auto-restart on failure
+- ✅ Production-optimized dependencies
 
 ### Option 5: Self-Hosted VPS
 
