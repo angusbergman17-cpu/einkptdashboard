@@ -28,6 +28,41 @@ The **server is the brain** - it calculates your leave time, checks coffee feasi
 
 ---
 
+## 🆕 What's New in v2.0
+
+### Auto-Save Everything
+- **No More Save Buttons**: Every field auto-saves 1.5 seconds after you stop typing
+- **Visual Confirmation**: Green "✓ Saved" indicator appears on every save
+- **Seamless Experience**: Your preferences sync instantly across all modules
+
+### Real-Time Journey Updates
+- **Faster Calculations**: Background updates every **2 minutes** (previously 10 minutes)
+- **Always Current**: TRMNL device always shows the most up-to-date transit info
+- **Live Monitoring**: Watch journey auto-calculation status in admin panel
+
+### Complete System Reset
+- **Fresh Start Button**: New "Wipe All Data & Restart Server" feature
+- **Triple Confirmation**: Prevents accidental deletions with multiple safety checks
+- **Clean Slate**: Perfect for testing or starting over
+
+### Enhanced Cache Management
+- **Manual Cache Clear**: Clear geocoding, weather, and journey caches without losing data
+- **Granular Control**: Choose to clear caches OR perform full system reset
+- **Performance Boost**: Clear caches when you need fresh data
+
+### Cafe Name Support
+- **Business Name Input**: Enter cafe names instead of just addresses
+- **Better Search**: System intelligently searches for cafes by name
+- **6-Tier Geocoding**: Falls back through Google Places → Mapbox → HERE → Foursquare → LocationIQ → Nominatim
+
+### Full System Transparency
+- **Architecture Map**: Visual representation of complete data flow
+- **System Audit**: Comprehensive SYSTEM-AUDIT.md with 10-point verification
+- **Decision Logging**: Every system decision recorded for transparency
+- **API Status Dashboard**: Live monitoring of all configured services
+
+---
+
 ## Quick Start (15 minutes)
 
 ### Step 1: Deploy Your Server (Free)
@@ -54,7 +89,10 @@ The **server is the brain** - it calculates your leave time, checks coffee feasi
 4. Go to the **Journey Planner** tab
 5. Enter your home address, work address, and favorite cafe
 6. Set your work arrival time (e.g., 09:00)
-7. Click **Plan My Journey**
+7. **Wait 1.5 seconds** - all fields auto-save (you'll see "✓ Saved" indicator)
+8. Click **Calculate Route** to generate your journey plan
+
+**Note**: No save buttons needed - everything saves automatically!
 
 ### Step 4: Flash Your TRMNL Device
 
