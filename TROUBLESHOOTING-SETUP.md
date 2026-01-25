@@ -1,5 +1,5 @@
 # Troubleshooting Setup Issues
-**For PTV-TRMNL v2.5.1+**
+**For PTV-TRMNL v2.5.2+**
 **Date**: 2026-01-25
 
 ---
@@ -345,5 +345,5 @@ If you've tried all the above and it's still not working:
 ---
 
 **Last Updated**: 2026-01-25
-**Version**: v2.5.1
+**Version**: v2.5.2
 **Status**: Debugging tools active
