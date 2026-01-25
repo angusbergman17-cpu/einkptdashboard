@@ -609,12 +609,19 @@
 
         <!-- Live Data Tab -->
         <div id="tab-live" class="tab-content active">
+            <!-- Configuration Status Banner -->
+            <div id="config-status-banner" style="margin-bottom: 20px; padding: 15px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-radius: 12px; border-left: 4px solid #667eea;">
+                <div style="font-weight: 700; margin-bottom: 8px; font-size: 14px;">📡 Live Data Configuration</div>
+                <div id="config-summary" style="font-size: 13px; opacity: 0.9; line-height: 1.6;">Loading configuration...</div>
+            </div>
+
             <div class="grid">
                 <!-- Train Departures -->
                 <div class="card">
                     <div class="card-header">
                         <span class="card-icon">🚆</span>
-                        <h2>Train Departures</h2>
+                        <h2 id="train-station-name">Train Departures</h2>
+                        <span class="status-badge" id="train-status">●</span>
                     </div>
                     <div id="train-departures">
                         <div class="loading"><div class="spinner"></div>Loading...</div>
@@ -625,7 +632,8 @@
                 <div class="card">
                     <div class="card-header">
                         <span class="card-icon">🚊</span>
-                        <h2>Tram Departures</h2>
+                        <h2 id="tram-station-name">Tram Departures</h2>
+                        <span class="status-badge" id="tram-status">●</span>
                     </div>
                     <div id="tram-departures">
                         <div class="loading"><div class="spinner"></div>Loading...</div>
@@ -636,7 +644,7 @@
                 <div class="card">
                     <div class="card-header">
                         <span class="card-icon">🌤️</span>
-                        <h2>Weather</h2>
+                        <h2 id="weather-location-name">Weather</h2>
                         <span class="status-badge status-live" id="weather-source">BOM</span>
                     </div>
                     <div id="weather-display">
@@ -649,10 +657,22 @@
                     <div class="card-header">
                         <span class="card-icon">☕</span>
                         <h2>Coffee Decision</h2>
+                        <span class="status-badge" id="coffee-status">●</span>
                     </div>
                     <div id="coffee-decision" class="coffee-decision">
                         <div class="loading"><div class="spinner"></div>Loading...</div>
                     </div>
+                </div>
+            </div>
+
+            <!-- API Status Dashboard -->
+            <div class="card" style="margin-top: 20px;">
+                <div class="card-header">
+                    <span class="card-icon">🔌</span>
+                    <h2>API Status & Configuration</h2>
+                </div>
+                <div id="api-status-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
+                    <div class="loading"><div class="spinner"></div>Loading API status...</div>
                 </div>
             </div>
 
@@ -1371,10 +1391,11 @@
 
         async function loadAllData() {
             try {
-                const [status, weather, regions] = await Promise.all([
+                const [status, weather, regions, systemStatus] = await Promise.all([
                     fetch(BASE_URL + '/api/status').then(r => r.json()).catch(() => null),
                     fetch(BASE_URL + '/admin/weather').then(r => r.json()).catch(() => null),
-                    fetch(BASE_URL + '/api/region-updates').then(r => r.json()).catch(() => null)
+                    fetch(BASE_URL + '/api/region-updates').then(r => r.json()).catch(() => null),
+                    fetch(BASE_URL + '/api/system-status').then(r => r.json()).catch(() => null)
                 ]);
 
                 if (status) {
@@ -1382,11 +1403,170 @@
                     document.getElementById('data-mode').textContent = status.dataMode === 'Live' ? 'Live Data' : 'Fallback';
                 }
                 if (weather) updateWeather(weather);
+                if (systemStatus) updateSystemStatus(systemStatus);
                 loadJourneySummary();
                 loadCoffeeDecision();
                 loadAutoCalcStatus();
             } catch (error) {
                 console.error('Error:', error);
+            }
+        }
+
+        function updateSystemStatus(status) {
+            // Update configuration banner
+            const configSummary = document.getElementById('config-summary');
+            if (configSummary) {
+                const isConfigured = status.configured;
+                configSummary.innerHTML = `
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; font-size: 12px;">
+                        <div><strong>Location:</strong> ${status.location.city}, ${status.location.state}</div>
+                        <div><strong>Transit Authority:</strong> ${status.location.transitAuthority}</div>
+                        <div><strong>Status:</strong> <span style="color: ${isConfigured ? '#48bb78' : '#fc8181'}; font-weight: 600;">${isConfigured ? '✓ Configured' : '✗ Not Configured'}</span></div>
+                        <div><strong>Auto-Calc:</strong> ${status.journey.autoCalculation.active ? '✓ Active' : '✗ Inactive'}</div>
+                    </div>
+                `;
+            }
+
+            // Update station names in live data widgets
+            if (status.transitStations.mode1.origin !== 'Not configured') {
+                const trainHeader = document.getElementById('train-station-name');
+                if (trainHeader) {
+                    trainHeader.textContent = `${status.transitStations.mode1.origin}`;
+                }
+            }
+
+            if (status.transitStations.mode2 && status.transitStations.mode2.origin !== 'Not configured') {
+                const tramHeader = document.getElementById('tram-station-name');
+                if (tramHeader) {
+                    tramHeader.textContent = `${status.transitStations.mode2.origin}`;
+                }
+            }
+
+            // Update weather location
+            const weatherHeader = document.getElementById('weather-location-name');
+            if (weatherHeader && status.location.city !== 'Not configured') {
+                weatherHeader.textContent = `Weather - ${status.location.city}`;
+            }
+
+            // Update API status grid
+            updateApiStatusGrid(status.apis);
+
+            // Update status badges
+            updateStatusBadges(status);
+        }
+
+        function updateApiStatusGrid(apis) {
+            const grid = document.getElementById('api-status-grid');
+            if (!grid) return;
+
+            const apiCards = [];
+
+            // Transit Authority API
+            apiCards.push(createApiCard(
+                '🚆',
+                apis.transitAuthority.name,
+                apis.transitAuthority.configured ? 'Configured' : 'Not Configured',
+                apis.transitAuthority.status,
+                apis.transitAuthority.baseUrl
+            ));
+
+            // Weather API
+            apiCards.push(createApiCard(
+                '🌤️',
+                apis.weather.name,
+                apis.weather.service,
+                apis.weather.status,
+                'Always Active'
+            ));
+
+            // Geocoding
+            apiCards.push(createApiCard(
+                '📍',
+                apis.geocoding.name,
+                `${apis.geocoding.services.length} Services Available`,
+                apis.geocoding.status,
+                apis.geocoding.services.join(', ')
+            ));
+
+            // Google Places (if configured)
+            if (apis.googlePlaces.configured) {
+                apiCards.push(createApiCard(
+                    '🗺️',
+                    apis.googlePlaces.name,
+                    'Enhanced Geocoding',
+                    apis.googlePlaces.status,
+                    'Active'
+                ));
+            }
+
+            // Mapbox (if configured)
+            if (apis.mapbox.configured) {
+                apiCards.push(createApiCard(
+                    '🌐',
+                    apis.mapbox.name,
+                    'Address Geocoding',
+                    apis.mapbox.status,
+                    'Active'
+                ));
+            }
+
+            // HERE (if configured)
+            if (apis.here.configured) {
+                apiCards.push(createApiCard(
+                    '🌏',
+                    apis.here.name,
+                    'Australian Address Optimization',
+                    apis.here.status,
+                    'Active'
+                ));
+            }
+
+            grid.innerHTML = apiCards.join('');
+        }
+
+        function createApiCard(icon, name, description, status, details) {
+            const statusColor = status === 'active' ? '#48bb78' : status === 'optional' ? '#f6ad55' : '#fc8181';
+            const statusText = status === 'active' ? 'Active' : status === 'optional' ? 'Optional' : 'Inactive';
+
+            return `
+                <div style="padding: 15px; background: rgba(255,255,255,0.03); border-radius: 8px; border-left: 4px solid ${statusColor};">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                        <span style="font-size: 24px;">${icon}</span>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; font-size: 13px;">${name}</div>
+                            <div style="font-size: 11px; opacity: 0.7;">${description}</div>
+                        </div>
+                        <div style="padding: 4px 8px; background: ${statusColor}33; color: ${statusColor}; border-radius: 4px; font-size: 10px; font-weight: 600;">
+                            ${statusText}
+                        </div>
+                    </div>
+                    <div style="font-size: 10px; opacity: 0.6; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1);">
+                        ${details}
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateStatusBadges(status) {
+            // Update train status
+            const trainStatus = document.getElementById('train-status');
+            if (trainStatus) {
+                trainStatus.style.color = status.apis.transitAuthority.configured ? '#48bb78' : '#fc8181';
+                trainStatus.textContent = status.apis.transitAuthority.configured ? '● Live' : '● Offline';
+            }
+
+            // Update tram status
+            const tramStatus = document.getElementById('tram-status');
+            if (tramStatus) {
+                tramStatus.style.color = status.apis.transitAuthority.configured ? '#48bb78' : '#fc8181';
+                tramStatus.textContent = status.apis.transitAuthority.configured ? '● Live' : '● Offline';
+            }
+
+            // Update coffee status
+            const coffeeStatus = document.getElementById('coffee-status');
+            if (coffeeStatus) {
+                coffeeStatus.style.color = status.journey.configured ? '#48bb78' : '#fc8181';
+                coffeeStatus.textContent = status.journey.configured ? '● Active' : '● Inactive';
             }
         }
 

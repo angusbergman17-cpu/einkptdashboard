@@ -538,6 +538,99 @@ app.get('/api/version', (req, res) => {
 });
 
 /**
+ * Get API Status and Configuration
+ * Returns status of all configured APIs and services
+ */
+app.get('/api/system-status', (req, res) => {
+  try {
+    const prefs = preferences.get();
+
+    // Gather all API and service statuses
+    const status = {
+      configured: isConfigured,
+      location: {
+        city: prefs?.location?.city || 'Not configured',
+        state: prefs?.location?.stateName || 'Not configured',
+        transitAuthority: prefs?.location?.authorityName || 'Not configured',
+        timezone: prefs?.location?.timezone || 'Not configured'
+      },
+      apis: {
+        transitAuthority: {
+          name: prefs?.location?.authorityName || 'Not configured',
+          baseUrl: prefs?.api?.baseUrl || 'Not configured',
+          configured: !!(prefs?.api?.key && prefs?.api?.token),
+          status: (prefs?.api?.key && prefs?.api?.token) ? 'active' : 'not-configured'
+        },
+        weather: {
+          name: 'Bureau of Meteorology',
+          service: weather.stationName || 'Not configured',
+          configured: true,
+          status: 'active',
+          cacheStatus: weather.getCacheStatus ? weather.getCacheStatus() : null
+        },
+        geocoding: {
+          name: 'Multi-Tier Geocoding',
+          services: global.geocodingService ? global.geocodingService.getAvailableServices() : [],
+          configured: true,
+          status: 'active'
+        },
+        googlePlaces: {
+          name: 'Google Places API',
+          configured: !!process.env.GOOGLE_PLACES_API_KEY,
+          status: process.env.GOOGLE_PLACES_API_KEY ? 'active' : 'optional'
+        },
+        mapbox: {
+          name: 'Mapbox Geocoding',
+          configured: !!process.env.MAPBOX_TOKEN,
+          status: process.env.MAPBOX_TOKEN ? 'active' : 'optional'
+        },
+        here: {
+          name: 'HERE Geocoding',
+          configured: !!process.env.HERE_API_KEY,
+          status: process.env.HERE_API_KEY ? 'active' : 'optional'
+        }
+      },
+      journey: {
+        addresses: {
+          home: !!prefs?.addresses?.home,
+          cafe: !!prefs?.addresses?.cafe,
+          work: !!prefs?.addresses?.work
+        },
+        configured: !!(prefs?.addresses?.home && prefs?.addresses?.work),
+        arrivalTime: prefs?.journey?.arrivalTime || 'Not set',
+        coffeeEnabled: prefs?.journey?.coffeeEnabled || false,
+        autoCalculation: {
+          active: !!journeyCalculationInterval,
+          lastCalculated: cachedJourney?.calculatedAt || null,
+          nextCalculation: journeyCalculationInterval ? 'In 10 minutes' : 'Not active'
+        }
+      },
+      transitStations: {
+        mode1: {
+          origin: prefs?.journey?.transitRoute?.mode1?.originStation?.name || 'Not configured',
+          destination: prefs?.journey?.transitRoute?.mode1?.destinationStation?.name || 'Not configured',
+          type: prefs?.journey?.transitRoute?.mode1?.type !== undefined ?
+            ['Train', 'Tram', 'Bus', 'V/Line'][prefs.journey.transitRoute.mode1.type] : 'Not configured'
+        },
+        mode2: prefs?.journey?.transitRoute?.numberOfModes === 2 ? {
+          origin: prefs?.journey?.transitRoute?.mode2?.originStation?.name || 'Not configured',
+          destination: prefs?.journey?.transitRoute?.mode2?.destinationStation?.name || 'Not configured',
+          type: prefs?.journey?.transitRoute?.mode2?.type !== undefined ?
+            ['Train', 'Tram', 'Bus', 'V/Line'][prefs.journey.transitRoute.mode2.type] : 'Not configured'
+        } : null
+      }
+    };
+
+    res.json(status);
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+      configured: false
+    });
+  }
+});
+
+/**
  * Get Required Attributions
  * Returns data source attributions based on configured transit authority
  */
