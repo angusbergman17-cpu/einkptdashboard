@@ -31,8 +31,10 @@ Complete guide to installing and deploying PTV-TRMNL for your own use.
 
 ### Optional (for enhanced features)
 
-- **PTV Timetable API v3 Credentials** (Victorian users) - [Get here](https://data.vic.gov.au/data/dataset/ptv-timetable-api)
-- **GTFS Realtime Subscription Key** (Victorian users) - [Get here](https://opendata.transport.vic.gov.au/)
+- **Transport Victoria GTFS Realtime Key** (Victorian users) - [Get here](https://opendata.transport.vic.gov.au/)
+  - Real-time metro train trip updates
+  - Protocol Buffers format
+  - See VICTORIA-GTFS-REALTIME-PROTOCOL.md for details
 - **Google Places API Key** - [Get here](https://console.cloud.google.com/)
 - **Mapbox Access Token** - [Get here](https://account.mapbox.com/)
 
@@ -133,12 +135,10 @@ TRMNL_API_KEY=your_trmnl_api_key_here
 # REQUIRED - Server port (3000 is default)
 PORT=3000
 
-# OPTIONAL - Victorian PTV Timetable API v3 (for live transit data)
-PTV_USER_ID=
-PTV_API_KEY=
-
-# OPTIONAL - Victorian GTFS Realtime API (for real-time trip updates)
-GTFS_REALTIME_SUBSCRIPTION_KEY=
+# OPTIONAL - Transport Victoria GTFS Realtime (Victorian users only)
+# Real-time metro train trip updates from OpenData Transport Victoria
+# Get subscription key from: https://opendata.transport.vic.gov.au/
+TRANSPORT_VICTORIA_GTFS_KEY=
 
 # OPTIONAL - Enhanced geocoding
 GOOGLE_PLACES_API_KEY=
@@ -200,17 +200,23 @@ The system will:
 
 Navigate to **Configuration tab** to add:
 
-#### Victorian Users - PTV Timetable API v3
+#### Victorian Users - Transport Victoria GTFS Realtime
 
-1. Get credentials from https://data.vic.gov.au/data/dataset/ptv-timetable-api
-2. Enter **User ID** and **API Key**
-3. Click **Save** then **Test**
+For real-time Melbourne metro train data:
 
-#### Victorian Users - GTFS Realtime
+1. Visit https://opendata.transport.vic.gov.au/
+2. Create account or sign in
+3. Generate subscription key from your profile
+4. Enter **Subscription Key** in Configuration tab
+5. Click **Save** then **Test**
 
-1. Get subscription key from https://opendata.transport.vic.gov.au/
-2. Enter **Subscription Key**
-3. Click **Save** then **Test**
+**What you get:**
+- Real-time metro train trip updates
+- Delays, cancellations, platform changes
+- Protocol Buffers format (binary data)
+- 30-second cache, polls every 1-2 minutes
+
+See [VICTORIA-GTFS-REALTIME-PROTOCOL.md](VICTORIA-GTFS-REALTIME-PROTOCOL.md) for complete documentation.
 
 #### Enhanced Geocoding - Google Places
 
@@ -333,9 +339,7 @@ You should see HTML markup with your journey information.
    ```
    TRMNL_API_KEY=your_key_here
    PORT=3000
-   PTV_USER_ID=your_id (optional)
-   PTV_API_KEY=your_key (optional)
-   GTFS_REALTIME_SUBSCRIPTION_KEY=your_key (optional)
+   TRANSPORT_VICTORIA_GTFS_KEY=your_key (optional, Victorian users only)
    GOOGLE_PLACES_API_KEY=your_key (optional)
    MAPBOX_ACCESS_TOKEN=your_token (optional)
    ```

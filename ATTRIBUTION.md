@@ -26,24 +26,19 @@ PTV-TRMNL uses data and services from multiple third-party providers. This docum
 
 ## 🚆 Transit Data
 
-### Transport for Victoria (PTV)
-
-**PTV Timetable API v3**
-- **Provider**: Department of Transport and Planning, Victoria, Australia
-- **License**: Creative Commons Attribution 4.0 International (CC BY 4.0)
-- **Terms**: https://data.vic.gov.au/terms-of-use
-- **API Documentation**: https://data.vic.gov.au/data/dataset/ptv-timetable-api
-- **Data Used**: Train, tram, and bus timetables, stop locations, route information
-- **Attribution Required**: Yes
-- **Attribution Text**: "Data provided by Public Transport Victoria, licensed under Creative Commons Attribution 4.0 International"
+### Transport for Victoria
 
 **GTFS Realtime API**
 - **Provider**: Transport for Victoria via OpenData Transport Victoria
+- **Authority**: Department of Transport and Planning, Victoria, Australia
 - **License**: Creative Commons Attribution 4.0 International (CC BY 4.0)
 - **Terms**: https://opendata.transport.vic.gov.au/
+- **API Documentation**: See VICTORIA-GTFS-REALTIME-PROTOCOL.md
 - **Data Used**: Real-time metro train trip updates, delays, cancellations, platform changes
+- **Protocol**: GTFS Realtime (Protocol Buffers)
+- **Coverage**: Melbourne Metro Trains
 - **Attribution Required**: Yes
-- **Attribution Text**: "Real-time data provided by Transport for Victoria via OpenData Transport Victoria, licensed under CC BY 4.0"
+- **Attribution Text**: "Real-time transit data provided by Transport for Victoria via OpenData Transport Victoria, licensed under CC BY 4.0"
 
 ### State Transit Authorities (Fallback Data)
 
@@ -211,8 +206,7 @@ Some features require API keys that you must obtain directly from providers:
 
 | Service | Required? | Get Key From |
 |---------|-----------|--------------|
-| PTV Timetable API v3 | Optional (VIC only) | https://data.vic.gov.au/ |
-| GTFS Realtime | Optional (VIC only) | https://opendata.transport.vic.gov.au/ |
+| Transport Victoria GTFS Realtime | Optional (VIC only) | https://opendata.transport.vic.gov.au/ |
 | Google Places | Optional | https://console.cloud.google.com/ |
 | Mapbox | Optional | https://account.mapbox.com/ |
 
@@ -220,7 +214,7 @@ Some features require API keys that you must obtain directly from providers:
 
 Be aware of rate limits and quotas:
 - **Nominatim**: 1 request/second (Usage Policy)
-- **PTV API**: Rate limits apply (check your credentials)
+- **Transport Victoria GTFS Realtime**: 20-27 calls/minute (varies by response size)
 - **Google Places**: Pay-per-use, set billing alerts
 - **Mapbox**: Free tier available, pay-per-use beyond
 
