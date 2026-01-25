@@ -623,21 +623,37 @@
 
         <!-- Navigation -->
         <div class="nav-tabs">
-            <button class="nav-tab" onclick="showTab('setup')">🚀 Setup</button>
+            <button class="nav-tab" onclick="showTab('setup')">🚀 Setup & Journey</button>
             <button class="nav-tab active" onclick="showTab('live')">🚊 Live Data</button>
-            <button class="nav-tab" onclick="showTab('journey')">🗺️ Journey Planner</button>
             <button class="nav-tab" onclick="showTab('config')">⚙️ Configuration</button>
             <button class="nav-tab" onclick="showTab('system')">🧠 System & Support</button>
         </div>
 
-        <!-- Setup Tab -->
+        <!-- Setup & Journey Tab -->
         <div id="tab-setup" class="tab-content">
+            <!-- Auto-Calculation Status (shown when configured) -->
+            <div id="auto-calc-card" class="card" style="display: none; margin-bottom: 20px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-left: 4px solid #667eea;">
+                <div class="card-header">
+                    <span class="card-icon">🔄</span>
+                    <h2>Automatic Journey Updates</h2>
+                </div>
+                <p style="margin-bottom: 15px; opacity: 0.9; font-size: 14px;">
+                    Your journey is automatically recalculated every 2 minutes with live transit data.
+                </p>
+                <div id="auto-calc-status" style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 15px;">
+                    <div style="font-size: 13px; opacity: 0.8;">Loading status...</div>
+                </div>
+                <button class="btn btn-secondary" onclick="forceRecalculation()" id="recalc-btn">
+                    🔄 Recalculate Now
+                </button>
+            </div>
+
             <div class="card" style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-left: 4px solid #667eea;">
                 <div class="card-header">
                     <span class="card-icon">🚀</span>
-                    <h2>Journey Setup</h2>
+                    <h2 id="setup-title">Journey Setup</h2>
                 </div>
-                <p style="margin-bottom: 25px; opacity: 0.9; font-size: 14px;">
+                <p id="setup-description" style="margin-bottom: 25px; opacity: 0.9; font-size: 14px;">
                     Enter your addresses and arrival time. We'll automatically detect nearby transit stops, select the best route, and start journey planning.
                 </p>
 
@@ -800,93 +816,6 @@
             </div><!-- end live-data-configured -->
         </div>
 
-        <!-- Journey Planner Tab -->
-        <div id="tab-journey" class="tab-content">
-            <!-- Auto-Calculation Status -->
-            <div class="card" style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-left: 4px solid #667eea;">
-                <div class="card-header">
-                    <span class="card-icon">🔄</span>
-                    <h2>Automatic Journey Calculation</h2>
-                </div>
-                <p style="margin-bottom: 15px; opacity: 0.9; font-size: 14px;">
-                    Your journey is automatically calculated every 2 minutes to keep transit data up-to-date.
-                    No need to manually refresh - your display always shows the latest information.
-                </p>
-                <div id="auto-calc-status" style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 15px;">
-                    <div style="font-size: 13px; opacity: 0.8;">Loading status...</div>
-                </div>
-                <button class="btn btn-secondary" onclick="forceRecalculation()" id="recalc-btn">
-                    🔄 Recalculate Now
-                </button>
-            </div>
-
-            <!-- Step 1: Addresses -->
-            <div class="card" id="address-card">
-                <div class="card-header">
-                    <span class="card-icon">📍</span>
-                    <h2>Your Journey Addresses</h2>
-                </div>
-                <p style="margin-bottom: 20px; opacity: 0.9;">
-                    Enter your daily commute addresses. The system will intelligently plan your route.
-                </p>
-
-                <div id="planner-message"></div>
-
-                <div class="form-group">
-                    <label class="form-label">🏠 Home Address</label>
-                    <input type="text" id="home-address" class="form-input" placeholder="Start typing your address..." autocomplete="off">
-                    <div id="home-suggestions" class="autocomplete-dropdown"></div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">☕ Cafe Name (optional)</label>
-                    <input type="text" id="cafe-name" class="form-input" placeholder="e.g., Seven Seeds Coffee" autocomplete="off">
-                    <div style="font-size: 11px; opacity: 0.7; margin-top: 5px;">Enter the cafe business name. System will search for it near your route.</div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">☕ Cafe Address (optional - or let us find it)</label>
-                    <input type="text" id="cafe-address" class="form-input" placeholder="Or enter full address if name search doesn't work..." autocomplete="off">
-                    <div id="cafe-suggestions" class="autocomplete-dropdown"></div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">💼 Work Address</label>
-                    <input type="text" id="work-address" class="form-input" placeholder="Your workplace address..." autocomplete="off">
-                    <div id="work-suggestions" class="autocomplete-dropdown"></div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">🕐 Arrival Time at Work</label>
-                    <input type="time" id="arrival-time" class="form-input" value="09:00">
-                </div>
-
-                <button class="btn btn-success btn-block" onclick="calculateSimpleRoute()">
-                    <span id="calc-btn-text">🗺️ Calculate Route</span>
-                </button>
-            </div>
-
-            <!-- Step 2: Route Options (shown after calculation) -->
-            <div class="card" id="route-options-card" style="display: none; margin-top: 20px;">
-                <div class="card-header">
-                    <span class="card-icon">🚆</span>
-                    <h2>Transit Options</h2>
-                </div>
-                <div id="route-options-content"></div>
-            </div>
-
-            <!-- Step 3: Selected Journey Details -->
-            <div class="card" id="journey-result" style="display: none; margin-top: 20px;">
-                <div class="card-header">
-                    <span class="card-icon">✅</span>
-                    <h2>Your Journey Plan</h2>
-                </div>
-                <div id="journey-result-content"></div>
-                <button class="btn btn-secondary" onclick="showAddressEditor()" style="margin-top: 15px;">
-                    ✏️ Edit Addresses
-                </button>
-            </div>
-        </div>
 
         <!-- Configuration Tab -->
         <div id="tab-config" class="tab-content">
