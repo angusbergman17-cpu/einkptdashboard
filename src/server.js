@@ -37,6 +37,25 @@ const VERSION = packageJson.version;
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+/**
+ * Location-agnostic timezone helper
+ * Maps Australian states to their IANA timezones
+ * COMPLIANCE: DEVELOPMENT-RULES.md Section K (Location Agnostic)
+ */
+function getTimezoneForState(state) {
+  const timezones = {
+    'VIC': 'Australia/Melbourne',
+    'NSW': 'Australia/Sydney',
+    'ACT': 'Australia/Sydney',
+    'QLD': 'Australia/Brisbane',
+    'SA': 'Australia/Adelaide',
+    'WA': 'Australia/Perth',
+    'TAS': 'Australia/Hobart',
+    'NT': 'Australia/Darwin'
+  };
+  return timezones[state] || 'Australia/Sydney'; // Fallback to Sydney (AEST)
+}
+
 // Email configuration (using environment variables)
 let emailTransporter = null;
 
@@ -1097,34 +1116,58 @@ app.get('/api/region-updates', async (req, res) => {
 // HTML Dashboard endpoint (for TRMNL device - 800x480)
 // Server does ALL the thinking - display just shows simple info
 // Design based on user's template
+/**
+ * ========================================================================
+ * DEVELOPMENT RULES COMPLIANCE: docs/development/DEVELOPMENT-RULES.md v1.0.12
+ * ========================================================================
+ * - Location agnostic (dynamic timezone based on detected state)
+ * - Works with fallback data (no API keys required)
+ * - Transit mode agnostic (supports all 8 Australian states)
+ * - BYOS compliant (800x480 dimensions)
+ * - Clear data source indicators
+ */
 app.get('/api/dashboard', async (req, res) => {
   try {
     const data = await getData();
     const prefs = preferences.get();
-    const stationName = prefs?.journey?.transitRoute?.mode1?.originStation?.name || 'STATION';
-    const destName = prefs?.journey?.transitRoute?.mode1?.destinationStation?.name || 'CITY';
+    const config = dataManager.getConfig();
+    const apis = dataManager.getApis();
 
-    // Get current time
+    // Location-agnostic timezone detection
+    const state = config?.location?.state || config?.location?.stateCode || 'VIC';
+    const timezone = getTimezoneForState(state);
+
+    // Get transit mode and stops (location agnostic)
+    const transitMode = config?.preferences?.transitMode || prefs?.preferences?.transitMode || 'train';
+    const stationName = config?.stops?.home?.name || prefs?.journey?.transitRoute?.mode1?.originStation?.name || 'STATION';
+    const destName = config?.stops?.work?.name || prefs?.journey?.transitRoute?.mode1?.destinationStation?.name || 'DESTINATION';
+
+    // Determine data source mode
+    const hasLiveData = apis?.transitAuthority?.configured || apis?.victorianGTFS?.configured || false;
+    const dataSourceMode = hasLiveData ? 'LIVE' : 'FALLBACK';
+    const dataSourceText = hasLiveData ? 'LIVE DATA' : 'FALLBACK TIMETABLES';
+
+    // Get current time (location agnostic)
     const now = new Date();
     const currentTime = now.toLocaleTimeString('en-AU', {
-      timeZone: 'Australia/Melbourne',
+      timeZone: timezone,
       hour: '2-digit',
       minute: '2-digit',
       hour12: false
     });
 
-    // Calculate "leave by" time based on next good train
-    const nextTrain = data.trains[0];
-    const walkBuffer = prefs?.manualWalkingTimes?.homeToStation || 5; // Use configured walk time or 5 min default
-    const leaveInMins = nextTrain ? Math.max(0, nextTrain.minutes - walkBuffer) : null;
+    // Calculate "leave by" time based on next departure
+    const nextDeparture = data.trains?.[0] || data.trams?.[0] || data.buses?.[0] || data.ferries?.[0] || null;
+    const walkBuffer = prefs?.manualWalkingTimes?.homeToStation || config?.preferences?.walkingTime || 5;
+    const leaveInMins = nextDeparture ? Math.max(0, nextDeparture.minutes - walkBuffer) : null;
     const leaveTime = leaveInMins !== null ? new Date(now.getTime() + leaveInMins * 60000).toLocaleTimeString('en-AU', {
-      timeZone: 'Australia/Melbourne',
+      timeZone: timezone,
       hour: '2-digit',
       minute: '2-digit',
       hour12: false
     }) : '--:--';
 
-    // Get weather data
+    // Get weather data (graceful fallback)
     let weatherText = 'N/A';
     let tempText = '--';
     try {
@@ -1134,16 +1177,68 @@ app.get('/api/dashboard', async (req, res) => {
         tempText = weatherData.temperature !== null ? weatherData.temperature + '°' : '--';
       }
     } catch (e) {
-      // Weather unavailable
+      // Weather unavailable - silent fail
     }
 
-    // Train/tram times with fallback
-    const train1 = data.trains[0] ? data.trains[0].minutes + ' min' : '-- min';
-    const train2 = data.trains[1] ? data.trains[1].minutes + ' min' : '-- min';
-    const tram1 = data.trams[0] ? data.trams[0].minutes + ' min' : '-- min';
-    const tram2 = data.trams[1] ? data.trams[1].minutes + ' min' : '-- min';
+    // Dynamic transit mode data (supports all modes)
+    const getModeTimes = (modeData) => {
+      const dep1 = modeData?.[0] ? modeData[0].minutes + ' min' : '-- min';
+      const dep2 = modeData?.[1] ? modeData[1].minutes + ' min' : '-- min';
+      return { dep1, dep2 };
+    };
 
-    // Dashboard HTML matching user's template design (800x480)
+    const trains = getModeTimes(data.trains);
+    const trams = getModeTimes(data.trams);
+    const buses = getModeTimes(data.buses);
+    const ferries = getModeTimes(data.ferries);
+    const lightRail = getModeTimes(data.lightRail);
+
+    // Determine primary and secondary modes based on state and configuration
+    let primaryMode = 'TRAINS';
+    let primaryTimes = trains;
+    let secondaryMode = 'TRAMS';
+    let secondaryTimes = trams;
+
+    // State-specific mode selection
+    if (state === 'NSW' || state === 'ACT') {
+      primaryMode = 'TRAINS';
+      secondaryMode = 'BUSES';
+      primaryTimes = trains;
+      secondaryTimes = buses;
+    } else if (state === 'QLD') {
+      primaryMode = 'TRAINS';
+      secondaryMode = 'BUSES';
+      primaryTimes = trains;
+      secondaryTimes = buses;
+    } else if (state === 'WA') {
+      primaryMode = 'TRAINS';
+      secondaryMode = 'BUSES';
+      primaryTimes = trains;
+      secondaryTimes = buses;
+    } else if (state === 'SA') {
+      primaryMode = 'TRAMS';
+      secondaryMode = 'BUSES';
+      primaryTimes = trams;
+      secondaryTimes = buses;
+    } else if (state === 'TAS') {
+      primaryMode = 'BUSES';
+      secondaryMode = 'FERRIES';
+      primaryTimes = buses;
+      secondaryTimes = ferries;
+    } else if (state === 'NT') {
+      primaryMode = 'BUSES';
+      secondaryMode = 'BUSES';
+      primaryTimes = buses;
+      secondaryTimes = buses;
+    } else {
+      // VIC - default trains and trams
+      primaryMode = 'TRAINS';
+      secondaryMode = 'TRAMS';
+      primaryTimes = trains;
+      secondaryTimes = trams;
+    }
+
+    // Dashboard HTML - BYOS compliant (800x480), supports fallback data
     const html = `<!DOCTYPE html>
 <html>
 <head>
@@ -1160,38 +1255,66 @@ app.get('/api/dashboard', async (req, res) => {
       overflow: hidden;
       position: relative;
     }
-    /* Station Name Box (Top Left) - matches template */
+    /* Data Source Indicator (Top Banner) */
+    .data-source-banner {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 20px;
+      background: ${hasLiveData ? '#10b981' : '#fbbf24'};
+      color: ${hasLiveData ? 'white' : '#1f2937'};
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      z-index: 1000;
+    }
+    /* Station Name Box (Top Left) */
     .station-box {
       position: absolute;
-      top: 10px;
+      top: 30px;
       left: 10px;
-      width: 90px;
-      height: 50px;
+      width: 100px;
+      height: 45px;
       border: 2px solid black;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 10px;
+      font-size: 9px;
       font-weight: bold;
       text-align: center;
       padding: 5px;
+      line-height: 1.2;
     }
     /* Large Time Display (Top Center) */
     .time {
       position: absolute;
-      top: 15px;
-      left: 140px;
-      font-size: 36px;
+      top: 30px;
+      left: 130px;
+      font-size: 32px;
       font-weight: bold;
       letter-spacing: 2px;
+    }
+    /* State/Location Badge */
+    .location-badge {
+      position: absolute;
+      top: 32px;
+      left: 290px;
+      font-size: 9px;
+      color: #666;
+      font-weight: 600;
+      letter-spacing: 0.5px;
     }
     /* LEAVE BY Box (Top Right) - KEY FEATURE */
     .leave-box {
       position: absolute;
-      top: 10px;
+      top: 30px;
       right: 10px;
-      width: 200px;
-      height: 50px;
+      width: 180px;
+      height: 45px;
       background: black;
       color: white;
       display: flex;
@@ -1200,49 +1323,50 @@ app.get('/api/dashboard', async (req, res) => {
       justify-content: center;
       font-weight: bold;
     }
-    .leave-label { font-size: 10px; }
-    .leave-time { font-size: 24px; letter-spacing: 1px; }
-    /* Section Headers (Black Strips) - matches template */
+    .leave-label { font-size: 9px; letter-spacing: 0.5px; }
+    .leave-time { font-size: 22px; letter-spacing: 1px; margin-top: 2px; }
+    /* Section Headers (Black Strips) */
     .section-header {
       position: absolute;
-      height: 25px;
+      height: 24px;
       background: black;
       color: white;
       display: flex;
       align-items: center;
       padding: 0 10px;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: bold;
       letter-spacing: 0.5px;
     }
-    .tram-header { top: 80px; left: 10px; width: 370px; }
-    .train-header { top: 80px; left: 400px; width: 360px; }
+    .secondary-header { top: 100px; left: 10px; width: 360px; }
+    .primary-header { top: 100px; left: 390px; width: 400px; }
     /* Departure Labels */
     .departure-label {
       position: absolute;
-      font-size: 12px;
+      font-size: 11px;
       color: #666;
-      font-weight: 500;
+      font-weight: 600;
     }
     /* Departure Times (Large Numbers) */
     .departure {
       position: absolute;
-      font-size: 28px;
+      font-size: 26px;
       font-weight: bold;
     }
     /* Weather (Right Sidebar) */
     .weather {
       position: absolute;
       right: 15px;
-      top: 280px;
-      font-size: 11px;
+      top: 290px;
+      font-size: 10px;
       text-align: right;
+      color: #666;
     }
     .temperature {
       position: absolute;
       right: 15px;
-      top: 300px;
-      font-size: 20px;
+      top: 308px;
+      font-size: 18px;
       font-weight: bold;
       text-align: right;
     }
@@ -1252,11 +1376,11 @@ app.get('/api/dashboard', async (req, res) => {
       bottom: 0;
       left: 0;
       right: 0;
-      height: 80px;
+      height: 70px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 24px;
+      font-size: 22px;
       font-weight: bold;
       border-top: 3px solid black;
     }
@@ -1265,10 +1389,10 @@ app.get('/api/dashboard', async (req, res) => {
     /* Status indicator */
     .status {
       position: absolute;
-      bottom: 90px;
+      bottom: 80px;
       left: 50%;
       transform: translateX(-50%);
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
       letter-spacing: 1px;
       color: #666;
@@ -1276,42 +1400,48 @@ app.get('/api/dashboard', async (req, res) => {
   </style>
 </head>
 <body>
+  <!-- Data Source Banner -->
+  <div class="data-source-banner">${dataSourceText} • ${state}</div>
+
   <!-- Station Name Box -->
-  <div class="station-box">${stationName.toUpperCase()}</div>
+  <div class="station-box">${stationName.toUpperCase().substring(0, 25)}</div>
 
   <!-- Large Time -->
   <div class="time">${currentTime}</div>
 
-  <!-- LEAVE BY Box (Key Feature!) -->
+  <!-- Location Badge -->
+  <div class="location-badge">${state} ${timezone.split('/')[1].toUpperCase()}</div>
+
+  <!-- LEAVE BY Box -->
   <div class="leave-box">
     <div class="leave-label">LEAVE BY</div>
     <div class="leave-time">${leaveTime}</div>
   </div>
 
-  <!-- Tram Section -->
-  <div class="section-header tram-header">TRAMS</div>
-  <div class="departure-label" style="top: 112px; left: 20px;">Next:</div>
-  <div class="departure" style="top: 130px; left: 20px;">${tram1}</div>
-  <div class="departure-label" style="top: 182px; left: 20px;">Then:</div>
-  <div class="departure" style="top: 200px; left: 20px;">${tram2}</div>
+  <!-- Secondary Mode Section (Left) -->
+  <div class="section-header secondary-header">${secondaryMode}</div>
+  <div class="departure-label" style="top: 132px; left: 20px;">Next:</div>
+  <div class="departure" style="top: 148px; left: 20px;">${secondaryTimes.dep1}</div>
+  <div class="departure-label" style="top: 192px; left: 20px;">Then:</div>
+  <div class="departure" style="top: 208px; left: 20px;">${secondaryTimes.dep2}</div>
 
-  <!-- Train Section -->
-  <div class="section-header train-header">TRAINS → ${destName.toUpperCase()}</div>
-  <div class="departure-label" style="top: 112px; left: 410px;">Next:</div>
-  <div class="departure" style="top: 130px; left: 410px;">${train1}</div>
-  <div class="departure-label" style="top: 182px; left: 410px;">Then:</div>
-  <div class="departure" style="top: 200px; left: 410px;">${train2}</div>
+  <!-- Primary Mode Section (Right) -->
+  <div class="section-header primary-header">${primaryMode} → ${destName.toUpperCase().substring(0, 18)}</div>
+  <div class="departure-label" style="top: 132px; left: 400px;">Next:</div>
+  <div class="departure" style="top: 148px; left: 400px;">${primaryTimes.dep1}</div>
+  <div class="departure-label" style="top: 192px; left: 400px;">Then:</div>
+  <div class="departure" style="top: 208px; left: 400px;">${primaryTimes.dep2}</div>
 
   <!-- Weather -->
   <div class="weather">${weatherText}</div>
   <div class="temperature">${tempText}</div>
 
   <!-- Status -->
-  <div class="status">GOOD SERVICE</div>
+  <div class="status">${hasLiveData ? 'LIVE SERVICE DATA' : 'FALLBACK TIMETABLES'}</div>
 
   <!-- Coffee Strip -->
-  <div class="coffee-strip ${data.coffee.canGet ? 'coffee-yes' : 'coffee-no'}">
-    ${data.coffee.canGet ? '☕ TIME FOR COFFEE' : '⚡ GO DIRECT - NO COFFEE'}
+  <div class="coffee-strip ${data.coffee?.canGet ? 'coffee-yes' : 'coffee-no'}">
+    ${data.coffee?.canGet ? '☕ TIME FOR COFFEE' : '⚡ GO DIRECT - NO COFFEE'}
   </div>
 </body>
 </html>`;
