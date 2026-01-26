@@ -21,6 +21,7 @@ import CafeBusyDetector from './services/cafe-busy-detector.js';
 import PreferencesManager from './data/preferences-manager.js';
 import MultiModalRouter from './core/multi-modal-router.js';
 import SmartJourneyPlanner from './core/smart-journey-planner.js';
+import JourneyPlanner from './services/journey-planner.js';
 import GeocodingService from './services/geocoding-service.js';
 import DecisionLogger from './core/decision-logger.js';
 import DataValidator from './data/data-validator.js';
@@ -106,14 +107,16 @@ const weather = new WeatherBOM(preferences);
 const routePlanner = new RoutePlanner(preferences);
 const busyDetector = new CafeBusyDetector(preferences);
 const multiModalRouter = new MultiModalRouter();
-const smartPlanner = new SmartJourneyPlanner();
+const smartPlanner = new SmartJourneyPlanner(); // DEPRECATED - Use JourneyPlanner instead
+const journeyPlanner = new JourneyPlanner(); // Compliant implementation
 
 // Initialize multi-tier geocoding service (global for route planner)
 // Check for API keys in preferences (saved via admin panel) or environment variables
 const prefs = preferences.get();
 
 // Set services as globals for admin endpoints
-global.smartJourneyPlanner = smartPlanner;
+global.smartJourneyPlanner = smartPlanner; // DEPRECATED
+global.journeyPlanner = journeyPlanner; // Compliant implementation
 global.weatherBOM = weather;
 
 global.geocodingService = new GeocodingService({
@@ -1892,21 +1895,47 @@ app.post('/admin/smart-journey/calculate', async (req, res) => {
       });
     }
 
-    // Use smart journey planner
-    const journey = await global.smartJourneyPlanner.planJourney({
-      home: { lat: homeLocation.lat, lon: homeLocation.lon },
-      work: { lat: workLocation.lat, lon: workLocation.lon },
-      cafe: cafeLocation ? { lat: cafeLocation.lat, lon: cafeLocation.lon } : null,
+    console.log('\n=== Journey Calculation Request ===');
+    console.log('Home:', homeLocation);
+    console.log('Work:', workLocation);
+    console.log('Cafe:', cafeLocation);
+    console.log('Work Start:', workStartTime);
+    console.log('Transit Authority:', transitAuthority);
+    console.log('===================================\n');
+
+    // Use NEW compliant journey planner (works with coordinates from Step 2)
+    const result = await global.journeyPlanner.calculateJourney({
+      homeLocation: {
+        lat: homeLocation.lat,
+        lon: homeLocation.lon,
+        formattedAddress: homeLocation.formattedAddress || `${homeLocation.lat}, ${homeLocation.lon}`
+      },
+      workLocation: {
+        lat: workLocation.lat,
+        lon: workLocation.lon,
+        formattedAddress: workLocation.formattedAddress || `${workLocation.lat}, ${workLocation.lon}`
+      },
+      cafeLocation: cafeLocation ? {
+        lat: cafeLocation.lat,
+        lon: cafeLocation.lon,
+        formattedAddress: cafeLocation.formattedAddress || `${cafeLocation.lat}, ${cafeLocation.lon}`
+      } : null,
       workStartTime,
-      cafeDuration: cafeDuration || 10,
-      state: transitAuthority,
-      useFallback: useFallbackData
+      cafeDuration: cafeDuration || 8,
+      transitAuthority: transitAuthority || 'VIC'
     });
 
-    res.json({
-      success: true,
-      ...journey
-    });
+    if (result.success) {
+      res.json({
+        success: true,
+        journey: result.journey
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: result.error
+      });
+    }
 
   } catch (error) {
     console.error('Journey calculation error:', error);

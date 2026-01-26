@@ -2788,6 +2788,248 @@ Provide a sophisticated, intelligent admin interface that guides users through c
 
 **CRITICAL**: Each step MUST be completed and validated before proceeding to the next. No overlapping panels, no skipping ahead.
 
+### 🔒 Sequential Step Dependency Protocol
+
+**MANDATORY ARCHITECTURE**: Setup wizard MUST enforce strict sequential dependency and data cascade.
+
+#### Core Principles
+
+1. **Lock-Until-Complete**: Each step is LOCKED until the previous step successfully completes and validates
+2. **Data Cascade**: Each step receives VERIFIED data from previous steps (no re-entry, no re-validation)
+3. **No Skipping**: User CANNOT proceed to Step N+1 without completing Step N
+4. **Immutable Flow**: Data flows forward only (home → work → cafe → journey → weather → transit → device → complete)
+
+#### Implementation Requirements
+
+**Step Validation**:
+```javascript
+// Each step MUST implement:
+async function validateStepN() {
+  // 1. Validate all required inputs for this step
+  if (!allInputsValid()) {
+    showError('Please complete all required fields');
+    return false;
+  }
+
+  // 2. Perform step-specific validation (API calls, geocoding, etc.)
+  const result = await performStepValidation();
+  if (!result.success) {
+    showError(result.error);
+    return false;
+  }
+
+  // 3. Save validated data to setupData object
+  setupData.stepNData = result.data;
+
+  // 4. UNLOCK next step
+  unlockStep(N + 1);
+
+  // 5. Automatically proceed
+  goToStep(N + 1);
+
+  return true;
+}
+```
+
+**Data Cascade Pattern**:
+```javascript
+// Global setupData object accumulates verified data
+const setupData = {
+  // Step 1: API Keys (optional, defaults to fallback)
+  googlePlacesKey: null,
+
+  // Step 2: Geocoded Locations (REQUIRED for Step 3+)
+  homeLocation: {
+    lat: -37.8423,
+    lon: 144.9981,
+    formattedAddress: "1008/1 Clara St, South Yarra VIC",
+    source: "googlePlaces"
+  },
+  workLocation: {
+    lat: -37.8140,
+    lon: 144.9709,
+    formattedAddress: "80 Collins St, Melbourne VIC",
+    source: "googlePlaces"
+  },
+  cafeLocation: null, // Optional
+
+  // Step 3: Detected State (AUTO-DETECTED from homeLocation)
+  detectedState: "VIC",
+  transitAuthority: "Transport for Victoria",
+
+  // Step 4: Calculated Journey (USES homeLocation, workLocation, cafeLocation, detectedState)
+  calculatedJourney: {
+    departureTime: "08:15",
+    arrivalTime: "09:00",
+    segments: [...],
+    route: {...}
+  },
+
+  // Step 5: Weather Station (USES homeLocation)
+  weatherStation: {
+    id: "086338",
+    name: "Melbourne (Olympic Park)",
+    distance: 2.1
+  },
+
+  // Step 6: Transit API (optional, defaults to fallback)
+  transitApiKey: null,
+
+  // Step 7: Device Selection
+  deviceType: "TRMNL_ORIGINAL",
+
+  // Step 8: Complete
+  setupComplete: true
+};
+```
+
+**Step Locking Implementation**:
+```javascript
+// Track step completion status
+const stepStatus = {
+  1: 'unlocked',  // First step always unlocked
+  2: 'locked',
+  3: 'locked',
+  4: 'locked',
+  5: 'locked',
+  6: 'locked',
+  7: 'locked',
+  8: 'locked'
+};
+
+function unlockStep(stepNumber) {
+  stepStatus[stepNumber] = 'unlocked';
+  updateStepUI(stepNumber);
+}
+
+function goToStep(stepNumber) {
+  // Enforce locking
+  if (stepStatus[stepNumber] === 'locked') {
+    showError(`Please complete Step ${stepNumber - 1} first`);
+    return;
+  }
+
+  // Hide all steps
+  document.querySelectorAll('.step').forEach(s => s.style.display = 'none');
+
+  // Show requested step
+  document.getElementById(`step-${stepNumber}`).style.display = 'block';
+
+  // Update progress indicator
+  updateProgressIndicator(stepNumber);
+}
+```
+
+#### Data Dependency Chain
+
+```
+Step 1: Google Places API Key (optional)
+    ↓
+Step 2: Geocode Addresses
+    → REQUIRES: Nothing (can use fallback geocoding)
+    → PROVIDES: homeLocation, workLocation, cafeLocation (with lat/lon/formattedAddress)
+    ↓
+Step 3: Detect Transit Authority
+    → REQUIRES: homeLocation.lat, homeLocation.lon
+    → PROVIDES: detectedState, transitAuthority
+    ↓
+Step 4: Calculate Journey
+    → REQUIRES: homeLocation, workLocation, cafeLocation (optional), detectedState
+    → PROVIDES: calculatedJourney (departureTime, segments, route)
+    ↓
+Step 5: Weather Station
+    → REQUIRES: homeLocation.lat, homeLocation.lon
+    → PROVIDES: weatherStation (id, name, distance)
+    ↓
+Step 6: Transit Data Feeds
+    → REQUIRES: detectedState
+    → PROVIDES: transitApiKey (optional, defaults to fallback)
+    ↓
+Step 7: Device Selection
+    → REQUIRES: Nothing (hardware selection)
+    → PROVIDES: deviceType
+    ↓
+Step 8: Complete
+    → REQUIRES: ALL previous steps completed
+    → SAVES: setupData to server preferences
+    → ENABLES: Live data generation
+```
+
+#### Validation Rules
+
+**Step 2 (Geocoding)**:
+- MUST successfully geocode at least homeLocation and workLocation
+- MUST provide lat/lon coordinates (not just address strings)
+- MUST provide formattedAddress for display
+- MUST record geocoding source (googlePlaces/nominatim)
+- cafeLocation is OPTIONAL but if provided MUST include lat/lon
+
+**Step 3 (State Detection)**:
+- MUST auto-detect state from homeLocation coordinates
+- MUST map state to correct transit authority name
+- NO user input required (automatic)
+
+**Step 4 (Journey Calculation)**:
+- MUST accept coordinates from Step 2 (NOT re-geocode addresses)
+- MUST use fallback-timetables.js for stop discovery (works without API)
+- MUST calculate journey even if Transit API not configured
+- MUST use timetabled estimates until API configured
+- MUST validate transit stops found near addresses
+- IF no stops found: provide clear error with helpful message
+
+**Step 5 (Weather)**:
+- MUST use coordinates from Step 2 homeLocation
+- MUST find closest BOM weather station
+- MUST validate station has current data
+
+**Step 6 (Transit Data)**:
+- OPTIONAL: Transit API key
+- MUST work with fallback data if API not provided
+- MUST validate API key if provided
+
+**Step 7 (Device)**:
+- MUST select device type matching hardware
+- MUST configure correct screen dimensions
+
+**Step 8 (Complete)**:
+- MUST save ALL setupData to server preferences
+- MUST verify system can generate display data
+- MUST enable device to receive updates
+
+#### Error Handling
+
+**When Step Validation Fails**:
+1. DO NOT unlock next step
+2. Display clear error message
+3. Provide actionable suggestion
+4. Allow user to retry current step
+5. DO NOT proceed automatically
+
+**When Data is Missing**:
+```javascript
+// Example: Step 4 requires Step 2 data
+function calculateJourney() {
+  if (!setupData.homeLocation || !setupData.workLocation) {
+    showError('Missing location data. Please complete Step 2 first.');
+    goToStep(2); // Send user back
+    return;
+  }
+
+  // Proceed with calculation...
+}
+```
+
+#### Testing Requirements
+
+**Before Deployment, Verify**:
+- [ ] Cannot click Step 2 before completing Step 1
+- [ ] Cannot manually navigate to locked step via URL
+- [ ] Step 4 receives exact coordinates from Step 2 (no re-geocoding)
+- [ ] Step 4 works WITHOUT Transit API (uses fallback stops)
+- [ ] Each step saves data to setupData object
+- [ ] Step 8 saves complete setupData to server
+- [ ] Browser refresh preserves progress (use sessionStorage)
+
 #### Step 1: Google Places API (New) Key
 
 **Purpose**: Obtain enhanced geocoding capability for accurate address finding.

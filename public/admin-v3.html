@@ -1332,15 +1332,18 @@
                     body: JSON.stringify({
                         homeLocation: {
                             lat: setupData.homeLocation.lat,
-                            lon: setupData.homeLocation.lon
+                            lon: setupData.homeLocation.lon,
+                            formattedAddress: setupData.homeLocation.formattedAddress
                         },
                         workLocation: {
                             lat: setupData.workLocation.lat,
-                            lon: setupData.workLocation.lon
+                            lon: setupData.workLocation.lon,
+                            formattedAddress: setupData.workLocation.formattedAddress
                         },
                         cafeLocation: includeCafe ? {
                             lat: setupData.cafeLocation.lat,
-                            lon: setupData.cafeLocation.lon
+                            lon: setupData.cafeLocation.lon,
+                            formattedAddress: setupData.cafeLocation.formattedAddress
                         } : null,
                         workStartTime,
                         cafeDuration,
@@ -1372,33 +1375,84 @@
             }
         }
 
-        function renderJourneyVisualization(journey) {
+        function renderJourneyVisualization(result) {
             const resultDiv = document.getElementById('journey-result');
 
-            const legs = journey.legs || [];
-            const legsHTML = legs.map(leg => `
-                <div class="journey-leg">
-                    <div class="leg-mode">${leg.mode}</div>
-                    <div class="leg-details">
-                        <strong>${leg.from}</strong> → <strong>${leg.to}</strong><br>
-                        ${leg.route ? `Route: ${leg.route}<br>` : ''}
-                        Duration: ${leg.duration} min<br>
-                        ${leg.walking ? `Walking: ${leg.walkingDistance}m (${leg.walkingTime} min)` : ''}
-                    </div>
-                </div>
-            `).join('');
+            // New format: result.journey contains the journey data
+            const journey = result.journey || result;
+            const segments = journey.segments || [];
+
+            // Helper function to get icon for segment type
+            const getSegmentIcon = (type, icon) => {
+                if (icon) return icon;
+                const icons = {
+                    'walk': '🚶',
+                    'wait': '⏳',
+                    'transit': '🚆',
+                    'coffee': '☕'
+                };
+                return icons[type] || '•';
+            };
+
+            // Helper function to format segment display
+            const formatSegment = (seg) => {
+                const icon = getSegmentIcon(seg.type, seg.icon);
+                let html = `<div class="journey-leg">`;
+
+                if (seg.type === 'walk') {
+                    html += `<div class="leg-mode">${icon} Walk</div>`;
+                    html += `<div class="leg-details">`;
+                    html += `<strong>${seg.from}</strong> → <strong>${seg.to}</strong><br>`;
+                    html += `${seg.minutes} minutes<br>`;
+                    html += `Depart: ${seg.time}`;
+                    html += `</div>`;
+                } else if (seg.type === 'transit') {
+                    html += `<div class="leg-mode">${icon} ${seg.mode}</div>`;
+                    html += `<div class="leg-details">`;
+                    html += `<strong>${seg.from}</strong> → <strong>${seg.to}</strong><br>`;
+                    html += `${seg.minutes} minutes<br>`;
+                    html += `Depart: ${seg.time}<br>`;
+                    if (seg.note) html += `<small style="color: #6366f1;">${seg.note}</small>`;
+                    html += `</div>`;
+                } else if (seg.type === 'coffee') {
+                    html += `<div class="leg-mode">${icon} Coffee Stop</div>`;
+                    html += `<div class="leg-details">`;
+                    html += `<strong>${seg.location}</strong><br>`;
+                    html += `${seg.minutes} minutes<br>`;
+                    html += `Time: ${seg.time}`;
+                    html += `</div>`;
+                } else if (seg.type === 'wait') {
+                    html += `<div class="leg-mode">${icon} Buffer</div>`;
+                    html += `<div class="leg-details">`;
+                    html += `<strong>${seg.location}</strong><br>`;
+                    html += `${seg.minutes} minutes buffer`;
+                    html += `</div>`;
+                }
+
+                html += `</div>`;
+                return html;
+            };
+
+            const segmentsHTML = segments.map(formatSegment).join('');
 
             resultDiv.innerHTML = `
-                <h3>Your Optimized Journey</h3>
+                <h3>✓ Your Optimized Journey</h3>
                 <div style="margin-top: 20px;">
-                    ${legsHTML}
+                    ${segmentsHTML}
                 </div>
                 <div style="margin-top: 20px; padding: 20px; background: white; border-radius: 8px;">
                     <h4>Summary</h4>
-                    <p><strong>Departure from home:</strong> ${journey.departureTime || 'TBD'}</p>
-                    <p><strong>Arrival at work:</strong> ${journey.arrivalTime || 'TBD'}</p>
-                    <p><strong>Total journey time:</strong> ${journey.totalDuration || 'TBD'} min</p>
-                    <p><strong>Total walking:</strong> ${journey.totalWalking || 'TBD'}m</p>
+                    <p><strong>🏠 Leave home:</strong> ${journey.departureTime}</p>
+                    <p><strong>🏢 Arrive at work:</strong> ${journey.arrivalTime}</p>
+                    <p><strong>⏱️ Total journey time:</strong> ${journey.totalMinutes} minutes</p>
+                    ${journey.route ? `<p><strong>🚆 Transit mode:</strong> ${journey.route.icon} ${journey.route.mode}</p>` : ''}
+                    ${journey.cafe?.included ? `<p><strong>☕ Coffee stop:</strong> ${journey.cafe.durationMinutes} minutes</p>` : ''}
+                </div>
+                <div style="margin-top: 15px; padding: 15px; background: rgba(99, 102, 241, 0.1); border-radius: 8px;">
+                    <p style="margin: 0; font-size: 13px;">
+                        <strong>Note:</strong> Journey times are estimated using fallback timetables.
+                        Configure Transport Victoria API in Step 6 for live departure times.
+                    </p>
                 </div>
             `;
         }
