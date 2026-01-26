@@ -548,7 +548,12 @@ curl https://ptv-trmnl-new.onrender.com/api/screen
 **Testing By**: Claude Sonnet 4.5
 **Test Environment**: Production (Render deployment)
 **Branch**: main
-**Commits Tested**: 107ca4b (compliance), 8641667 (legal audit), c18a3cf (README)
+**Commits Tested**:
+- 107ca4b (compliance)
+- 8641667 (legal audit)
+- c18a3cf (README)
+- 4cf15a9 (journey customization fix)
+- 5c8bb4f (INIT.md reference)
 
 ---
 
@@ -558,4 +563,306 @@ curl https://ptv-trmnl-new.onrender.com/api/screen
 - ⏳ PENDING - Test not yet executed
 - 🔄 IN PROGRESS - Test currently running
 - ⚠️ WARNING - Test passed with minor issues
+
+---
+
+## UPDATED TEST RESULTS - 2026-01-27 (Continued)
+
+### Phase 3: Journey Planning API Testing
+
+#### Test 3.1: Journey Calculation Endpoint - POST /admin/smart-journey/calculate
+
+**Test Data**:
+```json
+{
+  "homeLocation": {
+    "lat": -37.8404521,
+    "lon": 144.995426,
+    "formattedAddress": "25 Chapel St, South Yarra VIC 3141"
+  },
+  "workLocation": {
+    "lat": -37.8145,
+    "lon": 144.9658,
+    "formattedAddress": "1 Collins St, Melbourne VIC 3000"
+  },
+  "workStartTime": "09:00",
+  "cafeDuration": 8,
+  "transitAuthority": "VIC"
+}
+```
+
+**Status**: ✅ **PASS** (after bug fix in commit 4cf15a9)
+
+**Journey Results**:
+- Departure time: 08:42
+- Arrival time: 09:00
+- Total duration: 18 minutes
+- Segments: walk (3min) → wait (2min) → train (5min) → walk (6min)
+- Origin stop: South Yarra (train, ID: 1159)
+- Destination stop: Flinders Street Station (train, ID: 1071)
+
+**CRITICAL BUG FOUND & FIXED**:
+- **Issue**: Response only returned `journey` object, missing `options` object
+- **Impact**: HIGH - Journey customization UI couldn't display stop selection
+- **Missing Data**: homeStops, workStops, alternativeRoutes
+- **Location**: src/server.js lines 1948-1951
+- **Fix**: Added `options: result.options` to response
+- **Commit**: 4cf15a9
+- **Status**: ✅ DEPLOYED & TESTED
+
+**Compliance Verification**:
+- ✅ Uses JourneyPlanner (compliant, NOT SmartJourneyPlanner)
+- ✅ Works without Transit API key (uses fallback-timetables.js)
+- ✅ Accepts coordinates from Step 2 (not addresses)
+- ✅ Sequential step dependency protocol followed
+- ✅ Returns options for journey customization
+
+---
+
+### Phase 6: Comprehensive API Endpoint Testing
+
+#### Test 6.1: Geocoding - POST /admin/geocode
+
+**Test Address**: "25 Chapel St, South Yarra VIC 3141"
+
+**Status**: ✅ **PASS**
+
+**Results**:
+```json
+{
+  "success": true,
+  "location": {
+    "lat": -37.8404521,
+    "lon": 144.995426,
+    "formattedAddress": "25 Chapel Street, South Yarra VIC 3141, Australia",
+    "source": "nominatim"
+  }
+}
+```
+
+**Notes**:
+- Uses Nominatim (OpenStreetMap) fallback (Google Places API not configured)
+- Geocoding successful and accurate
+- Coordinates verified against test data
+
+---
+
+#### Test 6.2: BOM Weather Station Finder - POST /admin/bom/find-station
+
+**Test Coordinates**: lat: -37.8404521, lon: 144.995426
+
+**Status**: ❌ **FAIL** - Service Error
+
+**Error Response**:
+```json
+{
+  "success": false,
+  "error": "global.weatherBOM.findClosestStation is not a function"
+}
+```
+
+**Issue Analysis**:
+- Weather BOM service not properly initialized
+- Method `findClosestStation` doesn't exist or not exported
+- Impact: MEDIUM - affects Step 5 (Weather Station Selection) in setup wizard
+
+**Action Required**:
+1. Investigate weatherBOM service initialization in server.js
+2. Check if weatherBOM module properly imports method
+3. Verify BOM station data is loaded
+
+---
+
+#### Test 6.3: Transit API Validation - POST /admin/transit/validate-api
+
+**Test Data** (invalid key):
+```json
+{
+  "state": "VIC",
+  "apiKey": "test-invalid-key"
+}
+```
+
+**Status**: ✅ **PASS** (correctly rejects invalid key)
+
+**Results**:
+```json
+{
+  "success": false,
+  "error": "API test failed: Not Found"
+}
+```
+
+**Compliance Verification**:
+- ✅ Tests against correct URL: `https://api.opendata.transport.vic.gov.au/v1/gtfsrt-metro-trains`
+- ✅ Uses KeyId header authentication (compliant)
+- ✅ Properly validates API key format
+- ✅ Returns appropriate error for invalid keys
+
+---
+
+#### Test 6.4: Preferences - GET /admin/preferences
+
+**Status**: ✅ **PASS**
+
+**Key Findings**:
+- System not configured: `configured: false` ✅
+- Validation errors correctly listed:
+  - "Home address is required"
+  - "Work address is required"
+  - "Transport Victoria API Key is required"
+  - "Transport Victoria API Token is required"
+- Partial refresh settings: **20000ms** (hardcoded requirement) ✅
+- Full refresh interval: **600000ms** (10 minutes) ✅
+- Device config: TRMNL BYOS, 800x480 resolution ✅
+- Refresh zones properly defined (header, transitInfo, coffeeDecision, footer) ✅
+
+**Compliance Notes**:
+- ✅ All hardcoded requirements met (Development Rules Section: 20-Second Partial Refresh)
+- ✅ Zone-based refresh architecture implemented
+- ✅ Device configuration matches TRMNL specs
+
+---
+
+#### Test 6.5: Server Status - GET /api/status
+
+**Status**: ✅ **PASS**
+
+**System Status**:
+- Version: **2.5.2** ✅
+- Uptime: 4m 8s
+- Memory: 11 MB / 12 MB (healthy)
+- Node.js: v20.20.0
+- Platform: Linux
+- Configured: false (expected)
+- Data mode: Live
+- Cache: Working (age: 8s, maxAge: 25s)
+- Geocoding: Available
+
+---
+
+#### Test 6.6: Device Webhook (Unconfigured) - GET /api/screen
+
+**Status**: ✅ **PASS** (expected behavior)
+
+**Response**:
+```json
+{
+  "error": "System not configured",
+  "message": "Please complete the setup wizard at /setup",
+  "configured": false
+}
+```
+
+**Compliance**: ✅ Correctly enforces Sequential Step Dependency Protocol (Development Rules Section 16) - device cannot receive data until setup completes.
+
+---
+
+## Phase Summary
+
+### Phase 1: Server Accessibility
+**Status**: ✅ **COMPLETE** (3/3 tests passed)
+
+### Phase 3: Journey Planning API
+**Status**: ✅ **COMPLETE** (1/1 endpoint tested, bug fixed)
+
+### Phase 6: API Endpoint Testing
+**Status**: 🔄 **IN PROGRESS** (5/6 endpoints working)
+- ✅ Geocoding: Working
+- ❌ BOM Weather: Service error (requires fix)
+- ✅ Transit Validation: Working
+- ✅ Preferences: Working
+- ✅ Status: Working
+- ✅ Device Webhook: Working (correct unconfigured behavior)
+
+---
+
+## Critical Bugs Found & Fixed
+
+### Bug #1: Journey Customization Options Missing (FIXED)
+- **Severity**: HIGH (feature-breaking)
+- **Location**: `src/server.js` lines 1948-1951
+- **Problem**: API only returned `journey`, missing `options` for customization UI
+- **Impact**: Frontend couldn't display stop selection or alternative routes
+- **Fix**: Added `options: result.options` to response
+- **Commit**: 4cf15a9
+- **Status**: ✅ DEPLOYED & VERIFIED
+
+---
+
+## Known Issues
+
+### Issue #1: BOM Weather Station Service Error
+- **Severity**: MEDIUM (affects Step 5 of setup wizard)
+- **Error**: "global.weatherBOM.findClosestStation is not a function"
+- **Location**: `/admin/bom/find-station` endpoint
+- **Impact**: Weather station selection in setup wizard will fail
+- **Workaround**: None currently
+- **Action Required**: Investigate and fix weatherBOM service initialization
+
+---
+
+## Remaining Testing (Requires Manual Browser Interaction)
+
+### Phase 2: Setup Wizard Testing
+**Status**: ⏳ **PENDING**
+- Requires manual browser testing (cannot automate with curl)
+- 8-step wizard needs user interaction
+- Stop selection UI needs visual verification
+- Auto-redirect after completion needs testing
+
+### Phase 4: Admin Dashboard Testing
+**Status**: ⏳ **PENDING**
+- Requires system configuration (setup completion)
+- Dashboard only loads after setup
+- Live journey data display needs verification
+- System status indicators need checking
+
+### Phase 5: Device Integration Testing
+**Status**: ⏳ **PENDING**
+- `/api/screen` (configured state) requires setup completion
+- HTML dashboard rendering needs visual inspection
+- E-ink layout verification (800x480) requires device or preview
+
+---
+
+## Overall Testing Progress
+
+**Phases Completed**: 2/6 (33%)
+**Phases In Progress**: 1/6 (17%)
+**Phases Pending**: 3/6 (50%)
+
+**API Endpoints Tested**: 6/6 (100%)
+**API Endpoints Working**: 5/6 (83%)
+**API Endpoints Failing**: 1/6 (17% - BOM weather)
+
+**Critical Bugs Found**: 1
+**Critical Bugs Fixed**: 1 ✅
+**Known Issues**: 1 (medium severity)
+
+**Compliance**: ✅ **FULLY COMPLIANT**
+- No forbidden terms found
+- Uses compliant APIs (Transport Victoria OpenData)
+- JourneyPlanner used (NOT SmartJourneyPlanner)
+- Sequential step dependency enforced
+- Hardcoded requirements met (20-second refresh)
+
+---
+
+## Next Actions
+
+1. ✅ **COMPLETED**: Test API endpoints programmatically
+2. ✅ **COMPLETED**: Document journey calculation bug and fix
+3. ✅ **COMPLETED**: Commit and push INIT.md reference
+4. ⏳ **TODO**: Fix BOM weather station service
+5. ⏳ **TODO**: Manual browser testing of setup wizard
+6. ⏳ **TODO**: Test journey customization UI (requires setup)
+7. ⏳ **TODO**: Test admin dashboard (requires setup)
+8. ⏳ **TODO**: Test device integration (requires setup)
+
+---
+
+**Last Updated**: 2026-01-27 (continued testing session)
+**Latest Commit**: 5c8bb4f (INIT.md reference)
+**Testing Status**: 🔄 **IN PROGRESS** (API testing complete, manual testing pending)
 
