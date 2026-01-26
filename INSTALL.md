@@ -151,29 +151,177 @@ Once deployment completes:
 
 ---
 
-## Step 4: Configure Environment Variables
+## Step 4: Configure Environment Variables (Recommended)
 
-Environment variables are **optional** but enhance functionality.
+Environment variables provide **the most secure way** to store API keys on Render. While you can add API keys via the admin panel, **it's recommended to use Render environment variables** for production deployments.
 
-### 4.1 Add Environment Variables (Optional)
+### 4.1 Why Use Environment Variables?
+
+✅ **Best Practice**: Secrets stored server-side, never in code or JSON files
+✅ **Secure**: Not accessible via admin panel UI
+✅ **Persistent**: Survive redeployments and server restarts
+✅ **Priority**: Environment variables take precedence over admin panel settings
+
+### 4.2 How to Add Environment Variables
 
 1. In Render dashboard, go to your service
 2. Click **Environment** in the left sidebar
 3. Click **Add Environment Variable**
+4. Enter the variable name and value
+5. Click **Save Changes** (this will redeploy your service)
 
-**Recommended (but optional)**:
+### 4.3 Required Environment Variables
 
-```bash
-# Production mode (recommended)
-NODE_ENV=production
+**Production Mode** (always add this):
 
-# Port (Render sets this automatically, but you can override)
-PORT=10000
+| Variable | Value | Purpose |
+|----------|-------|---------|
+| `NODE_ENV` | `production` | Enables production optimizations |
+
+### 4.4 Recommended: Google Places API (for accurate address finding)
+
+**Why**: Significantly improves address geocoding accuracy during setup and journey planning.
+
+| Variable | Value | How to Get |
+|----------|-------|------------|
+| `GOOGLE_PLACES_API_KEY` | `AIza...` | [Get free API key](https://console.cloud.google.com/apis/library/places-backend.googleapis.com) |
+
+**Steps to Get Google Places API Key**:
+1. Go to https://console.cloud.google.com/
+2. Create a new project (or select existing)
+3. Enable **Places API** and **Geocoding API**
+4. Navigate to **Credentials** → **Create Credentials** → **API Key**
+5. Copy your API key (starts with `AIza`)
+6. **Important**: Enable billing (required even for free tier) - you get $200/month credit
+
+**In Render Environment**:
 ```
+Name:  GOOGLE_PLACES_API_KEY
+Value: AIzaSyC_your_actual_api_key_here
+```
+
+### 4.5 Optional: Transit Authority APIs (for real-time departure data)
+
+Add these **only if** you have API credentials for your local transit authority.
+
+#### For Victoria (Transport for Victoria)
+
+| Variable | Value | How to Get |
+|----------|-------|------------|
+| `ODATA_API_KEY` | `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` | [Register here](https://opendata.transport.vic.gov.au/) |
+
+**Format**: UUID format (e.g., `ce606b90-9ffb-43e8-bcd7-0c2bd0498367`)
+
+**In Render Environment**:
+```
+Name:  ODATA_API_KEY
+Value: ce606b90-9ffb-43e8-bcd7-0c2bd0498367
+```
+
+#### For Other States
+
+**NSW**: `TRANSPORT_NSW_API_KEY`
+**QLD**: `TRANSLINK_API_KEY`
+**SA**: `ADELAIDE_METRO_API_KEY`
+**WA**: `TRANSPERTH_API_KEY`
+
+(Contact your local transit authority for API access)
+
+### 4.6 Optional: Additional Geocoding (Mapbox)
+
+**Why**: Provides additional geocoding fallback if Google Places unavailable.
+
+| Variable | Value | How to Get |
+|----------|-------|------------|
+| `MAPBOX_ACCESS_TOKEN` | `pk.eyJ1...` | [Get free token](https://account.mapbox.com/) |
+
+**Free Tier**: 100,000 requests/month
+
+**In Render Environment**:
+```
+Name:  MAPBOX_ACCESS_TOKEN
+Value: pk.eyJ1IjoibXl1c2VybmFtZSIsImEiOiJjbGV5...
+```
+
+### 4.7 Optional: Email Notifications (Feedback Form)
+
+**Why**: Enables the feedback form in admin panel to send emails.
+
+| Variable | Value | Notes |
+|----------|-------|-------|
+| `SMTP_HOST` | `smtp.gmail.com` | Your email provider's SMTP server |
+| `SMTP_PORT` | `587` | Usually 587 for TLS |
+| `SMTP_USER` | `your-email@gmail.com` | Your email address |
+| `SMTP_PASS` | `your-app-password` | App-specific password (not your login password) |
+| `SMTP_FROM` | `your-email@gmail.com` | From address |
+| `SMTP_TO` | `your-email@gmail.com` | Where to send feedback |
+
+**For Gmail**: Use [App Passwords](https://support.google.com/accounts/answer/185833), not your regular password.
+
+### 4.8 Naming Convention Reference
+
+**CRITICAL**: Use the exact variable names below. Incorrect names will not work.
+
+| Service | Correct Variable Name | ❌ Wrong Names (Don't Use) |
+|---------|----------------------|---------------------------|
+| Google Places | `GOOGLE_PLACES_API_KEY` | ~~GOOGLE_API_KEY~~, ~~GOOGLE_PLACES_KEY~~ |
+| Mapbox | `MAPBOX_ACCESS_TOKEN` | ~~MAPBOX_TOKEN~~, ~~MAPBOX_KEY~~ |
+| Victoria Transit | `ODATA_API_KEY` | ~~PTV_API_KEY~~, ~~VICTORIA_API_KEY~~ |
+| SMTP Host | `SMTP_HOST` | ~~EMAIL_HOST~~, ~~MAIL_HOST~~ |
+
+### 4.9 When to Add API Keys
+
+**Recommended Flow**:
+
+1. **Before Setup**: Add `GOOGLE_PLACES_API_KEY` to Render environment variables
+   - Ensures accurate address finding during setup
+   - Improves journey planner success rate
+
+2. **After Setup**: Add transit API keys for your state
+   - Enables real-time departure data
+   - System works with fallback data until then
+
+3. **Anytime**: Add `MAPBOX_ACCESS_TOKEN` and SMTP credentials
+   - Additional geocoding fallback
+   - Email notifications for feedback
+
+### 4.10 Verifying Environment Variables
+
+After adding environment variables in Render:
+
+1. Click **Save Changes** (service will redeploy)
+2. Wait ~2-3 minutes for deployment
+3. Go to **Admin Panel** → **🔑 API Settings**
+4. Check **Data Sources** section
+5. You should see: `📍 Google Places API - ✓ Active` (if added)
+
+**Example Verification**:
+```
+Data Sources:
+✓ OpenStreetMap Nominatim (Free, always available)
+✓ Google Places API (Active - via environment variable)
+✓ Bureau of Meteorology Weather (Australia)
+```
+
+### 4.11 Environment Variables vs Admin Panel
+
+**Question**: Should I add API keys in Render environment variables OR the admin panel?
+
+**Answer**: **Use Render environment variables for production**
+
+| Method | Security | Persistence | Priority | Recommendation |
+|--------|----------|-------------|----------|----------------|
+| **Render Environment** | ✅ High | ✅ Yes | ✅ Checked first | **RECOMMENDED** |
+| **Admin Panel** | ⚠️ Medium | ✅ Yes (in JSON file) | ⚠️ Checked second | Development/Testing |
+
+**Best Practice**:
+- **Production**: Add API keys to Render environment variables
+- **Local Development**: Use `.env` file
+- **Admin Panel**: Use only for testing or temporary changes
 
 **Click Save Changes** to restart with new variables.
 
-**Note**: The system works completely WITHOUT environment variables using fallback data.
+**Note**: The system works completely WITHOUT environment variables using fallback data (free geocoding + GTFS timetables).
 
 ---
 
