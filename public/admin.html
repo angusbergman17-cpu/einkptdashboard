@@ -1505,6 +1505,42 @@
                         <label for="setup-include-coffee">Factor coffee time into journey planning (5 minutes)</label>
                     </div>
 
+                    <!-- Google Places API Key Section -->
+                    <div style="margin-top: 30px; padding: 20px; background: rgba(99, 102, 241, 0.1); border-radius: 12px; border: 2px dashed rgba(99, 102, 241, 0.3);">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                            <span style="font-size: 24px;">🔑</span>
+                            <h3 style="margin: 0; font-size: 16px; font-weight: 600;">Optional: Google Places API Key</h3>
+                        </div>
+                        <p style="font-size: 13px; opacity: 0.85; margin-bottom: 15px; line-height: 1.6;">
+                            The smart journey planner works with free Nominatim geocoding, but adding a Google Places API key provides enhanced address search and cafe discovery.
+                        </p>
+
+                        <div class="checkbox-group" style="margin-bottom: 15px;">
+                            <input type="checkbox" id="setup-has-google-api" onchange="toggleGoogleApiInput()">
+                            <label for="setup-has-google-api">I have a Google Places API key</label>
+                        </div>
+
+                        <div id="setup-google-api-input" style="display: none;">
+                            <div class="form-group">
+                                <label class="form-label">Google Places API Key</label>
+                                <input type="password" id="setup-google-api-key" class="form-input" placeholder="Enter your Google Places API key">
+                                <small style="color: rgba(255,255,255,0.6); font-size: 11px; display: block; margin-top: 5px;">
+                                    Don't have one? <a href="https://console.cloud.google.com/apis/library/places-backend.googleapis.com" target="_blank" style="color: #60a5fa; text-decoration: none;">Get it here (free tier available)</a>
+                                </small>
+                            </div>
+                            <button class="btn btn-secondary" onclick="saveGoogleApiKey()" style="width: 100%; margin-top: 10px;">
+                                💾 Save API Key & Restart System
+                            </button>
+                            <div id="google-api-save-message" style="display: none; margin-top: 10px; padding: 10px; border-radius: 6px; font-size: 13px;"></div>
+                        </div>
+
+                        <div style="margin-top: 12px; padding: 10px; background: rgba(251, 191, 36, 0.1); border-radius: 6px; border-left: 3px solid #fbbf24;">
+                            <div style="font-size: 12px; opacity: 0.9;">
+                                <strong>💡 Note:</strong> Google Places free tier includes $200/month credit. The system has quota protection built-in to never exceed free limits.
+                            </div>
+                        </div>
+                    </div>
+
                     <div id="setup-message" class="message" style="display: none; margin-top: 20px;"></div>
                     <div id="setup-progress" style="display: none; margin-top: 20px; padding: 15px; background: rgba(102, 126, 234, 0.2); border-radius: 8px; border-left: 3px solid #667eea;">
                         <div style="font-weight: 600; margin-bottom: 10px;">🔄 Setting up your journey...</div>
@@ -5158,6 +5194,72 @@
             const section = document.getElementById('setup-coffee-time-section');
             const checkbox = document.getElementById('setup-include-coffee');
             section.style.display = checkbox.checked ? 'block' : 'none';
+        }
+
+        // Toggle Google API key input visibility
+        function toggleGoogleApiInput() {
+            const checkbox = document.getElementById('setup-has-google-api');
+            const inputSection = document.getElementById('setup-google-api-input');
+            inputSection.style.display = checkbox.checked ? 'block' : 'none';
+        }
+
+        // Save Google API key and restart system
+        async function saveGoogleApiKey() {
+            const apiKey = document.getElementById('setup-google-api-key').value.trim();
+            const messageDiv = document.getElementById('google-api-save-message');
+
+            if (!apiKey) {
+                messageDiv.style.display = 'block';
+                messageDiv.style.background = 'rgba(239, 68, 68, 0.2)';
+                messageDiv.style.color = '#fca5a5';
+                messageDiv.innerHTML = '❌ Please enter your Google Places API key';
+                return;
+            }
+
+            try {
+                // Show saving message
+                messageDiv.style.display = 'block';
+                messageDiv.style.background = 'rgba(251, 191, 36, 0.2)';
+                messageDiv.style.color = '#fbbf24';
+                messageDiv.innerHTML = '⏳ Saving API key...';
+
+                // Save to additional APIs endpoint
+                const response = await fetch('/admin/apis/additional', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        apiId: 'googlePlaces',
+                        apiKey: apiKey,
+                        enabled: true
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    messageDiv.style.background = 'rgba(16, 185, 129, 0.2)';
+                    messageDiv.style.color = '#6ee7b7';
+                    messageDiv.innerHTML = `
+                        ✅ Google Places API key saved successfully!
+                        <br><small>Reloading system in 3 seconds...</small>
+                    `;
+
+                    // Reload the page after 3 seconds to restart with new API key
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 3000);
+                } else {
+                    messageDiv.style.background = 'rgba(239, 68, 68, 0.2)';
+                    messageDiv.style.color = '#fca5a5';
+                    messageDiv.innerHTML = `❌ Failed to save: ${result.message || 'Unknown error'}`;
+                }
+            } catch (error) {
+                console.error('Error saving Google API key:', error);
+                messageDiv.style.display = 'block';
+                messageDiv.style.background = 'rgba(239, 68, 68, 0.2)';
+                messageDiv.style.color = '#fca5a5';
+                messageDiv.innerHTML = `❌ Error: ${error.message}`;
+            }
         }
 
         async function startJourneyPlanning() {

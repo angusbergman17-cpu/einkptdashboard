@@ -2191,21 +2191,43 @@ app.post('/admin/apis/gtfs-realtime/test', async (req, res) => {
 // Additional APIs configuration (Google Places, Mapbox, RSS feeds)
 app.post('/admin/apis/additional', async (req, res) => {
   try {
-    const { google_places, mapbox, rss_feeds } = req.body;
+    // Support both old format (google_places, mapbox, rss_feeds) and new format (apiId, apiKey)
+    const { google_places, mapbox, rss_feeds, apiId, apiKey, enabled } = req.body;
 
     // Store in environment variables / preferences
     const prefs = preferences.get();
-    prefs.additionalAPIs = {
-      google_places: google_places || null,
-      mapbox: mapbox || null,
-      rss_feeds: rss_feeds || []
-    };
+
+    // Initialize additionalAPIs if it doesn't exist
+    if (!prefs.additionalAPIs) {
+      prefs.additionalAPIs = {
+        google_places: null,
+        mapbox: null,
+        rss_feeds: []
+      };
+    }
+
+    // Handle new format (from setup wizard)
+    if (apiId && apiKey !== undefined) {
+      if (apiId === 'googlePlaces') {
+        prefs.additionalAPIs.google_places = enabled ? apiKey : null;
+        console.log('✅ Google Places API key saved via setup wizard');
+      } else if (apiId === 'mapbox') {
+        prefs.additionalAPIs.mapbox = enabled ? apiKey : null;
+        console.log('✅ Mapbox API key saved via setup wizard');
+      }
+    } else {
+      // Handle old format (from API Settings tab)
+      prefs.additionalAPIs.google_places = google_places || prefs.additionalAPIs.google_places;
+      prefs.additionalAPIs.mapbox = mapbox || prefs.additionalAPIs.mapbox;
+      prefs.additionalAPIs.rss_feeds = rss_feeds || prefs.additionalAPIs.rss_feeds;
+    }
+
     await preferences.save();
 
-    console.log('✅ Additional APIs saved:', {
-      googlePlaces: !!google_places,
-      mapbox: !!mapbox,
-      rssFeeds: rss_feeds?.length || 0
+    console.log('✅ Additional APIs updated:', {
+      googlePlaces: !!prefs.additionalAPIs.google_places,
+      mapbox: !!prefs.additionalAPIs.mapbox,
+      rssFeeds: prefs.additionalAPIs.rss_feeds?.length || 0
     });
 
     res.json({
