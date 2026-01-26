@@ -33,6 +33,7 @@ bool wifiConnected = false;
 bool deviceRegistered = false;
 bool firstDataLoaded = false;
 bool systemConfigured = false;
+bool defaultDashboardShown = false;  // Track if default dashboard was displayed
 
 String friendlyID = "";
 String apiKey = "";
@@ -278,16 +279,25 @@ void fetchAndDisplaySafe() {
             http.end();
             delete client;
 
-            // HTTP 500 = System not configured, show default dashboard
+            // HTTP 500 = System not configured
             if (httpCode == 500) {
                 systemConfigured = false;
-                Serial.println("  System not configured - showing default dashboard");
-                drawDefaultDashboard();
+
+                // Show default dashboard ONCE, then stop refreshing
+                if (!defaultDashboardShown) {
+                    Serial.println("  System not configured - showing default dashboard (one-time)");
+                    drawDefaultDashboard();
+                    defaultDashboardShown = true;
+                } else {
+                    Serial.println("  System not configured - default dashboard already shown, skipping refresh");
+                }
             }
             return;
         }
 
+        // System is configured, allow normal refreshes
         systemConfigured = true;
+        defaultDashboardShown = false;  // Reset flag when system is configured
 
         payload = http.getString();
         http.end();
@@ -440,29 +450,18 @@ String getEstimatedTime() {
 }
 
 // Draw default dashboard when system is not configured
+// This is shown ONCE and never refreshed until setup is complete
 void drawDefaultDashboard() {
     Serial.println("  Drawing DEFAULT dashboard (setup in progress)...");
+    Serial.println("  → FULL REFRESH (One-time - no updates until configured)");
 
-    unsigned long now = millis();
-    bool needsFullRefresh = !firstDataLoaded ||
-                           (now - lastFullRefresh >= FULL_REFRESH_INTERVAL) ||
-                           (refreshCount % 30 == 0);
-
-    if (needsFullRefresh) {
-        Serial.println("  → FULL REFRESH (Default)");
-
-        bbep.fillScreen(BBEP_WHITE);
+    bbep.fillScreen(BBEP_WHITE);
 
         // === TOP BAR (Y: 0-60) ===
         // Title - centered
         bbep.setFont(FONT_12x16);
         bbep.setCursor(300, 30);
         bbep.print("PTV-TRMNL");
-
-        // Status - top right
-        bbep.setFont(FONT_8x8);
-        bbep.setCursor(650, 30);
-        bbep.print(getEstimatedTime().c_str());
 
         // === MIDDLE SECTION (Y: 80-400) ===
         // Status message
@@ -473,31 +472,25 @@ void drawDefaultDashboard() {
         // Information bars
         bbep.setFont(FONT_8x8);
 
-        // Bar 1
-        bbep.setCursor(100, 220);
-        bbep.print("Device: ESP32-C3 (");
+        // Bar 1 - Device ID
+        bbep.setCursor(150, 220);
+        bbep.print("Device: ");
         bbep.print(friendlyID.c_str());
-        bbep.print(")");
 
-        // Bar 2
-        bbep.setCursor(100, 250);
-        bbep.print("WiFi: Connected to ");
-        bbep.print(WiFi.SSID().c_str());
+        // Bar 2 - WiFi Status
+        bbep.setCursor(150, 250);
+        bbep.print("WiFi: Connected");
 
-        // Bar 3
-        bbep.setCursor(100, 280);
-        bbep.print("Server: ");
-        bbep.print(SERVER_URL);
-
-        // Bar 4
-        bbep.setCursor(100, 310);
+        // Bar 3 - Status
+        bbep.setCursor(150, 280);
         bbep.print("Status: Waiting for configuration");
 
         // Instructions
-        bbep.setCursor(80, 360);
-        bbep.print("Complete setup at: ");
-        bbep.print(SERVER_URL);
-        bbep.print("/admin");
+        bbep.setCursor(100, 340);
+        bbep.print("Complete setup at admin page");
+
+        bbep.setCursor(150, 370);
+        bbep.print("(see server URL in console)");
 
         // === BOTTOM BAR (Y: 420-480) ===
         bbep.setFont(FONT_8x8);
@@ -505,49 +498,20 @@ void drawDefaultDashboard() {
         bbep.print("Firmware: v5.9");
 
         bbep.setCursor(300, 450);
-        bbep.print("Refresh: ");
-        bbep.print(refreshCount);
+        bbep.print("Setup mode - Screen static");
 
         bbep.setCursor(650, 450);
-        bbep.print("Heap: ");
-        bbep.print(ESP.getFreeHeap() / 1024);
-        bbep.print(" KB");
+        bbep.print("No refresh");
 
-        Serial.println("  Default dashboard laid out horizontally");
-        Serial.println("  Coordinates: X(0-800) Y(0-480)");
+    Serial.println("  Default dashboard laid out horizontally");
+    Serial.println("  Coordinates: X(0-800) Y(0-480)");
+    Serial.println("  Note: Screen will remain static until setup is complete");
 
-        bbep.refresh(REFRESH_FULL, true);
-        lastFullRefresh = now;
-        firstDataLoaded = true;
+    bbep.refresh(REFRESH_FULL, true);
+    lastFullRefresh = millis();
+    firstDataLoaded = true;
 
-    } else {
-        Serial.println("  → PARTIAL REFRESH (Default)");
-
-        // Update time (top right)
-        String currentTime = getEstimatedTime();
-        if (currentTime != prevTime) {
-            bbep.fillRect(650, 15, 100, 30, BBEP_WHITE);
-            bbep.setFont(FONT_8x8);
-            bbep.setCursor(650, 30);
-            bbep.print(currentTime.c_str());
-            prevTime = currentTime;
-        }
-
-        // Update refresh count
-        bbep.fillRect(300, 435, 150, 30, BBEP_WHITE);
-        bbep.setFont(FONT_8x8);
-        bbep.setCursor(300, 450);
-        bbep.print("Refresh: ");
-        bbep.print(refreshCount);
-
-        bbep.refresh(REFRESH_PARTIAL, true);
-    }
-
-    Serial.print("✓ Default dashboard updated (");
-    Serial.print(needsFullRefresh ? "FULL" : "PARTIAL");
-    Serial.print(", #");
-    Serial.print(refreshCount);
-    Serial.println(")");
+    Serial.println("✓ Default dashboard displayed (one-time)");
 
     yield();
     delay(1000);

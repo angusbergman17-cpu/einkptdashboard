@@ -19,8 +19,6 @@ import WeatherBOM from './services/weather-bom.js';
 import RoutePlanner from './core/route-planner.js';
 import CafeBusyDetector from './services/cafe-busy-detector.js';
 import PreferencesManager from './data/preferences-manager.js';
-import MultiModalRouter from './core/multi-modal-router.js';
-import SmartJourneyPlanner from './core/smart-journey-planner.js';
 import JourneyPlanner from './services/journey-planner.js';
 import GeocodingService from './services/geocoding-service.js';
 import DecisionLogger from './core/decision-logger.js';
@@ -106,8 +104,6 @@ const coffeeEngine = new CoffeeDecision();
 const weather = new WeatherBOM(preferences);
 const routePlanner = new RoutePlanner(preferences);
 const busyDetector = new CafeBusyDetector(preferences);
-const multiModalRouter = new MultiModalRouter();
-const smartPlanner = new SmartJourneyPlanner(); // DEPRECATED - Use JourneyPlanner instead
 const journeyPlanner = new JourneyPlanner(); // Compliant implementation
 
 // Initialize multi-tier geocoding service (global for route planner)
@@ -115,7 +111,6 @@ const journeyPlanner = new JourneyPlanner(); // Compliant implementation
 const prefs = preferences.get();
 
 // Set services as globals for admin endpoints
-global.smartJourneyPlanner = smartPlanner; // DEPRECATED
 global.journeyPlanner = journeyPlanner; // Compliant implementation
 global.weatherBOM = weather;
 
@@ -163,17 +158,36 @@ async function calculateAndCacheJourney() {
       return null;
     }
 
-    // SmartJourneyPlanner uses LEGACY API - always use fallback mode
-    console.log('🔄 Auto-calculating journey (fallback mode)...');
+    // Use compliant JourneyPlanner (fallback timetables, no legacy API)
+    console.log('🔄 Auto-calculating journey (compliant planner)...');
 
-    const journey = await smartPlanner.planJourney({
-      homeAddress: prefs.addresses.home,
-      workAddress: prefs.addresses.work,
-      cafeAddress: prefs.addresses.cafe,
-      arrivalTime: prefs.journey.arrivalTime,
-      includeCoffee: prefs.journey.coffeeEnabled,
-      api: { key: null, token: null }  // Force fallback to GTFS data
+    const result = await journeyPlanner.calculateJourney({
+      homeLocation: {
+        lat: prefs.addresses.homeCoords?.lat,
+        lon: prefs.addresses.homeCoords?.lon,
+        formattedAddress: prefs.addresses.home
+      },
+      workLocation: {
+        lat: prefs.addresses.workCoords?.lat,
+        lon: prefs.addresses.workCoords?.lon,
+        formattedAddress: prefs.addresses.work
+      },
+      cafeLocation: prefs.addresses.cafe ? {
+        lat: prefs.addresses.cafeCoords?.lat,
+        lon: prefs.addresses.cafeCoords?.lon,
+        formattedAddress: prefs.addresses.cafe
+      } : null,
+      workStartTime: prefs.journey.arrivalTime,
+      cafeDuration: 8,
+      transitAuthority: prefs.detectedState || 'VIC'
     });
+
+    if (!result.success) {
+      console.error('❌ Journey calculation failed:', result.error);
+      return null;
+    }
+
+    const journey = result.journey;
 
     cachedJourney = {
       ...journey,
@@ -1993,7 +2007,7 @@ app.post('/admin/transit/validate-api', async (req, res) => {
     // Test API key with simple request
     // For VIC, test with Transport Victoria OpenData API
     if (state === 'VIC') {
-      const testUrl = 'https://opendata.transport.vic.gov.au/v1/gtfsrt-metro-trains';
+      const testUrl = 'https://api.opendata.transport.vic.gov.au/v1/gtfsrt-metro-trains';
       const response = await fetch(testUrl, {
         headers: {
           'KeyId': apiKey,
@@ -2089,10 +2103,25 @@ app.post('/admin/setup/complete', async (req, res) => {
       prefs.transitAPIConfigured = false;
     }
 
+    // Mark system as configured (for firmware check)
+    prefs.system_configured = true;
+
     // Save preferences
     await preferences.save(prefs);
 
-    res.json({ success: true, message: 'Setup completed successfully' });
+    // Mark system as configured (in-memory flag)
+    isConfigured = true;
+
+    // Start automatic journey calculation now that setup is complete
+    console.log('✅ Setup completed successfully');
+    console.log('🔄 Starting automatic journey calculation...');
+    startAutomaticJourneyCalculation();
+
+    res.json({
+      success: true,
+      message: 'Setup completed successfully',
+      redirectTo: '/admin.html'  // Tell frontend to redirect to dashboard
+    });
 
   } catch (error) {
     console.error('Setup completion error:', error);
@@ -2345,37 +2374,6 @@ app.put('/admin/preferences/addresses', async (req, res) => {
       success: true,
       addresses,
       message: 'Addresses updated successfully'
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Update API credentials
-app.put('/admin/preferences/api', async (req, res) => {
-  try {
-    const { key, token } = req.body;
-
-    if (!key || !token) {
-      return res.status(400).json({
-        error: 'Both API key and token are required'
-      });
-    }
-
-    const api = await preferences.updateApiCredentials({
-      key,
-      token,
-      baseUrl: 'https://timetableapi.ptv.vic.gov.au'
-    });
-
-    res.json({
-      success: true,
-      api: {
-        key: api.key,
-        baseUrl: api.baseUrl
-        // Don't return token in response for security
-      },
-      message: 'API credentials updated successfully'
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -3647,43 +3645,16 @@ app.post('/admin/route/auto-plan', async (req, res) => {
       });
     }
 
-    console.log('\n=== AUTO JOURNEY PLANNING ===');
-    console.log('Request:', { homeAddress, workAddress, cafeAddress, arrivalTime, includeCoffee });
-
-    // Plan the journey automatically
-    // NOTE: SmartJourneyPlanner uses LEGACY PTV API v3 which is FORBIDDEN
-    // Pass null credentials to force fallback to GTFS static data
-    const plan = await smartPlanner.planJourney({
-      homeAddress,
-      workAddress,
-      cafeAddress,
-      arrivalTime,
-      includeCoffee,
-      api: {
-        key: null,  // Force fallback mode - SmartJourneyPlanner uses legacy API
-        token: null
+    // DEPRECATED ENDPOINT - Use /admin/smart-journey/calculate instead
+    return res.status(410).json({
+      success: false,
+      error: 'Endpoint deprecated',
+      message: 'This endpoint uses legacy PTV API v3 code and has been removed for compliance.',
+      migration: {
+        newEndpoint: '/admin/smart-journey/calculate',
+        documentation: 'Use the new admin-v3.html interface which uses compliant Transport Victoria OpenData API'
       }
     });
-
-    if (!plan.success) {
-      return res.status(400).json(plan);
-    }
-
-    // Save successful addresses to preferences for future use
-    await preferences.updateAddresses({
-      home: homeAddress,
-      work: workAddress,
-      cafe: cafeAddress || savedAddresses.cafe
-    });
-
-    // Also update arrival time if provided
-    if (req.body.arrivalTime) {
-      await preferences.updateJourneyPreferences({
-        arrivalTime: req.body.arrivalTime
-      });
-    }
-
-    res.json(plan);
 
   } catch (error) {
     console.error('Auto journey planning error:', error);
@@ -3719,22 +3690,16 @@ app.get('/admin/route/quick-plan', async (req, res) => {
       });
     }
 
-    // Use query param for arrival time if provided
-    const arrivalTime = req.query.arrivalTime || savedJourney.arrivalTime || '09:00';
-
-    const plan = await smartPlanner.planJourney({
-      homeAddress: savedAddresses.home,
-      workAddress: savedAddresses.work,
-      cafeAddress: savedAddresses.cafe || null,
-      arrivalTime,
-      includeCoffee: savedJourney.coffeeEnabled !== false,
-      api: {
-        key: null,  // Force fallback mode
-        token: null
+    // DEPRECATED ENDPOINT - Use /admin/smart-journey/calculate instead
+    return res.status(410).json({
+      success: false,
+      error: 'Endpoint deprecated',
+      message: 'This endpoint uses legacy PTV API v3 code and has been removed for compliance.',
+      migration: {
+        newEndpoint: '/admin/smart-journey/calculate',
+        documentation: 'Use the new admin-v3.html interface'
       }
     });
-
-    res.json(plan);
 
   } catch (error) {
     console.error('Quick plan error:', error);
@@ -3761,23 +3726,16 @@ app.post('/admin/route/quick-plan', async (req, res) => {
       });
     }
 
-    // Get API credentials from preferences
-    const prefs = preferences.get();
-    const savedApi = prefs.api || {};
-
-    const plan = await smartPlanner.planJourney({
-      homeAddress,
-      workAddress,
-      cafeAddress: cafeAddress || null,
-      arrivalTime: arrivalTime || '09:00',
-      includeCoffee: !!cafeAddress,
-      api: {
-        key: null,  // Force fallback mode
-        token: null
+    // DEPRECATED ENDPOINT - Use /admin/smart-journey/calculate instead
+    return res.status(410).json({
+      success: false,
+      error: 'Endpoint deprecated',
+      message: 'This endpoint uses legacy PTV API v3 code and has been removed for compliance.',
+      migration: {
+        newEndpoint: '/admin/smart-journey/calculate',
+        documentation: 'Use the new admin-v3.html interface'
       }
     });
-
-    res.json(plan);
 
   } catch (error) {
     console.error('Quick plan POST error:', error);
@@ -3794,18 +3752,16 @@ app.post('/admin/route/quick-plan', async (req, res) => {
  */
 app.get('/admin/route/auto', (req, res) => {
   try {
-    const cached = smartPlanner.getCachedJourney();
-
-    if (!cached) {
-      return res.status(404).json({
-        success: false,
-        error: 'No journey planned',
-        message: 'Plan a journey first using POST /admin/route/auto-plan or GET /admin/route/quick-plan'
-      });
-    }
-
-    res.json(cached);
-
+    // DEPRECATED ENDPOINT - Use /admin/smart-journey/calculate instead
+    return res.status(410).json({
+      success: false,
+      error: 'Endpoint deprecated',
+      message: 'This endpoint uses legacy code and has been removed for compliance.',
+      migration: {
+        newEndpoint: '/admin/smart-journey/calculate',
+        documentation: 'Use the new admin-v3.html interface'
+      }
+    });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -3850,8 +3806,8 @@ app.get('/admin/route', (req, res) => {
  */
 app.get('/api/journey-status', async (req, res) => {
   try {
-    // Get the cached journey plan (try auto-calculated first, then smart planner)
-    let journey = cachedJourney || smartPlanner.getCachedJourney();
+    // Get the cached journey plan (auto-calculated from compliant JourneyPlanner)
+    let journey = cachedJourney;
 
     if (!journey || !journey.success) {
       // Return fallback journey status
@@ -4549,7 +4505,7 @@ app.get('/admin/live-display', async (req, res) => {
     const config = dataManager.getConfig();
     const apis = dataManager.getApis();
     const cachedRoute = routePlanner.getCachedRoute();
-    const cachedAutoJourney = smartPlanner.getCachedJourney();
+    const cachedAutoJourney = cachedJourney; // Use compliant auto-calculated journey
 
     // Location-agnostic timezone detection
     const state = config?.location?.state || config?.location?.stateCode || 'VIC';
@@ -5849,79 +5805,6 @@ app.get('/preview', requireConfiguration, (req, res) => {
 // Redirect setup wizard to admin page (all setup done through admin interface)
 app.get('/setup', (req, res) => {
   res.redirect('/admin#tab-setup');
-});
-
-/**
- * Complete Setup - Save configuration from wizard
- */
-app.post('/admin/setup/complete', async (req, res) => {
-  try {
-    const { addresses, authority, arrivalTime, includeCoffee, credentials, location } = req.body;
-
-    // Get location data for the state (from australian-cities.js)
-    const cityData = location?.city ? getPrimaryCityForState(authority) : getPrimaryCityForState(authority);
-
-    // Set API base URL based on transit authority
-    const authorityConfig = await import('./utils/transit-authorities.js').then(m => m.getAuthorityByState(authority));
-
-    // Build preferences update object
-    const updates = {
-      addresses: addresses,
-      location: {
-        state: authority,
-        stateCode: authority,
-        stateName: cityData?.stateName || null,
-        city: location?.city || cityData?.name || null,
-        transitAuthority: authority,
-        authorityName: authorityConfig?.name || location?.authorityName || null,
-        centerLat: cityData?.lat || null,
-        centerLon: cityData?.lon || null,
-        timezone: cityData?.timezone || 'Australia/Sydney'
-      },
-      journey: {
-        ...preferences.getSection('journey'),
-        arrivalTime,
-        coffeeEnabled: includeCoffee
-      },
-      api: {
-        key: credentials.devId || credentials.apiKey || '',
-        token: credentials.apiKey || credentials.devId || '',
-        baseUrl: authorityConfig?.baseUrl || ''
-      }
-    };
-
-    // Update preferences using the proper API
-    const prefs = await preferences.update(updates);
-
-    // Mark system as configured (for firmware check)
-    prefs.system_configured = true;
-    await preferences.save();
-
-    console.log(`✅ Setup completed for ${authority} (${cityData?.name || 'Unknown City'})`);
-    console.log(`   Location: ${cityData?.name}, ${cityData?.stateName}`);
-    console.log(`   Coordinates: ${cityData?.lat}, ${cityData?.lon}`);
-    console.log(`   System configured flag: ${prefs.system_configured}`);
-
-    // Mark system as configured (in-memory flag)
-    isConfigured = true;
-
-    // Start automatic journey calculation now that setup is complete
-    console.log('🔄 Starting automatic journey calculation...');
-    startAutomaticJourneyCalculation();
-
-    res.json({
-      success: true,
-      message: 'Setup completed successfully',
-      location: prefs.location,
-      journeyCalculationStarted: true
-    });
-  } catch (error) {
-    console.error('Setup completion error:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
 });
 
 /* =========================================================
