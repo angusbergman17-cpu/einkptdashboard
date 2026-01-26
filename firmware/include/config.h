@@ -18,8 +18,10 @@
 #define WIFI_AP_PASSWORD "transport123"
 
 // Refresh Timing (milliseconds)
-#define PARTIAL_REFRESH_INTERVAL 60000    // 1 minute for partial updates
-#define FULL_REFRESH_INTERVAL 300000      // 5 minutes for full refresh
+// ⚠️ CRITICAL: 20-second partial refresh is HARDCODED requirement
+// Do NOT change without explicit user approval
+#define PARTIAL_REFRESH_INTERVAL 20000    // 20 seconds for partial updates (REQUIRED)
+#define FULL_REFRESH_INTERVAL 600000      // 10 minutes for full refresh
 #define WIFI_TIMEOUT 30000                // 30 seconds WiFi connection timeout
 
 // Display Configuration (TRMNL 7.5" Waveshare)
@@ -68,7 +70,7 @@
 #define LOW_BATTERY_MV 3300
 
 // Sleep configuration
-#define SLEEP_BETWEEN_PARTIALS_MS 55000  // Light sleep between partial updates
+#define SLEEP_BETWEEN_PARTIALS_MS 18000  // Light sleep between partial updates (20s total cycle)
 
 // Memory safety limits (ESP32-C3 has ~238KB free RAM)
 #define MIN_FREE_HEAP 100000  // Require 100KB free heap before allocating

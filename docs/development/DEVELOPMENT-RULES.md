@@ -1,7 +1,7 @@
 # PTV-TRMNL Development Rules
 **MANDATORY COMPLIANCE DOCUMENT**
 **Last Updated**: 2026-01-26
-**Version**: 1.0.19
+**Version**: 1.0.21
 
 ---
 
@@ -91,6 +91,112 @@
 ```
 
 **This rule ensures system-wide consistency and prevents breaking changes.**
+
+---
+
+## ⚡ HARDCODED REQUIREMENT: 20-Second Partial Refresh
+
+### 🚨 CRITICAL - DO NOT CHANGE WITHOUT EXPLICIT USER APPROVAL
+
+**REQUIREMENT**: E-ink displays MUST perform partial refresh every 20 seconds, updating ONLY dynamic zones (time, departures, alerts).
+
+### 📐 Mandated Values
+
+**Firmware (`firmware/include/config.h`):**
+```c
+#define PARTIAL_REFRESH_INTERVAL 20000    // 20 seconds (REQUIRED)
+#define FULL_REFRESH_INTERVAL 600000      // 10 minutes
+#define SLEEP_BETWEEN_PARTIALS_MS 18000   // 18 seconds (allows 2s for processing)
+```
+
+**Server (`src/server.js` - `/api/config` endpoint):**
+```javascript
+{
+  partialRefreshMs: 20000,    // 20 seconds (HARDCODED REQUIREMENT)
+  fullRefreshMs: 600000,      // 10 minutes
+  sleepBetweenMs: 18000       // 18 seconds
+}
+```
+
+**Preferences (`src/data/preferences-manager.js`):**
+```javascript
+partialRefresh: {
+  enabled: true,
+  interval: 20000,      // 20 seconds (HARDCODED)
+  minimum: 20000,       // Cannot go lower
+  fullRefreshInterval: 600000   // 10 minutes
+}
+```
+
+### 🎯 Partial Refresh Zones
+
+**Zones that refresh every 20 seconds:**
+1. **Transit Info Zone** (15-65% vertical): Departure times, delays, platform changes
+2. **Time Display** (top 15%): Current time, updated every 60 seconds
+3. **Coffee Decision** (65-85%): Real-time cafe busyness, updated every 2 minutes
+4. **Footer** (85-100%): Journey summary, updated every 2 minutes
+
+### ❌ PROHIBITED Actions
+
+**DO NOT**:
+- Change `PARTIAL_REFRESH_INTERVAL` without user approval
+- Set refresh interval below 20 seconds (damages e-ink)
+- Set refresh interval above 30 seconds (data becomes stale)
+- Remove partial refresh capability
+- Force full refresh more often than every 10 minutes (ghosting)
+
+### ✅ REQUIRED Implementation
+
+**All components MUST:**
+1. Support partial refresh at 20-second intervals
+2. Update ONLY changed zones (not full screen)
+3. Perform full refresh every 10 minutes to prevent ghosting
+4. Sleep 18 seconds between updates (conserve battery)
+5. Handle zone updates independently
+
+### 🔧 Rationale
+
+**Why 20 seconds?**
+- Transit data changes every 10-30 seconds
+- Faster than 20s: Excessive e-ink wear
+- Slower than 30s: User sees stale departure times
+- Balance between freshness and display longevity
+
+**Why zone-based partial refresh?**
+- Only dynamic content needs updating (departures, time)
+- Static content (station names, layout) stays unchanged
+- Reduces e-ink cycles by 70-80%
+- Extends display lifespan from 1 year to 5+ years
+
+**Why 10-minute full refresh?**
+- Clears ghosting artifacts from partial refreshes
+- Resets pixel states to prevent burn-in
+- Industry standard for e-ink displays
+
+### 📝 Admin Panel Documentation
+
+The admin panel MUST display this information:
+- Current partial refresh interval (20 seconds)
+- Next full refresh countdown
+- Zone update history
+- Warning if user attempts to change interval
+
+### 🧪 Testing Requirements
+
+**Before deployment, verify:**
+```bash
+# Check firmware config
+grep "PARTIAL_REFRESH_INTERVAL" firmware/include/config.h
+# Should return: #define PARTIAL_REFRESH_INTERVAL 20000
+
+# Check server config
+grep "partialRefreshMs:" src/server.js
+# Should return: partialRefreshMs: 20000,
+
+# Check preferences default
+grep "interval: 20000" src/data/preferences-manager.js
+# Should find in partialRefresh section
+```
 
 ---
 

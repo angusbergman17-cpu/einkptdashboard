@@ -241,7 +241,7 @@ class PreferencesManager {
           },
 
           // Optimization settings
-          fullRefreshInterval: 900000,    // Force full refresh every 15 minutes (reduce ghosting)
+          fullRefreshInterval: 600000,    // Force full refresh every 10 minutes (reduce ghosting)
           zoneChangeThreshold: 5,         // Minimum % change to trigger zone update
           smartCoalescing: true,          // Combine adjacent zone updates
           fallbackToFull: true            // Fall back to full refresh if multiple zones changed

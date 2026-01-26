@@ -1680,9 +1680,9 @@ app.get('/api/config', (req, res) => {
   const timezone = getTimezoneForState(state);
 
   res.json({
-    partialRefreshMs: 60000,    // 1 minute partial refresh
-    fullRefreshMs: 300000,      // 5 minute full refresh
-    sleepBetweenMs: 55000,      // Sleep time between polls
+    partialRefreshMs: 20000,    // 20 seconds partial refresh (HARDCODED REQUIREMENT)
+    fullRefreshMs: 600000,      // 10 minutes full refresh
+    sleepBetweenMs: 18000,      // Sleep time between polls (20s cycle)
     timezone: timezone,
     version: '1.0.0'
   });
