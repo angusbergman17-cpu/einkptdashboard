@@ -103,9 +103,10 @@ class PreferencesManager {
         colorCoding: true
       },
 
-      // Device Configuration (Development Rules v1.0.14 Section U)
+      // Device Configuration (Development Rules v1.0.16 Section U)
       deviceConfig: {
         selectedDevice: 'trmnl-byos',  // Default to TRMNL BYOS
+        trmnlModel: 'trmnl-og',        // TRMNL OG (compatible) vs TRMNL X (not yet compatible)
         resolution: {
           width: 800,
           height: 480
