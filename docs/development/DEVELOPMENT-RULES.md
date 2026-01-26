@@ -1,7 +1,7 @@
 # PTV-TRMNL Development Rules
 **MANDATORY COMPLIANCE DOCUMENT**
 **Last Updated**: 2026-01-26
-**Version**: 1.0.12
+**Version**: 1.0.13
 
 ---
 
@@ -1005,6 +1005,126 @@ const response = await fetch(url, {
 // Google Places: API key in query string
 // Mapbox: Access token in query string
 ```
+
+### Google Places API Free Tier Protection
+
+**CRITICAL**: Google Places API must NEVER exceed free tier limits.
+
+**Free Tier Limits** (as of 2026-01-26):
+- **Monthly Credit**: $200 USD per project
+- **Place Details**: $0.017 per request = ~11,764 requests/month
+- **Place Search (Nearby)**: $0.032 per request = ~6,250 requests/month
+- **Geocoding API**: $0.005 per request = ~40,000 requests/month
+- **Places Autocomplete**: $0.002-$0.032 per session (Session-based)
+
+**Mandatory Protections**:
+
+1. **Aggressive Caching** (REQUIRED)
+   ```javascript
+   // Cache geocoding results for 30 days (location data doesn't change)
+   const GEOCODE_CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+   // Cache place details for 7 days (opening hours may change)
+   const PLACE_DETAILS_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+   // Cache search results for 1 day
+   const PLACE_SEARCH_CACHE_TTL = 24 * 60 * 60 * 1000; // 1 day
+   ```
+
+2. **Rate Limiting** (REQUIRED)
+   ```javascript
+   // Maximum 1 Google Places API call per second
+   const googlePlacesRateLimiter = new RateLimiter(1, 1000);
+
+   // Maximum 100 calls per day (well under free tier)
+   const dailyQuota = 100;
+   ```
+
+3. **Quota Tracking** (REQUIRED)
+   ```javascript
+   // Track daily usage in persistent storage
+   const quotaTracker = {
+     date: new Date().toDateString(),
+     geocode: 0,
+     placeDetails: 0,
+     placeSearch: 0,
+     totalCost: 0.00
+   };
+
+   // Block requests if approaching limits
+   if (quotaTracker.totalCost > 6.50) { // 195/200 = 97.5% of monthly limit
+     console.error('❌ Google Places API quota near limit - using fallback');
+     throw new Error('API quota protection triggered');
+   }
+   ```
+
+4. **Fallback Behavior** (REQUIRED)
+   ```javascript
+   // ALWAYS try Nominatim (free, no quota) first
+   // ONLY use Google Places as enhancement
+
+   async function geocodeAddress(address) {
+     // 1. Try Nominatim first (no cost)
+     try {
+       const result = await nominatimGeocode(address);
+       if (result.confidence > 0.8) return result;
+     } catch (e) {}
+
+     // 2. Only use Google Places if Nominatim fails
+     try {
+       await googlePlacesRateLimiter.acquire();
+       checkQuota();
+       const result = await googlePlacesGeocode(address);
+       trackUsage('geocode', 0.005);
+       return result;
+     } catch (e) {
+       // 3. Fallback to Mapbox or other services
+       return fallbackGeocode(address);
+     }
+   }
+   ```
+
+5. **Session-Based Autocomplete** (REQUIRED)
+   ```javascript
+   // Use session tokens to reduce costs
+   // Session pricing: $0.017 per session (not per keystroke)
+   const sessionToken = new google.maps.places.AutocompleteSessionToken();
+
+   // Reuse same token for entire user input session
+   autocompleteService.getPlacePredictions({
+     input: userInput,
+     sessionToken: sessionToken
+   });
+   ```
+
+6. **Development Mode Protection** (REQUIRED)
+   ```javascript
+   // In development, use mocks or local data
+   if (process.env.NODE_ENV === 'development') {
+     console.warn('⚠️  Using mock Google Places data (dev mode)');
+     return mockPlacesData;
+   }
+   ```
+
+7. **Monitoring and Alerts** (REQUIRED)
+   ```javascript
+   // Log all Google Places API usage
+   console.log(`📊 Google Places API Usage:
+     - Today: ${dailyUsage} calls ($${dailyCost.toFixed(4)})
+     - This Month: ${monthlyUsage} calls ($${monthlyCost.toFixed(2)})
+     - Remaining Budget: $${(200 - monthlyCost).toFixed(2)}
+   `);
+
+   // Alert when > 80% of quota used
+   if (monthlyCost > 160) {
+     console.error('🚨 WARNING: 80% of Google Places quota used!');
+   }
+   ```
+
+**Violation Consequences**:
+- Exceeding free tier risks unexpected charges
+- Development MUST stop immediately if quota warning triggered
+- Implement fallback-only mode until next billing cycle
 
 ---
 
