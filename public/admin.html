@@ -3185,13 +3185,33 @@
             event.target.classList.add('active');
         }
 
+        // Location-agnostic timezone detection
+        let detectedTimezone = null;
+
+        function getTimezoneForState(state) {
+            const timezones = {
+                'VIC': 'Australia/Melbourne',
+                'NSW': 'Australia/Sydney',
+                'ACT': 'Australia/Sydney',
+                'QLD': 'Australia/Brisbane',
+                'SA': 'Australia/Adelaide',
+                'WA': 'Australia/Perth',
+                'TAS': 'Australia/Hobart',
+                'NT': 'Australia/Darwin'
+            };
+            return timezones[state] || Intl.DateTimeFormat().resolvedOptions().timeZone;
+        }
+
         function updateClock() {
             const now = new Date();
+            // Use detected timezone or fallback to browser timezone
+            const timezone = detectedTimezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+
             document.getElementById('current-time').textContent = now.toLocaleTimeString('en-AU', {
-                timeZone: 'Australia/Melbourne', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+                timeZone: timezone, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
             });
             document.getElementById('current-date').textContent = now.toLocaleDateString('en-AU', {
-                timeZone: 'Australia/Melbourne', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+                timeZone: timezone, weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
             });
         }
 
@@ -3220,6 +3240,12 @@
 
         function updateSystemStatus(status) {
             const isConfigured = status.configured;
+
+            // Set timezone based on detected state (location agnostic)
+            if (status.location && status.location.state) {
+                detectedTimezone = getTimezoneForState(status.location.state);
+                console.log(`Timezone set to ${detectedTimezone} for state ${status.location.state}`);
+            }
 
             // Control Live Data tab visibility based on configuration status
             const liveDataUnconfigured = document.getElementById('live-data-unconfigured');

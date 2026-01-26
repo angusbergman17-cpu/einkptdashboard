@@ -1,7 +1,7 @@
 # PTV-TRMNL Development Rules
 **MANDATORY COMPLIANCE DOCUMENT**
 **Last Updated**: 2026-01-26
-**Version**: 1.0.11
+**Version**: 1.0.12
 
 ---
 
@@ -563,7 +563,278 @@ function validateTRMNLImage(imageData) {
 // Boot errors often caused by dimension mismatches
 ```
 
-### Q. User-First API Key Flow
+### Q. Render Deployment Compatibility & Free Tier Optimization
+
+**Purpose**: Ensure reliable deployment on Render.com hosting platform with optimizations for free tier constraints.
+
+**Critical Render Requirements**:
+
+**1. File Structure Compatibility**:
+```bash
+# Render expects standard Node.js structure
+project/
+├── server.js          # Compatibility shim (REQUIRED for backwards compatibility)
+├── src/
+│   └── server.js      # Actual server code
+├── package.json       # MUST have correct start script
+├── .env.example       # Template for environment variables
+└── node_modules/      # Auto-installed by Render
+```
+
+**2. package.json Configuration**:
+```json
+{
+  "name": "ptv-trmnl",
+  "version": "2.0.0",
+  "type": "module",  // CRITICAL: ES Modules support
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",  // Render uses this
+    "dev": "nodemon src/server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"  // Specify Node version for Render
+  }
+}
+```
+
+**3. Server.js Compatibility Shim** (REQUIRED):
+```javascript
+/**
+ * Compatibility shim for deployment platforms
+ * Render may expect server.js in root - this ensures compatibility
+ */
+import './src/server.js';
+```
+
+**4. Path Resolution (CRITICAL)**:
+```javascript
+// ❌ WRONG - Breaks in Render:
+const packageJson = JSON.parse(readFileSync('../package.json', 'utf-8'));
+
+// ✅ CORRECT - Works in all environments:
+import path from 'path';
+const packageJsonPath = path.join(process.cwd(), 'package.json');
+const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+```
+
+**5. Import Paths (CRITICAL)**:
+```javascript
+// ❌ WRONG - Causes doubled paths (src/src/):
+import config from "./config.js";  // If config moved to src/utils/
+
+// ✅ CORRECT - Relative from actual location:
+import config from "../utils/config.js";  // Correct relative path
+```
+
+**Render Free Tier Constraints**:
+
+**Performance Limits**:
+- **CPU**: Shared CPU (limited, throttled under load)
+- **Memory**: 512 MB RAM maximum
+- **Disk**: 1 GB storage
+- **Bandwidth**: Limited (unmetered but throttled)
+- **Sleep**: Service sleeps after 15 minutes of inactivity
+
+**Free Tier Optimizations**:
+
+**1. Memory Management**:
+```javascript
+// Aggressive caching to reduce CPU/memory usage
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const memCache = new Map();
+
+function getCachedData(key, fetchFn, ttl = CACHE_DURATION) {
+  const cached = memCache.get(key);
+  if (cached && Date.now() < cached.expiry) {
+    return cached.data;
+  }
+
+  const data = fetchFn();
+  memCache.set(key, { data, expiry: Date.now() + ttl });
+  return data;
+}
+
+// Periodic cache cleanup to prevent memory leaks
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, value] of memCache.entries()) {
+    if (now > value.expiry) {
+      memCache.delete(key);
+    }
+  }
+}, 60000); // Clean every minute
+```
+
+**2. Request Efficiency**:
+```javascript
+// Batch API calls where possible
+// Use circuit breakers to prevent cascading failures
+// Implement timeouts to prevent hanging requests
+// Rate limit to prevent overwhelming free tier resources
+
+// Example: Efficient API batching
+async function fetchMultipleEndpoints() {
+  const timeout = 10000; // 10s max
+  const results = await Promise.all([
+    fetchWithTimeout('/api/trains', {}, timeout),
+    fetchWithTimeout('/api/trams', {}, timeout),
+    fetchWithTimeout('/api/weather', {}, timeout)
+  ].map(p => p.catch(err => ({ error: err.message }))));
+
+  return results;
+}
+```
+
+**3. Cold Start Optimization**:
+```javascript
+// Minimize dependencies loaded on startup
+// Lazy load heavy modules
+// Cache frequently used data
+
+// Example: Lazy loading
+let heavyModule = null;
+async function getHeavyModule() {
+  if (!heavyModule) {
+    heavyModule = await import('./heavy-module.js');
+  }
+  return heavyModule;
+}
+```
+
+**4. Sleep Prevention (Optional)**:
+```javascript
+// For services that need 24/7 availability
+// Use external uptime monitor (e.g., UptimeRobot, cron-job.org)
+// Ping endpoint every 14 minutes to prevent sleep
+
+// Health check endpoint for uptime monitoring
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    timestamp: new Date().toISOString()
+  });
+});
+```
+
+**Environment Variables**:
+```bash
+# Set in Render Dashboard > Environment
+NODE_ENV=production
+PORT=3000  # Render provides this automatically
+
+# API Keys (all optional for fallback mode)
+ODATA_API_KEY=your_api_key_here
+GOOGLE_PLACES_API_KEY=optional
+MAPBOX_ACCESS_TOKEN=optional
+```
+
+**Render Build Configuration**:
+```bash
+# Build Command:
+npm install
+
+# Start Command:
+npm start
+# OR: node server.js (compatibility shim works either way)
+
+# Auto-Deploy:
+✓ Enable auto-deploy from main branch
+✓ Render detects package.json changes
+✓ Automatic rebuilds on git push
+```
+
+**Render Deployment Checklist**:
+```
+Pre-Deployment:
+□ package.json has correct "start" script
+□ server.js compatibility shim in root
+□ All import paths use correct relative paths
+□ process.cwd() used for file paths (not ../)
+□ package.json "type": "module" set
+□ Node version specified in engines
+□ .gitignore includes node_modules, .env
+□ Environment variables documented in .env.example
+
+Post-Deployment:
+□ Build succeeds without errors
+□ Server starts successfully
+□ Health endpoint returns 200
+□ No "Cannot find module" errors
+□ No ENOENT file not found errors
+□ No import path doubling (src/src/)
+□ Memory usage < 400 MB
+□ Response times acceptable
+□ Logs show no errors
+```
+
+**Common Render Deployment Errors**:
+
+**Error 1: Module Not Found**:
+```bash
+Error: Cannot find module '/opt/render/project/src/server.js'
+```
+**Fix**: Ensure server.js compatibility shim exists in root, or update package.json start script.
+
+**Error 2: Doubled Paths**:
+```bash
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/opt/render/project/src/src/data/config.js'
+```
+**Fix**: Update import paths to use correct relative paths (../utils/ not ./).
+
+**Error 3: File Not Found**:
+```bash
+Error: ENOENT: no such file or directory, open '../package.json'
+```
+**Fix**: Use process.cwd() for file paths instead of relative paths.
+
+**Error 4: Memory Limit**:
+```bash
+JavaScript heap out of memory
+```
+**Fix**: Optimize caching, reduce memory footprint, implement cleanup.
+
+**Monitoring & Debugging**:
+```javascript
+// Log memory usage periodically
+setInterval(() => {
+  const usage = process.memoryUsage();
+  console.log('Memory:', {
+    rss: `${Math.round(usage.rss / 1024 / 1024)}MB`,
+    heapUsed: `${Math.round(usage.heapUsed / 1024 / 1024)}MB`
+  });
+}, 60000); // Every minute
+
+// Log slow requests
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    if (duration > 1000) {
+      console.warn(`Slow request: ${req.method} ${req.path} - ${duration}ms`);
+    }
+  });
+  next();
+});
+```
+
+**Free Tier Limits to Remember**:
+- Service sleeps after 15 minutes inactivity
+- 512 MB RAM (enforce < 400 MB usage for safety)
+- Shared CPU (be efficient with processing)
+- Build minutes limited per month
+- Database storage limited (if using Render Postgres)
+
+**Render vs. Other Platforms**:
+- **Render**: Good for small apps, auto-deploys, sleeps on free tier
+- **Railway**: Similar, better for hobby projects
+- **Fly.io**: Better for global distribution
+- **Heroku**: More expensive, deprecated free tier
+- **Self-hosted VPS**: Full control, but requires management
+
+### R. User-First API Key Flow
 - **Fallback data** allows setup WITHOUT API keys initially
 - **API keys requested AFTER** basic journey configuration
 - **Sequential credential gathering** (addresses → API keys → live data)
@@ -941,7 +1212,7 @@ Before committing, verify:
 
 ---
 
-**Version**: 1.0.11
+**Version**: 1.0.12
 **Last Updated**: 2026-01-26
 **Maintained By**: Angus Bergman
 **License**: CC BY-NC 4.0 (matches project license)
