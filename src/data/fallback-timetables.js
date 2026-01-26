@@ -38,7 +38,10 @@ const FALLBACK_STOPS = {
         { id: '1120', name: 'Parliament', lat: -37.8110, lon: 144.9730 },
         { id: '1068', name: 'Flagstaff', lat: -37.8122, lon: 144.9560 },
         { id: '1104', name: 'Richmond', lat: -37.8210, lon: 145.0037 },
+        { id: '1159', name: 'South Yarra', lat: -37.8397, lon: 144.9933 },
         { id: '1012', name: 'Caulfield', lat: -37.8770, lon: 145.0250 },
+        { id: '1230', name: 'Hawksburn', lat: -37.8530, lon: 145.0122 },
+        { id: '1229', name: 'Toorak', lat: -37.8480, lon: 145.0080 },
         { id: '1043', name: 'Footscray', lat: -37.8018, lon: 144.9012 },
         { id: '1026', name: 'Dandenong', lat: -37.9872, lon: 145.2135 },
         { id: '1190', name: 'Box Hill', lat: -37.8190, lon: 145.1240 }
@@ -48,7 +51,12 @@ const FALLBACK_STOPS = {
         { id: '2500', name: 'St Kilda Junction', lat: -37.8560, lon: 144.9800 },
         { id: '2172', name: 'Collins St/Elizabeth St', lat: -37.8140, lon: 144.9650 },
         { id: '2173', name: 'Bourke St/Swanston St', lat: -37.8140, lon: 144.9680 },
-        { id: '2590', name: 'Melbourne University', lat: -37.7980, lon: 144.9610 }
+        { id: '2590', name: 'Melbourne University', lat: -37.7980, lon: 144.9610 },
+        { id: '2801', name: 'Chapel St/Tivoli Rd', lat: -37.8420, lon: 144.9970 },
+        { id: '2802', name: 'Chapel St/High St', lat: -37.8450, lon: 144.9965 },
+        { id: '2803', name: 'Toorak Rd/Chapel St', lat: -37.8400, lon: 144.9980 },
+        { id: '2804', name: 'Domain Interchange', lat: -37.8250, lon: 144.9800 },
+        { id: '2805', name: 'Collins St/Spring St', lat: -37.8155, lon: 144.9735 }
       ],
       bus: [
         { id: '10005', name: 'Melbourne CBD', lat: -37.8136, lon: 144.9631 },

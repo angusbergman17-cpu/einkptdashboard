@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Journey - PTV-TRMNL Demo</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      background: #0f172a;
+      color: #f1f5f9;
+      padding: 40px 20px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .header h1 {
+      font-size: 36px;
+      margin-bottom: 10px;
+      color: #f1f5f9;
+    }
+
+    .header p {
+      font-size: 16px;
+      color: #94a3b8;
+    }
+
+    .status-banner {
+      background: rgba(16, 185, 129, 0.2);
+      border: 2px solid #10b981;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .status-banner h2 {
+      color: #10b981;
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    .status-banner p {
+      color: #94a3b8;
+      font-size: 14px;
+    }
+
+    .eink-frame {
+      background: white;
+      border: 6px solid #334155;
+      border-radius: 16px;
+      padding: 30px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      margin-bottom: 30px;
+    }
+
+    .display-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 20px;
+      border-bottom: 3px solid #0f172a;
+      margin-bottom: 30px;
+    }
+
+    .leave-time {
+      font-size: 48px;
+      font-weight: bold;
+      color: #0f172a;
+    }
+
+    .location {
+      font-size: 14px;
+      color: #64748b;
+      background: #f1f5f9;
+      padding: 6px 12px;
+      border-radius: 6px;
+    }
+
+    .journey-leg {
+      display: flex;
+      align-items: center;
+      padding: 20px 0;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .journey-leg:last-child {
+      border-bottom: none;
+    }
+
+    .leg-icon {
+      font-size: 36px;
+      width: 60px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .leg-content {
+      flex: 1;
+      padding: 0 20px;
+    }
+
+    .leg-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #0f172a;
+      margin-bottom: 4px;
+    }
+
+    .leg-detail {
+      font-size: 14px;
+      color: #64748b;
+    }
+
+    .leg-time {
+      font-size: 24px;
+      font-weight: bold;
+      color: #0f172a;
+      min-width: 100px;
+      text-align: right;
+    }
+
+    .leg-duration {
+      font-size: 12px;
+      color: #94a3b8;
+      text-align: right;
+    }
+
+    .arrival-box {
+      background: #0f172a;
+      color: white;
+      padding: 25px;
+      border-radius: 12px;
+      margin-top: 30px;
+      text-align: center;
+    }
+
+    .arrival-box h3 {
+      font-size: 14px;
+      color: #94a3b8;
+      margin-bottom: 8px;
+      letter-spacing: 2px;
+    }
+
+    .arrival-box .time {
+      font-size: 42px;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    .arrival-box .location-name {
+      font-size: 16px;
+      color: #cbd5e1;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-top: 30px;
+    }
+
+    .info-card {
+      background: rgba(100, 116, 139, 0.1);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .info-card h4 {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .info-card .value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #f1f5f9;
+    }
+
+    .info-card .unit {
+      font-size: 14px;
+      color: #94a3b8;
+    }
+
+    .coffee-badge {
+      display: inline-block;
+      background: #fbbf24;
+      color: #78350f;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-left: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Your Smart Journey</h1>
+      <p>Live Demo - South Yarra to Melbourne CBD</p>
+    </div>
+
+    <div class="status-banner">
+      <h2>✅ Journey Planner Working</h2>
+      <p>Successfully calculated your route with coffee stop</p>
+    </div>
+
+    <!-- E-ink Display Preview -->
+    <div class="eink-frame">
+      <div class="display-header">
+        <div class="leave-time">08:34</div>
+        <div class="location">South Yarra VIC</div>
+      </div>
+
+      <!-- Journey Timeline -->
+      <div class="journey-leg">
+        <div class="leg-icon">🚶</div>
+        <div class="leg-content">
+          <div class="leg-title">Walk to Norman</div>
+          <div class="leg-detail">From home → Shop 2/300 Toorak Rd</div>
+        </div>
+        <div>
+          <div class="leg-time">08:34</div>
+          <div class="leg-duration">4 min</div>
+        </div>
+      </div>
+
+      <div class="journey-leg">
+        <div class="leg-icon">☕</div>
+        <div class="leg-content">
+          <div class="leg-title">Coffee at Norman <span class="coffee-badge">LOW BUSY</span></div>
+          <div class="leg-detail">Shop 2/300 Toorak Rd, South Yarra</div>
+        </div>
+        <div>
+          <div class="leg-time">08:38</div>
+          <div class="leg-duration">3 min</div>
+        </div>
+      </div>
+
+      <div class="journey-leg">
+        <div class="leg-icon">🚶</div>
+        <div class="leg-content">
+          <div class="leg-title">Walk to South Yarra Station</div>
+          <div class="leg-detail">From cafe → Platform 1 & 2</div>
+        </div>
+        <div>
+          <div class="leg-time">08:41</div>
+          <div class="leg-duration">5 min</div>
+        </div>
+      </div>
+
+      <div class="journey-leg">
+        <div class="leg-icon">⏱️</div>
+        <div class="leg-content">
+          <div class="leg-title">Wait for Train</div>
+          <div class="leg-detail">South Yarra Station platform</div>
+        </div>
+        <div>
+          <div class="leg-time">08:46</div>
+          <div class="leg-duration">2 min</div>
+        </div>
+      </div>
+
+      <div class="journey-leg">
+        <div class="leg-icon">🚆</div>
+        <div class="leg-content">
+          <div class="leg-title">Train to Parliament</div>
+          <div class="leg-detail">Sandringham/Frankston/Pakenham line</div>
+        </div>
+        <div>
+          <div class="leg-time">08:48</div>
+          <div class="leg-duration">5 min</div>
+        </div>
+      </div>
+
+      <div class="journey-leg">
+        <div class="leg-icon">🚶</div>
+        <div class="leg-content">
+          <div class="leg-title">Walk to Work</div>
+          <div class="leg-detail">Parliament Station → 80 Collins St</div>
+        </div>
+        <div>
+          <div class="leg-time">08:53</div>
+          <div class="leg-duration">5 min</div>
+        </div>
+      </div>
+
+      <!-- Arrival Box -->
+      <div class="arrival-box">
+        <h3>ARRIVE AT WORK</h3>
+        <div class="time">09:00</div>
+        <div class="location-name">80 Collins Street, Melbourne</div>
+      </div>
+    </div>
+
+    <!-- Journey Stats -->
+    <div class="info-grid">
+      <div class="info-card">
+        <h4>Total Duration</h4>
+        <div class="value">26 <span class="unit">minutes</span></div>
+      </div>
+      <div class="info-card">
+        <h4>Walking Time</h4>
+        <div class="value">14 <span class="unit">minutes</span></div>
+      </div>
+      <div class="info-card">
+        <h4>Transit Time</h4>
+        <div class="value">5 <span class="unit">minutes</span></div>
+      </div>
+      <div class="info-card">
+        <h4>Coffee Stop</h4>
+        <div class="value">3 <span class="unit">minutes</span></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -515,7 +515,7 @@ class SmartJourneyPlanner {
 
     // Iterate through all available modes in this state
     for (const [modeName, stops] of Object.entries(stateStops.modes || {})) {
-      const route_type = modeToRouteType[modeName] || 2; // Default to bus if unknown
+      const route_type = modeToRouteType[modeName] ?? 2; // Default to bus if unknown (use ?? not || because 0 is falsy)
 
       for (const stop of stops) {
         allStops.push({
