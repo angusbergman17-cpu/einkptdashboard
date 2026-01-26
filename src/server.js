@@ -4427,46 +4427,446 @@ app.post('/admin/system/reset-all', async (req, res) => {
 });
 
 // Preview HTML page
+/**
+ * ========================================================================
+ * DEVELOPMENT RULES COMPLIANCE: docs/development/DEVELOPMENT-RULES.md v1.0.12
+ * ========================================================================
+ * - Works with fallback data (no API keys required)
+ * - Location agnostic (no hardcoded locations/timezones)
+ * - BYOS compliant (800x480 dimensions, proper refresh)
+ * - Clear data source indicators (fallback vs live)
+ */
 app.get('/preview', requireConfiguration, (req, res) => {
+  const config = dataManager.getConfig();
+  const apis = dataManager.getApis();
+
+  // Determine data source mode
+  const hasLiveData = apis?.transitAuthority?.configured ||
+                      apis?.victorianGTFS?.configured ||
+                      false;
+
+  const dataSourceMode = hasLiveData ? 'live' : 'fallback';
+  const dataSourceIcon = hasLiveData ? '🟢' : '🔴';
+  const dataSourceTitle = hasLiveData ? 'Live Data Active' : 'Using Fallback Timetable Data';
+  const dataSourceSubtitle = hasLiveData
+    ? 'Real-time transit updates enabled • Last updated just now'
+    : 'Configure API keys in Admin Panel to enable real-time updates';
+  const dataSourceColor = hasLiveData
+    ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.05) 100%)'
+    : 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.05) 100%)';
+  const dataSourceBorder = hasLiveData ? 'rgba(16, 185, 129, 0.3)' : 'rgba(251, 191, 36, 0.3)';
+
+  // Get journey configuration details
+  const state = config?.location?.state || config?.location?.stateCode || 'N/A';
+  const stateName = config?.location?.stateName || state;
+  const transitMode = config?.preferences?.transitMode || 'Not configured';
+  const homeStop = config?.stops?.home?.name || 'Not configured';
+  const workStop = config?.stops?.work?.name || 'Not configured';
+
   res.send(`
     <!DOCTYPE html>
     <html>
     <head>
-      <title>PTV-TRMNL Preview</title>
+      <title>PTV-TRMNL E-ink Preview</title>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <style>
-        body { font-family: Arial, sans-serif; max-width: 1200px; margin: 50px auto; padding: 20px; }
-        h1 { color: #333; }
-        .info { background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0; }
-        .endpoints { list-style: none; padding: 0; }
-        .endpoints li { margin: 10px 0; }
-        .endpoints a { color: #0066cc; text-decoration: none; }
-        .endpoints a:hover { text-decoration: underline; }
-        iframe { width: 820px; height: 500px; border: 2px solid #333; margin-top: 20px; }
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          min-height: 100vh;
+          padding: 20px;
+        }
+
+        .container {
+          max-width: 1400px;
+          margin: 0 auto;
+        }
+
+        .header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 25px;
+        }
+
+        .header h1 {
+          color: white;
+          font-size: 32px;
+          font-weight: 600;
+          text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .btn {
+          background: rgba(255, 255, 255, 0.2);
+          backdrop-filter: blur(10px);
+          color: white;
+          padding: 12px 24px;
+          border-radius: 12px;
+          text-decoration: none;
+          font-weight: 500;
+          transition: all 0.3s ease;
+          border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .btn:hover {
+          background: rgba(255, 255, 255, 0.3);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .data-source-indicator {
+          background: ${dataSourceColor};
+          border: 2px solid ${dataSourceBorder};
+          border-radius: 16px;
+          padding: 20px 25px;
+          margin-bottom: 25px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .data-source-info {
+          display: flex;
+          align-items: center;
+          gap: 15px;
+        }
+
+        .data-source-icon {
+          font-size: 32px;
+        }
+
+        .data-source-text h2 {
+          color: #1f2937;
+          font-size: 20px;
+          font-weight: 600;
+          margin-bottom: 4px;
+        }
+
+        .data-source-text p {
+          color: #6b7280;
+          font-size: 14px;
+        }
+
+        .data-source-actions {
+          display: flex;
+          gap: 12px;
+        }
+
+        .btn-primary {
+          background: #6366f1;
+          color: white;
+          padding: 10px 20px;
+          border-radius: 8px;
+          text-decoration: none;
+          font-weight: 500;
+          font-size: 14px;
+          transition: all 0.2s ease;
+          border: none;
+          cursor: pointer;
+        }
+
+        .btn-primary:hover {
+          background: #4f46e5;
+          transform: translateY(-1px);
+          box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-secondary {
+          background: rgba(255, 255, 255, 0.8);
+          color: #374151;
+          padding: 10px 20px;
+          border-radius: 8px;
+          text-decoration: none;
+          font-weight: 500;
+          font-size: 14px;
+          transition: all 0.2s ease;
+          border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .btn-secondary:hover {
+          background: white;
+          transform: translateY(-1px);
+          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .config-summary {
+          background: rgba(255, 255, 255, 0.95);
+          border-radius: 16px;
+          padding: 25px;
+          margin-bottom: 25px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .config-summary h3 {
+          color: #1f2937;
+          font-size: 18px;
+          font-weight: 600;
+          margin-bottom: 15px;
+        }
+
+        .config-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 15px;
+        }
+
+        .config-item {
+          background: rgba(99, 102, 241, 0.05);
+          padding: 12px 16px;
+          border-radius: 8px;
+          border-left: 3px solid #6366f1;
+        }
+
+        .config-item label {
+          display: block;
+          color: #6b7280;
+          font-size: 12px;
+          font-weight: 500;
+          margin-bottom: 4px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .config-item value {
+          display: block;
+          color: #1f2937;
+          font-size: 16px;
+          font-weight: 600;
+        }
+
+        .preview-section {
+          background: rgba(255, 255, 255, 0.95);
+          border-radius: 16px;
+          padding: 25px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .preview-section h3 {
+          color: #1f2937;
+          font-size: 18px;
+          font-weight: 600;
+          margin-bottom: 15px;
+        }
+
+        .device-frame {
+          background: #1f2937;
+          border-radius: 12px;
+          padding: 20px;
+          display: inline-block;
+          box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        }
+
+        .device-screen {
+          background: white;
+          border-radius: 4px;
+          overflow: hidden;
+          box-shadow: inset 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        iframe {
+          width: 800px;
+          height: 480px;
+          border: none;
+          display: block;
+          background: white;
+        }
+
+        .device-label {
+          text-align: center;
+          margin-top: 15px;
+          color: #9ca3af;
+          font-size: 13px;
+        }
+
+        .device-specs {
+          color: #6b7280;
+          font-size: 12px;
+          margin-top: 4px;
+        }
+
+        .refresh-info {
+          background: rgba(251, 191, 36, 0.1);
+          border: 1px solid rgba(251, 191, 36, 0.3);
+          border-radius: 8px;
+          padding: 12px 16px;
+          margin-top: 15px;
+          color: #92400e;
+          font-size: 14px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .endpoints-section {
+          background: rgba(255, 255, 255, 0.95);
+          border-radius: 16px;
+          padding: 25px;
+          margin-top: 25px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .endpoints-section h3 {
+          color: #1f2937;
+          font-size: 18px;
+          font-weight: 600;
+          margin-bottom: 15px;
+        }
+
+        .endpoints-list {
+          list-style: none;
+        }
+
+        .endpoints-list li {
+          padding: 12px;
+          border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .endpoints-list li:last-child {
+          border-bottom: none;
+        }
+
+        .endpoints-list a {
+          color: #6366f1;
+          text-decoration: none;
+          font-weight: 600;
+          font-family: 'Courier New', monospace;
+        }
+
+        .endpoints-list a:hover {
+          text-decoration: underline;
+        }
+
+        .endpoint-description {
+          color: #6b7280;
+          font-size: 14px;
+          margin-left: 8px;
+        }
       </style>
       <script>
+        // BYOS-compliant refresh: Respect e-ink display limits
+        // Refresh every 5 minutes (300000ms) to avoid excessive e-ink wear
         setInterval(() => {
-          document.getElementById('live-dashboard').src = '/api/dashboard?t=' + Date.now();
-        }, 30000);
+          const iframe = document.getElementById('live-dashboard');
+          if (iframe) {
+            iframe.src = '/api/dashboard?t=' + Date.now();
+          }
+        }, 300000);
+
+        // Manual refresh function
+        function refreshPreview() {
+          const iframe = document.getElementById('live-dashboard');
+          if (iframe) {
+            iframe.src = '/api/dashboard?t=' + Date.now();
+          }
+        }
       </script>
     </head>
     <body>
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h1 style="margin: 0;">🚊 PTV-TRMNL Preview</h1>
-        <a href="/admin" style="background: #6366f1; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 500;">← Back to Admin</a>
+      <div class="container">
+        <!-- Header -->
+        <div class="header">
+          <h1>🖼️ E-ink Display Preview</h1>
+          <a href="/admin" class="btn">← Back to Admin Panel</a>
+        </div>
+
+        <!-- Data Source Indicator -->
+        <div class="data-source-indicator">
+          <div class="data-source-info">
+            <div class="data-source-icon">${dataSourceIcon}</div>
+            <div class="data-source-text">
+              <h2>${dataSourceTitle}</h2>
+              <p>${dataSourceSubtitle}</p>
+            </div>
+          </div>
+          <div class="data-source-actions">
+            ${!hasLiveData ? '<a href="/admin#tab-api" class="btn-primary">🔑 Configure API Keys</a>' : '<button onclick="refreshPreview()" class="btn-primary">🔄 Refresh Now</button>'}
+            <a href="/admin#tab-live" class="btn-secondary">View Live Data</a>
+          </div>
+        </div>
+
+        <!-- Journey Configuration Summary -->
+        <div class="config-summary">
+          <h3>📍 Current Journey Configuration</h3>
+          <div class="config-grid">
+            <div class="config-item">
+              <label>State</label>
+              <value>${stateName}</value>
+            </div>
+            <div class="config-item">
+              <label>Transit Mode</label>
+              <value>${transitMode}</value>
+            </div>
+            <div class="config-item">
+              <label>Home Stop</label>
+              <value>${homeStop}</value>
+            </div>
+            <div class="config-item">
+              <label>Work Stop</label>
+              <value>${workStop}</value>
+            </div>
+            <div class="config-item">
+              <label>Data Source</label>
+              <value>${dataSourceMode === 'live' ? 'Real-time API' : 'Fallback Timetables'}</value>
+            </div>
+          </div>
+        </div>
+
+        <!-- Preview Section -->
+        <div class="preview-section">
+          <h3>🖥️ TRMNL Device Preview (7.5" E-ink Display)</h3>
+          <div class="device-frame">
+            <div class="device-screen">
+              <iframe id="live-dashboard" src="/api/dashboard" title="TRMNL Dashboard Preview"></iframe>
+            </div>
+            <div class="device-label">
+              TRMNL BYOS Display
+              <div class="device-specs">800 × 480 pixels • Landscape orientation</div>
+            </div>
+          </div>
+          <div class="refresh-info">
+            ⏱️ Auto-refresh: Every 5 minutes (e-ink display protection) • <a href="#" onclick="refreshPreview(); return false;" style="color: #92400e; font-weight: 600;">Refresh now</a>
+          </div>
+        </div>
+
+        <!-- Available Endpoints -->
+        <div class="endpoints-section">
+          <h3>🔗 Available API Endpoints</h3>
+          <ul class="endpoints-list">
+            <li>
+              <a href="/admin">/admin</a>
+              <span class="endpoint-description">Admin Panel - Configure journey, API keys, and settings</span>
+            </li>
+            <li>
+              <a href="/api/screen">/api/screen</a>
+              <span class="endpoint-description">TRMNL JSON Webhook - For TRMNL BYOS platform</span>
+            </li>
+            <li>
+              <a href="/api/dashboard">/api/dashboard</a>
+              <span class="endpoint-description">HTML Dashboard - 800×480 optimized display</span>
+            </li>
+            <li>
+              <a href="/api/status">/api/status</a>
+              <span class="endpoint-description">System Status - Server health and configuration</span>
+            </li>
+            <li>
+              <a href="/journey">/journey</a>
+              <span class="endpoint-description">Journey Visualizer - Interactive timeline view</span>
+            </li>
+            <li>
+              <a href="/admin/live-display">/admin/live-display</a>
+              <span class="endpoint-description">Live Display - Auto-refreshing journey view</span>
+            </li>
+          </ul>
+        </div>
       </div>
-      <div class="info">
-        <h2>Available Endpoints:</h2>
-        <ul class="endpoints">
-          <li><a href="/admin">/admin</a> - <strong>Admin Panel</strong> (Manage APIs & Configuration)</li>
-          <li><a href="/api/status">/api/status</a> - Server status and data summary</li>
-          <li><a href="/api/screen">/api/screen</a> - TRMNL JSON markup (for TRMNL devices)</li>
-          <li><a href="/api/dashboard">/api/dashboard</a> - HTML Dashboard (800x480)</li>
-          <li><a href="/api/region-updates">/api/region-updates</a> - JSON data updates</li>
-        </ul>
-      </div>
-      <h2>Live Dashboard Preview:</h2>
-      <iframe id="live-dashboard" src="/api/dashboard" title="Live Dashboard"></iframe>
-      <p style="color: #666; font-size: 14px;">Dashboard refreshes every 30 seconds</p>
     </body>
     </html>
   `);
