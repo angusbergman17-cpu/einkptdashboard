@@ -30,7 +30,8 @@ import { readFileSync } from 'fs';
 import nodemailer from 'nodemailer';
 
 // Read version from package.json
-const packageJson = JSON.parse(readFileSync('../package.json', 'utf-8'));
+const packageJsonPath = path.join(process.cwd(), 'package.json');
+const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
 const VERSION = packageJson.version;
 
 const app = express();
