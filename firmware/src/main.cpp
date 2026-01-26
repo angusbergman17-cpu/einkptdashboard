@@ -17,6 +17,7 @@
 #include <bb_epaper.h>
 #include <PNGdec.h>
 #include <esp_system.h>
+#include <qrcode.h>
 #include "../include/config.h"
 
 // E-paper display object (using BBEPAPER class like official firmware)
@@ -58,10 +59,13 @@ int getWiFiRSSI();
 void addLog(const char* message);
 void showLog();
 void showAllLogs();
+void showSetupLog();
 void showMessage(const char* line1, const char* line2 = "", const char* line3 = "");
 bool waitForButtonConfirmation(int timeoutSeconds);
 void checkLongPressReset();
 void showConfirmationPrompt();
+void drawQRCode(const char* url, int x, int y, int scale);
+void showEnhancedSetupScreen();
 
 void setup() {
     // Initialize serial for debugging
@@ -136,40 +140,10 @@ void setup() {
         // Close preferences
         preferences.end();
 
-        // Show setup message
-        bbep.fillScreen(BBEP_WHITE);
+        // Show enhanced setup screen with QR code and live log
+        showEnhancedSetupScreen();
 
-        bbep.setFont(FONT_12x16);
-        bbep.setCursor(200, 150);
-        bbep.print("System Not Configured");
-
-        bbep.setFont(FONT_8x8);
-        bbep.setCursor(180, 190);
-        bbep.print("Please complete setup at:");
-
-        bbep.setFont(FONT_12x16);
-        bbep.setCursor(120, 220);
-        bbep.print(SERVER_URL);
-        bbep.setCursor(320, 250);
-        bbep.print("/setup");
-
-        bbep.setFont(FONT_8x8);
-        bbep.setCursor(200, 300);
-        bbep.print("1. Enter your Google Places API key");
-        bbep.setCursor(200, 320);
-        bbep.print("2. Enter your home address");
-        bbep.setCursor(200, 340);
-        bbep.print("3. Configure your journey");
-
-        bbep.setCursor(250, 380);
-        bbep.print("Device will check again in 60s");
-
-        bbep.setCursor(280, 430);
-        bbep.print("(c) 2026 Angus Bergman");
-
-        bbep.refresh(REFRESH_FULL, true);
-
-        Serial.println("Setup message displayed - entering loop()");
+        Serial.println("Setup screen displayed - entering loop()");
         Serial.println("Device will NOT reboot - waiting for configuration");
 
         // Stay awake and check periodically
@@ -983,14 +957,187 @@ void checkLongPressReset() {
     }
 }
 
+// ============================================================================
+// ENHANCED SETUP SCREEN - QR CODE + INSTRUCTIONS + LIVE LOG
+// ============================================================================
+
+// Draw a QR code at the specified position with scale factor
+void drawQRCode(const char* url, int x, int y, int scale) {
+    Serial.print("Generating QR code for: ");
+    Serial.println(url);
+
+    // Create QR code object (version 3 = 29x29 modules, can fit medium URL)
+    QRCode qrcode;
+    uint8_t qrcodeData[qrcode_getBufferSize(3)];
+
+    // Generate QR code
+    int result = qrcode_initText(&qrcode, qrcodeData, 3, ECC_LOW, url);
+
+    if (result != 0) {
+        Serial.println("QR code generation failed!");
+        bbep.setFont(FONT_8x8);
+        bbep.setCursor(x, y);
+        bbep.print("QR Error");
+        return;
+    }
+
+    Serial.print("QR code size: ");
+    Serial.print(qrcode.size);
+    Serial.println(" modules");
+
+    // Draw QR code pixel by pixel
+    for (uint8_t qr_y = 0; qr_y < qrcode.size; qr_y++) {
+        for (uint8_t qr_x = 0; qr_x < qrcode.size; qr_x++) {
+            // Get module state (true = black, false = white)
+            bool module = qrcode_getModule(&qrcode, qr_x, qr_y);
+
+            // Draw scaled pixel block
+            for (int dy = 0; dy < scale; dy++) {
+                for (int dx = 0; dx < scale; dx++) {
+                    int pixel_x = x + (qr_x * scale) + dx;
+                    int pixel_y = y + (qr_y * scale) + dy;
+                    bbep.drawPixel(pixel_x, pixel_y, module ? BBEP_BLACK : BBEP_WHITE);
+                }
+            }
+        }
+
+        // Yield every few rows to prevent watchdog timeout
+        if (qr_y % 5 == 0) {
+            yield();
+        }
+    }
+
+    Serial.println("QR code drawn successfully");
+}
+
+// Show the enhanced setup screen with QR code, instructions, and live log
+void showEnhancedSetupScreen() {
+    // Clear screen
+    bbep.fillScreen(BBEP_WHITE);
+
+    // ========================================================================
+    // TOP SECTION: Title
+    // ========================================================================
+    bbep.setFont(FONT_12x16);
+    bbep.setCursor(250, 20);
+    bbep.print("TRMNL SETUP REQUIRED");
+
+    // Draw horizontal divider
+    bbep.drawLine(10, 50, 790, 50, BBEP_BLACK);
+
+    // ========================================================================
+    // MIDDLE SECTION: QR Code (left) + Instructions (right)
+    // ========================================================================
+
+    // Generate setup URL
+    String setupUrl = String(SERVER_URL) + "/setup";
+
+    // Draw QR code on the left (100, 70) with scale 6 (29 modules * 6 = 174 pixels)
+    drawQRCode(setupUrl.c_str(), 100, 70, 6);
+
+    // Draw border around QR code
+    int qrSize = 29 * 6;  // 174 pixels
+    bbep.drawRect(95, 65, qrSize + 10, qrSize + 10, BBEP_BLACK);
+
+    // Instructions on the right
+    int instrX = 320;
+    int instrY = 80;
+    int lineSpacing = 25;
+
+    bbep.setFont(FONT_8x8);
+    bbep.setCursor(instrX, instrY);
+    bbep.print("Setup Instructions:");
+
+    instrY += lineSpacing + 5;
+    bbep.setCursor(instrX, instrY);
+    bbep.print("1. Scan QR code to start setup");
+
+    instrY += lineSpacing;
+    bbep.setCursor(instrX, instrY);
+    bbep.print("2. Enter your Google Places API key");
+
+    instrY += lineSpacing;
+    bbep.setCursor(instrX, instrY);
+    bbep.print("3. Enter your addresses");
+
+    instrY += lineSpacing;
+    bbep.setCursor(instrX, instrY);
+    bbep.print("4. Configure your journey");
+
+    instrY += lineSpacing + 10;
+    bbep.setCursor(instrX, instrY);
+    bbep.print("Setup URL:");
+
+    instrY += 15;
+    bbep.setFont(FONT_12x16);
+    bbep.setCursor(instrX, instrY);
+    bbep.print(setupUrl.c_str());
+
+    // ========================================================================
+    // BOTTOM SECTION: System Log
+    // ========================================================================
+    int logSectionY = 280;
+    bbep.drawLine(10, logSectionY, 790, logSectionY, BBEP_BLACK);
+
+    bbep.setFont(FONT_12x16);
+    bbep.setCursor(320, logSectionY + 20);
+    bbep.print("System Log");
+
+    // Add initial log entries
+    addLog("System starting...");
+    addLog("Display initialized");
+    addLog("Checking configuration...");
+    addLog("No configuration found");
+    addLog("Waiting for setup...");
+    addLog("Scan QR code or visit URL above");
+
+    // Show log entries
+    showSetupLog();
+
+    // Copyright notice
+    bbep.setFont(FONT_8x8);
+    bbep.setCursor(320, 460);
+    bbep.print("(c) 2026 Angus Bergman");
+
+    // Refresh display
+    bbep.refresh(REFRESH_FULL, true);
+
+    Serial.println("Enhanced setup screen displayed");
+}
+
+// Display system log in the bottom section (for setup screen)
+void showSetupLog() {
+    if (logCount == 0) return;
+
+    int logStartX = 20;
+    int logStartY = 320;
+    int logLineHeight = 16;
+    int maxLogLines = 8;  // Show last 8 log entries
+
+    bbep.setFont(FONT_8x8);
+
+    // Calculate starting index (show most recent entries)
+    int displayCount = min(logCount, maxLogLines);
+    int startIdx = (logIndex - displayCount + MAX_LOG_LINES) % MAX_LOG_LINES;
+
+    for (int i = 0; i < displayCount; i++) {
+        int idx = (startIdx + i) % MAX_LOG_LINES;
+        int y = logStartY + (i * logLineHeight);
+
+        bbep.setCursor(logStartX, y);
+        bbep.print(logBuffer[idx]);
+    }
+}
+
 // Add a log entry to the circular buffer
 void addLog(const char* message) {
-    // Add timestamp
-    unsigned long seconds = millis() / 1000;
-    unsigned long minutes = seconds / 60;
-    seconds = seconds % 60;
+    // Add timestamp (HH:MM:SS format)
+    unsigned long totalSeconds = millis() / 1000;
+    unsigned long hours = (totalSeconds / 3600) % 24;
+    unsigned long minutes = (totalSeconds % 3600) / 60;
+    unsigned long seconds = totalSeconds % 60;
 
-    snprintf(logBuffer[logIndex], 60, "[%02lu:%02lu] %s", minutes, seconds, message);
+    snprintf(logBuffer[logIndex], 60, "[%02lu:%02lu:%02lu] %s", hours, minutes, seconds, message);
 
     logIndex = (logIndex + 1) % MAX_LOG_LINES;
     if (logCount < MAX_LOG_LINES) logCount++;

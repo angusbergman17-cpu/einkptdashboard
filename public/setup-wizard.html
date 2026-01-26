@@ -282,9 +282,9 @@
 
             <!-- Step 1: Google Places API Key -->
             <div class="step-content active" id="step-1">
-                <h2 style="margin-bottom: 20px;">🔑 Step 1: Google Places API Key</h2>
+                <h2 style="margin-bottom: 20px;">🔑 Step 1: Google Places API Key (Recommended)</h2>
                 <p style="color: #718096; margin-bottom: 25px;">
-                    For accurate address geocoding, we need your <strong>Google Places API (new)</strong> key. This will be saved and tested before proceeding.
+                    For accurate address geocoding, we recommend adding your <strong>Google Places API (new)</strong> key. This will be saved and tested before proceeding.
                 </p>
 
                 <div class="info-box">
@@ -293,7 +293,7 @@
                 </div>
 
                 <div class="form-group" style="margin-top: 25px;">
-                    <label class="form-label">Google Places API (New) Key</label>
+                    <label class="form-label">Google Places API (New) Key (Optional)</label>
                     <input type="text" id="google-places-api-key" class="form-input" placeholder="Enter your Google Places API (new) key...">
                     <a href="https://console.cloud.google.com/apis/library/places-backend.googleapis.com" target="_blank" style="font-size: 13px; color: #667eea; display: block; margin-top: 8px;">
                         Get a free Google Places API (new) key →
@@ -303,11 +303,32 @@
                     </small>
                 </div>
 
-                <button class="btn" onclick="saveAndTestGoogleKey()" style="margin-top: 20px; background: #48bb78;" id="save-api-key-btn">
-                    💾 Save & Test API Key
-                </button>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button class="btn" onclick="saveAndTestGoogleKey()" style="background: #48bb78; flex: 1;" id="save-api-key-btn">
+                        💾 Save & Test API Key
+                    </button>
+                    <button class="btn btn-secondary" onclick="skipGoogleKey()" style="flex: 1;">
+                        Skip for Now
+                    </button>
+                </div>
 
                 <div id="api-key-status" style="margin-top: 15px; display: none;"></div>
+
+                <!-- Warning box for skipping -->
+                <div id="skip-warning" style="display: none; margin-top: 20px; padding: 15px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px;">
+                    <strong style="color: #856404;">⚠️ Limited Features Without API Key</strong>
+                    <p style="color: #856404; font-size: 13px; margin-top: 8px; margin-bottom: 0;">
+                        Without the Google Places API key:
+                    </p>
+                    <ul style="color: #856404; font-size: 13px; margin: 10px 0 0 20px;">
+                        <li>Address lookups may fail or be inaccurate</li>
+                        <li><strong>Smart Journey Planner will not work</strong></li>
+                        <li>You'll need to manually configure your entire route</li>
+                    </ul>
+                    <p style="color: #856404; font-size: 13px; margin-top: 10px; margin-bottom: 0;">
+                        <strong>✅ Still works:</strong> Intelligent transit mode communication and real-time service updates
+                    </p>
+                </div>
 
                 <button class="btn" onclick="nextStep(1)" id="step-1-next-btn" style="margin-top: 20px; display: none;">
                     Next: Your Addresses →
@@ -596,6 +617,25 @@
                 btn.disabled = false;
                 btn.textContent = '💾 Save & Test API Key';
             }
+        };
+
+        window.skipGoogleKey = function() {
+            const warning = document.getElementById('skip-warning');
+            const nextBtn = document.getElementById('step-1-next-btn');
+            const status = document.getElementById('api-key-status');
+
+            // Show warning
+            warning.style.display = 'block';
+            status.style.display = 'none';
+
+            // Show the Next button after 2 seconds to ensure user reads warning
+            setTimeout(() => {
+                nextBtn.style.display = 'block';
+                nextBtn.innerHTML = 'I Understand - Continue Without API Key →';
+                nextBtn.style.background = '#f59e0b';  // Warning color
+            }, 2000);
+
+            console.log('User chose to skip Google Places API key');
         };
 
         window.nextStep = function(step) {
