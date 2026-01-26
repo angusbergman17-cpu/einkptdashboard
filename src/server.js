@@ -2551,6 +2551,59 @@ function getTransitAuthorityForState(state) {
   return authorities[state] || 'Local Transit Authority';
 }
 
+// Get device configuration for firmware (Development Rules v1.0.15 Section X)
+app.get('/api/device-config', (req, res) => {
+  try {
+    const prefs = preferences.get();
+    const deviceConfig = prefs.deviceConfig || {
+      selectedDevice: 'trmnl-byos',
+      resolution: { width: 800, height: 480 },
+      orientation: 'landscape'
+    };
+    const refreshSettings = prefs.refreshSettings || {
+      displayRefresh: { interval: 900000, unit: 'minutes' },
+      journeyRecalc: { interval: 120000, unit: 'minutes' },
+      dataFetch: { interval: 30000, unit: 'seconds' },
+      trmnlWebhook: { interval: 900000, fixed: true }
+    };
+
+    res.json({
+      success: true,
+      device: deviceConfig.selectedDevice,
+      resolution: deviceConfig.resolution,
+      orientation: deviceConfig.orientation,
+      refreshInterval: refreshSettings.displayRefresh.interval,
+      webhookEndpoint: '/api/screen',
+      dashboardEndpoint: '/api/dashboard',
+      serverVersion: process.env.npm_package_version || '3.0.0'
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Update refresh settings (Development Rules v1.0.15 Section Y)
+app.post('/admin/refresh-settings', async (req, res) => {
+  try {
+    const { displayRefresh, journeyRecalc, dataFetch } = req.body;
+
+    const refreshSettings = {};
+    if (displayRefresh) refreshSettings.displayRefresh = displayRefresh;
+    if (journeyRecalc) refreshSettings.journeyRecalc = journeyRecalc;
+    if (dataFetch) refreshSettings.dataFetch = dataFetch;
+
+    await preferences.updateRefreshSettings(refreshSettings);
+
+    res.json({
+      success: true,
+      message: 'Refresh settings updated successfully',
+      settings: preferences.getRefreshSettings()
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Validate preferences
 app.get('/admin/preferences/validate', (req, res) => {
   try {

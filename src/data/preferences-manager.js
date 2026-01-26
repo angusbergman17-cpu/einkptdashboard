@@ -113,6 +113,37 @@ class PreferencesManager {
         orientation: 'landscape'
       },
 
+      // Refresh Rate Settings (Development Rules v1.0.15 Section Y)
+      refreshSettings: {
+        // Display refresh (how often device updates screen)
+        displayRefresh: {
+          interval: 900000,  // 15 minutes default (milliseconds)
+          minimum: 900000,   // Device-specific minimum (TRMNL BYOS: 15 min)
+          unit: 'minutes'
+        },
+
+        // Journey recalculation (how often server recalculates route)
+        journeyRecalc: {
+          interval: 120000,  // 2 minutes default
+          minimum: 60000,    // 1 minute minimum
+          unit: 'minutes'
+        },
+
+        // Data fetching (how often server fetches transit/weather APIs)
+        dataFetch: {
+          interval: 30000,   // 30 seconds default
+          minimum: 10000,    // 10 seconds minimum
+          unit: 'seconds'
+        },
+
+        // TRMNL webhook interval (BYOS platform limitation)
+        trmnlWebhook: {
+          interval: 900000,  // 15 minutes (TRMNL platform requirement)
+          fixed: true,       // Cannot be changed (platform limitation)
+          note: 'TRMNL BYOS platform enforces 15-minute minimum'
+        }
+      },
+
       // Metadata
       meta: {
         version: '1.0',
@@ -311,6 +342,55 @@ class PreferencesManager {
    */
   async updateDeviceConfig(deviceConfig) {
     return await this.updateSection('deviceConfig', deviceConfig);
+  }
+
+  /**
+   * Get refresh settings
+   */
+  getRefreshSettings() {
+    return this.getSection('refreshSettings');
+  }
+
+  /**
+   * Update refresh settings
+   */
+  async updateRefreshSettings(refreshSettings) {
+    // Validate minimums
+    const deviceConfig = this.getDeviceConfig();
+    const deviceMinimums = {
+      'trmnl-byos': 900000,     // 15 minutes
+      'kindle-pw3': 300000,     // 5 minutes
+      'kindle-pw4': 300000,     // 5 minutes
+      'kindle-pw5': 300000,     // 5 minutes
+      'kindle-4': 600000        // 10 minutes
+    };
+
+    const minDisplay = deviceMinimums[deviceConfig?.selectedDevice] || 900000;
+
+    // Enforce minimums
+    if (refreshSettings.displayRefresh) {
+      refreshSettings.displayRefresh.interval = Math.max(
+        refreshSettings.displayRefresh.interval,
+        minDisplay
+      );
+      refreshSettings.displayRefresh.minimum = minDisplay;
+    }
+
+    if (refreshSettings.journeyRecalc) {
+      refreshSettings.journeyRecalc.interval = Math.max(
+        refreshSettings.journeyRecalc.interval,
+        60000  // 1 minute minimum
+      );
+    }
+
+    if (refreshSettings.dataFetch) {
+      refreshSettings.dataFetch.interval = Math.max(
+        refreshSettings.dataFetch.interval,
+        10000  // 10 seconds minimum
+      );
+    }
+
+    return await this.updateSection('refreshSettings', refreshSettings);
   }
 
   /**
