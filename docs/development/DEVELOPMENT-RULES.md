@@ -1,7 +1,7 @@
 # PTV-TRMNL Development Rules
 **MANDATORY COMPLIANCE DOCUMENT**
 **Last Updated**: 2026-01-26
-**Version**: 1.0.9
+**Version**: 1.0.10
 
 ---
 
@@ -324,23 +324,27 @@ try {
 **Purpose**: Ensure reliable hardware integration across device types while maintaining compatibility with official firmware standards.
 
 **Primary Target Device**: TRMNL (usetrmnl.com) e-ink display
+**Platform**: BYOS (Bring Your Own Screen) - TRMNL official firmware
 
 **Firmware Compliance**:
-- **MUST** comply with official TRMNL firmware specifications
+- **MUST** comply with official TRMNL BYOS firmware specifications
 - **MUST** support standard TRMNL API webhook format
+- **MUST** use TRMNL BYOS plugin architecture
 - **MUST** handle orientation correctly (portrait/landscape)
 - **MUST** prevent boot errors and initialization failures
 - **MUST** gracefully handle display refresh limits
 - **MUST** respect e-ink display constraints (ghosting, partial refresh)
 
-**Confirmed Compatibility Checklist (TRMNL OG Device)**:
+**Confirmed Compatibility Checklist (TRMNL OG Device - 7.5")**:
 ```
 Hardware Specs:
-- Display: 2.9" e-ink (296x128 pixels)
+- Display: 7.5" e-ink display
+- Resolution: 800x480 pixels (verify with actual device)
 - Orientation: Portrait (default) / Landscape (configurable)
-- Refresh Rate: Max 1 per minute (e-ink limitation)
-- Color Depth: 1-bit (black & white)
+- Refresh Rate: Configurable (e-ink limitation, typically 1-15 min)
+- Color Depth: 1-bit (black & white) or 3-color (depending on model)
 - Network: WiFi 2.4GHz
+- Platform: TRMNL BYOS (Bring Your Own Screen)
 
 Firmware Compliance:
 □ API endpoint returns valid TRMNL webhook format
@@ -359,21 +363,31 @@ Known Issues & Workarounds:
 - Refresh Issues: [Document if encountered]
 ```
 
-**API Endpoint Requirements (TRMNL)**:
+**API Endpoint Requirements (TRMNL BYOS)**:
 ```javascript
-// /api/screen endpoint MUST return:
+// /api/screen endpoint MUST return TRMNL BYOS webhook format:
 {
-  "image": "base64_encoded_bmp_image",  // Exact display dimensions
+  "image": "base64_encoded_image",  // Exact display dimensions
   "orientation": "portrait",  // or "landscape"
-  "refresh_rate": 60  // seconds between refreshes (min 60 for e-ink)
+  "refresh_rate": 900  // seconds between refreshes (15 min default, configurable)
 }
 
-// Image specifications:
-- Format: BMP or PNG
-- Dimensions: 296x128 (portrait) or 128x296 (landscape)
-- Color: 1-bit black & white
-- Encoding: Base64 (if transmitted as string)
+// Image specifications for 7.5" TRMNL:
+- Format: BMP or PNG (check TRMNL BYOS requirements)
+- Dimensions: 800x480 pixels (landscape) - VERIFY WITH ACTUAL DEVICE
+- Alternative: 480x800 pixels (portrait)
+- Color: 1-bit black & white (or 3-color if device supports)
+- Encoding: Base64 (as per TRMNL BYOS spec)
+- Note: Exact dimensions must match TRMNL BYOS firmware expectations
 ```
+
+**IMPORTANT**: Always verify image dimensions with actual TRMNL device.
+Incorrect dimensions will cause boot errors or display issues.
+
+**TRMNL BYOS Resources**:
+- Official TRMNL: https://usetrmnl.com/
+- BYOS Documentation: Check official TRMNL developer resources
+- Plugin API: TRMNL BYOS plugin specification
 
 **Future Device Compatibility (To Be Expanded)**:
 This section will be updated as additional e-ink displays are tested:
@@ -407,24 +421,28 @@ This section will be updated as additional e-ink displays are tested:
 
 **Implementation Notes**:
 ```javascript
-// Example: Checking device compatibility
+// Example: Checking TRMNL BYOS device compatibility
 function validateTRMNLImage(imageData) {
+  // TRMNL 7.5" e-ink display dimensions (VERIFY WITH ACTUAL DEVICE)
   const allowedDimensions = [
-    { width: 296, height: 128, orientation: 'portrait' },
-    { width: 128, height: 296, orientation: 'landscape' }
+    { width: 800, height: 480, orientation: 'landscape' },
+    { width: 480, height: 800, orientation: 'portrait' }
   ];
 
-  // Validate dimensions match device
+  // Validate dimensions match TRMNL BYOS requirements
   const valid = allowedDimensions.some(d =>
     imageData.width === d.width && imageData.height === d.height
   );
 
   if (!valid) {
-    throw new Error(`Invalid dimensions for TRMNL device. Expected 296x128 or 128x296, got ${imageData.width}x${imageData.height}`);
+    throw new Error(`Invalid dimensions for TRMNL BYOS device. Expected 800x480 (landscape) or 480x800 (portrait), got ${imageData.width}x${imageData.height}`);
   }
 
   return true;
 }
+
+// CRITICAL: Test with actual TRMNL device to confirm exact dimensions
+// Boot errors often caused by dimension mismatches
 ```
 
 ### Q. User-First API Key Flow
@@ -805,7 +823,7 @@ Before committing, verify:
 
 ---
 
-**Version**: 1.0.9
+**Version**: 1.0.10
 **Last Updated**: 2026-01-26
 **Maintained By**: Angus Bergman
 **License**: CC BY-NC 4.0 (matches project license)
