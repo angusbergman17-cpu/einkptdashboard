@@ -1,7 +1,7 @@
 # PTV-TRMNL Development Rules
 **MANDATORY COMPLIANCE DOCUMENT**
 **Last Updated**: 2026-01-26
-**Version**: 1.0.16
+**Version**: 1.0.17
 
 ---
 
@@ -31,6 +31,66 @@
 6. **RESUME work** only after rules are updated
 
 **This document is self-amending and must reflect ALL current restrictions at all times.**
+
+### 🔄 CROSS-SYSTEM CHANGE PROPAGATION REQUIREMENT
+
+**CRITICAL RULE**: When ANY change is made to ANY part of the system, ALL other software, programs, documentation, and configurations that reference or depend on that change MUST be updated accordingly.
+
+**Examples of Required Propagation**:
+
+1. **Schema Changes**: If preferences schema is updated (e.g., adding `mode3` and `mode4`):
+   - ✅ MUST update: route-planner.js logic to handle new modes
+   - ✅ MUST update: admin panel UI to show/configure new modes
+   - ✅ MUST update: documentation referencing mode limits
+   - ✅ MUST update: validation code that checks number of modes
+   - ✅ MUST update: display/rendering code that shows modes
+
+2. **API Changes**: If API endpoint format changes:
+   - ✅ MUST update: All services calling that endpoint
+   - ✅ MUST update: API documentation
+   - ✅ MUST update: Error handling for new response format
+   - ✅ MUST update: Tests for the endpoint
+   - ✅ MUST update: Environment variable guides if auth changes
+
+3. **Configuration Changes**: If device types are added:
+   - ✅ MUST update: Setup wizard UI
+   - ✅ MUST update: Preferences schema
+   - ✅ MUST update: Rendering logic for new device specs
+   - ✅ MUST update: Development Rules documentation
+   - ✅ MUST update: Device firmware configuration
+
+4. **Transit Authority Changes**: If new state is added:
+   - ✅ MUST update: Transit authorities configuration
+   - ✅ MUST update: State detection logic
+   - ✅ MUST update: GTFS fallback timetables
+   - ✅ MUST update: Timezone mapping
+   - ✅ MUST update: Weather station mapping
+
+**Enforcement**:
+- Use global search (`grep -r "oldValue"`) to find all references
+- Check all files that import/require the changed module
+- Update documentation alongside code changes
+- Test all dependent systems after changes
+- Never leave orphaned references or dead code
+
+**Failure to Propagate**:
+- Creates inconsistencies
+- Causes runtime errors
+- Breaks dependent features
+- Violates Development Rules
+
+**Verification Checklist**:
+```bash
+# After making change to X, verify:
+1. grep -r "X" src/          # Find all code references
+2. grep -r "X" docs/         # Find all documentation references
+3. grep -r "X" public/       # Find all UI references
+4. Check imports/exports     # Find all module dependencies
+5. Run tests                 # Ensure nothing broke
+6. Update documentation      # Reflect the change
+```
+
+**This rule ensures system-wide consistency and prevents breaking changes.**
 
 ---
 
