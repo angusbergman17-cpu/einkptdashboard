@@ -674,6 +674,21 @@ If PTV-TRMNL helps your daily commute:
 - 🐛 Report bugs and suggest features
 - 💻 Contribute code improvements
 
+### ☕ Support Development
+
+This project is developed and maintained in my free time. If you find it useful and want to support ongoing development:
+
+**[☕ Buy me a coffee](https://www.buymeacoffee.com/angusbergman)** | **[💙 Sponsor on GitHub](https://github.com/sponsors/angusbergman17-cpu)**
+
+Your support helps with:
+- Server costs for testing and development
+- TRMNL devices for compatibility testing
+- Time spent on bug fixes and new features
+- Documentation and user support
+- GTFS data updates and maintenance
+
+Every contribution, no matter the size, is deeply appreciated and motivates continued development.
+
 ---
 
 ## 📜 Changelog
@@ -713,3 +728,7 @@ See [CHANGELOG.md](CHANGELOG.md) for complete version history.
 **Author**: Angus Bergman
 **License**: CC BY-NC 4.0
 **Last Updated**: 2026-01-26
+
+---
+
+**Support this project**: [Buy me a coffee](https://www.buymeacoffee.com/angusbergman) | [GitHub Sponsors](https://github.com/sponsors/angusbergman17-cpu)

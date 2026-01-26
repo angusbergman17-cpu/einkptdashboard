@@ -821,8 +821,28 @@ You now have:
 
 ---
 
+## ☕ Support Development
+
+This project is developed and maintained by Angus Bergman in free time. If you find PTV-TRMNL useful and want to support ongoing development:
+
+**[☕ Buy me a coffee](https://www.buymeacoffee.com/angusbergman)** | **[💙 Sponsor on GitHub](https://github.com/sponsors/angusbergman17-cpu)**
+
+Your support helps with:
+- Server costs for testing and development
+- TRMNL devices for compatibility testing
+- Time spent on bug fixes and new features
+- Documentation and user support
+- GTFS data updates and maintenance
+- API credits for development environments
+
+Every contribution, no matter the size, is deeply appreciated and motivates continued development. Thank you for using PTV-TRMNL! 🙏
+
+---
+
 **Installation Guide Version**: 1.0.0
 **Last Updated**: 2026-01-26
 **Maintained By**: Angus Bergman
 
 For questions or issues, please open an issue on GitHub.
+
+**Support this project**: [Buy me a coffee](https://www.buymeacoffee.com/angusbergman) | [GitHub Sponsors](https://github.com/sponsors/angusbergman17-cpu)

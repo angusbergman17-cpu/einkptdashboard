@@ -1,7 +1,7 @@
 # PTV-TRMNL Development Rules
 **MANDATORY COMPLIANCE DOCUMENT**
 **Last Updated**: 2026-01-26
-**Version**: 1.0.14
+**Version**: 1.0.15
 
 ---
 
@@ -1165,6 +1165,221 @@ const TRANSIT_AUTHORITIES = {
 - Clear release notes for breaking changes
 - Migration guides for major version updates
 - Backward compatibility maintained where possible
+
+### X. Firmware Flash Once Philosophy
+
+**Principle**: Users should flash device firmware **once only**. All configuration, including refresh rates, must be **server-driven**.
+
+**Implementation Requirements**:
+- **Firmware Stability**: Device firmware reads ALL settings from server
+- **No Hardcoded Values**: Refresh rates, resolutions, and endpoints configurable via admin panel
+- **Server Authority**: Server tells device when and how to refresh
+- **Device Independence**: Firmware works with any device (TRMNL BYOS, Kindle variants)
+
+**Refresh Rate Architecture**:
+```
+Device Firmware (flashed once):
+  - Queries: GET /api/device-config
+  - Receives: { refreshInterval: 900000, resolution: { width, height }, ... }
+  - Updates: Uses server-specified refresh rate
+  - Never: Hardcodes refresh intervals
+```
+
+**Configuration Flow**:
+```
+1. User flashes firmware once (generic, device-type aware)
+2. Firmware boots, queries /api/device-config
+3. Server responds with user's configured settings:
+   - Refresh interval (customizable in admin panel)
+   - Display resolution (from device selection)
+   - Orientation (landscape/portrait)
+   - Webhook endpoints
+4. Firmware applies settings dynamically
+5. User changes settings in admin panel → firmware picks up on next query
+```
+
+**Device-Specific Refresh Minimums**:
+| Device | Minimum Interval | Typical | E-ink Protection |
+|--------|------------------|---------|------------------|
+| TRMNL BYOS | 15 minutes | 15-30 min | Moderate wear (partial refresh) |
+| Kindle PW3/4 | 5 minutes | 10-15 min | High wear (full refresh) |
+| Kindle PW5 | 5 minutes | 10-15 min | Lower wear (improved Carta 1200) |
+| Kindle 4 | 10 minutes | 15-30 min | Highest wear (Pearl display) |
+
+**Admin Panel Controls** (Development Rules Section Y):
+- User sets refresh interval (enforces device minimum)
+- User sets journey recalculation frequency
+- User sets data fetch frequency
+- All intervals stored in preferences, served to device
+
+### Y. Customizable Refresh Rates
+
+**Principle**: All refresh and update intervals must be **customizable via admin panel**, respecting device-specific minimums.
+
+**Preferences Schema Addition**:
+```javascript
+refreshSettings: {
+  // Display refresh (how often device updates screen)
+  displayRefresh: {
+    interval: 900000,  // 15 minutes default (milliseconds)
+    minimum: 900000,   // Device-specific minimum (TRMNL BYOS: 15 min)
+    unit: 'minutes'
+  },
+
+  // Journey recalculation (how often server recalculates route)
+  journeyRecalc: {
+    interval: 120000,  // 2 minutes default
+    minimum: 60000,    // 1 minute minimum
+    unit: 'minutes'
+  },
+
+  // Data fetching (how often server fetches transit/weather APIs)
+  dataFetch: {
+    interval: 30000,   // 30 seconds default
+    minimum: 10000,    // 10 seconds minimum
+    unit: 'seconds'
+  },
+
+  // TRMNL webhook interval (BYOS platform limitation)
+  trmnlWebhook: {
+    interval: 900000,  // 15 minutes (TRMNL platform requirement)
+    fixed: true,       // Cannot be changed (platform limitation)
+    note: 'TRMNL BYOS platform enforces 15-minute minimum'
+  }
+}
+```
+
+**Admin Panel UI Requirements**:
+```html
+<div class="refresh-settings-card">
+  <h3>⏱️ Refresh Rate Settings</h3>
+
+  <div class="setting-item">
+    <label>Display Refresh Interval</label>
+    <input type="number" id="display-refresh" min="15" value="15">
+    <select><option>minutes</option></select>
+    <small>Minimum: 15 minutes for TRMNL BYOS (e-ink protection)</small>
+  </div>
+
+  <div class="setting-item">
+    <label>Journey Recalculation</label>
+    <input type="number" id="journey-recalc" min="1" value="2">
+    <select><option>minutes</option></select>
+    <small>How often the server recalculates your journey</small>
+  </div>
+
+  <div class="setting-item">
+    <label>Transit Data Fetch</label>
+    <input type="number" id="data-fetch" min="10" value="30">
+    <select><option>seconds</option></select>
+    <small>How often server checks for new departures</small>
+  </div>
+
+  <button onclick="saveRefreshSettings()">Save Settings</button>
+</div>
+```
+
+**Validation Rules**:
+- Display refresh ≥ device minimum (enforced by device type)
+- Journey recalc ≥ 1 minute (prevents excessive CPU usage)
+- Data fetch ≥ 10 seconds (respects API rate limits)
+- TRMNL webhook = 15 minutes (platform limitation, not user-configurable)
+
+**E-ink Protection Logic**:
+```javascript
+function calculateEinkWear(refreshMinutes, displayType) {
+  const wearFactors = {
+    'trmnl-byos': 0.3,     // Partial refresh = lower wear
+    'kindle-pw5': 0.5,     // Carta 1200 = moderate wear
+    'kindle-pw3': 0.7,     // Carta = higher wear
+    'kindle-4': 1.0        // Pearl = highest wear
+  };
+
+  const dailyRefreshes = (24 * 60) / refreshMinutes;
+  const yearlyRefreshes = dailyRefreshes * 365;
+  const estimatedLifespan = 1000000 / (yearlyRefreshes * wearFactors[displayType]);
+
+  return {
+    dailyRefreshes,
+    estimatedYears: Math.round(estimatedLifespan)
+  };
+}
+```
+
+### Z. Device Firmware Setup Wizard
+
+**Principle**: Provide a **cross-platform wizard** in the GitHub repository that helps users flash firmware and set up deployment.
+
+**Repository Structure**:
+```
+/tools/
+  /setup-wizard/
+    setup-wizard.js        # Cross-platform Node.js CLI
+    README.md             # Wizard usage instructions
+    /firmware/
+      trmnl-byos.ino      # TRMNL firmware (if applicable)
+      kindle-launcher.sh  # Kindle jailbreak launcher
+    /configs/
+      device-configs.json # Device specifications database
+```
+
+**Wizard Functionality**:
+```bash
+$ node tools/setup-wizard/setup-wizard.js
+
+╔═══════════════════════════════════════════════╗
+║  PTV-TRMNL Setup Wizard v3.0.0                ║
+║  Copyright © 2026 Angus Bergman               ║
+╚═══════════════════════════════════════════════╝
+
+Select your device:
+  1. TRMNL BYOS (7.5" E-ink)
+  2. Kindle Paperwhite 3/4 (6")
+  3. Kindle Paperwhite 5 (6.8")
+  4. Kindle 4 (6" Non-Touch)
+
+Choice: 1
+
+Selected: TRMNL BYOS
+Resolution: 800×480 landscape
+
+Steps:
+  ✓ Check Node.js version (20.x)
+  ✓ Check Git installation
+  ⏳ Fork repository to your GitHub account
+  ⏳ Deploy to Render (free tier)
+  ⏳ Configure device webhook
+  ⏳ Flash firmware (if needed)
+
+Continue? [Y/n]:
+```
+
+**Wizard Steps**:
+1. **Device Selection**: Prompts user to select their device
+2. **GitHub Setup**: Checks if user has forked repo, offers to help
+3. **Render Deployment**: Guides through Render deployment
+4. **Environment Variables**: Helps user add API keys to Render
+5. **Device Firmware**: Provides device-specific flashing instructions
+6. **Configuration**: Opens admin panel in browser for final setup
+
+**Platform Support**:
+- **macOS**: Full support (bash/zsh compatible)
+- **Windows**: PowerShell/Command Prompt via Node.js
+- **Linux**: Full support (bash compatible)
+
+**Copyright Attribution**:
+All wizard output includes:
+```
+Copyright © 2026 Angus Bergman
+Licensed under CC BY-NC 4.0
+https://github.com/angusbergman17-cpu/PTV-TRMNL-NEW
+```
+
+**Audit Integration**:
+- Wizard code in public GitHub repository
+- Subject to same development rules
+- Changes via pull request (owner approval)
+- Versioned alongside main codebase
 
 ---
 

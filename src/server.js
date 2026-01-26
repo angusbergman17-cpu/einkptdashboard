@@ -1084,10 +1084,19 @@ app.get('/api/screen', requireConfiguration, async (req, res) => {
   try {
     const data = await getData();
 
-    // Get station names from preferences
+    // Get station names and device config from preferences
     const prefs = preferences.get();
     const trainStation = prefs?.journey?.transitRoute?.mode1?.originStation?.name || 'TRAINS';
     const tramStation = prefs?.journey?.transitRoute?.mode2?.originStation?.name || 'TRAMS';
+
+    // Get device configuration (Development Rules v1.0.14 Section U)
+    const deviceConfig = prefs?.deviceConfig || {
+      selectedDevice: 'trmnl-byos',
+      resolution: { width: 800, height: 480 },
+      orientation: 'landscape'
+    };
+
+    console.log(`📱 Rendering for device: ${deviceConfig.selectedDevice} (${deviceConfig.resolution.width}×${deviceConfig.resolution.height} ${deviceConfig.orientation})`);
 
     // Build TRMNL markup
     const markup = [
@@ -1106,7 +1115,11 @@ app.get('/api/screen', requireConfiguration, async (req, res) => {
 
     res.json({
       merge_variables: {
-        screen_text: markup.join('\n')
+        screen_text: markup.join('\n'),
+        device: deviceConfig.selectedDevice,
+        width: deviceConfig.resolution.width,
+        height: deviceConfig.resolution.height,
+        orientation: deviceConfig.orientation
       }
     });
   } catch (error) {
@@ -1156,6 +1169,18 @@ app.get('/api/dashboard', async (req, res) => {
     const prefs = preferences.get();
     const config = dataManager.getConfig();
     const apis = dataManager.getApis();
+
+    // Get device configuration (Development Rules v1.0.14 Section U - Device-First Design)
+    const deviceConfig = prefs?.deviceConfig || {
+      selectedDevice: 'trmnl-byos',
+      resolution: { width: 800, height: 480 },
+      orientation: 'landscape'
+    };
+    const deviceWidth = req.query.width || deviceConfig.resolution.width;
+    const deviceHeight = req.query.height || deviceConfig.resolution.height;
+    const deviceOrientation = req.query.orientation || deviceConfig.orientation;
+
+    console.log(`📱 Dashboard rendering for: ${deviceConfig.selectedDevice} (${deviceWidth}×${deviceHeight} ${deviceOrientation})`);
 
     // Location-agnostic timezone detection
     const state = config?.location?.state || config?.location?.stateCode || 'VIC';
@@ -1262,20 +1287,20 @@ app.get('/api/dashboard', async (req, res) => {
       secondaryTimes = trams;
     }
 
-    // Dashboard HTML - BYOS compliant (800x480), supports fallback data
+    // Dashboard HTML - Device-aware (uses device config from preferences), supports fallback data
     const html = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=800, height=480">
+  <meta name="viewport" content="width=${deviceWidth}, height=${deviceHeight}">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
       background: white;
       color: black;
-      width: 800px;
-      height: 480px;
+      width: ${deviceWidth}px;
+      height: ${deviceHeight}px;
       overflow: hidden;
       position: relative;
     }
@@ -2321,9 +2346,9 @@ app.post('/admin/smart-setup', async (req, res) => {
   }, 30000);
 
   try {
-    const { addresses, arrivalTime, coffeeEnabled } = req.body;
+    const { addresses, arrivalTime, coffeeEnabled, deviceConfig } = req.body;
 
-    console.log('🚀 Smart setup initiated:', { addresses, arrivalTime, coffeeEnabled });
+    console.log('🚀 Smart setup initiated:', { addresses, arrivalTime, coffeeEnabled, deviceConfig });
 
     // Validate required fields
     if (!addresses?.home || !addresses?.work || !arrivalTime) {
@@ -2442,11 +2467,16 @@ app.post('/admin/smart-setup', async (req, res) => {
         coffeeEnabled: coffeeEnabled,
         coffeeTime: 5,
         transitRoute: transitRoute
+      },
+      deviceConfig: deviceConfig || {
+        selectedDevice: 'trmnl-byos',
+        resolution: { width: 800, height: 480 },
+        orientation: 'landscape'
       }
     };
 
     await preferences.update(configData);
-    console.log('  ✅ Configuration saved');
+    console.log('  ✅ Configuration saved (including device: ' + (deviceConfig?.selectedDevice || 'trmnl-byos') + ')');
 
     // Step 7: Validate selected transit stops
     const homeStopValidation = DataValidator.validateTransitStop(bestHomeStop, homeLocation);
@@ -4709,6 +4739,38 @@ app.post('/admin/system/reset-all', async (req, res) => {
 app.get('/preview', requireConfiguration, (req, res) => {
   const config = dataManager.getConfig();
   const apis = dataManager.getApis();
+  const prefs = preferences.get();
+
+  // Get device configuration (Development Rules v1.0.14 Section U - Device-First Design)
+  const deviceConfig = prefs?.deviceConfig || {
+    selectedDevice: 'trmnl-byos',
+    resolution: { width: 800, height: 480 },
+    orientation: 'landscape'
+  };
+
+  // Allow query parameter override for testing different devices
+  const deviceParam = req.query.device;
+  const deviceResolutions = {
+    'trmnl-byos': { width: 800, height: 480, orientation: 'landscape', name: 'TRMNL BYOS (7.5")' },
+    'kindle-pw3': { width: 758, height: 1024, orientation: 'portrait', name: 'Kindle Paperwhite 3/4 (6")' },
+    'kindle-pw4': { width: 758, height: 1024, orientation: 'portrait', name: 'Kindle Paperwhite 4 (6")' },
+    'kindle-pw5': { width: 1236, height: 1648, orientation: 'portrait', name: 'Kindle Paperwhite 5 (6.8")' },
+    'kindle-4': { width: 600, height: 800, orientation: 'portrait', name: 'Kindle 4 (6" Non-Touch)' }
+  };
+
+  let deviceSpec = deviceConfig;
+  let deviceName = deviceResolutions[deviceConfig.selectedDevice]?.name || deviceConfig.selectedDevice;
+
+  if (deviceParam && deviceResolutions[deviceParam]) {
+    deviceSpec = {
+      selectedDevice: deviceParam,
+      resolution: { width: deviceResolutions[deviceParam].width, height: deviceResolutions[deviceParam].height },
+      orientation: deviceResolutions[deviceParam].orientation
+    };
+    deviceName = deviceResolutions[deviceParam].name;
+  }
+
+  console.log(`📱 Preview rendering for: ${deviceName} (${deviceSpec.resolution.width}×${deviceSpec.resolution.height})`);
 
   // Determine data source mode
   const hasLiveData = apis?.transitAuthority?.configured ||
@@ -4942,8 +5004,8 @@ app.get('/preview', requireConfiguration, (req, res) => {
         }
 
         iframe {
-          width: 800px;
-          height: 480px;
+          width: ${deviceSpec.resolution.width}px;
+          height: ${deviceSpec.resolution.height}px;
           border: none;
           display: block;
           background: white;
@@ -5064,8 +5126,16 @@ app.get('/preview', requireConfiguration, (req, res) => {
 
         <!-- Journey Configuration Summary -->
         <div class="config-summary">
-          <h3>📍 Current Journey Configuration</h3>
+          <h3>📍 Current Configuration</h3>
           <div class="config-grid">
+            <div class="config-item">
+              <label>Device</label>
+              <value>${deviceName}</value>
+            </div>
+            <div class="config-item">
+              <label>Resolution</label>
+              <value>${deviceSpec.resolution.width}×${deviceSpec.resolution.height}</value>
+            </div>
             <div class="config-item">
               <label>State</label>
               <value>${stateName}</value>
@@ -5087,18 +5157,19 @@ app.get('/preview', requireConfiguration, (req, res) => {
               <value>${dataSourceMode === 'live' ? 'Real-time API' : 'Fallback Timetables'}</value>
             </div>
           </div>
+          ${deviceParam ? '<div style="margin-top: 15px; padding: 12px; background: rgba(99, 102, 241, 0.1); border-radius: 8px; border-left: 3px solid #6366f1; font-size: 13px;"><strong>Testing Mode:</strong> Preview showing ' + deviceName + '. <a href="/preview" style="color: #6366f1; font-weight: 600;">View your configured device</a></div>' : '<div style="margin-top: 15px; padding: 12px; background: rgba(99, 102, 241, 0.1); border-radius: 8px; border-left: 3px solid #6366f1; font-size: 13px;"><strong>Tip:</strong> Test other devices by adding ?device=kindle-pw5 to the URL</div>'}
         </div>
 
         <!-- Preview Section -->
         <div class="preview-section">
-          <h3>🖥️ TRMNL Device Preview (7.5" E-ink Display)</h3>
+          <h3>🖥️ ${deviceName} Preview</h3>
           <div class="device-frame">
             <div class="device-screen">
-              <iframe id="live-dashboard" src="/api/dashboard" title="TRMNL Dashboard Preview"></iframe>
+              <iframe id="live-dashboard" src="/api/dashboard?width=${deviceSpec.resolution.width}&height=${deviceSpec.resolution.height}&orientation=${deviceSpec.orientation}" title="Device Dashboard Preview"></iframe>
             </div>
             <div class="device-label">
-              TRMNL BYOS Display
-              <div class="device-specs">800 × 480 pixels • Landscape orientation</div>
+              ${deviceName}
+              <div class="device-specs">${deviceSpec.resolution.width} × ${deviceSpec.resolution.height} pixels • ${deviceSpec.orientation.charAt(0).toUpperCase() + deviceSpec.orientation.slice(1)} orientation</div>
             </div>
           </div>
           <div class="refresh-info">

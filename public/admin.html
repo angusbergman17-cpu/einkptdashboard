@@ -1471,6 +1471,31 @@
 
                 <!-- Single-Step Form -->
                 <div style="max-width: 600px; margin: 0 auto;">
+                    <!-- Device Selection -->
+                    <div class="form-group">
+                        <label class="form-label">📱 Select Your Device *</label>
+                        <select id="setup-device-select" class="form-input" onchange="updateDeviceInfo()" required>
+                            <option value="trmnl-byos" selected>TRMNL BYOS (7.5" - 800×480 landscape)</option>
+                            <option value="kindle-pw3">Kindle Paperwhite 3/4 (6" - 758×1024 portrait)</option>
+                            <option value="kindle-pw4">Kindle Paperwhite 4 (6" - 758×1024 portrait)</option>
+                            <option value="kindle-pw5">Kindle Paperwhite 5 (6.8" - 1236×1648 portrait)</option>
+                            <option value="kindle-4">Kindle 4 (6" - 600×800 portrait)</option>
+                        </select>
+                        <div id="device-info" style="margin-top: 10px; padding: 12px; background: rgba(99, 102, 241, 0.1); border-radius: 8px; border-left: 3px solid #6366f1;">
+                            <div style="font-size: 13px; line-height: 1.7;">
+                                <div style="font-weight: 600; margin-bottom: 5px;">📺 TRMNL BYOS</div>
+                                <div style="font-size: 12px; opacity: 0.85;">
+                                    Resolution: 800×480 pixels<br>
+                                    Orientation: Landscape<br>
+                                    Display: 7.5" E-ink
+                                </div>
+                            </div>
+                        </div>
+                        <small style="color: rgba(255,255,255,0.6); font-size: 11px; display: block; margin-top: 8px;">
+                            All outputs will be optimized for your selected device
+                        </small>
+                    </div>
+
                     <div class="form-group" style="position: relative;">
                         <label class="form-label">🏠 Home Address *</label>
                         <input type="text" id="setup-home-address" class="form-input" placeholder="Start typing your home address..." autocomplete="off" required>
@@ -1818,10 +1843,11 @@
                     <span class="card-icon">📊</span>
                     <h2>API Status Overview</h2>
                 </div>
-                <div id="api-health-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
-                    <div style="padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px; text-align: center; opacity: 0.6;">
-                        Configure APIs above to see status
-                    </div>
+                <p style="opacity: 0.8; font-size: 13px; margin-bottom: 20px;">
+                    Current status of all configured API keys. Keys are masked for security.
+                </p>
+                <div id="api-keys-status-list" style="display: grid; gap: 12px;">
+                    <!-- API keys will be populated here -->
                 </div>
             </div>
 
@@ -2362,6 +2388,53 @@
                         • Paying for any commercial API usage<br>
                         <br>
                         <strong>The software creator (Angus Bergman) is not responsible for your use of external APIs.</strong>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Support Development -->
+            <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(244, 114, 182, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%); border-left: 4px solid #f472b6;">
+                <div class="card-header">
+                    <span class="card-icon">☕</span>
+                    <h2>Support Development</h2>
+                </div>
+                <p style="margin-bottom: 20px; opacity: 0.9; font-size: 14px; line-height: 1.7;">
+                    PTV-TRMNL is developed and maintained by <strong>Angus Bergman</strong> in free time. If this system helps your daily commute and you'd like to support ongoing development, any contribution is deeply appreciated.
+                </p>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                    <a href="https://www.buymeacoffee.com/angusbergman" target="_blank" style="text-decoration: none;">
+                        <div style="background: rgba(255, 221, 87, 0.2); border: 2px solid #ffdd57; border-radius: 12px; padding: 20px; text-align: center; transition: all 0.3s; cursor: pointer;">
+                            <div style="font-size: 32px; margin-bottom: 10px;">☕</div>
+                            <div style="font-weight: 600; font-size: 16px; color: #ffdd57; margin-bottom: 5px;">Buy Me a Coffee</div>
+                            <div style="font-size: 12px; opacity: 0.8;">One-time donation</div>
+                        </div>
+                    </a>
+                    <a href="https://github.com/sponsors/angusbergman17-cpu" target="_blank" style="text-decoration: none;">
+                        <div style="background: rgba(99, 102, 241, 0.2); border: 2px solid #6366f1; border-radius: 12px; padding: 20px; text-align: center; transition: all 0.3s; cursor: pointer;">
+                            <div style="font-size: 32px; margin-bottom: 10px;">💙</div>
+                            <div style="font-weight: 600; font-size: 16px; color: #6366f1; margin-bottom: 5px;">GitHub Sponsors</div>
+                            <div style="font-size: 12px; opacity: 0.8;">Monthly support</div>
+                        </div>
+                    </a>
+                </div>
+
+                <div style="background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 15px;">
+                    <div style="font-weight: 600; margin-bottom: 10px; font-size: 13px;">💝 Your support helps with:</div>
+                    <ul style="margin: 0; padding-left: 20px; font-size: 12px; opacity: 0.9; line-height: 2;">
+                        <li>Server costs for testing and development</li>
+                        <li>TRMNL devices for compatibility testing</li>
+                        <li>Time spent on bug fixes and new features</li>
+                        <li>Documentation and user support</li>
+                        <li>GTFS data updates and maintenance</li>
+                        <li>API credits for development environments</li>
+                    </ul>
+                </div>
+
+                <div style="margin-top: 15px; padding: 12px; background: rgba(244, 114, 182, 0.1); border-radius: 8px; text-align: center;">
+                    <p style="margin: 0; font-size: 12px; opacity: 0.85; line-height: 1.6;">
+                        <strong>Every contribution, no matter the size, is deeply appreciated and motivates continued development.</strong><br>
+                        Thank you for using PTV-TRMNL! 🙏
                     </p>
                 </div>
             </div>
@@ -3289,6 +3362,11 @@
             document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
             document.getElementById('tab-' + tabId).classList.add('active');
             event.target.classList.add('active');
+
+            // Update API keys status when API tab is shown
+            if (tabId === 'api') {
+                updateAPIKeysStatus();
+            }
         }
 
         // Location-agnostic timezone detection
@@ -4133,6 +4211,8 @@
                     body: JSON.stringify({ ptv_opendata: { api_key: document.getElementById('ptv-dev-id').value, token: document.getElementById('ptv-api-key').value } })
                 });
                 showMessage('api-message', 'Saved!', 'success');
+                // Refresh API keys status display
+                setTimeout(() => updateAPIKeysStatus(), 500);
             } catch (e) {
                 showMessage('api-message', 'Error', 'error');
             }
@@ -4152,6 +4232,8 @@
                     body: JSON.stringify({ subscription_key: key })
                 });
                 showMessage('api-message', '✅ GTFS Realtime key saved!', 'success');
+                // Refresh API keys status display
+                setTimeout(() => updateAPIKeysStatus(), 500);
             } catch (e) {
                 showMessage('api-message', '❌ Error saving key', 'error');
                 console.error('GTFS Realtime save error:', e);
@@ -4203,6 +4285,8 @@
                 });
 
                 showMessage('api-message', '✅ Additional APIs saved!', 'success');
+                // Refresh API keys status display
+                setTimeout(() => updateAPIKeysStatus(), 500);
             } catch (e) {
                 showMessage('api-message', '❌ Error saving', 'error');
                 console.error('Additional APIs save error:', e);
@@ -4266,6 +4350,127 @@
                 </div>
             `).join('');
         }
+
+        // ==================== API KEYS STATUS DISPLAY ====================
+
+        function maskAPIKey(key) {
+            if (!key || key.length < 8) return '••••••••';
+            return key.substring(0, 4) + '••••' + key.substring(key.length - 4);
+        }
+
+        async function updateAPIKeysStatus() {
+            try {
+                const response = await fetch(BASE_URL + '/admin/preferences');
+                const prefs = await response.json();
+
+                const statusList = document.getElementById('api-keys-status-list');
+                if (!statusList) return;
+
+                const apis = [];
+
+                // Google Places API
+                const googleKey = prefs.additionalAPIs?.google_places || process.env?.GOOGLE_PLACES_API_KEY;
+                apis.push({
+                    name: '📍 Google Places API',
+                    value: googleKey,
+                    status: googleKey ? 'active' : 'not-configured',
+                    note: googleKey ? 'Enhanced geocoding enabled' : 'Optional - improves address search'
+                });
+
+                // Mapbox API
+                const mapboxToken = prefs.additionalAPIs?.mapbox;
+                apis.push({
+                    name: '🗺️ Mapbox Geocoding',
+                    value: mapboxToken,
+                    status: mapboxToken ? 'active' : 'not-configured',
+                    note: mapboxToken ? 'Additional geocoding coverage' : 'Optional - backup geocoding'
+                });
+
+                // Transit Authority API
+                const transitKey = prefs.api?.key;
+                const state = prefs.location?.state || 'VIC';
+                const authorityNames = {
+                    'VIC': 'Transport for Victoria',
+                    'NSW': 'Transport for NSW',
+                    'QLD': 'TransLink Queensland',
+                    'SA': 'Adelaide Metro',
+                    'WA': 'Transperth',
+                    'TAS': 'Metro Tasmania',
+                    'ACT': 'Transport Canberra',
+                    'NT': 'Transport NT'
+                };
+                const authorityName = authorityNames[state] || 'Transit Authority';
+
+                apis.push({
+                    name: `🚂 ${authorityName}`,
+                    value: transitKey,
+                    status: transitKey ? 'active' : 'not-configured',
+                    note: transitKey ? `Real-time data for ${state}` : 'Optional - enables real-time departures'
+                });
+
+                // GTFS Realtime (Victoria only)
+                if (state === 'VIC') {
+                    const gtfsKey = prefs.additionalAPIs?.gtfs_realtime_key;
+                    apis.push({
+                        name: '🚆 GTFS Realtime (Victoria)',
+                        value: gtfsKey,
+                        status: gtfsKey ? 'active' : 'not-configured',
+                        note: gtfsKey ? 'Live metro train updates' : 'Optional - Victoria only'
+                    });
+                }
+
+                // Nominatim (always available)
+                apis.push({
+                    name: '🌍 OpenStreetMap Nominatim',
+                    value: 'built-in',
+                    status: 'active',
+                    note: 'Free geocoding - always available'
+                });
+
+                // BOM Weather (always available)
+                apis.push({
+                    name: '🌤️ Bureau of Meteorology',
+                    value: 'built-in',
+                    status: 'active',
+                    note: 'Weather data - always available'
+                });
+
+                // Render API status items
+                statusList.innerHTML = apis.map(api => {
+                    const statusColors = {
+                        'active': { bg: 'rgba(72, 187, 120, 0.15)', border: '#48bb78', icon: '✓', iconColor: '#48bb78' },
+                        'not-configured': { bg: 'rgba(251, 191, 36, 0.15)', border: '#fbbf24', icon: '⚠️', iconColor: '#fbbf24' },
+                        'invalid': { bg: 'rgba(239, 68, 68, 0.15)', border: '#ef4444', icon: '❌', iconColor: '#ef4444' }
+                    };
+                    const colors = statusColors[api.status];
+
+                    return `
+                        <div style="padding: 15px; background: ${colors.bg}; border-radius: 10px; border-left: 4px solid ${colors.border};">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                <div style="font-weight: 600; font-size: 14px;">${api.name}</div>
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <span style="font-size: 14px;">${colors.icon}</span>
+                                    <span style="font-size: 12px; font-weight: 600; color: ${colors.iconColor};">
+                                        ${api.status === 'active' ? 'Active' : api.status === 'not-configured' ? 'Not Configured' : 'Invalid'}
+                                    </span>
+                                </div>
+                            </div>
+                            <div style="font-size: 12px; opacity: 0.75; font-family: 'Courier New', monospace; margin-bottom: 6px;">
+                                ${api.value === 'built-in' ? 'Built-in service' : maskAPIKey(api.value)}
+                            </div>
+                            <div style="font-size: 11px; opacity: 0.7;">
+                                ${api.note}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (error) {
+                console.error('Error updating API keys status:', error);
+            }
+        }
+
+        // ==================== END API KEYS STATUS DISPLAY ====================
 
         function saveDisplaySettings() {
             localStorage.setItem('ptv-display-settings', JSON.stringify({
@@ -5265,8 +5470,72 @@
             }
         }
 
+        // ==================== DEVICE SELECTION ====================
+
+        function updateDeviceInfo() {
+            const deviceSelect = document.getElementById('setup-device-select');
+            const deviceInfo = document.getElementById('device-info');
+            const selectedDevice = deviceSelect.value;
+
+            const deviceSpecs = {
+                'trmnl-byos': {
+                    name: 'TRMNL BYOS',
+                    resolution: '800×480 pixels',
+                    orientation: 'Landscape',
+                    display: '7.5" E-ink',
+                    icon: '📺'
+                },
+                'kindle-pw3': {
+                    name: 'Kindle Paperwhite 3/4',
+                    resolution: '758×1024 pixels',
+                    orientation: 'Portrait',
+                    display: '6" E-ink (Carta)',
+                    icon: '📖'
+                },
+                'kindle-pw4': {
+                    name: 'Kindle Paperwhite 4',
+                    resolution: '758×1024 pixels',
+                    orientation: 'Portrait',
+                    display: '6" E-ink (Carta)',
+                    icon: '📖'
+                },
+                'kindle-pw5': {
+                    name: 'Kindle Paperwhite 5',
+                    resolution: '1236×1648 pixels',
+                    orientation: 'Portrait',
+                    display: '6.8" E-ink (Carta 1200)',
+                    icon: '📖'
+                },
+                'kindle-4': {
+                    name: 'Kindle 4 (Non-Touch)',
+                    resolution: '600×800 pixels',
+                    orientation: 'Portrait',
+                    display: '6" E-ink (Pearl)',
+                    icon: '📕'
+                }
+            };
+
+            const spec = deviceSpecs[selectedDevice];
+            deviceInfo.innerHTML = `
+                <div style="font-size: 13px; line-height: 1.7;">
+                    <div style="font-weight: 600; margin-bottom: 5px;">${spec.icon} ${spec.name}</div>
+                    <div style="font-size: 12px; opacity: 0.85;">
+                        Resolution: ${spec.resolution}<br>
+                        Orientation: ${spec.orientation}<br>
+                        Display: ${spec.display}
+                    </div>
+                </div>
+            `;
+        }
+
+        // ==================== END DEVICE SELECTION ====================
+
         async function startJourneyPlanning() {
             console.log('🚀 startJourneyPlanning() called');
+
+            // Get device selection
+            const selectedDevice = document.getElementById('setup-device-select').value;
+            console.log(`📱 Selected device: ${selectedDevice}`);
 
             // Validate required fields
             const homeAddress = document.getElementById('setup-home-address').value.trim();
@@ -5300,6 +5569,17 @@
             progressText.textContent = 'Validating addresses...';
 
             try {
+                // Get device specifications
+                const deviceResolutions = {
+                    'trmnl-byos': { width: 800, height: 480, orientation: 'landscape' },
+                    'kindle-pw3': { width: 758, height: 1024, orientation: 'portrait' },
+                    'kindle-pw4': { width: 758, height: 1024, orientation: 'portrait' },
+                    'kindle-pw5': { width: 1236, height: 1648, orientation: 'portrait' },
+                    'kindle-4': { width: 600, height: 800, orientation: 'portrait' }
+                };
+
+                const deviceSpec = deviceResolutions[selectedDevice];
+
                 // Prepare data for smart setup
                 const setupData = {
                     addresses: {
@@ -5308,7 +5588,15 @@
                         cafe: cafeAddress || null
                     },
                     arrivalTime: arrivalTime,
-                    coffeeEnabled: coffeeEnabled
+                    coffeeEnabled: coffeeEnabled,
+                    deviceConfig: {
+                        selectedDevice: selectedDevice,
+                        resolution: {
+                            width: deviceSpec.width,
+                            height: deviceSpec.height
+                        },
+                        orientation: deviceSpec.orientation
+                    }
                 };
 
                 console.log('📤 Sending request to /admin/smart-setup:', setupData);

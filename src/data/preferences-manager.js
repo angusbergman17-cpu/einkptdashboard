@@ -103,6 +103,16 @@ class PreferencesManager {
         colorCoding: true
       },
 
+      // Device Configuration (Development Rules v1.0.14 Section U)
+      deviceConfig: {
+        selectedDevice: 'trmnl-byos',  // Default to TRMNL BYOS
+        resolution: {
+          width: 800,
+          height: 480
+        },
+        orientation: 'landscape'
+      },
+
       // Metadata
       meta: {
         version: '1.0',
@@ -287,6 +297,20 @@ class PreferencesManager {
    */
   async updateJourneyPreferences(journey) {
     return await this.updateSection('journey', journey);
+  }
+
+  /**
+   * Get device configuration
+   */
+  getDeviceConfig() {
+    return this.getSection('deviceConfig');
+  }
+
+  /**
+   * Update device configuration
+   */
+  async updateDeviceConfig(deviceConfig) {
+    return await this.updateSection('deviceConfig', deviceConfig);
   }
 
   /**
