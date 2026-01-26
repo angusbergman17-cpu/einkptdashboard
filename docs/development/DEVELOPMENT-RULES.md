@@ -1,7 +1,7 @@
 # PTV-TRMNL Development Rules
 **MANDATORY COMPLIANCE DOCUMENT**
 **Last Updated**: 2026-01-26
-**Version**: 1.0.13
+**Version**: 1.0.14
 
 ---
 
@@ -859,6 +859,312 @@ const nearbyStopsHome = await smartJourneyPlanner.findNearbyStops(
 // After setup, prompt for API keys in separate step
 // Live data endpoints check for API keys and fallback gracefully
 ```
+
+### S. Setup Enhancement - Google Places API Recommendation
+
+**Principle**: While the system works with free Nominatim geocoding, **actively recommend Google Places API** during setup to ensure accurate address finding on first try.
+
+**Requirements**:
+- **MUST recommend** Google Places API key during setup (not just "optional")
+- **MUST explain benefit**: Accurate geocoding of specific buildings, cafes, businesses
+- **MUST provide** clear guidance on obtaining free API key ($200/month credit)
+- **MUST make key addition easy**: Checkbox + input field in setup wizard
+- **MUST save immediately**: API key takes effect without server restart
+- **MUST update geocoding service**: Re-initialize with new key instantly
+
+**Implementation**:
+```javascript
+// Setup wizard - Recommend Google Places API
+<h3>Recommended: Google Places API Key</h3>
+<p><strong>Highly recommended for setup:</strong> Adding your Google Places API key
+now ensures the journey planner can accurately find your home, work, and cafe addresses.
+While the system works with free Nominatim geocoding, Google Places provides
+significantly better address recognition, especially for specific buildings,
+cafes, and businesses.</p>
+
+<p>💡 <strong>Tip:</strong> The Google Places API has a generous free tier
+($200/month credit). Adding it during setup prevents address lookup failures
+and ensures your journey planner works correctly on first try.</p>
+
+// Immediate effect after save
+await preferences.save();
+global.geocodingService = new GeocodingService({
+  googlePlacesKey: apiKey  // Re-initialize immediately
+});
+```
+
+**Messaging Hierarchy**:
+1. ✅ "Recommended" (not "Optional")
+2. ✅ Explain "why" (accurate address finding)
+3. ✅ Emphasize "when" (during setup for best results)
+4. ✅ Highlight "free tier" (removes cost barrier)
+5. ✅ Show "benefit" (prevents setup failures)
+
+### T. Single-User Architecture
+
+**Principle**: System designed for **one user, one device, one server** deployment model.
+
+**Implications for Security & Features**:
+- **API key security**: Less critical since user owns all data
+- **Multi-user features**: NOT REQUIRED (no user authentication, no multi-tenancy)
+- **Session management**: NOT REQUIRED (single user assumption)
+- **Data privacy**: User's own data only (no cross-user concerns)
+- **Deployment complexity**: Simplified (no database, no user management)
+
+**What This Means for Development**:
+```javascript
+// ❌ NOT NEEDED:
+// - User authentication/login system
+// - Multi-user database with user_id foreign keys
+// - Session tokens and CSRF protection
+// - Role-based access control
+// - User data isolation
+
+// ✅ FOCUS ON:
+// - Ease of setup (single user, zero config)
+// - Functionality (journey planning works great)
+// - Device integration (TRMNL webhook, multi-device support)
+// - Documentation (user can self-deploy and configure)
+```
+
+**Security Approach**:
+- Assume user has physical/network access to server
+- API keys stored in preferences or environment variables (user's own keys)
+- No need for encryption at rest (user's own deployment)
+- Focus on preventing external attacks (input validation, timeouts)
+- No shared infrastructure concerns
+
+### U. Device-First Design
+
+**Principle**: User MUST select target device during setup, and ALL outputs automatically adjust to device specifications.
+
+**Requirements**:
+- **MUST ask** for device selection in setup wizard
+- **MUST save** device choice to preferences
+- **MUST auto-adjust** all outputs to selected device
+- **MUST show** device-specific preview
+- **MUST support** multiple device types
+
+**Supported Devices**:
+```javascript
+const SUPPORTED_DEVICES = {
+  'trmnl-byos': {
+    name: 'TRMNL BYOS (7.5")',
+    resolution: { width: 800, height: 480 },
+    orientation: 'landscape',
+    format: 'PNG',
+    colorDepth: '1-bit',
+    refreshMethod: 'webhook'
+  },
+  'kindle-pw3': {
+    name: 'Kindle Paperwhite 3 (6")',
+    resolution: { width: 758, height: 1024 },
+    orientation: 'portrait',
+    format: 'HTML/PNG',
+    colorDepth: '4-bit grayscale',
+    refreshMethod: 'kiosk_browser'
+  },
+  'kindle-pw4': {
+    name: 'Kindle Paperwhite 4 (6")',
+    resolution: { width: 758, height: 1024 },
+    orientation: 'portrait',
+    format: 'HTML/PNG',
+    colorDepth: '4-bit grayscale',
+    refreshMethod: 'kiosk_browser'
+  },
+  'kindle-pw5': {
+    name: 'Kindle Paperwhite 5 (6.8")',
+    resolution: { width: 1236, height: 1648 },
+    orientation: 'portrait',
+    format: 'HTML/PNG',
+    colorDepth: '4-bit grayscale',
+    refreshMethod: 'kiosk_browser'
+  },
+  'kindle-4': {
+    name: 'Kindle 4 (6" non-touch)',
+    resolution: { width: 600, height: 800 },
+    orientation: 'portrait',
+    format: 'HTML/PNG',
+    colorDepth: '4-bit grayscale',
+    refreshMethod: 'kiosk_browser'
+  }
+};
+```
+
+**Auto-Adjusted Outputs**:
+```javascript
+// /api/screen - TRMNL webhook
+// Uses device resolution from preferences
+const device = preferences.get().selectedDevice || 'trmnl-byos';
+const config = SUPPORTED_DEVICES[device];
+const image = generateImage(config.resolution.width, config.resolution.height);
+
+// /preview - Device-specific preview
+// Shows exact layout for selected device
+res.render('preview', {
+  device: config,
+  orientation: config.orientation,
+  resolution: config.resolution
+});
+
+// Admin panel visualizers
+// Match selected device dimensions
+const previewWidth = config.resolution.width;
+const previewHeight = config.resolution.height;
+```
+
+**Setup Wizard Device Selection**:
+```html
+<div class="device-selection">
+  <h3>Select Your Device</h3>
+  <p>Choose the e-ink display you'll be using:</p>
+
+  <select id="device-select">
+    <option value="trmnl-byos">TRMNL BYOS (7.5" - 800×480)</option>
+    <option value="kindle-pw3">Kindle Paperwhite 3/4 (6" - 758×1024)</option>
+    <option value="kindle-pw5">Kindle Paperwhite 5 (6.8" - 1236×1648)</option>
+    <option value="kindle-4">Kindle 4 (6" - 600×800)</option>
+  </select>
+
+  <div id="device-preview">
+    <!-- Shows device image and specs -->
+  </div>
+</div>
+```
+
+**Preview Accuracy**:
+- Preview page MUST show pixel-perfect representation
+- Dimensions MUST match selected device exactly
+- Orientation MUST respect device default
+- Font sizes MUST be readable on target device
+- Layout MUST fit within device constraints
+
+### V. API Key & Transit Authority Display
+
+**Principle**: Show users **which API keys are configured** and **which transit authority is being used** for transparency and verification.
+
+**Requirements**:
+- **MUST list** API keys as they are configured (in succession)
+- **MUST show** status: ✓ Active, ⚠️ Not configured, ❌ Invalid
+- **MUST display** transit authority name (not just state code)
+- **MUST update** display immediately after configuration
+- **MUST mask** API keys for security (show first/last 4 chars)
+
+**Implementation - API Key Display**:
+```html
+<div class="api-keys-status">
+  <h3>Configured API Keys</h3>
+
+  <!-- Show in succession as added -->
+  <div class="api-key-item">
+    <div class="api-name">📍 Google Places API</div>
+    <div class="api-status active">✓ Active</div>
+    <div class="api-value">AIza...x7Qm</div>
+    <div class="api-note">Enhanced geocoding enabled</div>
+  </div>
+
+  <div class="api-key-item">
+    <div class="api-name">🚂 Transport for Victoria (OpenData)</div>
+    <div class="api-status active">✓ Active</div>
+    <div class="api-value">ce60...8367</div>
+    <div class="api-note">Real-time GTFS data enabled</div>
+  </div>
+
+  <div class="api-key-item">
+    <div class="api-name">🗺️ Mapbox Geocoding</div>
+    <div class="api-status inactive">⚠️ Not configured</div>
+    <div class="api-note">Optional fallback geocoding</div>
+  </div>
+</div>
+```
+
+**Transit Authority Display**:
+```html
+<div class="transit-authority-status">
+  <h3>Transit Authority</h3>
+
+  <div class="authority-info">
+    <div class="authority-name">
+      🚂 Transport for Victoria
+    </div>
+    <div class="authority-details">
+      State: Victoria (VIC)<br>
+      API: GTFS Realtime (OpenData)<br>
+      Coverage: Metro Trains, Trams, Buses, V/Line<br>
+      Status: <span class="status-active">✓ Connected</span>
+    </div>
+  </div>
+</div>
+```
+
+**Status Updates**:
+- When user adds Google Places API key → Show immediately in list
+- When user adds transit API → Show transit authority name
+- When connection test passes → Update status to ✓ Active
+- When API call fails → Update status to ❌ Error (with helpful message)
+
+**Authority Name Mapping**:
+```javascript
+const TRANSIT_AUTHORITIES = {
+  'VIC': {
+    name: 'Transport for Victoria',
+    shortName: 'PTV',
+    apiType: 'GTFS Realtime',
+    coverage: 'Metro Trains, Trams, Buses, V/Line'
+  },
+  'NSW': {
+    name: 'Transport for NSW',
+    shortName: 'TfNSW',
+    apiType: 'Open Data API',
+    coverage: 'Trains, Buses, Light Rail, Ferries'
+  },
+  'QLD': {
+    name: 'TransLink (Queensland)',
+    shortName: 'TransLink',
+    apiType: 'GTFS',
+    coverage: 'Trains, Buses, Ferries, Trams'
+  },
+  // ... other states
+};
+```
+
+### W. Deployment Model - Public Read-Only Repository
+
+**Principle**: Code distributed via **read-only public GitHub repository** where only owner can edit, users can download and deploy.
+
+**Implementation Requirements**:
+- **Repository Settings**: Public visibility, branch protection on main
+- **Contribution Model**: Issues allowed, pull requests allowed (owner review)
+- **Forking Encouraged**: Users fork to deploy their own instance
+- **License**: CC BY-NC 4.0 (non-commercial, attribution required)
+- **Owner Control**: Only repository owner can merge to main branch
+
+**User Deployment Flow**:
+```
+1. User visits: github.com/owner/PTV-TRMNL-NEW
+2. User clicks "Fork" (creates their own copy)
+3. User deploys fork to Render (their own server)
+4. User configures via admin panel (their own API keys)
+5. User's fork remains separate (no write access to original)
+```
+
+**Documentation Requirements**:
+- **README.md**: Clear deployment instructions (fork → Render → configure)
+- **INSTALL.md**: Step-by-step guide (assumes user is deploying own instance)
+- **CONTRIBUTING.md**: Issues welcome, PRs subject to owner review
+- **LICENSE**: CC BY-NC 4.0 with clear attribution requirements
+
+**Code Quality Standards**:
+- **Assume users can read code**: Well-commented, clear structure
+- **Assume users can't edit original**: Forking is the modification path
+- **Provide extension points**: Clear documentation for customization
+- **Version control**: Semantic versioning, changelog maintained
+
+**Update Distribution**:
+- Users pull updates from original repo to their fork
+- Clear release notes for breaking changes
+- Migration guides for major version updates
+- Backward compatibility maintained where possible
 
 ---
 
