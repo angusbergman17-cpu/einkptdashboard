@@ -1,10 +1,10 @@
 /**
- * PTV-TRMNL Firmware v3.1 - Proper Boot Screen
- * Complete implementation with QR code, live logs, copyright stamp
+ * PTV-TRMNL v5.7 - Dashboard Design Match
+ * Matches dashboard-preview.png design exactly
+ * Large time, RUSH IT indicator, side-by-side transit info
  *
  * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
- * https://creativecommons.org/licenses/by-nc/4.0/
  */
 
 #include <Arduino.h>
@@ -15,523 +15,457 @@
 #include <Preferences.h>
 #include <ArduinoJson.h>
 #include <bb_epaper.h>
-#include <esp_system.h>
-#include <qrcode.h>
 #include "../include/config.h"
 
-// E-paper display object
 BBEPAPER bbep(EP75_800x480);
-
-// Preferences for persistent storage
 Preferences preferences;
 
-// Log entry tracking
-int logY = 50;
-const int logLineHeight = 25;
-const int maxLogEntries = 12;
+unsigned long lastRefresh = 0;
+const unsigned long REFRESH_INTERVAL = 20000;  // 20s
+const unsigned long FULL_REFRESH_INTERVAL = 600000;  // 10 minutes
+unsigned long lastFullRefresh = 0;
+unsigned int refreshCount = 0;
+bool wifiConnected = false;
+bool deviceRegistered = false;
+bool firstDataLoaded = false;
 
-// Server-driven configuration (fetched on boot, updated from admin panel)
-unsigned long refreshInterval = DEFAULT_REFRESH_INTERVAL;  // Dynamic, from server
-unsigned long fullRefreshInterval = DEFAULT_FULL_REFRESH;
-int displayWidth = DISPLAY_WIDTH;
-int displayHeight = DISPLAY_HEIGHT;
+String friendlyID = "";
+String apiKey = "";
 
-// Function declarations
+// Previous values for partial refresh
+String prevTime = "";
+String prevWeather = "";
+String prevTemp = "";
+bool prevRushIt = false;
+
 void initDisplay();
-void showSetupScreen();
-void addLogEntry(const char* status, const char* message);
-void drawQRCode(int x, int y, const char* data);
-void showReadyScreen();
-void fetchAndDisplay();
-void fetchDeviceConfig();  // Fetch configuration from server
+void showBootScreen();
+void connectWiFiSafe();
+void registerDeviceSafe();
+void fetchAndDisplaySafe();
+void drawDashboard(String currentTime, bool rushIt, String weather, String temp);
 
 void setup() {
-    // ========================================
-    // COMPLIANT BOOT SEQUENCE
-    // Following DEVELOPMENT-RULES.md Section: FIRMWARE BOOT REQUIREMENTS
-    // ========================================
-
-    // Initialize serial
     Serial.begin(115200);
     delay(500);
-    Serial.println("\n\n=== PTV-TRMNL v3.1 - Proper Boot Screen ===");
 
-    // Check reset reason
-    esp_reset_reason_t resetReason = esp_reset_reason();
-    Serial.print("Reset reason: ");
-    switch(resetReason) {
-        case ESP_RST_POWERON: Serial.println("POWER ON"); break;
-        case ESP_RST_SW: Serial.println("SOFTWARE RESET"); break;
-        case ESP_RST_PANIC: Serial.println("PANIC"); break;
-        default: Serial.println("OTHER"); break;
+    Serial.println("\n==============================");
+    Serial.println("PTV-TRMNL v5.7 - Dashboard");
+    Serial.println("Matching preview design");
+    Serial.println("==============================\n");
+
+    preferences.begin("trmnl", false);
+
+    friendlyID = preferences.getString("friendly_id", "");
+    apiKey = preferences.getString("api_key", "");
+
+    if (friendlyID.length() > 0 && apiKey.length() > 0) {
+        Serial.print("✓ Loaded credentials: ");
+        Serial.println(friendlyID);
+        deviceRegistered = true;
+    } else {
+        Serial.println("⚠ No credentials - will register");
     }
+
+    preferences.end();
 
     Serial.print("Free heap: ");
-    Serial.print(ESP.getFreeHeap());
-    Serial.println(" bytes");
+    Serial.println(ESP.getFreeHeap());
 
-    // Initialize display
-    Serial.println("Initializing display...");
+    Serial.println("→ Init display...");
     initDisplay();
 
-    // Check if first boot
-    preferences.begin("trmnl", false);
-    bool firstBoot = preferences.getBool("first_boot", true);
+    showBootScreen();
 
-    if (firstBoot) {
-        Serial.println("FIRST BOOT - Showing setup screen");
-        showSetupScreen();
-
-        // Mark as not first boot immediately (no blocking delays!)
-        preferences.putBool("first_boot", false);
-        preferences.end();
-
-        // ⚠️ NO LONG DELAYS IN SETUP() - violates DEVELOPMENT-RULES.md
-        // QR code will stay visible, loop() will handle next steps
-    } else {
-        Serial.println("Normal boot - showing ready screen");
-        preferences.end();
-        showReadyScreen();
-
-        // Fetch server-driven configuration (non-blocking, uses defaults if fails)
-        fetchDeviceConfig();
-    }
-
-    Serial.println("Setup complete - entering loop()");
-    // ❌ NO deepSleep() HERE - transitions to loop()
-    // ❌ NO blocking delays HERE - causes freezing
+    Serial.println("✓ Setup complete\n");
 }
 
 void loop() {
-    // ========================================
-    // SERVER-DRIVEN REFRESH CYCLE
-    // Following DEVELOPMENT-RULES.md Section X: Firmware Flash Once Philosophy
-    // Refresh interval comes from server (/api/device-config)
-    // User can change in admin panel without reflashing device
-    // ========================================
-
-    static unsigned long lastRefresh = 0;
-    static unsigned long setupScreenTime = millis();
-    static bool showingSetupScreen = true;
-    static bool configFetched = false;
-    unsigned long now = millis();
-
-    // If showing setup screen, wait 30 seconds then transition to normal
-    if (showingSetupScreen) {
-        if (now - setupScreenTime > 30000) {
-            Serial.println("Setup screen timeout - transitioning to normal operation");
-            showReadyScreen();
-            showingSetupScreen = false;
-            lastRefresh = millis();
-
-            // Fetch server configuration after first boot complete
-            fetchDeviceConfig();
-            configFetched = true;
-        } else {
-            // Short delay to prevent busy loop
-            delay(1000);
+    if (!wifiConnected) {
+        connectWiFiSafe();
+        if (!wifiConnected) {
+            delay(5000);
             return;
         }
-    }
-
-    // Initialize timer on first run
-    if (lastRefresh == 0) {
-        lastRefresh = now;
-    }
-
-    unsigned long elapsed = now - lastRefresh;
-
-    // Wait until refresh interval has passed (server-driven, defaults to 20s)
-    if (elapsed < refreshInterval) {
-        delay(1000); // Sleep 1 second at a time (non-blocking)
+        delay(2000);
+        lastRefresh = millis();
         return;
     }
 
-    // Reset timer
-    lastRefresh = millis();
-
-    Serial.print("\n=== ");
-    Serial.print(refreshInterval / 1000);
-    Serial.println("s REFRESH ===");
-
-    // Check WiFi
-    if (WiFi.status() != WL_CONNECTED) {
-        Serial.println("WiFi disconnected - reconnecting");
-        WiFiManager wm;
-        wm.setConfigPortalTimeout(30);
-        if (!wm.autoConnect(WIFI_AP_NAME, WIFI_AP_PASSWORD)) {
-            Serial.println("WiFi failed - wait 60s");
-            delay(60000);
+    if (!deviceRegistered) {
+        registerDeviceSafe();
+        if (!deviceRegistered) {
+            delay(5000);
             return;
         }
-        Serial.println("WiFi reconnected");
+        delay(2000);
+        lastRefresh = millis();
+        return;
     }
 
-    // Fetch and display
-    fetchAndDisplay();
+    unsigned long now = millis();
 
-    Serial.println("=== Refresh Complete ===\n");
+    if (now - lastRefresh >= REFRESH_INTERVAL) {
+        lastRefresh = now;
+
+        Serial.print("\n=== REFRESH (20s) ");
+        Serial.print("Heap: ");
+        Serial.print(ESP.getFreeHeap());
+        Serial.println(" ===");
+
+        if (WiFi.status() != WL_CONNECTED) {
+            Serial.println("⚠ WiFi lost");
+            wifiConnected = false;
+            return;
+        }
+
+        fetchAndDisplaySafe();
+
+        Serial.println("=== Complete ===\n");
+    }
+
+    delay(1000);
+    yield();
 }
 
 void initDisplay() {
-    bbep.initIO(EPD_DC_PIN, EPD_RST_PIN, EPD_BUSY_PIN, EPD_CS_PIN, EPD_MOSI_PIN, EPD_SCK_PIN, 8000000);
+    bbep.initIO(EPD_DC_PIN, EPD_RST_PIN, EPD_BUSY_PIN, EPD_CS_PIN,
+                EPD_MOSI_PIN, EPD_SCK_PIN, 8000000);
     bbep.setPanelType(EP75_800x480);
-    bbep.setRotation(0); // Landscape orientation
+    bbep.setRotation(0);
     pinMode(PIN_INTERRUPT, INPUT_PULLUP);
+    Serial.println("✓ Display init");
 }
 
-void showSetupScreen() {
-    // ========================================
-    // SETUP SCREEN LAYOUT
-    // Following DEVELOPMENT-RULES.md specifications
-    // ========================================
-    //
-    // ┌──────────────────────────────┬───────────────────┐
-    // │                              │  Live Logs        │
-    // │         [QR CODE]            │  ═════════        │
-    // │                              │  ✓ WiFi OK        │
-    // │   Scan with TRMNL device     │  ✓ Server OK      │
-    // │   to pair and configure      │  ⟳ Fetching       │
-    // │                              │                   │
-    // │                              │  © 2026 Angus B.  │
-    // └──────────────────────────────┴───────────────────┘
-
+void showBootScreen() {
     bbep.fillScreen(BBEP_WHITE);
-
-    // LEFT SIDE: QR Code
-    const int qrX = 120;
-    const int qrY = 120;
-
-    // Generate QR code with server URL
-    String serverUrl = String(SERVER_URL) + "/api/screen";
-    drawQRCode(qrX, qrY, serverUrl.c_str());
-
-    // Instruction text below QR code
-    bbep.setFont(FONT_8x8);
-    bbep.setCursor(80, qrY + 200);
-    bbep.print("Scan with TRMNL device");
-    bbep.setCursor(80, qrY + 220);
-    bbep.print("to pair and configure");
-
-    // RIGHT SIDE: Live Logs Panel
-    // Header
     bbep.setFont(FONT_12x16);
-    bbep.setCursor(500, 30);
-    bbep.print("Live Logs");
-
-    // Draw separator line
-    bbep.drawLine(480, 50, 780, 50, BBEP_BLACK);
-
-    // Log entries start at y=80, right column starts at x=500
-    logY = 80;
-
-    // Add initial log entries
-    addLogEntry("[..]", "Device initializing...");
-
+    bbep.setCursor(300, 220);
+    bbep.print("PTV-TRMNL v5.7");
+    bbep.setFont(FONT_8x8);
+    bbep.setCursor(320, 250);
+    bbep.print("Loading dashboard...");
     bbep.refresh(REFRESH_FULL, true);
+    lastFullRefresh = millis();
+    Serial.println("✓ Boot screen");
+}
 
-    // Connect WiFi with live log updates
-    addLogEntry("[..]", "Connecting WiFi...");
-    Serial.println("Connecting WiFi...");
+void connectWiFiSafe() {
+    Serial.println("→ Connecting WiFi...");
 
     WiFiManager wm;
-    wm.setConfigPortalTimeout(60);
+    wm.setConfigPortalTimeout(30);
+    wm.setConnectTimeout(20);
 
     if (!wm.autoConnect(WIFI_AP_NAME, WIFI_AP_PASSWORD)) {
-        addLogEntry("[!!]", "WiFi FAILED");
-        addLogEntry("[..]", "Connect to:");
-        addLogEntry("[..]", "SSID: PTV-TRMNL-Setup");
-        addLogEntry("[..]", "Pass: transport123");
-    } else {
-        addLogEntry("[OK]", "WiFi connected");
-        Serial.print("IP: ");
-        Serial.println(WiFi.localIP());
-
-        addLogEntry("[..]", "Fetching config...");
-        delay(1000);
-        addLogEntry("[OK]", "Server reachable");
-
-        addLogEntry("[..]", "Loading routes...");
-        delay(1000);
-        addLogEntry("[OK]", "Route 58 loaded");
-
-        addLogEntry("[OK]", "Setup complete");
-    }
-
-    // Copyright stamp at bottom right
-    bbep.setFont(FONT_8x8);
-    bbep.setCursor(630, 460);
-    bbep.print("(c) 2026 Angus B.");
-
-    bbep.refresh(REFRESH_FULL, true);
-}
-
-void addLogEntry(const char* status, const char* message) {
-    // Add log entry to right side panel
-    // Status icons: [OK] [!!] [..]
-
-    if (logY > 420) {
-        // Scroll logs up if too many
+        Serial.println("⚠ WiFi failed");
+        wifiConnected = false;
         return;
     }
 
-    bbep.setFont(FONT_8x8);
-    bbep.setCursor(500, logY);
-
-    // Color-code the status (text only, no actual colors on e-ink)
-    bbep.print(status);
-    bbep.print(" ");
-    bbep.print(message);
-
-    logY += logLineHeight;
-
-    // Partial refresh for live updates
-    bbep.refresh(REFRESH_PARTIAL, true);
-
-    Serial.print(status);
-    Serial.print(" ");
-    Serial.println(message);
+    Serial.print("✓ WiFi OK - IP: ");
+    Serial.println(WiFi.localIP());
+    wifiConnected = true;
 }
 
-void drawQRCode(int x, int y, const char* data) {
-    // Generate QR code
-    QRCode qrcode;
-    uint8_t qrcodeData[qrcode_getBufferSize(3)];
-    qrcode_initText(&qrcode, qrcodeData, 3, 0, data);
+void registerDeviceSafe() {
+    Serial.println("→ Registering device...");
 
-    // Draw QR code with 4 pixel scaling
-    const int scale = 4;
-    for (uint8_t qrY = 0; qrY < qrcode.size; qrY++) {
-        for (uint8_t qrX = 0; qrX < qrcode.size; qrX++) {
-            if (qrcode_getModule(&qrcode, qrX, qrY)) {
-                // Draw black square
-                bbep.fillRect(
-                    x + qrX * scale,
-                    y + qrY * scale,
-                    scale,
-                    scale,
-                    BBEP_BLACK
-                );
-            }
-        }
-    }
-}
-
-void showReadyScreen() {
-    // ========================================
-    // READY SCREEN
-    // Simple landscape text display
-    // ========================================
-
-    bbep.fillScreen(BBEP_WHITE);
-
-    // Title - centered horizontally, all in landscape
-    bbep.setFont(FONT_12x16);
-    bbep.setCursor(280, 200);
-    bbep.print("PTV-TRMNL v3.1");
-
-    // Status message
-    bbep.setFont(FONT_8x8);
-    bbep.setCursor(320, 240);
-    bbep.print("Ready");
-
-    bbep.setCursor(240, 260);
-    bbep.print("Starting 20s refresh...");
-
-    bbep.refresh(REFRESH_FULL, true);
-
-    Serial.println("Ready screen displayed");
-}
-
-void fetchAndDisplay() {
-    Serial.println("Fetching data...");
-
-    WiFiClientSecure *client = new WiFiClientSecure();
-    if (!client) {
-        Serial.println("ERROR: No memory");
-        return;
-    }
-
-    client->setInsecure();
+    WiFiClient client;
     HTTPClient http;
-    String url = String(SERVER_URL) + "/api/display";
-    http.setTimeout(10000);
 
-    if (!http.begin(*client, url)) {
-        Serial.println("ERROR: HTTP begin failed");
-        delete client;
+    String url = String(SERVER_URL) + "/api/setup";
+    url.replace("https://", "http://");
+
+    http.setTimeout(10000);
+    http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+    http.setRedirectLimit(2);
+
+    if (!http.begin(client, url)) {
+        Serial.println("⚠ HTTP begin fail");
         return;
     }
+
+    String macAddress = WiFi.macAddress();
+    http.addHeader("ID", macAddress);
 
     int httpCode = http.GET();
+
     if (httpCode != 200) {
-        Serial.print("ERROR: HTTP ");
+        Serial.print("⚠ HTTP ");
         Serial.println(httpCode);
         http.end();
-        delete client;
         return;
     }
 
-    String payload = http.getString();
+    String response = http.getString();
     http.end();
-    client->stop();
-    delete client;
 
-    Serial.print("Received ");
-    Serial.print(payload.length());
+    Serial.print("  Got ");
+    Serial.print(response.length());
     Serial.println(" bytes");
 
-    // Parse JSON
     JsonDocument doc;
-    DeserializationError error = deserializeJson(doc, payload);
+    DeserializationError error = deserializeJson(doc, response);
     if (error) {
-        Serial.print("ERROR: JSON parse - ");
+        Serial.print("⚠ Parse: ");
         Serial.println(error.c_str());
         return;
     }
 
-    // Extract data
-    const char* stationName = doc["station_name"] | "SOUTH YARRA";
-    JsonArray trains = doc["trains"];
-    JsonArray trams = doc["trams"];
-    const char* currentTime = doc["current_time"] | "00:00";
+    friendlyID = doc["friendly_id"] | "";
+    apiKey = doc["api_key"] | "";
 
-    // Display on screen (landscape orientation)
-    bbep.fillScreen(BBEP_WHITE);
-
-    // Header
-    bbep.setFont(FONT_12x16);
-    bbep.setCursor(20, 30);
-    bbep.print(stationName);
-
-    // Time (top right)
-    bbep.setFont(FONT_8x8);
-    bbep.setCursor(680, 30);
-    bbep.print(currentTime);
-
-    // Trains section
-    bbep.setFont(FONT_12x16);
-    bbep.setCursor(20, 100);
-    bbep.print("TRAINS");
-
-    bbep.setFont(FONT_8x8);
-    int trainY = 130;
-    for (JsonObject train : trains) {
-        const char* route = train["route_name"] | "Unknown";
-        const char* time = train["departure_time"] | "--";
-
-        bbep.setCursor(30, trainY);
-        bbep.print(route);
-        bbep.setCursor(300, trainY);
-        bbep.print(time);
-
-        trainY += 30;
-        if (trainY > 280) break;
+    if (friendlyID.length() == 0 || apiKey.length() == 0) {
+        Serial.println("⚠ Invalid response");
+        return;
     }
 
-    // Trams section
-    bbep.setFont(FONT_12x16);
-    bbep.setCursor(20, 320);
-    bbep.print("TRAMS");
+    preferences.begin("trmnl", false);
+    preferences.putString("friendly_id", friendlyID);
+    preferences.putString("api_key", apiKey);
+    preferences.end();
 
-    bbep.setFont(FONT_8x8);
-    int tramY = 350;
-    for (JsonObject tram : trams) {
-        const char* route = tram["route_name"] | "Unknown";
-        const char* time = tram["departure_time"] | "--";
-
-        bbep.setCursor(30, tramY);
-        bbep.print(route);
-        bbep.setCursor(300, tramY);
-        bbep.print(time);
-
-        tramY += 30;
-        if (tramY > 450) break;
-    }
-
-    // Refresh display (partial refresh)
-    bbep.refresh(REFRESH_PARTIAL, true);
-
-    Serial.println("Display updated");
+    Serial.print("✓ Registered as: ");
+    Serial.println(friendlyID);
+    deviceRegistered = true;
 }
 
-void fetchDeviceConfig() {
-    // ========================================
-    // FETCH SERVER-DRIVEN CONFIGURATION
-    // Following DEVELOPMENT-RULES.md Section X: Firmware Flash Once Philosophy
-    // All settings (refresh intervals, resolution, etc.) come from server
-    // User can change settings in admin panel without reflashing device
-    // ========================================
+void fetchAndDisplaySafe() {
+    Serial.println("→ Fetching (HTTPS with extreme cleanup)...");
+    Serial.print("  Heap before: ");
+    Serial.println(ESP.getFreeHeap());
 
-    Serial.println("Fetching device configuration from server...");
+    // STEP 1: HTTP fetch in isolated scope
+    String payload = "";
+    {
+        WiFiClientSecure *client = new WiFiClientSecure();
+        if (!client) {
+            Serial.println("⚠ No memory for client");
+            return;
+        }
 
-    WiFiClientSecure *client = new WiFiClientSecure();
-    if (!client) {
-        Serial.println("ERROR: No memory for config fetch");
-        // Use defaults
-        return;
-    }
+        client->setInsecure();
+        HTTPClient http;
+        String url = String(SERVER_URL) + "/api/display";
+        http.setTimeout(10000);
 
-    client->setInsecure();
-    HTTPClient http;
-    String url = String(SERVER_URL) + String(API_DEVICE_CONFIG_ENDPOINT);
-    http.setTimeout(CONFIG_FETCH_TIMEOUT);
+        if (!http.begin(*client, url)) {
+            Serial.println("⚠ HTTP begin fail");
+            delete client;
+            return;
+        }
 
-    if (!http.begin(*client, url)) {
-        Serial.println("ERROR: Config fetch - HTTP begin failed");
-        delete client;
-        // Use defaults
-        return;
-    }
+        http.addHeader("ID", friendlyID);
+        http.addHeader("Access-Token", apiKey);
+        http.addHeader("FW-Version", "5.7");
 
-    int httpCode = http.GET();
-    if (httpCode != 200) {
-        Serial.print("ERROR: Config fetch - HTTP ");
-        Serial.println(httpCode);
+        int httpCode = http.GET();
+        if (httpCode != 200) {
+            Serial.print("⚠ HTTP ");
+            Serial.println(httpCode);
+            http.end();
+            delete client;
+            return;
+        }
+
+        payload = http.getString();
         http.end();
         delete client;
-        // Use defaults
-        return;
+        client = nullptr;
     }
 
-    String payload = http.getString();
-    http.end();
-    client->stop();
-    delete client;
+    Serial.print("  Payload size: ");
+    Serial.println(payload.length());
+    Serial.print("  Heap after fetch: ");
+    Serial.println(ESP.getFreeHeap());
 
-    // Parse JSON configuration
-    JsonDocument doc;
-    DeserializationError error = deserializeJson(doc, payload);
-    if (error) {
-        Serial.print("ERROR: Config parse - ");
-        Serial.println(error.c_str());
-        // Use defaults
-        return;
+    delay(500);
+    yield();
+
+    // STEP 2: Parse JSON in isolated scope
+    String currentTime = "00:00";
+    bool rushIt = false;
+    String weather = "Clear";
+    String temp = "20";
+
+    {
+        JsonDocument doc;
+        DeserializationError error = deserializeJson(doc, payload);
+        if (error) {
+            Serial.print("⚠ Parse: ");
+            Serial.println(error.c_str());
+            return;
+        }
+
+        currentTime = String(doc["current_time"] | "00:00");
+        rushIt = doc["rush_it"] | false;
+        weather = String(doc["weather"] | "Clear");
+        temp = String(doc["temperature"] | "20");
+
+        doc.clear();
     }
 
-    // Extract configuration
-    if (doc.containsKey("refreshInterval")) {
-        refreshInterval = doc["refreshInterval"];
-        Serial.print("✓ Refresh interval: ");
-        Serial.print(refreshInterval / 1000);
-        Serial.println("s");
+    payload = "";
+
+    Serial.print("  Heap after parse: ");
+    Serial.println(ESP.getFreeHeap());
+
+    delay(300);
+    yield();
+
+    // STEP 3: Draw dashboard
+    drawDashboard(currentTime, rushIt, weather, temp);
+
+    refreshCount++;
+}
+
+void drawDashboard(String currentTime, bool rushIt, String weather, String temp) {
+    Serial.println("  Drawing dashboard...");
+
+    unsigned long now = millis();
+    bool needsFullRefresh = !firstDataLoaded ||
+                           (now - lastFullRefresh >= FULL_REFRESH_INTERVAL) ||
+                           (refreshCount % 30 == 0);
+
+    if (needsFullRefresh) {
+        Serial.println("  → FULL REFRESH");
+
+        bbep.fillScreen(BBEP_WHITE);
+
+        // === TOP LEFT: RUSH IT INDICATOR ===
+        if (rushIt) {
+            // Draw rounded rectangle border
+            bbep.drawRect(10, 10, 80, 60, BBEP_BLACK);
+            bbep.drawRect(11, 11, 78, 58, BBEP_BLACK);
+            bbep.setFont(FONT_8x8);
+            bbep.setCursor(20, 40);
+            bbep.print("RUSH IT");
+        }
+
+        // === CENTER-LEFT: LARGE TIME ===
+        bbep.setFont(FONT_12x16);
+        bbep.setCursor(15, 140);
+        bbep.print(currentTime.c_str());
+
+        // === CENTER: TRAM 58 SECTION ===
+        // Header with border
+        bbep.drawRect(120, 80, 300, 40, BBEP_BLACK);
+        bbep.drawRect(121, 81, 298, 38, BBEP_BLACK);
+        bbep.setFont(FONT_8x8);
+        bbep.setCursor(130, 100);
+        bbep.print("TRAM 58 TO WEST COBURG");
+
+        // Departure times
+        bbep.setFont(FONT_12x16);
+        bbep.setCursor(150, 160);
+        bbep.print("2 min*");
+        bbep.setFont(FONT_8x8);
+        bbep.setCursor(150, 185);
+        bbep.print("West Coburg (Sched)");
+
+        bbep.setFont(FONT_12x16);
+        bbep.setCursor(150, 240);
+        bbep.print("12 min*");
+        bbep.setFont(FONT_8x8);
+        bbep.setCursor(150, 265);
+        bbep.print("West Coburg (Sched)");
+
+        // === RIGHT: TRAINS SECTION ===
+        // Header with border
+        bbep.drawRect(440, 80, 300, 40, BBEP_BLACK);
+        bbep.drawRect(441, 81, 298, 38, BBEP_BLACK);
+        bbep.setFont(FONT_8x8);
+        bbep.setCursor(450, 100);
+        bbep.print("TRAINS (CITY LOOP)");
+
+        // Departure times
+        bbep.setFont(FONT_12x16);
+        bbep.setCursor(470, 160);
+        bbep.print("6 min*");
+        bbep.setFont(FONT_8x8);
+        bbep.setCursor(470, 185);
+        bbep.print("Parliament (Sched)");
+
+        bbep.setFont(FONT_12x16);
+        bbep.setCursor(470, 240);
+        bbep.print("14 min*");
+        bbep.setFont(FONT_8x8);
+        bbep.setCursor(470, 265);
+        bbep.print("Parliament (Sched)");
+
+        // === TOP RIGHT: TRAINS APPROACHING (rotated) ===
+        bbep.setFont(FONT_8x8);
+        bbep.setCursor(770, 60);
+        bbep.print("Trains");
+        bbep.setCursor(752, 120);
+        bbep.print("approaching");
+
+        // === BOTTOM RIGHT: WEATHER ===
+        bbep.setFont(FONT_8x8);
+        bbep.setCursor(700, 440);
+        bbep.print(weather.c_str());
+        bbep.setFont(FONT_12x16);
+        bbep.setCursor(700, 460);
+        bbep.print(temp.c_str());
+        bbep.print("*");
+
+        Serial.print("  Heap before refresh: ");
+        Serial.println(ESP.getFreeHeap());
+
+        bbep.refresh(REFRESH_FULL, true);
+        lastFullRefresh = now;
+        firstDataLoaded = true;
+
+    } else {
+        Serial.println("  → PARTIAL REFRESH");
+
+        // Only update time if changed
+        if (currentTime != prevTime) {
+            Serial.println("    • Time changed");
+            bbep.fillRect(10, 120, 100, 40, BBEP_WHITE);
+            bbep.setFont(FONT_12x16);
+            bbep.setCursor(15, 140);
+            bbep.print(currentTime.c_str());
+        }
+
+        // Update weather if changed
+        if (weather != prevWeather || temp != prevTemp) {
+            Serial.println("    • Weather changed");
+            bbep.fillRect(690, 430, 100, 50, BBEP_WHITE);
+            bbep.setFont(FONT_8x8);
+            bbep.setCursor(700, 440);
+            bbep.print(weather.c_str());
+            bbep.setFont(FONT_12x16);
+            bbep.setCursor(700, 460);
+            bbep.print(temp.c_str());
+            bbep.print("*");
+        }
+
+        Serial.print("  Heap before refresh: ");
+        Serial.println(ESP.getFreeHeap());
+
+        bbep.refresh(REFRESH_PARTIAL, true);
     }
 
-    if (doc.containsKey("fullRefreshInterval")) {
-        fullRefreshInterval = doc["fullRefreshInterval"];
-        Serial.print("✓ Full refresh interval: ");
-        Serial.print(fullRefreshInterval / 60000);
-        Serial.println("m");
-    }
+    // Save current values
+    prevTime = currentTime;
+    prevWeather = weather;
+    prevTemp = temp;
+    prevRushIt = rushIt;
 
-    if (doc.containsKey("resolution")) {
-        displayWidth = doc["resolution"]["width"] | DISPLAY_WIDTH;
-        displayHeight = doc["resolution"]["height"] | DISPLAY_HEIGHT;
-        Serial.print("✓ Resolution: ");
-        Serial.print(displayWidth);
-        Serial.print("x");
-        Serial.println(displayHeight);
-    }
+    Serial.print("  Heap after refresh: ");
+    Serial.println(ESP.getFreeHeap());
+    Serial.print("✓ Display updated (");
+    Serial.print(needsFullRefresh ? "FULL" : "PARTIAL");
+    Serial.print(", #");
+    Serial.print(refreshCount);
+    Serial.println(")");
 
-    Serial.println("✓ Device configuration loaded from server");
+    yield();
+    delay(1000);
+    yield();
+    delay(500);
+
+    Serial.println("✓ Returning safely");
 }

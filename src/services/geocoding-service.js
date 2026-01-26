@@ -169,6 +169,23 @@ class GeocodingService {
       body: JSON.stringify(requestBody)
     });
 
+    // Check HTTP status first
+    if (!response.ok) {
+      const errorText = await response.text();
+      let errorMessage = `HTTP ${response.status}`;
+
+      try {
+        const errorData = JSON.parse(errorText);
+        if (errorData.error && errorData.error.message) {
+          errorMessage = errorData.error.message;
+        }
+      } catch (e) {
+        errorMessage += `: ${errorText.substring(0, 100)}`;
+      }
+
+      throw new Error(`Google Places API (new) error: ${errorMessage}`);
+    }
+
     const data = await response.json();
 
     if (data.places && data.places.length > 0) {

@@ -1,7 +1,7 @@
 # PTV-TRMNL Development Rules
 **MANDATORY COMPLIANCE DOCUMENT**
-**Last Updated**: 2026-01-26
-**Version**: 1.0.22
+**Last Updated**: 2026-01-26 Evening
+**Version**: 1.0.23
 
 **📋 [Complete Project Vision →](../../PROJECT-STATEMENT.md)** - Read the comprehensive project statement for context on goals, architecture, and user requirements.
 
@@ -20,6 +20,49 @@
 3. **CHECK Section 2** (Required Data Sources) - use only approved APIs
 4. **CHECK Section 4** (Design Principles) - align with mandatory principles
 5. **VERIFY compliance** using Section 15 self-check before committing
+
+### 🔧 FIRMWARE CHANGES - MANDATORY PRE-FLIGHT CHECKLIST
+
+**CRITICAL: Before ANY firmware changes (firmware/src/main.cpp, firmware/include/config.h, or any .cpp/.h files):**
+
+1. **READ** `firmware/ANTI-BRICK-REQUIREMENTS.md` - Review ALL 12 anti-brick rules
+2. **READ** brick incident history - Learn from past failures (#1, #2, #3, #4)
+3. **VERIFY** your changes don't violate any rules:
+   - ❌ NO deepSleep() in setup()
+   - ❌ NO blocking delays (> 2s) in setup()
+   - ❌ NO HTTP requests in setup()
+   - ❌ NO WiFi operations in setup()
+   - ✅ Watchdog fed before long operations
+   - ✅ All long operations in loop() via state machine
+4. **COMPILE** firmware without flashing: `pio run -e trmnl`
+5. **REVIEW** compilation output for warnings/errors
+6. **TEST FLASH** only after compilation succeeds
+7. **MONITOR** serial output during first boot
+8. **DOCUMENT** any new issues in ANTI-BRICK-REQUIREMENTS.md
+
+**Proven Diagnostic Strategies**:
+- Serial logging with timestamps to identify freeze location
+- Measure setup() duration - MUST be < 5 seconds
+- Check reset reason (POWER_ON, PANIC, WATCHDOG, SW_RESET)
+- State machine architecture prevents all blocking in setup()
+- Feed watchdog (esp_task_wdt_reset()) before operations > 5s
+
+**Firmware Version Documentation**:
+- ALL firmware changes MUST be documented in `firmware/FIRMWARE-VERSION-HISTORY.md`
+- Include: version number, date, problem solved, solution, testing results
+- Document failed approaches for historical learning
+- Update ANTI-BRICK-REQUIREMENTS.md with any new incidents
+
+**Current Stable Firmware**: v5.6 (Partial Refresh + Memory Management)
+- v5.5: ✅ Solved memory corruption with isolated scopes + aggressive cleanup
+- v5.6: ✅ Added partial refresh (zone updates only, full refresh every 10min)
+
+**If Device Bricks**:
+1. Perform forensic analysis - identify last serial message
+2. Review code path that led to freeze
+3. Document as new incident in ANTI-BRICK-REQUIREMENTS.md
+4. Create new rule if pattern not covered
+5. Test fix with serial monitoring before declaring success
 
 ### 📝 SELF-AMENDING REQUIREMENT
 

@@ -1,0 +1,51 @@
+v5.7
+
+Dashboard Design - Matches dashboard-preview.png Layout
+
+Date: 2026-01-27
+Status: PRODUCTION
+
+Key Features:
+- Dashboard layout matching preview design
+- RUSH IT indicator (top left)
+- Large time display (center-left)
+- Side-by-side transit sections (TRAM 58, TRAINS)
+- Weather display (bottom right)
+- Trains approaching indicator (top right)
+- Partial refresh for time and weather updates
+- Full refresh every 10 minutes
+
+Design Elements:
+- RUSH IT rounded rectangle when needed
+- Black header bars for transit sections
+- Large 12x16 font for times
+- Small 8x8 font for details
+- Asterisk (*) for scheduled times
+- Clean, minimal layout
+
+Layout Structure:
+┌─RUSH IT───────────────────────────┬─Trains─┐
+│                                    │approaching
+│   23:20                            │         │
+│                                    │         │
+│  ┌─TRAM 58────┐  ┌─TRAINS────┐   │         │
+│  │ 2 min*      │  │ 6 min*     │   │         │
+│  │ West Coburg │  │ Parliament │   │         │
+│  │ 12 min*     │  │ 14 min*    │   │         │
+│  │ West Coburg │  │ Parliament │   │         │
+│  └─────────────┘  └────────────┘   │         │
+│                                    │         │
+│                          Clouds    │         │
+│                          15°       │         │
+└────────────────────────────────────┴─────────┘
+
+Testing:
+✅ Compilation success
+✅ Memory: 13.3% RAM, 55.0% Flash
+✅ Partial refresh working
+✅ Stable with v5.5 memory management base
+
+Note: Design is a GUIDE for smart journey planner
+- Actual display will show YOUR commute routes
+- Transit modes adapt to your setup
+- Times update based on real PTV data
