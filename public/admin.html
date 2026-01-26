@@ -1957,6 +1957,93 @@
                 </div>
             </div>
 
+            <!-- Refresh Rate Settings (Development Rules v1.0.15 Section Y) -->
+            <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(245, 158, 11, 0.1) 100%); border-left: 4px solid #fbbf24;">
+                <div class="card-header">
+                    <span class="card-icon">⏱️</span>
+                    <h2>Refresh Rate Settings</h2>
+                </div>
+                <p style="margin-bottom: 20px; opacity: 0.9; font-size: 14px;">
+                    Configure how often your device refreshes and the server recalculates your journey. Lower intervals increase accuracy but may reduce e-ink display lifespan.
+                </p>
+
+                <div id="refresh-settings-message" style="display: none; margin-bottom: 15px;"></div>
+
+                <div style="display: grid; gap: 20px;">
+                    <!-- Display Refresh -->
+                    <div style="padding: 15px; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                        <div style="font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                            <span>📱</span> Display Refresh Interval
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 8px;">
+                            <input type="number" id="display-refresh-value" class="form-input" style="flex: 1; max-width: 100px;" min="5" value="15">
+                            <select id="display-refresh-unit" class="form-input" style="flex: 1; max-width: 120px;">
+                                <option value="minutes">minutes</option>
+                            </select>
+                        </div>
+                        <small style="color: rgba(255,255,255,0.6); font-size: 12px; display: block;">
+                            <span id="display-refresh-note">Minimum: 15 minutes for TRMNL BYOS (e-ink protection)</span>
+                        </small>
+                        <div id="display-refresh-estimate" style="margin-top: 8px; padding: 8px; background: rgba(251, 191, 36, 0.1); border-radius: 4px; font-size: 11px; display: none;">
+                            📊 Estimated e-ink lifespan: <span id="eink-lifespan"></span> years
+                        </div>
+                    </div>
+
+                    <!-- Journey Recalculation -->
+                    <div style="padding: 15px; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                        <div style="font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                            <span>🔄</span> Journey Recalculation
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 8px;">
+                            <input type="number" id="journey-recalc-value" class="form-input" style="flex: 1; max-width: 100px;" min="1" value="2">
+                            <select id="journey-recalc-unit" class="form-input" style="flex: 1; max-width: 120px;">
+                                <option value="minutes">minutes</option>
+                            </select>
+                        </div>
+                        <small style="color: rgba(255,255,255,0.6); font-size: 12px;">
+                            How often the server recalculates your journey (minimum: 1 minute)
+                        </small>
+                    </div>
+
+                    <!-- Transit Data Fetch -->
+                    <div style="padding: 15px; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                        <div style="font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                            <span>🚂</span> Transit Data Fetch
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 8px;">
+                            <input type="number" id="data-fetch-value" class="form-input" style="flex: 1; max-width: 100px;" min="10" value="30">
+                            <select id="data-fetch-unit" class="form-input" style="flex: 1; max-width: 120px;">
+                                <option value="seconds">seconds</option>
+                            </select>
+                        </div>
+                        <small style="color: rgba(255,255,255,0.6); font-size: 12px;">
+                            How often server checks for new departures (minimum: 10 seconds)
+                        </small>
+                    </div>
+
+                    <!-- TRMNL Webhook (Fixed) -->
+                    <div style="padding: 15px; background: rgba(99, 102, 241, 0.1); border-radius: 8px; border-left: 3px solid #6366f1;">
+                        <div style="font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                            <span>📡</span> TRMNL Webhook Interval
+                        </div>
+                        <div style="font-size: 14px; opacity: 0.9; margin-bottom: 8px;">
+                            <strong>Fixed:</strong> 15 minutes
+                        </div>
+                        <small style="color: rgba(255,255,255,0.6); font-size: 12px;">
+                            TRMNL BYOS platform enforces 15-minute minimum (cannot be changed)
+                        </small>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary btn-block" onclick="saveRefreshSettings()" style="margin-top: 20px;">
+                    💾 Save Refresh Settings
+                </button>
+
+                <div style="margin-top: 15px; padding: 12px; background: rgba(59, 130, 246, 0.1); border-radius: 8px; border-left: 3px solid #3b82f6; font-size: 12px;">
+                    <strong>💡 Tip:</strong> Lower refresh intervals provide more up-to-date information but increase e-ink display wear. For daily commuting, 15-minute display refresh is recommended.
+                </div>
+            </div>
+
             <div class="grid">
                 <div class="card">
                     <div class="card-header">
@@ -4479,6 +4566,102 @@
             }));
             showMessage('api-message', 'Saved!', 'success');
         }
+
+        // ==================== REFRESH RATE SETTINGS ====================
+
+        async function saveRefreshSettings() {
+            try {
+                const displayValue = parseInt(document.getElementById('display-refresh-value').value);
+                const displayUnit = document.getElementById('display-refresh-unit').value;
+                const journeyValue = parseInt(document.getElementById('journey-recalc-value').value);
+                const journeyUnit = document.getElementById('journey-recalc-unit').value;
+                const dataValue = parseInt(document.getElementById('data-fetch-value').value);
+                const dataUnit = document.getElementById('data-fetch-unit').value;
+
+                // Convert to milliseconds
+                const displayInterval = displayUnit === 'minutes' ? displayValue * 60000 : displayValue * 1000;
+                const journeyInterval = journeyUnit === 'minutes' ? journeyValue * 60000 : journeyValue * 1000;
+                const dataInterval = dataUnit === 'seconds' ? dataValue * 1000 : dataValue * 60000;
+
+                const response = await fetch(BASE_URL + '/admin/refresh-settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        displayRefresh: { interval: displayInterval, unit: displayUnit },
+                        journeyRecalc: { interval: journeyInterval, unit: journeyUnit },
+                        dataFetch: { interval: dataInterval, unit: dataUnit }
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    const messageDiv = document.getElementById('refresh-settings-message');
+                    messageDiv.style.display = 'block';
+                    messageDiv.style.background = 'rgba(72, 187, 120, 0.2)';
+                    messageDiv.style.padding = '12px';
+                    messageDiv.style.borderRadius = '8px';
+                    messageDiv.style.color = '#48bb78';
+                    messageDiv.innerHTML = `✅ ${result.message}`;
+
+                    setTimeout(() => {
+                        messageDiv.style.display = 'none';
+                    }, 3000);
+
+                    // Update e-ink lifespan estimate
+                    updateEinkLifespanEstimate();
+                } else {
+                    throw new Error(result.error || 'Failed to save settings');
+                }
+            } catch (error) {
+                console.error('Error saving refresh settings:', error);
+                const messageDiv = document.getElementById('refresh-settings-message');
+                messageDiv.style.display = 'block';
+                messageDiv.style.background = 'rgba(239, 68, 68, 0.2)';
+                messageDiv.style.padding = '12px';
+                messageDiv.style.borderRadius = '8px';
+                messageDiv.style.color = '#fca5a5';
+                messageDiv.innerHTML = `❌ Error: ${error.message}`;
+            }
+        }
+
+        function updateEinkLifespanEstimate() {
+            const displayValue = parseInt(document.getElementById('display-refresh-value').value);
+            const deviceSelect = document.getElementById('setup-device-select');
+            const selectedDevice = deviceSelect ? deviceSelect.value : 'trmnl-byos';
+
+            // E-ink wear factors (Development Rules v1.0.15 Section Y)
+            const wearFactors = {
+                'trmnl-byos': 0.3,     // Partial refresh = lower wear
+                'kindle-pw5': 0.5,     // Carta 1200 = moderate wear
+                'kindle-pw3': 0.7,     // Carta = higher wear
+                'kindle-pw4': 0.7,
+                'kindle-4': 1.0        // Pearl = highest wear
+            };
+
+            const dailyRefreshes = (24 * 60) / displayValue;
+            const yearlyRefreshes = dailyRefreshes * 365;
+            const estimatedLifespan = 1000000 / (yearlyRefreshes * wearFactors[selectedDevice]);
+
+            const lifespanSpan = document.getElementById('eink-lifespan');
+            const estimateDiv = document.getElementById('display-refresh-estimate');
+
+            if (lifespanSpan && estimateDiv) {
+                lifespanSpan.textContent = Math.round(estimatedLifespan * 10) / 10;
+                estimateDiv.style.display = 'block';
+            }
+        }
+
+        // Update lifespan estimate when display refresh changes
+        document.addEventListener('DOMContentLoaded', function() {
+            const displayRefreshInput = document.getElementById('display-refresh-value');
+            if (displayRefreshInput) {
+                displayRefreshInput.addEventListener('input', updateEinkLifespanEstimate);
+                updateEinkLifespanEstimate(); // Initial calculation
+            }
+        });
+
+        // ==================== END REFRESH RATE SETTINGS ====================
 
         function refreshData() { loadAllData(); }
         async function clearCache() { await fetch(BASE_URL + '/admin/cache/clear', { method: 'POST' }); loadAllData(); }
