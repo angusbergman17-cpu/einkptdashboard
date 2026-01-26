@@ -1947,7 +1947,8 @@ app.post('/admin/smart-journey/calculate', async (req, res) => {
     if (result.success) {
       res.json({
         success: true,
-        journey: result.journey
+        journey: result.journey,
+        options: result.options  // Include stop options for customization
       });
     } else {
       res.status(500).json({
