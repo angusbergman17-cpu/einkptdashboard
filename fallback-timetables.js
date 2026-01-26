@@ -3,7 +3,22 @@
  * Provides default stop/station data when live APIs are unavailable
  * Used for journey planning when real-time data cannot be fetched
  *
+ * DATA ATTRIBUTION:
+ * Stop IDs, names, and coordinates compiled from publicly available transit information:
+ * - VIC: Transport for Victoria (PTV) - Public transit data
+ * - NSW: Transport for NSW - Public transit data
+ * - QLD: TransLink Queensland - Public transit data
+ * - SA: Adelaide Metro - Public transit data
+ * - WA: Transperth - Public transit data
+ * - TAS: Metro Tasmania - Public transit data
+ * - ACT: Transport Canberra - Public transit data
+ * - NT: Transport NT - Public transit data
+ *
+ * This compilation and code structure:
  * Copyright (c) 2026 Angus Bergman
+ * Licensed under CC BY-NC 4.0
+ *
+ * The underlying transit data remains property of respective transit authorities.
  */
 
 /**

@@ -40,36 +40,68 @@ PTV-TRMNL uses data and services from multiple third-party providers. This docum
 - **Attribution Required**: Yes
 - **Attribution Text**: "Real-time transit data provided by Transport for Victoria via OpenData Transport Victoria, licensed under CC BY 4.0"
 
+**OpenAPI Specifications**
+- **Source**: Victorian Department of Transport and Planning
+- **Files**: All files prefixed with `_published_public_transport_gtfs_realtime_`
+- **License**: CC BY 4.0
+- **Copyright**: © Victorian Department of Transport and Planning
+- **Status**: UNMODIFIED - Exact copies from OpenData portal
+- **Purpose**: API reference documentation
+- **Note**: These files are NOT created by Angus Bergman
+- **See**: OPENAPI-SPECS-README.md for complete list
+
 ### State Transit Authorities (Fallback Data)
+
+**Important Note**: The fallback timetable data in `fallback-timetables.js` is compiled from publicly available transit information. While the code structure and compilation is created by Angus Bergman, the underlying transit data (stop IDs, station names, coordinates) is public information from the respective transit authorities.
+
+**VIC - Transport for Victoria**
+- **Provider**: Transport for Victoria (PTV)
+- **Data Used**: Major station/stop IDs, names, coordinates
+- **Source**: Publicly available transit information
+- **File**: fallback-timetables.js (VIC section)
+- **Usage**: Fallback when real-time API unavailable
 
 **NSW - Transport for NSW**
 - **Provider**: Transport for New South Wales
-- **Data Used**: Major station names and locations (fallback timetables)
-- **Source**: Public transit information
+- **Data Used**: Major station/stop IDs, names, coordinates
+- **Source**: Publicly available transit information
+- **File**: fallback-timetables.js (NSW section)
 
 **QLD - TransLink**
 - **Provider**: TransLink Queensland
-- **Data Used**: Major station names and locations (fallback timetables)
+- **Data Used**: Major station/stop IDs, names, coordinates
+- **Source**: Publicly available transit information
+- **File**: fallback-timetables.js (QLD section)
 
 **SA - Adelaide Metro**
 - **Provider**: Adelaide Metro, Department for Infrastructure and Transport SA
-- **Data Used**: Major station names and locations (fallback timetables)
+- **Data Used**: Major station/stop IDs, names, coordinates
+- **Source**: Publicly available transit information
+- **File**: fallback-timetables.js (SA section)
 
 **WA - Transperth**
 - **Provider**: Transperth, Western Australia Public Transport Authority
-- **Data Used**: Major station names and locations (fallback timetables)
+- **Data Used**: Major station/stop IDs, names, coordinates
+- **Source**: Publicly available transit information
+- **File**: fallback-timetables.js (WA section)
 
 **TAS - Metro Tasmania**
 - **Provider**: Metro Tasmania Pty Ltd
-- **Data Used**: Major station names and locations (fallback timetables)
+- **Data Used**: Major station/stop IDs, names, coordinates
+- **Source**: Publicly available transit information
+- **File**: fallback-timetables.js (TAS section)
 
 **ACT - Transport Canberra**
 - **Provider**: Transport Canberra and City Services
-- **Data Used**: Major station names and locations (fallback timetables)
+- **Data Used**: Major station/stop IDs, names, coordinates
+- **Source**: Publicly available transit information
+- **File**: fallback-timetables.js (ACT section)
 
 **NT - Transport NT**
 - **Provider**: Department of Infrastructure, Planning and Logistics, Northern Territory
-- **Data Used**: Major station names and locations (fallback timetables)
+- **Data Used**: Major station/stop IDs, names, coordinates
+- **Source**: Publicly available transit information
+- **File**: fallback-timetables.js (NT section)
 
 ---
 
