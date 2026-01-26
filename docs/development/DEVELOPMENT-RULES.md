@@ -1,7 +1,7 @@
 # PTV-TRMNL Development Rules
 **MANDATORY COMPLIANCE DOCUMENT**
 **Last Updated**: 2026-01-26
-**Version**: 1.0.7
+**Version**: 1.0.8
 
 ---
 
@@ -187,12 +187,35 @@ All development must align with these core principles:
 - **Universal interface** that works for all Australian states/territories
 - **Transit mode discovery** based on detected location
 - **Graceful handling** of locations without transit data
+- **Dynamic timezone** based on detected state (never hardcoded)
+- **No geographic defaults** - let users' addresses determine everything
 
-**Implementation**:
-- Setup form should not pre-select or assume Victorian location
-- Geocoding should detect state from address coordinates
-- Transit mode options should populate based on detected state
-- Fallback data should be state-appropriate
+**CRITICAL: What NOT to do**:
+```javascript
+// ❌ WRONG - Hardcoded location assumptions:
+const timezone = 'Australia/Melbourne';  // Assumes Victoria
+const defaultCity = 'Melbourne';  // Assumes user is in Melbourne
+const showTrainModule = true;  // Assumes metro trains available
+const state = 'VIC';  // Never pre-select state
+```
+
+```javascript
+// ✅ CORRECT - Location agnostic:
+const timezone = getTimezoneForState(detectedState) || userBrowserTimezone;
+const city = geocodeResult.city;  // From user's address
+const transitModes = detectAvailableModesForLocation(coordinates);
+const state = detectStateFromCoordinates(lat, lon);  // From geocoding
+```
+
+**Implementation Requirements**:
+- Setup form must NOT pre-select or assume any location
+- NO hardcoded timezones (Melbourne, Sydney, etc.) - MUST detect from state
+- NO pre-populated city/state fields - MUST be user-entered or auto-detected
+- Geocoding MUST detect state from address coordinates automatically
+- Transit mode UI elements MUST show/hide based on detected location
+- Fallback data MUST be state-appropriate (not Victorian-only)
+- All 8 Australian states/territories MUST be supported equally
+- NO assumptions about available transit modes (trains, trams, buses, ferries)
 
 ### L. Cascading Tab Population
 - **Data flows forward** from Setup → Live Data → Config → System
@@ -225,6 +248,24 @@ if (detectedModes.includes('tram')) {
   showTramModule();
 }
 // Don't show bus, ferry, lightrail if not available in this location
+```
+
+**Australian Timezone Reference**:
+```javascript
+// Correct timezone mapping for all states/territories
+function getTimezoneForState(state) {
+  const timezones = {
+    'VIC': 'Australia/Melbourne',
+    'NSW': 'Australia/Sydney',
+    'ACT': 'Australia/Sydney',
+    'QLD': 'Australia/Brisbane',
+    'SA': 'Australia/Adelaide',
+    'WA': 'Australia/Perth',
+    'TAS': 'Australia/Hobart',
+    'NT': 'Australia/Darwin'
+  };
+  return timezones[state] || Intl.DateTimeFormat().resolvedOptions().timeZone;
+}
 ```
 
 ### N. Robust Error Handling & Resilience
@@ -656,7 +697,7 @@ Before committing, verify:
 
 ---
 
-**Version**: 1.0.7
+**Version**: 1.0.8
 **Last Updated**: 2026-01-26
 **Maintained By**: Angus Bergman
 **License**: CC BY-NC 4.0 (matches project license)
