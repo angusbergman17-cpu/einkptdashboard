@@ -26,7 +26,7 @@ class SmartJourneyPlanner {
     this.BASE_COFFEE_TIME = 3;
 
     // Maximum walking distance to consider (meters)
-    this.MAX_WALKING_DISTANCE = 1500;
+    this.MAX_WALKING_DISTANCE = 2000; // Increased to 2km for suburban areas
 
     // PTV API base URL
     this.PTV_BASE_URL = 'https://timetableapi.ptv.vic.gov.au';
@@ -532,21 +532,29 @@ class SmartJourneyPlanner {
     console.log(`  📍 Found ${allStops.length} real stops across all modes in ${state}`);
 
     // Find closest stops within walking distance
-    const nearbyStops = allStops
-      .map(stop => {
-        const walkingData = this.calculateWalkingTime(
-          location.lat, location.lon,
-          stop.lat, stop.lon
-        );
-        return {
-          ...stop,
-          route_type_name: this.ROUTE_TYPES[stop.route_type]?.name || stop.mode,
-          icon: this.ROUTE_TYPES[stop.route_type]?.icon || '🚏',
-          distance: walkingData.distance,
-          walking_time: walkingData.walkingTime,
-          priority: this.ROUTE_TYPES[stop.route_type]?.priority || 3
-        };
-      })
+    const stopsWithDistance = allStops.map(stop => {
+      const walkingData = this.calculateWalkingTime(
+        location.lat, location.lon,
+        stop.lat, stop.lon
+      );
+      return {
+        ...stop,
+        route_type_name: this.ROUTE_TYPES[stop.route_type]?.name || stop.mode,
+        icon: this.ROUTE_TYPES[stop.route_type]?.icon || '🚏',
+        distance: walkingData.distance,
+        walking_time: walkingData.walkingTime,
+        priority: this.ROUTE_TYPES[stop.route_type]?.priority || 3
+      };
+    });
+
+    // Show closest 5 stops regardless of distance (for debugging)
+    const closestFive = [...stopsWithDistance].sort((a, b) => a.distance - b.distance).slice(0, 5);
+    console.log(`  📏 Closest 5 stops to (${location.lat}, ${location.lon}):`);
+    closestFive.forEach(s => {
+      console.log(`     ${s.icon} ${s.stop_name} - ${s.distance}m (${s.walking_time} min walk) ${s.distance <= this.MAX_WALKING_DISTANCE ? '✓' : '✗ TOO FAR'}`);
+    });
+
+    const nearbyStops = stopsWithDistance
       .filter(stop => stop.distance <= this.MAX_WALKING_DISTANCE)
       .sort((a, b) => {
         // Sort by priority first (train > tram > bus), then by distance

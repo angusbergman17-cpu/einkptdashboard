@@ -155,12 +155,8 @@ async function calculateAndCacheJourney() {
       return null;
     }
 
-    if (!prefs.api?.key || !prefs.api?.token) {
-      console.log('⏭️  Skipping journey calculation - API credentials not configured');
-      return null;
-    }
-
-    console.log('🔄 Auto-calculating journey...');
+    // SmartJourneyPlanner uses LEGACY API - always use fallback mode
+    console.log('🔄 Auto-calculating journey (fallback mode)...');
 
     const journey = await smartPlanner.planJourney({
       homeAddress: prefs.addresses.home,
@@ -168,7 +164,7 @@ async function calculateAndCacheJourney() {
       cafeAddress: prefs.addresses.cafe,
       arrivalTime: prefs.journey.arrivalTime,
       includeCoffee: prefs.journey.coffeeEnabled,
-      api: prefs.api
+      api: { key: null, token: null }  // Force fallback to GTFS data
     });
 
     cachedJourney = {
@@ -3311,6 +3307,8 @@ app.post('/admin/route/auto-plan', async (req, res) => {
     console.log('Request:', { homeAddress, workAddress, cafeAddress, arrivalTime, includeCoffee });
 
     // Plan the journey automatically
+    // NOTE: SmartJourneyPlanner uses LEGACY PTV API v3 which is FORBIDDEN
+    // Pass null credentials to force fallback to GTFS static data
     const plan = await smartPlanner.planJourney({
       homeAddress,
       workAddress,
@@ -3318,8 +3316,8 @@ app.post('/admin/route/auto-plan', async (req, res) => {
       arrivalTime,
       includeCoffee,
       api: {
-        key: savedApi.key,
-        token: savedApi.token
+        key: null,  // Force fallback mode - SmartJourneyPlanner uses legacy API
+        token: null
       }
     });
 
@@ -3387,8 +3385,8 @@ app.get('/admin/route/quick-plan', async (req, res) => {
       arrivalTime,
       includeCoffee: savedJourney.coffeeEnabled !== false,
       api: {
-        key: savedApi.key,
-        token: savedApi.token
+        key: null,  // Force fallback mode
+        token: null
       }
     });
 
@@ -3430,8 +3428,8 @@ app.post('/admin/route/quick-plan', async (req, res) => {
       arrivalTime: arrivalTime || '09:00',
       includeCoffee: !!cafeAddress,
       api: {
-        key: savedApi.key,
-        token: savedApi.token
+        key: null,  // Force fallback mode
+        token: null
       }
     });
 
