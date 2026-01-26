@@ -130,30 +130,63 @@ class GeocodingService {
   }
 
   /**
-   * Google Places API - Best for businesses and cafes
+   * Google Places API (new) - Best for businesses and cafes
+   * Uses Places API (new) with v1 endpoint
+   * Reference: https://developers.google.com/maps/documentation/places/web-service/text-search
    */
   async geocodeGooglePlaces(query, country, type) {
     if (!this.googlePlacesKey) {
       throw new Error('Google Places API key not configured');
     }
 
-    const searchType = type === 'business' ? 'textquery' : 'findplacefromtext';
-    const url = `https://maps.googleapis.com/maps/api/place/${searchType}/json?input=${encodeURIComponent(query)}&inputtype=textquery&fields=formatted_address,geometry,name&key=${this.googlePlacesKey}&region=${country.toLowerCase()}`;
+    // Use new Places API (new) endpoint
+    const url = 'https://places.googleapis.com/v1/places:searchText';
 
-    const response = await fetch(url);
+    const requestBody = {
+      textQuery: query,
+      languageCode: 'en',
+      regionCode: country,
+      maxResultCount: 1
+    };
+
+    // Add location bias if we have coordinates (future enhancement)
+    // if (bias && bias.lat && bias.lon) {
+    //   requestBody.locationBias = {
+    //     circle: {
+    //       center: { latitude: bias.lat, longitude: bias.lon },
+    //       radius: 50000.0
+    //     }
+    //   };
+    // }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': this.googlePlacesKey,
+        'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location'
+      },
+      body: JSON.stringify(requestBody)
+    });
+
     const data = await response.json();
 
-    if (data.status === 'OK' && data.candidates && data.candidates.length > 0) {
-      const place = data.candidates[0];
+    if (data.places && data.places.length > 0) {
+      const place = data.places[0];
       return {
-        lat: place.geometry.location.lat,
-        lon: place.geometry.location.lng,
-        formattedAddress: place.formatted_address,
-        name: place.name
+        lat: place.location.latitude,
+        lon: place.location.longitude,
+        formattedAddress: place.formattedAddress,
+        name: place.displayName?.text || null
       };
     }
 
-    throw new Error(`Google Places: ${data.status}`);
+    // Handle error responses
+    if (data.error) {
+      throw new Error(`Google Places API (new): ${data.error.message || data.error.status}`);
+    }
+
+    throw new Error('Google Places API (new): No results found');
   }
 
   /**

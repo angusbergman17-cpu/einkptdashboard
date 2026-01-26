@@ -10,7 +10,7 @@
  */
 
 class CoffeeDecision {
-  constructor(config = {}) {
+  constructor(config = {}, preferences = null) {
     // Default timing constants (in minutes)
     // These are overridden by user's journey configuration
     this.commute = {
@@ -22,6 +22,9 @@ class CoffeeDecision {
       platformChange: config.platformChange || 3,  // Connection walking time
       trainRide: config.trainRide || 15            // Primary transit duration
     };
+
+    // Store preferences for timezone detection (Development Rules v1.0.15 - Location Agnostic)
+    this.preferences = preferences;
   }
 
   /**
@@ -45,12 +48,36 @@ class CoffeeDecision {
   }
 
   /**
-   * Get current Melbourne time (UTC+11)
+   * Get timezone for state (Development Rules v1.0.15 - Location Agnostic)
    */
-  getMelbourneTime() {
+  getTimezoneForState(state) {
+    const timezones = {
+      'VIC': 'Australia/Melbourne',
+      'NSW': 'Australia/Sydney',
+      'ACT': 'Australia/Sydney',
+      'QLD': 'Australia/Brisbane',
+      'SA': 'Australia/Adelaide',
+      'WA': 'Australia/Perth',
+      'TAS': 'Australia/Hobart',
+      'NT': 'Australia/Darwin'
+    };
+    return timezones[state] || 'Australia/Sydney';
+  }
+
+  /**
+   * Get current local time based on user's state (replaces getMelbourneTime)
+   * Development Rules v1.0.15 Section 4 - Location-Agnostic Design
+   */
+  getLocalTime() {
+    const prefs = this.preferences ? this.preferences.get() : {};
+    const state = prefs.location?.state || prefs.state || 'VIC';
+    const timezone = this.getTimezoneForState(state);
+
     const now = new Date();
-    // UTC+11 (AEDT - Melbourne)
-    return new Date(now.getTime() + (11 * 60 * 60 * 1000));
+    // Get local time for user's state
+    const localTime = new Date(now.toLocaleString('en-US', { timeZone: timezone }));
+
+    return localTime;
   }
 
   /**
@@ -71,10 +98,10 @@ class CoffeeDecision {
    * @returns {object} - { decision, subtext, canGet, urgent }
    */
   calculate(nextTrainMin, tramData, newsText) {
-    const now = this.getMelbourneTime();
-    const day = now.getUTCDay(); // 0=Sun, 6=Sat
-    const currentHour = now.getUTCHours();
-    const currentMin = now.getUTCMinutes();
+    const now = this.getLocalTime();  // Now location-agnostic
+    const day = now.getDay(); // 0=Sun, 6=Sat (use local day, not UTC)
+    const currentHour = now.getHours();
+    const currentMin = now.getMinutes();
     const currentTimeInMins = currentHour * 60 + currentMin;
 
     // 1. SERVICE INTERRUPTION - Skip coffee if network is disrupted

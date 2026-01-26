@@ -69,15 +69,36 @@ class WeatherBOM {
   }
 
   /**
+   * Get primary city for state (location-agnostic fallback)
+   * Development Rules v1.0.15 Section 4 - Location-Agnostic Design
+   */
+  getPrimaryCityForState(state) {
+    const primaryCities = {
+      'VIC': 'Melbourne',
+      'NSW': 'Sydney',
+      'ACT': 'Canberra',
+      'QLD': 'Brisbane',
+      'SA': 'Adelaide',
+      'WA': 'Perth',
+      'TAS': 'Hobart',
+      'NT': 'Darwin'
+    };
+    return primaryCities[state] || 'Sydney';
+  }
+
+  /**
    * Get the correct weather station based on configured city
    */
   getWeatherStation() {
-    // Get city from preferences
-    const city = this.preferences?.location?.city;
+    // Get city and state from preferences
+    const prefs = this.preferences ? this.preferences.get() : {};
+    const city = prefs.location?.city;
+    const state = prefs.location?.state || prefs.state || 'VIC';
 
     if (!city) {
-      console.warn('⚠️  No city configured in preferences, using Melbourne as fallback');
-      return BOM_STATIONS['Melbourne'];
+      const fallbackCity = this.getPrimaryCityForState(state);
+      console.warn(`⚠️  No city configured, using ${fallbackCity} (${state}) as fallback`);
+      return BOM_STATIONS[fallbackCity];
     }
 
     // Find matching station (case-insensitive)
@@ -86,8 +107,9 @@ class WeatherBOM {
     )?.[1];
 
     if (!station) {
-      console.warn(`⚠️  No BOM station found for ${city}, using Melbourne as fallback`);
-      return BOM_STATIONS['Melbourne'];
+      const fallbackCity = this.getPrimaryCityForState(state);
+      console.warn(`⚠️  No BOM station found for ${city}, using ${fallbackCity} (${state}) as fallback`);
+      return BOM_STATIONS[fallbackCity];
     }
 
     return station;
