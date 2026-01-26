@@ -1118,11 +1118,12 @@
                 return;
             }
 
-            showLoading('Testing Google Places API...');
+            showLoading('Saving and testing Google Places API...');
             hideError();
 
             try {
-                const response = await fetch('/admin/apis/validate-google-places', {
+                // Save and test using the working force-save endpoint
+                const response = await fetch('/admin/apis/force-save-google-places', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ apiKey })
@@ -1131,19 +1132,23 @@
                 const result = await response.json();
 
                 if (!result.success) {
-                    throw new Error(result.error || 'Invalid API key');
+                    throw new Error(result.message || 'Failed to save API key');
                 }
-
-                // Save immediately
-                await fetch('/admin/apis/force-save-google-places', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ apiKey })
-                });
 
                 setupData.googlePlacesKey = apiKey;
                 hideLoading();
-                showSuccess('google-places-success', 'Google Places API configured successfully. Enhanced geocoding is now available.');
+
+                // Show success message with test results
+                let successMsg = 'Google Places API configured successfully. Enhanced geocoding is now available.';
+                if (result.testResult) {
+                    if (result.testResult.success) {
+                        successMsg += '<br><small>Test: ' + result.testResult.testAddress + ' found successfully</small>';
+                    } else {
+                        successMsg += '<br><small>Key saved (test inconclusive - will be used for address searches)</small>';
+                    }
+                }
+
+                showSuccess('google-places-success', successMsg);
 
                 setTimeout(() => {
                     goToStep(2);
