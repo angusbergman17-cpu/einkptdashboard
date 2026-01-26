@@ -278,9 +278,31 @@ class PreferencesManager {
   }
 
   /**
-   * Load preferences from file
+   * Load preferences from file or environment variable
+   * Priority: 1) USER_CONFIG env var (for Render persistence), 2) user-preferences.json file
    */
   async load() {
+    // FIRST: Try loading from environment variable (Render persistence)
+    if (process.env.USER_CONFIG) {
+      try {
+        console.log('📦 Loading preferences from USER_CONFIG environment variable');
+        this.preferences = JSON.parse(process.env.USER_CONFIG);
+        this.preferences = this.mergeWithDefaults(this.preferences);
+
+        // Override API key if set separately
+        if (process.env.ODATA_API_KEY) {
+          this.preferences.api.key = process.env.ODATA_API_KEY;
+        }
+
+        console.log('✅ User preferences loaded from environment variable');
+        return this.preferences;
+      } catch (error) {
+        console.error('❌ Error parsing USER_CONFIG env var:', error.message);
+        console.log('⚠️  Falling back to file-based preferences');
+      }
+    }
+
+    // SECOND: Try loading from file (local development)
     try {
       const data = await fs.readFile(this.preferencesFile, 'utf8');
       this.preferences = JSON.parse(data);
@@ -288,7 +310,7 @@ class PreferencesManager {
       // Merge with defaults for any missing fields
       this.preferences = this.mergeWithDefaults(this.preferences);
 
-      console.log('✅ User preferences loaded successfully');
+      console.log('✅ User preferences loaded successfully from file');
       return this.preferences;
     } catch (error) {
       if (error.code === 'ENOENT') {
@@ -616,10 +638,27 @@ class PreferencesManager {
   }
 
   /**
-   * Export preferences as JSON
+   * Export preferences as JSON (formatted for viewing)
    */
   export() {
     return JSON.stringify(this.preferences, null, 2);
+  }
+
+  /**
+   * Export preferences as compact JSON for environment variable
+   * Use this value for USER_CONFIG environment variable on Render
+   */
+  exportForEnvVar() {
+    // Remove sensitive data that should be set separately
+    const configCopy = JSON.parse(JSON.stringify(this.preferences));
+
+    // API key should be set via ODATA_API_KEY env var, not in USER_CONFIG
+    if (configCopy.api) {
+      delete configCopy.api.key;
+    }
+
+    // Compact JSON (no whitespace)
+    return JSON.stringify(configCopy);
   }
 
   /**

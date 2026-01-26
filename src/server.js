@@ -2125,6 +2125,38 @@ app.post('/admin/setup/complete', async (req, res) => {
   }
 });
 
+// Export configuration for Render environment variable
+app.get('/admin/export-config', async (req, res) => {
+  try {
+    const envVarValue = preferences.exportForEnvVar();
+    const apiKey = process.env.ODATA_API_KEY || '';
+
+    res.json({
+      success: true,
+      instructions: [
+        '1. Go to Render Dashboard → Your Service → Environment',
+        '2. Add these environment variables:',
+        '   - USER_CONFIG = [copy the userConfig value below]',
+        '   - ODATA_API_KEY = [copy the apiKey value below]',
+        '3. Save and deploy',
+        '',
+        'Your configuration will now persist across server restarts!'
+      ],
+      userConfig: envVarValue,
+      apiKey: apiKey,
+      example: {
+        variable: 'USER_CONFIG',
+        value: envVarValue
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // ============================================================================
 // END SMART SETUP WIZARD ENDPOINTS
 // ============================================================================
