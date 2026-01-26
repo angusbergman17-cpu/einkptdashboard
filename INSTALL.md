@@ -42,8 +42,8 @@ Before you begin, you'll need:
 - [ ] **TRMNL Device** (7.5" e-ink display) - [Get one here](https://usetrmnl.com)
 - [ ] **Home and work addresses** (for journey planning)
 
-### Optional (for enhanced features)
-- [ ] **Google Places API Key** (free tier: $200/month credit) - [Get it here](https://console.cloud.google.com/apis/library/places-backend.googleapis.com)
+### Recommended (for enhanced features)
+- [ ] **Google Places API Key** - **Highly recommended for accurate address finding during setup** (free tier: $200/month credit) - [Get it here](https://console.cloud.google.com/apis/library/places-backend.googleapis.com)
 - [ ] **Transit Authority API Credentials** - See [Transit APIs section](#optional-transit-authority-apis)
 
 ---
@@ -315,9 +315,15 @@ Add real-time departure data for your state.
 
 **Note**: API availability varies by state. System works with fallback data if APIs unavailable.
 
-### Optional: Google Places API
+### Recommended: Google Places API
 
-Enhances address geocoding and cafe discovery.
+**Highly recommended for setup:** While the system works with free Nominatim geocoding, Google Places API significantly improves address accuracy for finding your home, work, and cafe locations. This is especially important during initial setup to ensure the journey planner can correctly identify your addresses on first try.
+
+**Benefits**:
+- ✅ Accurate geocoding of specific buildings and businesses
+- ✅ Better cafe and coffee shop discovery
+- ✅ Improved address parsing (handles variations better)
+- ✅ Higher success rate for journey planning setup
 
 **Get Free API Key**:
 1. Go to https://console.cloud.google.com/
