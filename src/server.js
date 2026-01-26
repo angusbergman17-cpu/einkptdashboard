@@ -93,7 +93,12 @@ const multiModalRouter = new MultiModalRouter();
 const smartPlanner = new SmartJourneyPlanner();
 
 // Initialize multi-tier geocoding service (global for route planner)
-global.geocodingService = new GeocodingService();
+// Check for API keys in preferences (saved via admin panel) or environment variables
+const prefs = preferences.get();
+global.geocodingService = new GeocodingService({
+  googlePlacesKey: prefs.additionalAPIs?.google_places || process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_PLACES_KEY,
+  mapboxToken: prefs.additionalAPIs?.mapbox || process.env.MAPBOX_ACCESS_TOKEN || process.env.MAPBOX_TOKEN
+});
 console.log('✅ Multi-tier geocoding service initialized');
 console.log('   Available services:', global.geocodingService.getAvailableServices());
 
@@ -214,6 +219,18 @@ preferences.load().then(() => {
   console.log('✅ User preferences loaded');
   const status = preferences.getStatus();
   isConfigured = status.configured;
+
+  // Re-initialize geocoding service with API keys from preferences (if any)
+  const prefs = preferences.get();
+  if (prefs.additionalAPIs?.google_places || prefs.additionalAPIs?.mapbox) {
+    console.log('🔄 Re-initializing geocoding service with saved API keys...');
+    global.geocodingService = new GeocodingService({
+      googlePlacesKey: prefs.additionalAPIs.google_places || process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_PLACES_KEY,
+      mapboxToken: prefs.additionalAPIs.mapbox || process.env.MAPBOX_ACCESS_TOKEN || process.env.MAPBOX_TOKEN
+    });
+    console.log('✅ Geocoding service updated with saved API keys');
+    console.log('   Available services:', global.geocodingService.getAvailableServices());
+  }
 
   if (!isConfigured) {
     console.log('⚠️  User preferences not fully configured');
@@ -2249,9 +2266,20 @@ app.post('/admin/apis/additional', async (req, res) => {
       rssFeeds: prefs.additionalAPIs.rss_feeds?.length || 0
     });
 
+    // Re-initialize geocoding service with new API keys for immediate effect
+    if (prefs.additionalAPIs.google_places || prefs.additionalAPIs.mapbox) {
+      console.log('🔄 Re-initializing geocoding service with updated API keys...');
+      global.geocodingService = new GeocodingService({
+        googlePlacesKey: prefs.additionalAPIs.google_places || process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_PLACES_KEY,
+        mapboxToken: prefs.additionalAPIs.mapbox || process.env.MAPBOX_ACCESS_TOKEN || process.env.MAPBOX_TOKEN
+      });
+      console.log('✅ Geocoding service re-initialized with new keys');
+      console.log('   Available services:', global.geocodingService.getAvailableServices());
+    }
+
     res.json({
       success: true,
-      message: 'Additional APIs saved successfully'
+      message: 'Additional APIs saved successfully. Geocoding service updated for immediate use.'
     });
   } catch (error) {
     console.error('❌ Additional APIs save error:', error);
