@@ -1,7 +1,7 @@
 /**
- * PTV-TRMNL v5.8 - FIXED Orientation
- * Complete rebuild with verified 800x480 landscape dimensions
- * Simple, clean layout - text renders HORIZONTALLY
+ * PTV-TRMNL v5.9 - Default Dashboard
+ * Shows time and status info while setup is in progress
+ * Gracefully handles "system not configured" state
  *
  * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
@@ -32,6 +32,7 @@ unsigned int refreshCount = 0;
 bool wifiConnected = false;
 bool deviceRegistered = false;
 bool firstDataLoaded = false;
+bool systemConfigured = false;
 
 String friendlyID = "";
 String apiKey = "";
@@ -39,22 +40,28 @@ String apiKey = "";
 String prevTime = "";
 String prevWeather = "";
 
+// Time tracking for default dashboard
+unsigned long bootTime = 0;
+
 void initDisplay();
 void showBootScreen();
 void connectWiFiSafe();
 void registerDeviceSafe();
 void fetchAndDisplaySafe();
 void drawSimpleDashboard(String currentTime, String weather);
+void drawDefaultDashboard();
+String getEstimatedTime();
 
 void setup() {
     Serial.begin(115200);
     delay(500);
 
     Serial.println("\n==============================");
-    Serial.println("PTV-TRMNL v5.8 - FIXED");
-    Serial.println("800x480 Landscape - Correct Orientation");
+    Serial.println("PTV-TRMNL v5.9 - Default Dashboard");
+    Serial.println("800x480 Landscape - Shows status until configured");
     Serial.println("==============================\n");
 
+    bootTime = millis();
     preferences.begin("trmnl", false);
 
     friendlyID = preferences.getString("friendly_id", "");
@@ -150,11 +157,11 @@ void showBootScreen() {
     // Center text on 800x480 screen
     bbep.setFont(FONT_12x16);
     bbep.setCursor(280, 220);
-    bbep.print("PTV-TRMNL v5.8");
+    bbep.print("PTV-TRMNL v5.9");
 
     bbep.setFont(FONT_8x8);
-    bbep.setCursor(300, 250);
-    bbep.print("Fixed Orientation");
+    bbep.setCursor(280, 250);
+    bbep.print("Default Dashboard");
 
     bbep.refresh(REFRESH_FULL, true);
     lastFullRefresh = millis();
@@ -262,7 +269,7 @@ void fetchAndDisplaySafe() {
 
         http.addHeader("ID", friendlyID);
         http.addHeader("Access-Token", apiKey);
-        http.addHeader("FW-Version", "5.8");
+        http.addHeader("FW-Version", "5.9");
 
         int httpCode = http.GET();
         if (httpCode != 200) {
@@ -270,8 +277,17 @@ void fetchAndDisplaySafe() {
             Serial.println(httpCode);
             http.end();
             delete client;
+
+            // HTTP 500 = System not configured, show default dashboard
+            if (httpCode == 500) {
+                systemConfigured = false;
+                Serial.println("  System not configured - showing default dashboard");
+                drawDefaultDashboard();
+            }
             return;
         }
+
+        systemConfigured = true;
 
         payload = http.getString();
         http.end();
@@ -402,6 +418,132 @@ void drawSimpleDashboard(String currentTime, String weather) {
     prevWeather = weather;
 
     Serial.print("✓ Display updated (");
+    Serial.print(needsFullRefresh ? "FULL" : "PARTIAL");
+    Serial.print(", #");
+    Serial.print(refreshCount);
+    Serial.println(")");
+
+    yield();
+    delay(1000);
+    yield();
+}
+
+// Get estimated time since boot (rough approximation)
+String getEstimatedTime() {
+    unsigned long elapsedSeconds = (millis() - bootTime) / 1000;
+    unsigned long hours = (elapsedSeconds / 3600) % 24;
+    unsigned long minutes = (elapsedSeconds / 60) % 60;
+
+    char timeStr[6];
+    sprintf(timeStr, "%02lu:%02lu", hours, minutes);
+    return String(timeStr);
+}
+
+// Draw default dashboard when system is not configured
+void drawDefaultDashboard() {
+    Serial.println("  Drawing DEFAULT dashboard (setup in progress)...");
+
+    unsigned long now = millis();
+    bool needsFullRefresh = !firstDataLoaded ||
+                           (now - lastFullRefresh >= FULL_REFRESH_INTERVAL) ||
+                           (refreshCount % 30 == 0);
+
+    if (needsFullRefresh) {
+        Serial.println("  → FULL REFRESH (Default)");
+
+        bbep.fillScreen(BBEP_WHITE);
+
+        // === TOP BAR (Y: 0-60) ===
+        // Title - centered
+        bbep.setFont(FONT_12x16);
+        bbep.setCursor(300, 30);
+        bbep.print("PTV-TRMNL");
+
+        // Status - top right
+        bbep.setFont(FONT_8x8);
+        bbep.setCursor(650, 30);
+        bbep.print(getEstimatedTime().c_str());
+
+        // === MIDDLE SECTION (Y: 80-400) ===
+        // Status message
+        bbep.setFont(FONT_12x16);
+        bbep.setCursor(200, 150);
+        bbep.print("SETUP IN PROGRESS");
+
+        // Information bars
+        bbep.setFont(FONT_8x8);
+
+        // Bar 1
+        bbep.setCursor(100, 220);
+        bbep.print("Device: ESP32-C3 (");
+        bbep.print(friendlyID.c_str());
+        bbep.print(")");
+
+        // Bar 2
+        bbep.setCursor(100, 250);
+        bbep.print("WiFi: Connected to ");
+        bbep.print(WiFi.SSID().c_str());
+
+        // Bar 3
+        bbep.setCursor(100, 280);
+        bbep.print("Server: ");
+        bbep.print(SERVER_URL);
+
+        // Bar 4
+        bbep.setCursor(100, 310);
+        bbep.print("Status: Waiting for configuration");
+
+        // Instructions
+        bbep.setCursor(80, 360);
+        bbep.print("Complete setup at: ");
+        bbep.print(SERVER_URL);
+        bbep.print("/admin");
+
+        // === BOTTOM BAR (Y: 420-480) ===
+        bbep.setFont(FONT_8x8);
+        bbep.setCursor(20, 450);
+        bbep.print("Firmware: v5.9");
+
+        bbep.setCursor(300, 450);
+        bbep.print("Refresh: ");
+        bbep.print(refreshCount);
+
+        bbep.setCursor(650, 450);
+        bbep.print("Heap: ");
+        bbep.print(ESP.getFreeHeap() / 1024);
+        bbep.print(" KB");
+
+        Serial.println("  Default dashboard laid out horizontally");
+        Serial.println("  Coordinates: X(0-800) Y(0-480)");
+
+        bbep.refresh(REFRESH_FULL, true);
+        lastFullRefresh = now;
+        firstDataLoaded = true;
+
+    } else {
+        Serial.println("  → PARTIAL REFRESH (Default)");
+
+        // Update time (top right)
+        String currentTime = getEstimatedTime();
+        if (currentTime != prevTime) {
+            bbep.fillRect(650, 15, 100, 30, BBEP_WHITE);
+            bbep.setFont(FONT_8x8);
+            bbep.setCursor(650, 30);
+            bbep.print(currentTime.c_str());
+            prevTime = currentTime;
+        }
+
+        // Update refresh count
+        bbep.fillRect(300, 435, 150, 30, BBEP_WHITE);
+        bbep.setFont(FONT_8x8);
+        bbep.setCursor(300, 450);
+        bbep.print("Refresh: ");
+        bbep.print(refreshCount);
+
+        bbep.refresh(REFRESH_PARTIAL, true);
+    }
+
+    Serial.print("✓ Default dashboard updated (");
     Serial.print(needsFullRefresh ? "FULL" : "PARTIAL");
     Serial.print(", #");
     Serial.print(refreshCount);
