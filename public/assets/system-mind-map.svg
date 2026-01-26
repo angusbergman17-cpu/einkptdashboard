@@ -1,0 +1,247 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 1400" style="background: #0f172a">
+  <defs>
+    <!-- Gradients -->
+    <radialGradient id="coreGrad">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4338ca;stop-opacity:0.8" />
+    </radialGradient>
+    <radialGradient id="layer1Grad">
+      <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#7c3aed;stop-opacity:0.1" />
+    </radialGradient>
+    <radialGradient id="layer2Grad">
+      <stop offset="0%" style="stop-color:#10b981;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:0.1" />
+    </radialGradient>
+    <radialGradient id="layer3Grad">
+      <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#d97706;stop-opacity:0.1" />
+    </radialGradient>
+
+    <!-- Glow effect -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Connection lines style -->
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
+      <polygon points="0 0, 10 5, 0 10" fill="#6366f1" opacity="0.6"/>
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="700" y="50" font-family="Inter, system-ui, sans-serif" font-size="32" font-weight="700" fill="#f1f5f9" text-anchor="middle">
+    PTV-TRMNL System Architecture
+  </text>
+  <text x="700" y="85" font-family="Inter, system-ui, sans-serif" font-size="15" fill="#94a3b8" text-anchor="middle">
+    Concentric circles showing component interactions
+  </text>
+
+  <!-- Layer 3: External Services (Outermost circle) -->
+  <circle cx="700" cy="720" r="580" fill="url(#layer3Grad)" stroke="#f59e0b" stroke-width="2" stroke-dasharray="8,4" opacity="0.4"/>
+  <text x="700" y="150" font-family="Inter, system-ui, sans-serif" font-size="18" font-weight="600" fill="#fbbf24" text-anchor="middle">
+    LAYER 3: External Services
+  </text>
+
+  <!-- External service boxes -->
+  <!-- PTV API -->
+  <g transform="translate(200, 300)">
+    <rect x="0" y="0" width="160" height="100" rx="8" fill="#1e293b" stroke="#f59e0b" stroke-width="2"/>
+    <text x="80" y="30" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="600" fill="#fbbf24" text-anchor="middle">🚊 PTV API</text>
+    <text x="80" y="50" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">Transport VIC</text>
+    <text x="80" y="68" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b" text-anchor="middle">GTFS Realtime</text>
+    <text x="80" y="85" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b" text-anchor="middle">Live departures</text>
+  </g>
+
+  <!-- Bureau of Meteorology -->
+  <g transform="translate(1040, 300)">
+    <rect x="0" y="0" width="160" height="100" rx="8" fill="#1e293b" stroke="#f59e0b" stroke-width="2"/>
+    <text x="80" y="30" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="600" fill="#fbbf24" text-anchor="middle">🌤️ Weather</text>
+    <text x="80" y="50" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">BOM API</text>
+    <text x="80" y="68" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b" text-anchor="middle">Current conditions</text>
+    <text x="80" y="85" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b" text-anchor="middle">Forecasts</text>
+  </g>
+
+  <!-- Nominatim -->
+  <g transform="translate(200, 1000)">
+    <rect x="0" y="0" width="160" height="100" rx="8" fill="#1e293b" stroke="#f59e0b" stroke-width="2"/>
+    <text x="80" y="30" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="600" fill="#fbbf24" text-anchor="middle">🗺️ Nominatim</text>
+    <text x="80" y="50" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">OpenStreetMap</text>
+    <text x="80" y="68" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b" text-anchor="middle">Geocoding</text>
+    <text x="80" y="85" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b" text-anchor="middle">Address lookup</text>
+  </g>
+
+  <!-- Google Places -->
+  <g transform="translate(1040, 1000)">
+    <rect x="0" y="0" width="160" height="100" rx="8" fill="#1e293b" stroke="#f59e0b" stroke-width="2"/>
+    <text x="80" y="30" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="600" fill="#fbbf24" text-anchor="middle">📍 Google</text>
+    <text x="80" y="50" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">Places API</text>
+    <text x="80" y="68" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b" text-anchor="middle">Enhanced geocode</text>
+    <text x="80" y="85" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b" text-anchor="middle">Cafe busyness</text>
+  </g>
+
+  <!-- Layer 2: Server & APIs (Middle circle) -->
+  <circle cx="700" cy="720" r="400" fill="url(#layer2Grad)" stroke="#10b981" stroke-width="3" opacity="0.5"/>
+  <text x="700" y="340" font-family="Inter, system-ui, sans-serif" font-size="18" font-weight="600" fill="#22c55e" text-anchor="middle">
+    LAYER 2: Server &amp; APIs
+  </text>
+
+  <!-- Server components -->
+  <!-- Smart Journey Planner -->
+  <g transform="translate(420, 420)">
+    <rect x="0" y="0" width="180" height="90" rx="8" fill="#1e293b" stroke="#10b981" stroke-width="2" filter="url(#glow)"/>
+    <text x="90" y="28" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#22c55e" text-anchor="middle">🧠 Journey Planner</text>
+    <text x="90" y="48" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">Multi-modal routing</text>
+    <text x="90" y="64" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">GTFS fallback</text>
+    <text x="90" y="80" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">All 8 states</text>
+  </g>
+
+  <!-- Coffee Engine -->
+  <g transform="translate(710, 500)">
+    <rect x="0" y="0" width="150" height="80" rx="8" fill="#1e293b" stroke="#10b981" stroke-width="2"/>
+    <text x="75" y="28" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#22c55e" text-anchor="middle">☕ Coffee</text>
+    <text x="75" y="48" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">Timing analysis</text>
+    <text x="75" y="64" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">Busyness check</text>
+  </g>
+
+  <!-- Route Calculator -->
+  <g transform="translate(420, 880)">
+    <rect x="0" y="0" width="150" height="80" rx="8" fill="#1e293b" stroke="#10b981" stroke-width="2"/>
+    <text x="75" y="28" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#22c55e" text-anchor="middle">📐 Routes</text>
+    <text x="75" y="48" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">Walking time</text>
+    <text x="75" y="64" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">Departure calc</text>
+  </g>
+
+  <!-- Preferences Manager -->
+  <g transform="translate(710, 920)">
+    <rect x="0" y="0" width="150" height="80" rx="8" fill="#1e293b" stroke="#10b981" stroke-width="2"/>
+    <text x="75" y="28" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#22c55e" text-anchor="middle">💾 Storage</text>
+    <text x="75" y="48" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">User prefs</text>
+    <text x="75" y="64" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">Profiles</text>
+  </g>
+
+  <!-- API Endpoints -->
+  <g transform="translate(330, 650)">
+    <rect x="0" y="0" width="140" height="70" rx="8" fill="#1e293b" stroke="#10b981" stroke-width="2"/>
+    <text x="70" y="25" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#22c55e" text-anchor="middle">🌐 APIs (53)</text>
+    <text x="70" y="42" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#94a3b8" text-anchor="middle">/api/display</text>
+    <text x="70" y="56" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#94a3b8" text-anchor="middle">/api/dashboard</text>
+  </g>
+
+  <!-- Decision Logger -->
+  <g transform="translate(930, 650)">
+    <rect x="0" y="0" width="140" height="70" rx="8" fill="#1e293b" stroke="#10b981" stroke-width="2"/>
+    <text x="70" y="25" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="#22c55e" text-anchor="middle">📊 Decisions</text>
+    <text x="70" y="42" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#94a3b8" text-anchor="middle">Transparency</text>
+    <text x="70" y="56" font-family="Inter, system-ui, sans-serif" font-size="9" fill="#94a3b8" text-anchor="middle">Audit trail</text>
+  </g>
+
+  <!-- Layer 1: Device & UI (Inner circle) -->
+  <circle cx="700" cy="720" r="220" fill="url(#layer1Grad)" stroke="#8b5cf6" stroke-width="3" opacity="0.6"/>
+  <text x="700" y="520" font-family="Inter, system-ui, sans-serif" font-size="18" font-weight="600" fill="#a78bfa" text-anchor="middle">
+    LAYER 1: Devices &amp; Interface
+  </text>
+
+  <!-- Device components -->
+  <!-- TRMNL Device -->
+  <g transform="translate(560, 610)">
+    <rect x="0" y="0" width="140" height="80" rx="8" fill="#1e293b" stroke="#8b5cf6" stroke-width="2" filter="url(#glow)"/>
+    <text x="70" y="28" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#a78bfa" text-anchor="middle">📟 E-Ink</text>
+    <text x="70" y="48" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">7.5" 800×480</text>
+    <text x="70" y="64" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">Partial refresh</text>
+  </g>
+
+  <!-- Admin Panel -->
+  <g transform="translate(560, 780)">
+    <rect x="0" y="0" width="140" height="80" rx="8" fill="#1e293b" stroke="#8b5cf6" stroke-width="2"/>
+    <text x="70" y="28" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#a78bfa" text-anchor="middle">💻 Admin</text>
+    <text x="70" y="48" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">Web interface</text>
+    <text x="70" y="64" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">Configuration</text>
+  </g>
+
+  <!-- Core: ESP32-C3 (Center) -->
+  <circle cx="700" cy="720" r="80" fill="url(#coreGrad)" stroke="#6366f1" stroke-width="4" filter="url(#glow)"/>
+  <text x="700" y="710" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700" fill="white" text-anchor="middle">
+    CORE
+  </text>
+  <text x="700" y="735" font-family="Inter, system-ui, sans-serif" font-size="18" font-weight="700" fill="white" text-anchor="middle">
+    ESP32-C3
+  </text>
+  <text x="700" y="755" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#e0e7ff" text-anchor="middle">
+    160MHz • 320KB RAM
+  </text>
+
+  <!-- Connection lines (showing data flow) -->
+  <!-- Core to Layer 1 -->
+  <line x1="700" y1="640" x2="630" y2="610" stroke="#8b5cf6" stroke-width="2" opacity="0.6" stroke-dasharray="4,2"/>
+  <line x1="700" y1="800" x2="630" y2="820" stroke="#8b5cf6" stroke-width="2" opacity="0.6" stroke-dasharray="4,2"/>
+
+  <!-- Layer 1 to Layer 2 -->
+  <line x1="560" y1="650" x2="470" y2="510" stroke="#10b981" stroke-width="2" opacity="0.4" stroke-dasharray="4,2"/>
+  <line x1="630" y1="780" x2="600" y2="920" stroke="#10b981" stroke-width="2" opacity="0.4" stroke-dasharray="4,2"/>
+
+  <!-- Layer 2 to Layer 3 -->
+  <line x1="420" y1="465" x2="360" y2="350" stroke="#f59e0b" stroke-width="2" opacity="0.3" stroke-dasharray="4,2"/>
+  <line x1="600" y1="465" x2="1040" y2="350" stroke="#f59e0b" stroke-width="2" opacity="0.3" stroke-dasharray="4,2"/>
+  <line x1="470" y1="960" x2="360" y2="1050" stroke="#f59e0b" stroke-width="2" opacity="0.3" stroke-dasharray="4,2"/>
+  <line x1="785" y1="960" x2="1040" y2="1050" stroke="#f59e0b" stroke-width="2" opacity="0.3" stroke-dasharray="4,2"/>
+
+  <!-- Legend -->
+  <g transform="translate(100, 1280)">
+    <text x="0" y="0" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="600" fill="#f1f5f9">
+      System Layers
+    </text>
+
+    <!-- Core -->
+    <circle cx="10" cy="25" r="8" fill="#6366f1"/>
+    <text x="25" y="30" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94a3b8">
+      Core: ESP32-C3 microcontroller (hardware)
+    </text>
+
+    <!-- Layer 1 -->
+    <circle cx="10" cy="50" r="8" fill="#8b5cf6"/>
+    <text x="25" y="55" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94a3b8">
+      Layer 1: Device firmware &amp; user interface
+    </text>
+
+    <!-- Layer 2 -->
+    <circle cx="10" cy="75" r="8" fill="#10b981"/>
+    <text x="25" y="80" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94a3b8">
+      Layer 2: Server logic &amp; API endpoints
+    </text>
+
+    <!-- Layer 3 -->
+    <circle cx="10" cy="100" r="8" fill="#f59e0b"/>
+    <text x="25" y="105" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94a3b8">
+      Layer 3: External services &amp; data sources
+    </text>
+  </g>
+
+  <!-- Data flow indicator -->
+  <g transform="translate(950, 1280)">
+    <text x="0" y="0" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="600" fill="#f1f5f9">
+      Data Flow
+    </text>
+    <text x="0" y="25" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94a3b8">
+      User → Admin Panel → Server → APIs
+    </text>
+    <text x="0" y="45" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#94a3b8">
+      APIs → Server → Device → Display
+    </text>
+    <text x="0" y="70" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">
+      ━━ Solid: Direct connection
+    </text>
+    <text x="0" y="88" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b">
+      ┄┄ Dashed: API/Network call
+    </text>
+  </g>
+
+  <!-- Performance note -->
+  <text x="700" y="1360" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#64748b" text-anchor="middle">
+    Total system response: &lt;10 seconds • Updates every 2 minutes • 53 API endpoints
+  </text>
+</svg>

@@ -1,0 +1,158 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1400" style="background: #0f172a">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="grad3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#d97706;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Title -->
+  <text x="600" y="40" font-family="Inter, system-ui, sans-serif" font-size="28" font-weight="700" fill="#f1f5f9" text-anchor="middle">
+    PTV-TRMNL Data Flow Architecture
+  </text>
+  <text x="600" y="70" font-family="Inter, system-ui, sans-serif" font-size="14" fill="#94a3b8" text-anchor="middle">
+    Complete journey from user input to e-ink display
+  </text>
+
+  <!-- Layer 1: User Input -->
+  <rect x="450" y="110" width="300" height="100" rx="12" fill="url(#grad1)" opacity="0.9"/>
+  <text x="600" y="145" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="600" fill="white" text-anchor="middle">👤 USER INPUT</text>
+  <text x="600" y="170" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#e0e7ff" text-anchor="middle">Admin Panel</text>
+  <text x="600" y="190" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#c7d2fe" text-anchor="middle">Home & Work Addresses</text>
+
+  <!-- Arrow -->
+  <path d="M 600 210 L 600 260" stroke="#6366f1" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
+      <polygon points="0 0, 10 5, 0 10" fill="#6366f1"/>
+    </marker>
+  </defs>
+
+  <!-- Layer 2: Geocoding -->
+  <rect x="350" y="260" width="220" height="90" rx="12" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+  <text x="460" y="290" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="600" fill="#f1f5f9" text-anchor="middle">🗺️ GEOCODING</text>
+  <text x="460" y="310" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">Nominatim / Google Places</text>
+  <text x="460" y="330" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b" text-anchor="middle">→ Coordinates & State</text>
+
+  <rect x="630" y="260" width="220" height="90" rx="12" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+  <text x="740" y="290" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="600" fill="#f1f5f9" text-anchor="middle">💾 PREFERENCES</text>
+  <text x="740" y="310" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">user-preferences.json</text>
+  <text x="740" y="330" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b" text-anchor="middle">Persistent Storage</text>
+
+  <!-- Arrows -->
+  <path d="M 600 350 L 600 390" stroke="#6366f1" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+
+  <!-- Layer 3: Journey Planning -->
+  <rect x="400" y="390" width="400" height="120" rx="12" fill="url(#grad2)" opacity="0.9" filter="url(#glow)"/>
+  <text x="600" y="425" font-family="Inter, system-ui, sans-serif" font-size="18" font-weight="700" fill="white" text-anchor="middle">🧠 SMART JOURNEY PLANNER</text>
+  <text x="600" y="450" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#d1fae5" text-anchor="middle">✓ Find nearby transit stops (GTFS)</text>
+  <text x="600" y="470" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#d1fae5" text-anchor="middle">✓ Calculate walking distances</text>
+  <text x="600" y="490" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#d1fae5" text-anchor="middle">✓ Build multi-modal route (1-4 modes)</text>
+
+  <!-- Arrow -->
+  <path d="M 600 510 L 600 560" stroke="#10b981" stroke-width="3" fill="none" marker-end="url(#arrowhead2)"/>
+  <defs>
+    <marker id="arrowhead2" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
+      <polygon points="0 0, 10 5, 0 10" fill="#10b981"/>
+    </marker>
+  </defs>
+
+  <!-- Layer 4: Route Calculation -->
+  <rect x="150" y="560" width="280" height="110" rx="12" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+  <text x="290" y="590" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="600" fill="#f1f5f9" text-anchor="middle">🚊 ROUTE PLANNER</text>
+  <text x="290" y="610" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">• Walking time calculation</text>
+  <text x="290" y="630" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">• Live departures (GTFS-RT)</text>
+  <text x="290" y="650" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">• Total journey duration</text>
+
+  <rect x="480" y="560" width="240" height="110" rx="12" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+  <text x="600" y="590" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="600" fill="#f1f5f9" text-anchor="middle">☕ COFFEE ENGINE</text>
+  <text x="600" y="610" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">• Time availability check</text>
+  <text x="600" y="630" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">• Cafe busyness analysis</text>
+  <text x="600" y="650" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">• YES/NO decision</text>
+
+  <rect x="770" y="560" width="280" height="110" rx="12" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+  <text x="910" y="590" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="600" fill="#f1f5f9" text-anchor="middle">📊 DECISION LOGGER</text>
+  <text x="910" y="610" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">• Record all decisions</text>
+  <text x="910" y="630" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">• Track fallback usage</text>
+  <text x="910" y="650" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">• Transparency log</text>
+
+  <!-- Arrows -->
+  <path d="M 600 670 L 600 720" stroke="#10b981" stroke-width="3" fill="none" marker-end="url(#arrowhead2)"/>
+
+  <!-- Layer 5: Background Processing -->
+  <rect x="400" y="720" width="400" height="100" rx="12" fill="url(#grad3)" opacity="0.9"/>
+  <text x="600" y="755" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="600" fill="white" text-anchor="middle">⚡ BACKGROUND CALCULATION</text>
+  <text x="600" y="780" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#fef3c7" text-anchor="middle">Updates every 2 minutes • Caches journey data</text>
+  <text x="600" y="800" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#fef3c7" text-anchor="middle">Triggers TRMNL webhook if configured</text>
+
+  <!-- Arrow -->
+  <path d="M 600 820 L 600 870" stroke="#f59e0b" stroke-width="3" fill="none" marker-end="url(#arrowhead3)"/>
+  <defs>
+    <marker id="arrowhead3" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
+      <polygon points="0 0, 10 5, 0 10" fill="#f59e0b"/>
+    </marker>
+  </defs>
+
+  <!-- Layer 6: API Endpoints -->
+  <rect x="180" y="870" width="200" height="80" rx="12" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+  <text x="280" y="900" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#f1f5f9" text-anchor="middle">📱 /api/display</text>
+  <text x="280" y="920" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">Device JSON</text>
+  <text x="280" y="937" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b" text-anchor="middle">Optimized for e-ink</text>
+
+  <rect x="420" y="870" width="200" height="80" rx="12" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+  <text x="520" y="900" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#f1f5f9" text-anchor="middle">🌐 /api/dashboard</text>
+  <text x="520" y="920" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">HTML rendering</text>
+  <text x="520" y="937" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b" text-anchor="middle">Web display</text>
+
+  <rect x="660" y="870" width="200" height="80" rx="12" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+  <text x="760" y="900" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#f1f5f9" text-anchor="middle">🔗 /api/screen</text>
+  <text x="760" y="920" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">TRMNL webhook</text>
+  <text x="760" y="937" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b" text-anchor="middle">BYOS compliant</text>
+
+  <rect x="900" y="870" width="200" height="80" rx="12" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+  <text x="1000" y="900" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#f1f5f9" text-anchor="middle">🔄 /api/partial</text>
+  <text x="1000" y="920" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">Partial updates</text>
+  <text x="1000" y="937" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#64748b" text-anchor="middle">Fast refresh</text>
+
+  <!-- Arrow -->
+  <path d="M 280 950 L 280 1000 L 600 1000 L 600 1040" stroke="#6366f1" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+
+  <!-- Layer 7: Device -->
+  <rect x="400" y="1040" width="400" height="140" rx="12" fill="url(#grad1)" opacity="0.9" filter="url(#glow)"/>
+  <text x="600" y="1075" font-family="Inter, system-ui, sans-serif" font-size="18" font-weight="700" fill="white" text-anchor="middle">📟 TRMNL E-INK DEVICE</text>
+  <text x="600" y="1100" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#e0e7ff" text-anchor="middle">ESP32-C3 + 7.5" 800×480 display</text>
+  <text x="600" y="1120" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#e0e7ff" text-anchor="middle">Partial refresh: 1 minute</text>
+  <text x="600" y="1140" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#e0e7ff" text-anchor="middle">Full refresh: 5 minutes</text>
+  <text x="600" y="1160" font-family="Inter, system-ui, sans-serif" font-size="12" fill="#e0e7ff" text-anchor="middle">Deep sleep between updates</text>
+
+  <!-- Arrow -->
+  <path d="M 600 1180 L 600 1230" stroke="#6366f1" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+
+  <!-- Layer 8: Output -->
+  <rect x="350" y="1230" width="500" height="140" rx="12" fill="#10b981" opacity="0.9"/>
+  <text x="600" y="1265" font-family="Inter, system-ui, sans-serif" font-size="20" font-weight="700" fill="white" text-anchor="middle">✨ DASHBOARD DISPLAY</text>
+  <text x="600" y="1295" font-family="Inter, system-ui, sans-serif" font-size="14" fill="#d1fae5" text-anchor="middle">🕐 Leave by: 8:42 AM (in 12 minutes)</text>
+  <text x="600" y="1318" font-family="Inter, system-ui, sans-serif" font-size="14" fill="#d1fae5" text-anchor="middle">🚊 Next Trains: 8:47, 8:52, 9:02</text>
+  <text x="600" y="1341" font-family="Inter, system-ui, sans-serif" font-size="14" fill="#d1fae5" text-anchor="middle">☕ Coffee: YES - 4 minutes available</text>
+  <text x="600" y="1364" font-family="Inter, system-ui, sans-serif" font-size="14" fill="#d1fae5" text-anchor="middle">🌤️ Weather: 18°C, Partly Cloudy</text>
+
+  <!-- Footer -->
+  <text x="600" y="1395" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#64748b" text-anchor="middle">
+    Response time: 5-10 seconds • Updates every 2 minutes
+  </text>
+</svg>
