@@ -830,6 +830,193 @@
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
         }
+
+        /* Progressive UI Disclosure - Mode Toggle */
+        .mode-toggle-container {
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .mode-toggle {
+            position: relative;
+            width: 56px;
+            height: 28px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .mode-toggle.advanced {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .mode-toggle-slider {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .mode-toggle.advanced .mode-toggle-slider {
+            transform: translateX(28px);
+        }
+
+        .mode-label {
+            font-size: 13px;
+            font-weight: 500;
+            opacity: 0.6;
+            transition: opacity 0.3s;
+        }
+
+        .mode-label.active {
+            opacity: 1;
+            color: #667eea;
+        }
+
+        /* Advanced-only elements (hidden in simple mode) */
+        .advanced-only {
+            display: none !important;
+        }
+
+        body.advanced-mode .advanced-only {
+            display: block !important;
+        }
+
+        body.advanced-mode .nav-tab.advanced-only {
+            display: inline-block !important;
+        }
+
+        body.advanced-mode .advanced-only.inline {
+            display: inline !important;
+        }
+
+        body.advanced-mode .advanced-only.flex {
+            display: flex !important;
+        }
+
+        /* Visual Enhancements - Status Indicators */
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+
+        .status-operational {
+            background: #22c55e;
+            box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+        }
+
+        .status-degraded {
+            background: #f59e0b;
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+        }
+
+        .status-down {
+            background: #ef4444;
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+        }
+
+        /* Loading Skeleton */
+        .skeleton {
+            background: linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0.05) 25%,
+                rgba(255, 255, 255, 0.1) 50%,
+                rgba(255, 255, 255, 0.05) 75%
+            );
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite;
+            border-radius: 8px;
+            height: 20px;
+            margin: 8px 0;
+        }
+
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .skeleton.skeleton-card {
+            height: 120px;
+            border-radius: 12px;
+        }
+
+        .skeleton.skeleton-text {
+            height: 16px;
+            width: 100%;
+        }
+
+        .skeleton.skeleton-text-short {
+            height: 16px;
+            width: 60%;
+        }
+
+        /* Success Animation */
+        @keyframes success-pulse {
+            0%, 100% {
+                background: rgba(34, 197, 94, 0.1);
+                border-color: rgba(34, 197, 94, 0.3);
+            }
+            50% {
+                background: rgba(34, 197, 94, 0.2);
+                border-color: rgba(34, 197, 94, 0.5);
+            }
+        }
+
+        .success-flash {
+            animation: success-pulse 1s ease-in-out;
+        }
+
+        /* Color-coded confidence indicators */
+        .confidence-high {
+            color: #22c55e;
+            font-weight: 600;
+        }
+
+        .confidence-medium {
+            color: #f59e0b;
+            font-weight: 600;
+        }
+
+        .confidence-low {
+            color: #ef4444;
+            font-weight: 600;
+        }
+
+        .confidence-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .confidence-badge.high {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+        }
+
+        .confidence-badge.medium {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+        }
+
+        .confidence-badge.low {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
     </style>
 </head>
 <body>
@@ -876,6 +1063,15 @@
             </div>
             <div class="time-display" id="current-time">--:--:--</div>
             <div class="date-display" id="current-date">Loading...</div>
+
+            <!-- Mode Toggle -->
+            <div class="mode-toggle-container">
+                <span class="mode-label active" id="mode-label-simple">Simple</span>
+                <div class="mode-toggle" id="mode-toggle" onclick="toggleUIMode()">
+                    <div class="mode-toggle-slider"></div>
+                </div>
+                <span class="mode-label" id="mode-label-advanced">Advanced</span>
+            </div>
         </div>
 
 
@@ -883,8 +1079,8 @@
         <div class="nav-tabs">
             <button class="nav-tab" onclick="showTab('setup')">🚀 Setup & Journey</button>
             <button class="nav-tab active" onclick="showTab('live')">🚊 Live Data</button>
-            <button class="nav-tab" onclick="showTab('config')">⚙️ Configuration</button>
-            <button class="nav-tab" onclick="showTab('system')">🧠 System & Support</button>
+            <button class="nav-tab advanced-only" onclick="showTab('config')">⚙️ Configuration</button>
+            <button class="nav-tab advanced-only" onclick="showTab('system')">🧠 System & Support</button>
         </div>
 
         <!-- Setup & Journey Tab -->
@@ -2036,6 +2232,48 @@
 
         // ==================== END ONBOARDING SYSTEM ====================
 
+        // ==================== PROGRESSIVE UI DISCLOSURE ====================
+
+        function toggleUIMode() {
+            const body = document.body;
+            const toggle = document.getElementById('mode-toggle');
+            const simpleLabel = document.getElementById('mode-label-simple');
+            const advancedLabel = document.getElementById('mode-label-advanced');
+
+            const isAdvanced = body.classList.toggle('advanced-mode');
+
+            // Update toggle appearance
+            if (isAdvanced) {
+                toggle.classList.add('advanced');
+                simpleLabel.classList.remove('active');
+                advancedLabel.classList.add('active');
+            } else {
+                toggle.classList.remove('advanced');
+                simpleLabel.classList.add('active');
+                advancedLabel.classList.remove('active');
+            }
+
+            // Save preference
+            localStorage.setItem('ptv-trmnl-ui-mode', isAdvanced ? 'advanced' : 'simple');
+        }
+
+        function loadUIMode() {
+            const savedMode = localStorage.getItem('ptv-trmnl-ui-mode') || 'simple';
+            if (savedMode === 'advanced') {
+                const body = document.body;
+                const toggle = document.getElementById('mode-toggle');
+                const simpleLabel = document.getElementById('mode-label-simple');
+                const advancedLabel = document.getElementById('mode-label-advanced');
+
+                body.classList.add('advanced-mode');
+                toggle.classList.add('advanced');
+                simpleLabel.classList.remove('active');
+                advancedLabel.classList.add('active');
+            }
+        }
+
+        // ==================== END PROGRESSIVE UI DISCLOSURE ====================
+
         document.addEventListener('DOMContentLoaded', () => {
             updateClock();
             setInterval(updateClock, 1000);
@@ -2044,6 +2282,9 @@
             loadVersionInfo();
             loadAttributions();
             refreshInterval = setInterval(loadAllData, 30000);
+
+            // Load UI mode preference (simple/advanced)
+            loadUIMode();
 
             // Check if this is first visit and show onboarding
             checkFirstVisit();
