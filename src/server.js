@@ -1885,7 +1885,8 @@ app.post('/admin/smart-journey/calculate', async (req, res) => {
       workStartTime,
       cafeDuration,
       transitAuthority,
-      useFallbackData
+      useFallbackData,
+      selectedStops  // NEW: Allow user to select specific stops
     } = req.body;
 
     if (!homeLocation || !workLocation || !workStartTime) {
@@ -1901,6 +1902,9 @@ app.post('/admin/smart-journey/calculate', async (req, res) => {
     console.log('Cafe:', cafeLocation);
     console.log('Work Start:', workStartTime);
     console.log('Transit Authority:', transitAuthority);
+    if (selectedStops) {
+      console.log('Selected Stops:', selectedStops);
+    }
     console.log('===================================\n');
 
     // Use NEW compliant journey planner (works with coordinates from Step 2)
@@ -1922,7 +1926,8 @@ app.post('/admin/smart-journey/calculate', async (req, res) => {
       } : null,
       workStartTime,
       cafeDuration: cafeDuration || 8,
-      transitAuthority: transitAuthority || 'VIC'
+      transitAuthority: transitAuthority || 'VIC',
+      selectedStops: selectedStops || null  // Pass user-selected stops
     });
 
     if (result.success) {

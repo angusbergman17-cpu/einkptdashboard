@@ -47,7 +47,10 @@ class JourneyPlanner {
    * @param {string} params.workStartTime "HH:MM"
    * @param {number} params.cafeDuration Minutes at cafe (default 8)
    * @param {string} params.transitAuthority State code (e.g., "VIC")
-   * @returns {Object} Journey plan
+   * @param {Object} params.selectedStops Optional user-selected stops
+   * @param {string} params.selectedStops.originStopId Stop ID for origin
+   * @param {string} params.selectedStops.destinationStopId Stop ID for destination
+   * @returns {Object} Journey plan with alternatives
    */
   async calculateJourney(params) {
     const {
@@ -56,7 +59,8 @@ class JourneyPlanner {
       cafeLocation,
       workStartTime,
       cafeDuration = this.COFFEE_TIME,
-      transitAuthority = 'VIC'
+      transitAuthority = 'VIC',
+      selectedStops = null
     } = params;
 
     console.log('\n========================================');
@@ -87,9 +91,28 @@ class JourneyPlanner {
       console.log(`  Found ${homeStops.length} stops near home`);
       console.log(`  Found ${workStops.length} stops near work`);
 
-      // Step 2: Find best route
-      console.log('\nSTEP 2: Finding best transit route...');
-      const route = this.findBestRoute(homeStops, workStops);
+      // Step 2: Find route (use selected stops or find best)
+      console.log('\nSTEP 2: Finding transit route...');
+      let route;
+      let alternativeRoutes = [];
+
+      if (selectedStops && selectedStops.originStopId && selectedStops.destinationStopId) {
+        // Use user-selected stops
+        console.log('  Using user-selected stops');
+        const originStop = homeStops.find(s => s.id === selectedStops.originStopId);
+        const destStop = workStops.find(s => s.id === selectedStops.destinationStopId);
+
+        if (!originStop || !destStop) {
+          throw new Error('Selected stops not found. Please try again.');
+        }
+
+        route = this.calculateRouteForStops(originStop, destStop);
+      } else {
+        // Find best route and alternatives
+        const routeResults = this.findBestRoute(homeStops, workStops, true);
+        route = routeResults.bestRoute;
+        alternativeRoutes = routeResults.alternatives;
+      }
 
       // Step 3: Handle cafe if provided
       let cafeStop = null;
@@ -163,6 +186,38 @@ class JourneyPlanner {
             stop: cafeStop,
             durationMinutes: cafeDuration
           } : { included: false }
+        },
+        // Return available stops and alternatives for user customization
+        options: {
+          homeStops: homeStops.slice(0, 5).map(s => ({
+            id: s.id,
+            name: s.name,
+            mode: s.mode,
+            icon: s.icon,
+            distance: s.distance,
+            walkingMinutes: s.walkingMinutes,
+            selected: s.id === route.originStop.id
+          })),
+          workStops: workStops.slice(0, 5).map(s => ({
+            id: s.id,
+            name: s.name,
+            mode: s.mode,
+            icon: s.icon,
+            distance: s.distance,
+            walkingMinutes: s.walkingMinutes,
+            selected: s.id === route.destinationStop.id
+          })),
+          alternativeRoutes: alternativeRoutes.slice(0, 3).map(alt => ({
+            originStopId: alt.originStop.id,
+            originStopName: alt.originStop.name,
+            destinationStopId: alt.destinationStop.id,
+            destinationStopName: alt.destinationStop.name,
+            mode: alt.mode,
+            icon: alt.icon,
+            totalMinutes: alt.totalMinutes,
+            transitMinutes: alt.transitMinutes,
+            walkingMinutes: alt.originStop.walkingMinutes + alt.destinationStop.walkingMinutes
+          }))
         }
       };
 
@@ -250,78 +305,107 @@ class JourneyPlanner {
    * Find best route between stops
    * @param {Array} homeStops Stops near home
    * @param {Array} workStops Stops near work
-   * @returns {Object} Best route
+   * @param {boolean} includeAlternatives Return alternative routes
+   * @returns {Object} Best route (and alternatives if requested)
    */
-  findBestRoute(homeStops, workStops) {
-    let bestRoute = null;
-    let bestScore = Infinity;
+  findBestRoute(homeStops, workStops, includeAlternatives = false) {
+    const allRoutes = [];
 
     for (const originStop of homeStops.slice(0, 5)) {
       for (const destStop of workStops.slice(0, 5)) {
-        // Calculate transit distance
-        const transitDistance = this.haversineDistance(
-          originStop.lat, originStop.lon,
-          destStop.lat, destStop.lon
-        );
-
-        // Estimate transit time based on mode average speed
-        const avgSpeed = this.ROUTE_TYPES[originStop.routeType]?.avgSpeed || 30;
-        const transitMinutes = Math.ceil((transitDistance / 1000) / avgSpeed * 60);
-
-        // Total score: walking time + transit time
-        let score = originStop.walkingMinutes + transitMinutes + destStop.walkingMinutes;
-
-        // Prefer same mode (no transfers)
-        if (originStop.routeType !== destStop.routeType) {
-          score += 15; // Transfer penalty
-        }
-
-        // Prefer trains (most reliable)
-        if (originStop.routeType === 0) {
-          score -= 5;
-        }
-
-        if (score < bestScore) {
-          bestScore = score;
-          bestRoute = {
-            originStop: {
-              id: originStop.id,
-              name: originStop.name,
-              lat: originStop.lat,
-              lon: originStop.lon,
-              mode: originStop.mode,
-              walkingMinutes: originStop.walkingMinutes,
-              distance: originStop.distance
-            },
-            destinationStop: {
-              id: destStop.id,
-              name: destStop.name,
-              lat: destStop.lat,
-              lon: destStop.lon,
-              mode: destStop.mode,
-              walkingMinutes: destStop.walkingMinutes,
-              distance: destStop.distance
-            },
-            mode: originStop.routeTypeName,
-            modeType: originStop.routeType,
-            icon: originStop.icon,
-            transitMinutes: transitMinutes,
-            totalMinutes: Math.round(originStop.walkingMinutes + transitMinutes + destStop.walkingMinutes),
-            score: score
-          };
-        }
+        const routeData = this.calculateRouteForStops(originStop, destStop);
+        allRoutes.push(routeData);
       }
     }
 
-    if (!bestRoute) {
+    if (allRoutes.length === 0) {
       throw new Error('Could not find a transit route between your locations');
     }
+
+    // Sort by score (best first)
+    allRoutes.sort((a, b) => a.score - b.score);
+
+    const bestRoute = allRoutes[0];
 
     console.log(`  Best route: ${bestRoute.icon} ${bestRoute.originStop.name} → ${bestRoute.destinationStop.name}`);
     console.log(`    Transit: ~${bestRoute.transitMinutes} min`);
     console.log(`    Walking: ${bestRoute.originStop.walkingMinutes + bestRoute.destinationStop.walkingMinutes} min total`);
 
+    if (includeAlternatives) {
+      // Return alternatives (next 4 best routes, different from the best)
+      const alternatives = allRoutes.slice(1, 5).filter(alt => {
+        // Exclude routes with same stops as best route
+        return alt.originStop.id !== bestRoute.originStop.id ||
+               alt.destinationStop.id !== bestRoute.destinationStop.id;
+      });
+
+      console.log(`  Found ${alternatives.length} alternative routes`);
+
+      return {
+        bestRoute,
+        alternatives
+      };
+    }
+
     return bestRoute;
+  }
+
+  /**
+   * Calculate route data for a specific pair of stops
+   * @param {Object} originStop Origin stop data
+   * @param {Object} destStop Destination stop data
+   * @returns {Object} Route data
+   */
+  calculateRouteForStops(originStop, destStop) {
+    // Calculate transit distance
+    const transitDistance = this.haversineDistance(
+      originStop.lat, originStop.lon,
+      destStop.lat, destStop.lon
+    );
+
+    // Estimate transit time based on mode average speed
+    const avgSpeed = this.ROUTE_TYPES[originStop.routeType]?.avgSpeed || 30;
+    const transitMinutes = Math.ceil((transitDistance / 1000) / avgSpeed * 60);
+
+    // Total score: walking time + transit time
+    let score = originStop.walkingMinutes + transitMinutes + destStop.walkingMinutes;
+
+    // Prefer same mode (no transfers)
+    if (originStop.routeType !== destStop.routeType) {
+      score += 15; // Transfer penalty
+    }
+
+    // Prefer trains (most reliable)
+    if (originStop.routeType === 0) {
+      score -= 5;
+    }
+
+    return {
+      originStop: {
+        id: originStop.id,
+        name: originStop.name,
+        lat: originStop.lat,
+        lon: originStop.lon,
+        mode: originStop.mode,
+        walkingMinutes: originStop.walkingMinutes,
+        distance: originStop.distance
+      },
+      destinationStop: {
+        id: destStop.id,
+        name: destStop.name,
+        lat: destStop.lat,
+        lon: destStop.lon,
+        mode: destStop.mode,
+        walkingMinutes: destStop.walkingMinutes,
+        distance: destStop.distance
+      },
+      mode: originStop.routeTypeName,
+      modeType: originStop.routeType,
+      icon: originStop.icon,
+      transitMinutes: transitMinutes,
+      totalMinutes: Math.round(originStop.walkingMinutes + transitMinutes + destStop.walkingMinutes),
+      score: score
+    };
   }
 
   /**
