@@ -1748,8 +1748,17 @@ app.use('/assets', express.static(path.join(process.cwd(), 'public/assets')));
 // Serve all public files
 app.use(express.static(path.join(process.cwd(), 'public')));
 
-// Admin panel home (main interface for all configuration)
+// Admin panel home (clean interface - rebuilt from ground up)
 app.get('/admin', (req, res) => {
+  res.sendFile(path.join(process.cwd(), 'public', 'admin-clean.html'));
+});
+
+// Previous interfaces (kept for reference)
+app.get('/admin/v2', (req, res) => {
+  res.sendFile(path.join(process.cwd(), 'public', 'admin-new.html'));
+});
+
+app.get('/admin/legacy', (req, res) => {
   res.sendFile(path.join(process.cwd(), 'public', 'admin.html'));
 });
 

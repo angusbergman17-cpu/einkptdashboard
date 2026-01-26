@@ -1,7 +1,7 @@
 # PTV-TRMNL Development Rules
 **MANDATORY COMPLIANCE DOCUMENT**
 **Last Updated**: 2026-01-26
-**Version**: 1.0.21
+**Version**: 1.0.22
 
 **📋 [Complete Project Vision →](../../PROJECT-STATEMENT.md)** - Read the comprehensive project statement for context on goals, architecture, and user requirements.
 
@@ -93,6 +93,224 @@
 ```
 
 **This rule ensures system-wide consistency and prevents breaking changes.**
+
+---
+
+## 🎨 USER EXPERIENCE & DESIGN PRINCIPLES (MANDATORY)
+
+### 🚨 CRITICAL: Simplicity First Philosophy
+
+**PRINCIPLE**: Make everything as simple as possible at first instance.
+
+**APPLIES TO**:
+- Admin interface design
+- Setup wizards
+- Configuration screens
+- User workflows
+- Documentation
+
+**REQUIREMENTS**:
+
+1. **One Step at a Time**
+   - Never show multiple configuration panels simultaneously
+   - Present only ONE task per screen
+   - Clear visual progression indicators (step 1 of 4, etc.)
+   - No overwhelming layouts or information overload
+
+2. **Validation Blocking**
+   - **CRITICAL**: Do NOT proceed to next step until server validates credentials
+   - API keys MUST be verified by server before allowing progression
+   - Show clear validation status (loading → success/error)
+   - Block UI interaction during validation
+   - Display specific error messages if validation fails
+
+3. **Visual Clarity**
+   - No overlapping panels or elements
+   - No cluttered interfaces
+   - Clean, focused layouts
+   - Ample white space
+   - Readable font sizes (minimum 14px for body text)
+   - Clear visual hierarchy
+
+4. **Progressive Disclosure**
+   - Show only necessary information for current step
+   - Hide advanced options until requested
+   - Provide "Simple" and "Advanced" modes where appropriate
+   - Default to simple mode always
+
+### 📱 Admin Interface Requirements
+
+**MANDATORY STRUCTURE**:
+
+```
+Step 1: API Configuration
+├─ Validate API keys with server
+├─ BLOCK progression until validation succeeds
+└─ Show clear success/error states
+
+Step 2: Location Configuration
+├─ Enter addresses only after API validation
+├─ Show real-time geocoding results
+└─ Validate addresses before proceeding
+
+Step 3: Journey Configuration
+├─ Set arrival time
+├─ Configure transit preferences
+├─ Minimize walking distances (primary goal)
+└─ Show route preview
+
+Step 4: Completion
+├─ Display setup QR code for device pairing
+├─ Show live segmented logs
+└─ Provide link to live preview
+```
+
+**PROHIBITED**:
+- ❌ Showing all configuration panels at once
+- ❌ Allowing progression without validation
+- ❌ Cluttered, overwhelming interfaces
+- ❌ Complex multi-column layouts
+- ❌ Overlapping or competing UI elements
+
+### 🚶 Route Optimization Principles
+
+**PRIMARY GOAL**: Minimize walking distance for the user
+
+**REQUIREMENTS**:
+1. Always choose routes that minimize total walking time
+2. Prioritize stops closer to home/work
+3. Consider coffee stops within minimal walking distance
+4. Calculate and display walking times for each leg
+5. Optimize for door-to-door journey time, not just transit time
+
+**EXAMPLE** (Route 58 Tram):
+```
+Home (1 Clara St) → 3 min walk → Norman tram stop
+Norman stop → 2 min tram → South Yarra Station
+South Yarra → 1 min walk → Norman Hotel (coffee)
+Norman Hotel → 1 min walk → South Yarra Station
+South Yarra Station → tram/train → City
+City stop → 5 min walk → Work (80 Collins St)
+```
+
+**VALIDATION**:
+- All walking segments must be minimized
+- Total walking time should be < 15 minutes
+- Avoid routes requiring transfers that add walking
+
+### 🖥️ Device Firmware Boot Requirements
+
+**CRITICAL**: Device must NEVER brick or freeze during boot
+
+**MANDATORY BOOT SEQUENCE**:
+
+1. **Initial Boot Screen**
+   ```
+   ┌─────────────────────────────────────────┐
+   │  PTV-TRMNL v3.0                         │
+   │                                         │
+   │  Ready                                  │
+   │  Starting 20s refresh...                │
+   └─────────────────────────────────────────┘
+   ```
+
+2. **Setup Mode (First Boot)**
+   ```
+   ┌──────────────────────────┬──────────────┐
+   │                          │  Live Logs   │
+   │   [QR CODE HERE]         │              │
+   │                          │  ✓ WiFi OK   │
+   │  Scan to pair device     │  ✓ Server OK │
+   │                          │  ⟳ Syncing   │
+   │                          │              │
+   │                          │  © 2026 AB   │
+   └──────────────────────────┴──────────────┘
+   ```
+   - QR code on LEFT side (centered)
+   - Live compiled logs on RIGHT side
+   - Small copyright stamp at bottom right
+   - Logs update in real-time
+   - Clear status indicators (✓, ✗, ⟳)
+
+3. **Operation Mode (Normal)**
+   ```
+   ┌─────────────────────────────────────────┐
+   │  TIME: 21:58        DATE: Mon 26 Jan    │
+   ├─────────────────────────────────────────┤
+   │                                         │
+   │  Route 58 → South Yarra                 │
+   │  Next: 2 min                            │
+   │                                         │
+   │  [Transit Information]                  │
+   │                                         │
+   ├─────────────────────────────────────────┤
+   │  ☕ Coffee: 15 min buffer                │
+   └─────────────────────────────────────────┘
+   ```
+   - Partial refresh every 20 seconds
+   - Only update changed zones
+   - Full refresh every 10 minutes
+
+**BOOT SEQUENCE RULES**:
+
+1. **NO DEEP SLEEP in setup()**
+   - Device must transition to loop() after setup
+   - Do NOT call deepSleep() at end of setup()
+   - Let loop() handle refresh cycles
+
+2. **Incremental Log Display**
+   - Each log entry appears sequentially
+   - Logs build up (don't clear previous entries)
+   - Use monospace font for alignment
+   - Color code status: Green (✓), Red (✗), Blue (⟳)
+
+3. **QR Code Requirements**
+   - Minimum size: 150x150 pixels
+   - Centered in left panel
+   - High contrast (black on white)
+   - Clear scannable margin
+   - Display server URL encoded
+
+4. **Never Freeze or Brick**
+   - All operations must have timeouts
+   - Failed operations must not halt boot
+   - Show error state but continue booting
+   - Provide fallback behavior for all failures
+
+### 📊 Live Logs Panel Requirements
+
+**LAYOUT** (Setup Mode):
+```
+┌────────────────────┐
+│ Live System Logs   │
+├────────────────────┤
+│ ✓ Device initialized│
+│ ✓ WiFi connected   │
+│ ⟳ Fetching data... │
+│ ✓ Server connected │
+│ ✓ Route loaded     │
+│ ✓ Ready            │
+│                    │
+│                    │
+│  © 2026 Angus B.   │
+└────────────────────┘
+```
+
+**REQUIREMENTS**:
+1. Right side of screen during setup
+2. Segmented entries (one per line)
+3. Status icons: ✓ (success), ✗ (error), ⟳ (loading)
+4. Monospace font for alignment
+5. Timestamp for each entry (optional)
+6. Auto-scroll as new entries appear
+7. Small copyright at bottom
+
+**LOG CATEGORIES**:
+- System: Device initialization
+- Network: WiFi connection status
+- Data: API fetches and parsing
+- Route: Transit route loading
+- Display: Screen refresh operations
 
 ---
 
@@ -199,6 +417,252 @@ grep "partialRefreshMs:" src/server.js
 grep "interval: 20000" src/data/preferences-manager.js
 # Should find in partialRefresh section
 ```
+
+---
+
+## 🔌 FIRMWARE BOOT REQUIREMENTS (CRITICAL)
+
+### 🚨 NEVER BRICK THE DEVICE
+
+**HISTORY**: Device was previously bricked due to incorrect boot sequence (see `docs/CHANGELOG-BOOT-FIX.md`)
+
+**ROOT CAUSE**: Calling `deepSleep()` at end of `setup()` caused immediate reboot loop
+
+**PERMANENT FIX**: Device firmware MUST follow these rules:
+
+### ✅ CORRECT Boot Sequence
+
+**File**: `firmware/src/main.cpp`
+
+```cpp
+void setup() {
+    // 1. Initialize hardware
+    initDisplay();
+    initWiFi();
+
+    // 2. Fetch initial data
+    fetchServerData();
+
+    // 3. Display dashboard
+    renderDashboard();
+
+    // 4. Mark setup complete
+    setupComplete = true;
+    preferences.putBool("setup_done", true);
+    preferences.end();
+
+    // 5. Show success message
+    Serial.println("Setup complete - entering loop()");
+
+    // ❌ DO NOT CALL deepSleep() HERE!
+    // ✅ Let loop() handle refresh cycles
+}
+
+void loop() {
+    // 6. Wait 20 seconds (partial refresh interval)
+    delay(20000);
+
+    // 7. Fetch updated data
+    fetchRegionUpdates();
+
+    // 8. Update only changed regions (partial refresh)
+    updateDashboardRegions(data);
+
+    // 9. Repeat forever (NO REBOOT, NO DEEP SLEEP)
+}
+```
+
+### 📋 Mandatory Boot Display Elements
+
+**FIRST BOOT (Setup Mode)**:
+
+```
+┌──────────────────────────────┬───────────────────┐
+│                              │  Live Logs        │
+│                              │  ═════════        │
+│         [QR CODE]            │  ✓ WiFi OK        │
+│                              │  ✓ Server OK      │
+│   Scan with TRMNL device     │  ⟳ Fetching       │
+│   to pair and configure      │  ✓ Data loaded    │
+│                              │  ✓ Ready          │
+│                              │                   │
+│                              │                   │
+│                              │  © 2026 Angus B.  │
+└──────────────────────────────┴───────────────────┘
+```
+
+**OPERATIONAL MODE**:
+
+```
+┌───────────────────────────────────────────────┐
+│  PTV-TRMNL v3.0              21:58  Mon 26/1  │
+├───────────────────────────────────────────────┤
+│                                               │
+│  Route 58 Tram → South Yarra Station          │
+│  Next: 2 min  |  Following: 7 min             │
+│                                               │
+│  [DEPARTURE TIMES]                            │
+│  [SERVICE ALERTS]                             │
+│                                               │
+├───────────────────────────────────────────────┤
+│  ☕ Coffee: Norman Hotel (15 min buffer)       │
+│  🏠→🚊 3 min walk | Total journey: 18 min      │
+└───────────────────────────────────────────────┘
+```
+
+### ❌ PROHIBITED Actions
+
+**NEVER DO THESE**:
+1. ❌ Call `deepSleep()` at end of `setup()` function
+2. ❌ Reboot device after displaying dashboard
+3. ❌ Call `ESP.restart()` except for critical errors
+4. ❌ Use infinite delays that freeze the device
+5. ❌ Block setup() execution indefinitely
+6. ❌ Skip partial refresh implementation
+7. ❌ Clear screen between partial refreshes
+
+### ✅ REQUIRED Implementations
+
+**MUST IMPLEMENT**:
+1. ✅ Transition from `setup()` to `loop()` after first boot
+2. ✅ Partial refresh in `loop()` every 20 seconds
+3. ✅ Update ONLY changed regions (not full screen)
+4. ✅ Full refresh every 10 minutes (anti-ghosting)
+5. ✅ QR code display during first boot
+6. ✅ Live log panel on right side during setup
+7. ✅ Copyright stamp in bottom right
+8. ✅ Timeout protection for all network operations
+9. ✅ Fallback behavior if server unreachable
+10. ✅ Status indicators (✓, ✗, ⟳) in logs
+
+### 🔧 QR Code Implementation
+
+**Requirements**:
+```cpp
+// Include QR code library
+#include <qrcode.h>
+
+// Generate QR code with server URL
+String serverURL = "http://your-server.com/api/screen";
+QRCode qrcode;
+uint8_t qrcodeData[qrcode_getBufferSize(3)];
+qrcode_initText(&qrcode, qrcodeData, 3, 0, serverURL.c_str());
+
+// Draw QR code on left side of screen
+int qrX = 50, qrY = 100;
+for (uint8_t y = 0; y < qrcode.size; y++) {
+    for (uint8_t x = 0; x < qrcode.size; x++) {
+        if (qrcode_getModule(&qrcode, x, y)) {
+            bbep.fillRect(qrX + x*4, qrY + y*4, 4, 4, BBEP_BLACK);
+        }
+    }
+}
+```
+
+**Display Position**:
+- Left panel during setup mode
+- Centered horizontally and vertically
+- Minimum size: 150x150 pixels
+- Scale factor: 4 pixels per QR module
+- High contrast (black on white background)
+
+### 📊 Live Logs Implementation
+
+**Requirements**:
+```cpp
+// Right panel for live logs
+int logX = 550;  // Right side of screen
+int logY = 50;   // Start position
+int lineHeight = 20;
+
+// Log function with status icon
+void logStatus(String message, char status) {
+    bbep.setFont(FONT_8x8);
+    bbep.setCursor(logX, logY);
+
+    // Status icon: ✓ ✗ ⟳
+    if (status == 'S') bbep.print("[OK] ");
+    else if (status == 'E') bbep.print("[!!] ");
+    else if (status == 'L') bbep.print("[..] ");
+
+    bbep.print(message);
+    bbep.refresh(REFRESH_PARTIAL, true);
+
+    logY += lineHeight;
+}
+
+// Usage during boot
+logStatus("WiFi connecting...", 'L');
+// ... connect WiFi ...
+logStatus("WiFi connected", 'S');
+
+logStatus("Fetching data...", 'L');
+// ... fetch data ...
+logStatus("Data received", 'S');
+```
+
+**Log Categories**:
+1. Hardware: Display, WiFi, sensors
+2. Network: Connection, HTTP requests
+3. Data: API calls, parsing, validation
+4. Display: Refresh operations, rendering
+5. System: Boot progress, errors
+
+### 🧪 Boot Testing Checklist
+
+**MUST VERIFY**:
+```bash
+# Flash firmware
+cd firmware
+pio run -t upload -e trmnl
+
+# Monitor serial output
+pio device monitor -b 115200
+
+# Check for:
+✓ Device boots without freezing
+✓ "Setup complete - entering loop()" appears in logs
+✓ Device DOES NOT reboot after dashboard display
+✓ loop() executes every 20 seconds
+✓ Partial refreshes update changed regions
+✓ No "deepSleep" calls in setup()
+✓ QR code displays during first boot
+✓ Live logs appear on right side
+✓ Copyright stamp visible
+```
+
+### 📝 Verification Commands
+
+```bash
+# Verify no deepSleep in setup()
+grep -n "deepSleep" firmware/src/main.cpp
+# Should ONLY appear in loop() or error handlers
+
+# Verify loop() implementation
+grep -A 20 "void loop()" firmware/src/main.cpp
+# Should show delay(20000) and update logic
+
+# Check QR code inclusion
+grep -n "qrcode" firmware/src/main.cpp firmware/platformio.ini
+# Should find QR code library and usage
+```
+
+### 🚨 Emergency Recovery
+
+**If device bricks again**:
+
+1. **Connect via serial** and monitor output
+2. **Identify where it freezes** (last log message)
+3. **Check for**:
+   - deepSleep() calls in setup()
+   - Infinite loops without delays
+   - Missing error handling
+   - Network timeouts
+4. **Apply fix** from `docs/CHANGELOG-BOOT-FIX.md`
+5. **Reflash firmware**
+6. **Verify boot sequence** completes
+
+**Reference**: See `docs/CHANGELOG-BOOT-FIX.md` for complete fix history
 
 ---
 

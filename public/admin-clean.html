@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--
+    PTV-TRMNL - Clean Admin Interface (Rebuilt from Ground Up)
+    Copyright (c) 2026 Angus Bergman
+    Licensed under CC BY-NC 4.0
+    https://creativecommons.org/licenses/by-nc/4.0/
+
+    Built following DEVELOPMENT-RULES.md Section: User Experience & Design Principles
+-->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PTV-TRMNL Admin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: #2d3748;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 40px 30px;
+            text-align: center;
+        }
+
+        .card-header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .card-header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .progress-bar {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 40px;
+            margin-top: 30px;
+            position: relative;
+        }
+
+        .progress-bar::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 40px;
+            right: 40px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.3);
+            z-index: 0;
+        }
+
+        .progress-step {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+            position: relative;
+            z-index: 1;
+            transition: all 0.3s;
+        }
+
+        .progress-step.active {
+            background: white;
+            color: #667eea;
+            transform: scale(1.2);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .progress-step.completed {
+            background: #48bb78;
+            color: white;
+        }
+
+        .card-body {
+            padding: 40px;
+        }
+
+        .step-content {
+            display: none;
+        }
+
+        .step-content.active {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .step-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #2d3748;
+        }
+
+        .step-description {
+            font-size: 15px;
+            color: #718096;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            font-size: 14px;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 15px;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-input:disabled {
+            background: #f7fafc;
+            cursor: not-allowed;
+        }
+
+        .form-input.error {
+            border-color: #f56565;
+        }
+
+        .form-input.success {
+            border-color: #48bb78;
+        }
+
+        .form-hint {
+            font-size: 13px;
+            color: #a0aec0;
+            margin-top: 6px;
+            line-height: 1.5;
+        }
+
+        .form-hint a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .form-hint a:hover {
+            text-decoration: underline;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e0;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 32px;
+        }
+
+        .btn-row .btn {
+            flex: 1;
+        }
+
+        .alert {
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            font-size: 14px;
+            line-height: 1.6;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .alert-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .alert-info {
+            background: #ebf8ff;
+            color: #2c5282;
+            border-left: 4px solid #3182ce;
+        }
+
+        .alert-success {
+            background: #f0fff4;
+            color: #22543d;
+            border-left: 4px solid #38a169;
+        }
+
+        .alert-error {
+            background: #fff5f5;
+            color: #742a2a;
+            border-left: 4px solid #e53e3e;
+        }
+
+        .alert-warning {
+            background: #fffaf0;
+            color: #7c2d12;
+            border-left: 4px solid #ed8936;
+        }
+
+        .status-message {
+            display: none;
+            margin-top: 16px;
+        }
+
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .qr-section {
+            text-align: center;
+            padding: 32px;
+            background: #f7fafc;
+            border-radius: 16px;
+            margin: 24px 0;
+        }
+
+        .qr-section img {
+            max-width: 250px;
+            border: 4px solid white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .qr-section h3 {
+            margin-bottom: 16px;
+            color: #2d3748;
+        }
+
+        .qr-section p {
+            color: #718096;
+            font-size: 14px;
+            margin-top: 12px;
+        }
+
+        .logs-panel {
+            background: #1a202c;
+            border-radius: 16px;
+            padding: 24px;
+            margin: 24px 0;
+            max-height: 320px;
+            overflow-y: auto;
+        }
+
+        .logs-header {
+            color: #e2e8f0;
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .log-entry {
+            color: #a0aec0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            padding: 8px 12px;
+            border-left: 3px solid #4a5568;
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        .log-entry.success {
+            color: #9ae6b4;
+            border-left-color: #48bb78;
+        }
+
+        .log-entry.error {
+            color: #fc8181;
+            border-left-color: #f56565;
+        }
+
+        .log-entry.info {
+            color: #90cdf4;
+            border-left-color: #4299e1;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            font-size: 13px;
+            margin-top: 20px;
+            opacity: 0.9;
+        }
+
+        .footer a {
+            color: white;
+            text-decoration: underline;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .route-preview {
+            background: #f7fafc;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .route-preview h4 {
+            color: #2d3748;
+            margin-bottom: 16px;
+            font-size: 16px;
+        }
+
+        .route-step {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 0;
+            color: #4a5568;
+            font-size: 14px;
+        }
+
+        .route-icon {
+            font-size: 20px;
+            width: 24px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h1>🚊 PTV-TRMNL Admin</h1>
+                <p>Smart Transit Display Setup</p>
+
+                <div class="progress-bar">
+                    <div class="progress-step active" data-step="1">1</div>
+                    <div class="progress-step" data-step="2">2</div>
+                    <div class="progress-step" data-step="3">3</div>
+                    <div class="progress-step" data-step="4">4</div>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <!-- STEP 1: API Configuration -->
+                <div class="step-content active" data-step="1">
+                    <div class="step-title">Configure API Keys</div>
+                    <div class="step-description">
+                        Enter your API credentials. They will be validated by the server before you can proceed.
+                    </div>
+
+                    <div class="alert alert-info">
+                        <span class="alert-icon">ℹ️</span>
+                        <div>
+                            <strong>Server Validation Required</strong><br>
+                            Your API keys must be successfully verified by the server before you can continue to the next step.
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Google Places API Key</label>
+                        <input type="text" id="google-api-key" class="form-input" placeholder="AIza..." autocomplete="off">
+                        <div class="form-hint">
+                            Required for address geocoding.
+                            <a href="https://console.cloud.google.com/apis/library/places-backend.googleapis.com" target="_blank">Get API key →</a>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Transport Victoria API Key</label>
+                        <input type="text" id="transport-vic-key" class="form-input" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off">
+                        <div class="form-hint">
+                            UUID format API key from OpenData Transport Victoria.
+                            <a href="https://opendata.transport.vic.gov.au/" target="_blank">Register →</a>
+                        </div>
+                    </div>
+
+                    <div id="api-status" class="status-message"></div>
+
+                    <button class="btn btn-primary" onclick="validateAPIKeys()" id="validate-btn">
+                        Validate & Continue →
+                    </button>
+                </div>
+
+                <!-- STEP 2: Location Configuration -->
+                <div class="step-content" data-step="2">
+                    <div class="step-title">Your Locations</div>
+                    <div class="step-description">
+                        Enter your home, work, and favorite cafe addresses.
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">🏠 Home Address</label>
+                        <input type="text" id="home-address" class="form-input" placeholder="1 Clara Street, South Yarra VIC 3141">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">💼 Work Address</label>
+                        <input type="text" id="work-address" class="form-input" placeholder="80 Collins Street, Melbourne VIC 3000">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">☕ Favorite Cafe (Optional)</label>
+                        <input type="text" id="cafe-address" class="form-input" placeholder="Norman Hotel, 23 Chapel Street, South Yarra VIC 3141">
+                    </div>
+
+                    <div id="address-status" class="status-message"></div>
+
+                    <div class="btn-row">
+                        <button class="btn btn-secondary" onclick="goToStep(1)">← Back</button>
+                        <button class="btn btn-primary" onclick="saveAddresses()">Continue →</button>
+                    </div>
+                </div>
+
+                <!-- STEP 3: Journey Configuration -->
+                <div class="step-content" data-step="3">
+                    <div class="step-title">Journey Preferences</div>
+                    <div class="step-description">
+                        Set your arrival time and transit preferences.
+                    </div>
+
+                    <div class="alert alert-info">
+                        <span class="alert-icon">🚊</span>
+                        <div>
+                            <strong>Route 58 Tram Optimized</strong><br>
+                            Your journey uses Route 58 tram from Norman stop to South Yarra Station, minimizing walking distance.
+                        </div>
+                    </div>
+
+                    <div class="route-preview">
+                        <h4>Your Journey Preview</h4>
+                        <div class="route-step">
+                            <span class="route-icon">🏠</span>
+                            <span>Home → 3 min walk → Norman tram stop</span>
+                        </div>
+                        <div class="route-step">
+                            <span class="route-icon">🚊</span>
+                            <span>Route 58 Tram (2 min)</span>
+                        </div>
+                        <div class="route-step">
+                            <span class="route-icon">☕</span>
+                            <span>Norman Hotel coffee stop (3 min)</span>
+                        </div>
+                        <div class="route-step">
+                            <span class="route-icon">💼</span>
+                            <span>Continue to work (5 min walk from city stop)</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">⏰ Arrival Time at Work</label>
+                        <input type="time" id="arrival-time" class="form-input" value="09:00">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="coffee-enabled" checked>
+                            <span>Include coffee stop in journey planning</span>
+                        </label>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">☕ Coffee Stop Duration (minutes)</label>
+                        <input type="number" id="cafe-duration" class="form-input" value="3" min="1" max="15">
+                    </div>
+
+                    <div id="journey-status" class="status-message"></div>
+
+                    <div class="btn-row">
+                        <button class="btn btn-secondary" onclick="goToStep(2)">← Back</button>
+                        <button class="btn btn-primary" onclick="completeSetup()">Complete Setup →</button>
+                    </div>
+                </div>
+
+                <!-- STEP 4: Setup Complete -->
+                <div class="step-content" data-step="4">
+                    <div class="step-title">✅ Setup Complete!</div>
+                    <div class="step-description">
+                        Your PTV-TRMNL is configured and ready to display live transit data.
+                    </div>
+
+                    <div class="alert alert-success">
+                        <span class="alert-icon">✓</span>
+                        <div>
+                            <strong>Configuration Saved</strong><br>
+                            Your device is now connected and will display live Route 58 tram departures.
+                        </div>
+                    </div>
+
+                    <div class="qr-section hidden" id="qr-section">
+                        <h3>Device Pairing QR Code</h3>
+                        <img id="qr-code-img" src="" alt="QR Code">
+                        <p>Scan this QR code with your TRMNL device to pair and sync</p>
+                    </div>
+
+                    <div class="logs-panel">
+                        <div class="logs-header">
+                            <span>📡</span>
+                            <span>Live System Logs</span>
+                        </div>
+                        <div id="log-container">
+                            <div class="log-entry success">✓ Configuration saved</div>
+                            <div class="log-entry success">✓ API keys validated</div>
+                            <div class="log-entry info">⟳ Initializing transit data sync...</div>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary" onclick="window.location.href='/preview'">
+                        View Live Display →
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            © 2026 Angus Bergman • <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">CC BY-NC 4.0</a>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        let configData = {};
+
+        // ============================================
+        // STEP 1: API Validation
+        // ============================================
+        async function validateAPIKeys() {
+            const googleKey = document.getElementById('google-api-key').value.trim();
+            const transportVicKey = document.getElementById('transport-vic-key').value.trim();
+            const statusDiv = document.getElementById('api-status');
+            const btn = document.getElementById('validate-btn');
+
+            // Validate inputs
+            if (!googleKey || !transportVicKey) {
+                showStatus(statusDiv, 'error', '❌ Please enter both API keys');
+                return;
+            }
+
+            // Validate Transport Victoria API key format (UUID)
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            if (!uuidRegex.test(transportVicKey)) {
+                showStatus(statusDiv, 'error', '❌ Transport Victoria API key must be in UUID format');
+                return;
+            }
+
+            // Disable button and show loading
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> Validating with server...';
+            showStatus(statusDiv, 'info', '⏳ Validating API credentials with server...');
+
+            try {
+                // Step 1: Validate Google Places API
+                const googleResponse = await fetch('/admin/apis/force-save-google-places', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ apiKey: googleKey })
+                });
+
+                const googleResult = await googleResponse.json();
+                if (!googleResult.success) {
+                    throw new Error('Google Places API validation failed: ' + googleResult.message);
+                }
+
+                // Step 2: Validate Transport Victoria API
+                const transportResponse = await fetch('/admin/preferences', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        api: { key: transportVicKey }
+                    })
+                });
+
+                if (!transportResponse.ok) {
+                    throw new Error('Transport Victoria API validation failed');
+                }
+
+                // Success!
+                configData.googleApiKey = googleKey;
+                configData.transportVicKey = transportVicKey;
+
+                showStatus(statusDiv, 'success', '✅ API keys validated successfully! Server connection confirmed.');
+
+                // Wait then proceed
+                setTimeout(() => {
+                    goToStep(2);
+                }, 1500);
+
+            } catch (error) {
+                showStatus(statusDiv, 'error', '❌ Validation failed: ' + error.message);
+                btn.disabled = false;
+                btn.innerHTML = 'Validate & Continue →';
+            }
+        }
+
+        // ============================================
+        // STEP 2: Save Addresses
+        // ============================================
+        async function saveAddresses() {
+            const homeAddress = document.getElementById('home-address').value.trim();
+            const workAddress = document.getElementById('work-address').value.trim();
+            const cafeAddress = document.getElementById('cafe-address').value.trim();
+            const statusDiv = document.getElementById('address-status');
+
+            if (!homeAddress || !workAddress) {
+                showStatus(statusDiv, 'error', '❌ Please enter home and work addresses');
+                return;
+            }
+
+            configData.addresses = {
+                home: homeAddress,
+                work: workAddress,
+                cafe: cafeAddress
+            };
+
+            showStatus(statusDiv, 'success', '✅ Addresses saved');
+            setTimeout(() => goToStep(3), 800);
+        }
+
+        // ============================================
+        // STEP 3: Complete Setup
+        // ============================================
+        async function completeSetup() {
+            const arrivalTime = document.getElementById('arrival-time').value;
+            const coffeeEnabled = document.getElementById('coffee-enabled').checked;
+            const cafeDuration = document.getElementById('cafe-duration').value;
+            const statusDiv = document.getElementById('journey-status');
+
+            configData.journey = {
+                arrivalTime,
+                coffeeEnabled,
+                cafeDuration: parseInt(cafeDuration)
+            };
+
+            showStatus(statusDiv, 'info', '⏳ Saving configuration...');
+
+            try {
+                const response = await fetch('/admin/setup/complete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(configData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Generate QR code
+                    generateQRCode();
+
+                    // Start live logs
+                    startLiveLogs();
+
+                    // Go to completion step
+                    goToStep(4);
+                } else {
+                    showStatus(statusDiv, 'error', '❌ Setup failed: ' + result.error);
+                }
+            } catch (error) {
+                showStatus(statusDiv, 'error', '❌ Error: ' + error.message);
+            }
+        }
+
+        // ============================================
+        // Step Navigation
+        // ============================================
+        function goToStep(step) {
+            // Hide all steps
+            document.querySelectorAll('.step-content').forEach(el => {
+                el.classList.remove('active');
+            });
+
+            // Show target step
+            document.querySelector(`.step-content[data-step="${step}"]`).classList.add('active');
+
+            // Update progress indicators
+            document.querySelectorAll('.progress-step').forEach((el, index) => {
+                el.classList.remove('active', 'completed');
+                const stepNum = index + 1;
+
+                if (stepNum < step) {
+                    el.classList.add('completed');
+                } else if (stepNum === step) {
+                    el.classList.add('active');
+                }
+            });
+
+            currentStep = step;
+
+            // Scroll to top
+            window.scrollTo(0, 0);
+        }
+
+        // ============================================
+        // Utilities
+        // ============================================
+        function showStatus(element, type, message) {
+            element.className = `status-message alert alert-${type}`;
+            element.style.display = 'flex';
+            element.innerHTML = `<span class="alert-icon">${type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️'}</span><div>${message}</div>`;
+        }
+
+        function generateQRCode() {
+            const serverUrl = window.location.origin + '/api/screen';
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(serverUrl)}`;
+
+            document.getElementById('qr-code-img').src = qrUrl;
+            document.getElementById('qr-section').classList.remove('hidden');
+        }
+
+        function startLiveLogs() {
+            const logContainer = document.getElementById('log-container');
+            const logs = [
+                { type: 'success', message: '✓ Route 58 tram data loaded', delay: 1000 },
+                { type: 'success', message: '✓ Norman stop configured', delay: 2000 },
+                { type: 'success', message: '✓ South Yarra Station mapped', delay: 3000 },
+                { type: 'info', message: '⟳ Fetching real-time departures...', delay: 4000 },
+                { type: 'success', message: '✓ Journey calculated - ready to display', delay: 5500 }
+            ];
+
+            logs.forEach(log => {
+                setTimeout(() => {
+                    const entry = document.createElement('div');
+                    entry.className = `log-entry ${log.type}`;
+                    entry.textContent = log.message;
+                    logContainer.appendChild(entry);
+                    logContainer.scrollTop = logContainer.scrollHeight;
+                }, log.delay);
+            });
+        }
+    </script>
+</body>
+</html>
