@@ -43,29 +43,34 @@ https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtim
 
 ## 🔑 Authentication
 
-### Two Authentication Methods
+### ✅ VERIFIED WORKING METHOD (2026-01-25)
 
-#### Method 1: HTTP Header (Recommended)
+#### HTTP Header Authentication (ONLY METHOD THAT WORKS)
 ```http
 GET /trip-updates HTTP/1.1
 Host: api.opendata.transport.vic.gov.au
-Ocp-Apim-Subscription-Key: YOUR_API_KEY_HERE
+KeyId: ce606b90-9ffb-43e8-bcd7-0c2bd0498367
+Accept: */*
 ```
 
-#### Method 2: Query Parameter
-```
-GET /trip-updates?subscription-key=YOUR_API_KEY_HERE
-```
+**Critical Details**:
+- Header name: `KeyId` (case-sensitive - must use exact capitalization)
+- Value: Your UUID format API Key (36 characters with dashes)
+- Accept header: `*/*` or `application/octet-stream`
 
 ### How to Get Your API Key
 
 1. Visit: https://opendata.transport.vic.gov.au/
 2. Create an account or sign in
 3. Navigate to your profile/API keys section
-4. Generate a new subscription key
-5. Copy the key (format: 32-character alphanumeric string)
+4. Copy your **API Key** (UUID format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
 
-**Important**: This is a **different API key** from the PTV Timetable API key. Do not confuse them.
+**IMPORTANT**:
+- The portal shows **TWO** credentials: "API Key" and "API Token"
+- **ONLY the API Key (UUID format) is used**
+- The API Token (JWT format) is NOT used for GTFS Realtime feeds
+- Do NOT use `Ocp-Apim-Subscription-Key` header (returns 401 error)
+- Do NOT use query parameters (returns 401 error)
 
 ---
 

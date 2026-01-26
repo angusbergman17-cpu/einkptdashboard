@@ -80,9 +80,9 @@ function headerTs(feed) {
 
 /**
  * Main snapshot builder
- * @param {string} subscriptionKey - OpenData Subscription Key (can be UUID or JWT format)
+ * @param {string} apiKey - OpenData API Key (UUID format)
  */
-export async function getSnapshot(subscriptionKey) {
+export async function getSnapshot(apiKey) {
   const now = nowMs();
   if (mem.snapshot && now < mem.cacheUntil) return mem.snapshot;
 
@@ -114,8 +114,8 @@ export async function getSnapshot(subscriptionKey) {
     }
   };
 
-  // If subscription key missing, return minimal snapshot (endpoints still work)
-  if (!subscriptionKey) {
+  // If API key missing, return minimal snapshot (endpoints still work)
+  if (!apiKey) {
     mem.snapshot = snapshotBase;
     mem.cacheUntil = now + (config.cacheSeconds ? config.cacheSeconds * 1000 : 60000);
     return mem.snapshot;
@@ -126,10 +126,10 @@ export async function getSnapshot(subscriptionKey) {
   const tBase = config.feeds.tram.base;
 
   const [metroTU, metroSA, tramTU, tramSA] = await Promise.all([
-    getMetroTripUpdates(subscriptionKey, mBase).catch(e => (console.warn("Metro TU error:", e.message), null)),
-    getMetroServiceAlerts(subscriptionKey, mBase).catch(e => (console.warn("Metro SA error:", e.message), null)),
-    getTramTripUpdates(subscriptionKey, tBase).catch(e => (console.warn("Tram TU error:", e.message), null)),
-    getTramServiceAlerts(subscriptionKey, tBase).catch(e => (console.warn("Tram SA error:", e.message), null))
+    getMetroTripUpdates(apiKey, mBase).catch(e => (console.warn("Metro TU error:", e.message), null)),
+    getMetroServiceAlerts(apiKey, mBase).catch(e => (console.warn("Metro SA error:", e.message), null)),
+    getTramTripUpdates(apiKey, tBase).catch(e => (console.warn("Tram TU error:", e.message), null)),
+    getTramServiceAlerts(apiKey, tBase).catch(e => (console.warn("Tram SA error:", e.message), null))
   ]);
 
   // Record feed timestamps

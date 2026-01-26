@@ -348,9 +348,9 @@ async function saveDevices() {
  */
 async function fetchData() {
   try {
-    // Use ODATA_TOKEN (JWT format) as the subscription key for OpenData Transport Victoria API
-    const subscriptionKey = process.env.ODATA_TOKEN || process.env.ODATA_KEY || process.env.PTV_KEY;
-    const snapshot = await getSnapshot(subscriptionKey);
+    // Use ODATA_API_KEY (UUID format) for OpenData Transport Victoria API
+    const apiKey = process.env.ODATA_API_KEY;
+    const snapshot = await getSnapshot(apiKey);
 
     // Transform snapshot into format for renderer
     const now = new Date();

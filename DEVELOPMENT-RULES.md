@@ -1,7 +1,7 @@
 # PTV-TRMNL Development Rules
 **MANDATORY COMPLIANCE DOCUMENT**
 **Last Updated**: 2026-01-25
-**Version**: 1.0.3
+**Version**: 1.0.4
 
 ---
 
@@ -68,23 +68,24 @@
 **Environment Variables**:
 ```bash
 ODATA_API_KEY=your_api_key_here
-ODATA_TOKEN=your_jwt_token_here
 ```
 
 **Credential Format** (as of 2026):
 - **API Key**: 36-character UUID format (e.g., ce606b90-9ffb-43e8-bcd7-0c2bd0498367)
-- **API Token**: JWT format (e.g., eyJ0eXAiOiJKV1Qi...)
 
-**Code References**:
+**Authentication Method** (VERIFIED WORKING):
 ```javascript
 // CORRECT:
 const apiKey = process.env.ODATA_API_KEY;
-const apiToken = process.env.ODATA_TOKEN;
 
-// Use in API calls per OpenData Transport Victoria specifications
+// Use in API calls with KeyId header
+headers: {
+  "KeyId": apiKey,
+  "Accept": "*/*"
+}
 ```
 
-**Note**: The OpenData Transport Victoria portal provides both an API Key and API Token. Both are required for authentication.
+**Note**: The OpenData Transport Victoria API uses the `KeyId` header (case-sensitive) with your UUID format API Key. This is the ONLY credential needed.
 
 ---
 
