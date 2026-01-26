@@ -1,7 +1,7 @@
 # PTV-TRMNL Development Rules
 **MANDATORY COMPLIANCE DOCUMENT**
 **Last Updated**: 2026-01-26
-**Version**: 1.0.10
+**Version**: 1.0.11
 
 ---
 
@@ -384,10 +384,128 @@ Known Issues & Workarounds:
 **IMPORTANT**: Always verify image dimensions with actual TRMNL device.
 Incorrect dimensions will cause boot errors or display issues.
 
-**TRMNL BYOS Resources**:
+**TRMNL BYOS Server Requirements**:
+
+**CRITICAL**: Server MUST comply with all BYOS server rules to ensure compatibility.
+
+**Server Endpoint Compliance**:
+```javascript
+// BYOS webhook endpoint requirements:
+app.get('/api/screen', (req, res) => {
+  // MUST return proper HTTP status codes
+  // MUST include appropriate headers
+  // MUST respect BYOS timeout requirements
+  // MUST return valid BYOS webhook format
+
+  res.status(200).json({
+    image: base64Image,  // Base64 encoded image, exact dimensions
+    orientation: 'landscape',  // or 'portrait'
+    refresh_rate: 900  // seconds (15 min default)
+  });
+});
+```
+
+**BYOS Server Rules Checklist**:
+```
+HTTP Compliance:
+□ Endpoint accessible via HTTPS (production)
+□ Returns 200 OK for successful requests
+□ Returns appropriate error codes (404, 500, etc.)
+□ Responds within BYOS timeout limit (typically 10-30s)
+□ Handles CORS correctly if needed
+□ Supports GET requests (BYOS standard)
+
+Response Format:
+□ Returns valid JSON (BYOS webhook format)
+□ Image is properly base64 encoded
+□ Image dimensions exactly match device
+□ Orientation field present and valid
+□ Refresh rate field present and reasonable
+□ No invalid characters in JSON
+□ Content-Type header set correctly
+
+Image Requirements:
+□ Exact dimensions (800x480 or 480x800 for 7.5")
+□ Correct format (BMP/PNG as per BYOS spec)
+□ Proper color depth (1-bit or 3-color)
+□ Base64 encoding valid and complete
+□ No corruption or truncation
+□ File size within BYOS limits
+
+Performance & Reliability:
+□ Response time < 10 seconds (BYOS timeout)
+□ Endpoint available 24/7 (for scheduled refreshes)
+□ Handles multiple requests gracefully
+□ No rate limiting conflicts with BYOS
+□ Caching implemented appropriately
+□ Fallback data available if live data fails
+□ Error responses include helpful messages
+
+Security:
+□ HTTPS enforced in production
+□ No sensitive data exposed in responses
+□ API keys not leaked in headers/body
+□ Rate limiting prevents abuse
+□ Input validation on query parameters
+□ CORS configured securely
+```
+
+**BYOS Timeout Handling**:
+```javascript
+// MUST respond within BYOS timeout (typically 10-30 seconds)
+app.get('/api/screen', async (req, res) => {
+  // Set server-side timeout to prevent hanging
+  const timeout = setTimeout(() => {
+    if (!res.headersSent) {
+      res.status(408).json({
+        error: 'Request timeout',
+        message: 'Image generation took too long'
+      });
+    }
+  }, 10000); // 10 second max for BYOS compatibility
+
+  try {
+    const image = await generateScreen();
+    clearTimeout(timeout);
+    res.status(200).json({
+      image: image.toString('base64'),
+      orientation: 'landscape',
+      refresh_rate: 900
+    });
+  } catch (error) {
+    clearTimeout(timeout);
+    if (!res.headersSent) {
+      res.status(500).json({
+        error: 'Image generation failed',
+        message: error.message
+      });
+    }
+  }
+});
+```
+
+**BYOS Error Response Format**:
+```javascript
+// When errors occur, return helpful BYOS-compatible response
+{
+  "error": "Error type",
+  "message": "User-friendly description",
+  "fallback_image": "base64_fallback_image",  // Optional: show error on device
+  "retry_after": 300  // Optional: suggest retry time in seconds
+}
+```
+
+**BYOS Refresh Rate Guidelines**:
+- Minimum: 60 seconds (e-ink limitation)
+- Recommended: 300-900 seconds (5-15 minutes)
+- Maximum: As needed, but consider device battery
+- Default: 900 seconds (15 minutes) for BYOS compatibility
+
+**BYOS Resources**:
 - Official TRMNL: https://usetrmnl.com/
 - BYOS Documentation: Check official TRMNL developer resources
 - Plugin API: TRMNL BYOS plugin specification
+- Server Requirements: Consult TRMNL BYOS server guidelines
 
 **Future Device Compatibility (To Be Expanded)**:
 This section will be updated as additional e-ink displays are tested:
@@ -823,7 +941,7 @@ Before committing, verify:
 
 ---
 
-**Version**: 1.0.10
+**Version**: 1.0.11
 **Last Updated**: 2026-01-26
 **Maintained By**: Angus Bergman
 **License**: CC BY-NC 4.0 (matches project license)
