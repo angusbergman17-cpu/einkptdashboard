@@ -1742,15 +1742,23 @@ async function saveApiConfig(config) {
   }
 }
 
-// Serve admin panel static files
-app.use('/admin', express.static(path.join(process.cwd(), 'public')));
+// Serve static assets (SVGs, CSS, JS)
+app.use('/assets', express.static(path.join(process.cwd(), 'public/assets')));
 
-// Admin panel home
+// Serve all public files
+app.use(express.static(path.join(process.cwd(), 'public')));
+
+// Admin panel home (main interface for all configuration)
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(process.cwd(), 'public', 'admin.html'));
 });
 
-// Journey display visualization
+// Journey demo visualization
+app.get('/journey-demo', (req, res) => {
+  res.sendFile(path.join(process.cwd(), 'public', 'journey-demo.html'));
+});
+
+// Journey display visualization (legacy - kept for compatibility)
 app.get('/journey', (req, res) => {
   res.sendFile(path.join(process.cwd(), 'public', 'journey-display.html'));
 });
@@ -5502,8 +5510,9 @@ app.get('/preview', requireConfiguration, (req, res) => {
 /**
  * Setup Wizard Page
  */
+// Redirect setup wizard to admin page (all setup done through admin interface)
 app.get('/setup', (req, res) => {
-  res.sendFile(path.join(process.cwd(), 'public', 'setup-wizard.html'));
+  res.redirect('/admin#tab-setup');
 });
 
 /**
