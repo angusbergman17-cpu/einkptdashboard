@@ -5492,7 +5492,7 @@ app.post('/admin/setup/complete', async (req, res) => {
     const cityData = location?.city ? getPrimaryCityForState(authority) : getPrimaryCityForState(authority);
 
     // Set API base URL based on transit authority
-    const authorityConfig = await import('./transit-authorities.js').then(m => m.getAuthorityByState(authority));
+    const authorityConfig = await import('./utils/transit-authorities.js').then(m => m.getAuthorityByState(authority));
 
     // Build preferences update object
     const updates = {

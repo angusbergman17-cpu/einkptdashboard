@@ -277,11 +277,46 @@
                 <div class="step" id="step-2-indicator">2</div>
                 <div class="step" id="step-3-indicator">3</div>
                 <div class="step" id="step-4-indicator">4</div>
+                <div class="step" id="step-5-indicator">5</div>
             </div>
 
-            <!-- Step 1: Addresses -->
+            <!-- Step 1: Google Places API Key -->
             <div class="step-content active" id="step-1">
-                <h2 style="margin-bottom: 20px;">📍 Step 1: Your Addresses</h2>
+                <h2 style="margin-bottom: 20px;">🔑 Step 1: Google Places API Key</h2>
+                <p style="color: #718096; margin-bottom: 25px;">
+                    For accurate address geocoding, we need your <strong>Google Places API (new)</strong> key. This will be saved and tested before proceeding.
+                </p>
+
+                <div class="info-box">
+                    <strong>Why do we need this?</strong><br>
+                    The Google Places API (new) provides highly accurate address geocoding for your home, work, and favorite locations. It's saved immediately and used for all address searches throughout the setup.
+                </div>
+
+                <div class="form-group" style="margin-top: 25px;">
+                    <label class="form-label">Google Places API (New) Key</label>
+                    <input type="text" id="google-places-api-key" class="form-input" placeholder="Enter your Google Places API (new) key...">
+                    <a href="https://console.cloud.google.com/apis/library/places-backend.googleapis.com" target="_blank" style="font-size: 13px; color: #667eea; display: block; margin-top: 8px;">
+                        Get a free Google Places API (new) key →
+                    </a>
+                    <small style="font-size: 12px; color: #a0aec0; display: block; margin-top: 5px;">
+                        Note: Use the modern "Places API (new)", not the legacy version
+                    </small>
+                </div>
+
+                <button class="btn" onclick="saveAndTestGoogleKey()" style="margin-top: 20px; background: #48bb78;" id="save-api-key-btn">
+                    💾 Save & Test API Key
+                </button>
+
+                <div id="api-key-status" style="margin-top: 15px; display: none;"></div>
+
+                <button class="btn" onclick="nextStep(1)" id="step-1-next-btn" style="margin-top: 20px; display: none;">
+                    Next: Your Addresses →
+                </button>
+            </div>
+
+            <!-- Step 2: Addresses -->
+            <div class="step-content" id="step-2">
+                <h2 style="margin-bottom: 20px;">📍 Step 2: Your Addresses</h2>
                 <p style="color: #718096; margin-bottom: 25px;">
                     Enter your home and work addresses. We'll automatically detect your state and suggest the right transit authority.
                 </p>
@@ -304,35 +339,19 @@
                     <div id="cafe-suggestions" class="autocomplete-dropdown"></div>
                 </div>
 
-                <!-- Google Places API (New) Key (Optional but Recommended) -->
-                <div class="form-group" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
-                    <label class="form-label">🔑 Google Places API (New) Key (Recommended)</label>
-                    <p style="font-size: 13px; color: #718096; margin-bottom: 10px;">
-                        For best address accuracy, add your <strong>Google Places API (new)</strong> key. It's saved immediately, no restart needed, and prioritizes Google results for all address searches.
-                    </p>
-                    <input type="text" id="google-places-api-key" class="form-input" placeholder="Enter your Google Places API (new) key...">
-                    <button class="btn" onclick="saveGooglePlacesKey()" style="margin-top: 10px; background: #48bb78;" id="save-api-key-btn">
-                        💾 Save & Activate API Key
-                    </button>
-                    <div id="api-key-status" style="margin-top: 10px; display: none;"></div>
-                    <a href="https://console.cloud.google.com/apis/library/places-backend.googleapis.com" target="_blank" style="font-size: 13px; color: #667eea; display: block; margin-top: 8px;">
-                        Get a free Google Places API (new) key →
-                    </a>
-                    <small style="font-size: 12px; color: #a0aec0; display: block; margin-top: 5px;">
-                        Note: Use the modern "Places API (new)", not the legacy version
-                    </small>
-                </div>
-
                 <div id="state-detection" style="display: none;" class="info-box">
                     <strong>✓ Detected:</strong> <span id="detected-state"></span>
                 </div>
 
-                <button class="btn" onclick="nextStep(1)">Next: Choose Transit Authority →</button>
+                <div class="btn-row">
+                    <button class="btn btn-secondary" onclick="previousStep(2)">← Back</button>
+                    <button class="btn" onclick="nextStep(2)">Next: Transit Authority →</button>
+                </div>
             </div>
 
-            <!-- Step 2: Transit Authority -->
-            <div class="step-content" id="step-2">
-                <h2 style="margin-bottom: 20px;">🚆 Step 2: Transit Authority</h2>
+            <!-- Step 3: Transit Authority -->
+            <div class="step-content" id="step-3">
+                <h2 style="margin-bottom: 20px;">🚆 Step 3: Transit Authority</h2>
                 <p style="color: #718096; margin-bottom: 25px;">
                     We've detected your location. Please confirm or choose your transit authority.
                 </p>
@@ -340,14 +359,14 @@
                 <div id="authority-list"></div>
 
                 <div class="btn-row">
-                    <button class="btn btn-secondary" onclick="previousStep(2)">← Back</button>
-                    <button class="btn" onclick="nextStep(2)">Next: API Credentials →</button>
+                    <button class="btn btn-secondary" onclick="previousStep(3)">← Back</button>
+                    <button class="btn" onclick="nextStep(3)">Next: PTV API Credentials →</button>
                 </div>
             </div>
 
-            <!-- Step 3: API Credentials -->
-            <div class="step-content" id="step-3">
-                <h2 style="margin-bottom: 20px;">🔑 Step 3: API Credentials</h2>
+            <!-- Step 4: PTV API Credentials -->
+            <div class="step-content" id="step-4">
+                <h2 style="margin-bottom: 20px;">🔑 Step 4: PTV API Credentials</h2>
                 <p style="color: #718096; margin-bottom: 25px;">
                     To access real-time transit data, you'll need API credentials from your transit authority.
                 </p>
@@ -357,14 +376,14 @@
                 <div id="api-credentials-form"></div>
 
                 <div class="btn-row">
-                    <button class="btn btn-secondary" onclick="previousStep(3)">← Back</button>
-                    <button class="btn" onclick="nextStep(3)">Next: Journey Settings →</button>
+                    <button class="btn btn-secondary" onclick="previousStep(4)">← Back</button>
+                    <button class="btn" onclick="nextStep(4)">Next: Journey Settings →</button>
                 </div>
             </div>
 
-            <!-- Step 4: Journey Settings -->
-            <div class="step-content" id="step-4">
-                <h2 style="margin-bottom: 20px;">⏰ Step 4: Journey Preferences</h2>
+            <!-- Step 5: Journey Settings -->
+            <div class="step-content" id="step-5">
+                <h2 style="margin-bottom: 20px;">⏰ Step 5: Journey Preferences</h2>
                 <p style="color: #718096; margin-bottom: 25px;">
                     When do you need to arrive at work?
                 </p>
@@ -384,7 +403,7 @@
                 <div id="setup-status"></div>
 
                 <div class="btn-row">
-                    <button class="btn btn-secondary" onclick="previousStep(4)">← Back</button>
+                    <button class="btn btn-secondary" onclick="previousStep(5)">← Back</button>
                     <button class="btn" onclick="completeSetup()">🚀 Complete Setup</button>
                 </div>
             </div>
@@ -519,11 +538,12 @@
             }
         };
 
-        // Save Google Places API Key
-        window.saveGooglePlacesKey = async function() {
+        // Save and Test Google Places API Key (Step 1)
+        window.saveAndTestGoogleKey = async function() {
             const apiKey = document.getElementById('google-places-api-key').value.trim();
             const btn = document.getElementById('save-api-key-btn');
             const status = document.getElementById('api-key-status');
+            const nextBtn = document.getElementById('step-1-next-btn');
 
             if (!apiKey) {
                 status.style.display = 'block';
@@ -534,10 +554,11 @@
 
             // Disable button during save
             btn.disabled = true;
-            btn.textContent = '💾 Saving...';
+            btn.textContent = '💾 Saving and Testing...';
             status.style.display = 'block';
             status.style.color = '#718096';
             status.innerHTML = '⏳ Saving and testing API key...';
+            nextBtn.style.display = 'none';
 
             try {
                 const response = await fetch('/admin/apis/force-save-google-places', {
@@ -555,8 +576,11 @@
                     } else {
                         status.innerHTML = '✅ API key saved (test inconclusive - will be used for address searches)';
                     }
-                    btn.textContent = '✓ Saved & Activated';
+                    btn.textContent = '✓ Saved & Tested';
                     btn.style.background = '#48bb78';
+
+                    // Show the Next button
+                    nextBtn.style.display = 'block';
 
                     // Re-enable autocomplete with new API key
                     console.log('Google Places API key activated, available services:', result.availableServices);
@@ -564,18 +588,22 @@
                     status.style.color = '#e53e3e';
                     status.innerHTML = `❌ Failed to save: ${result.message}`;
                     btn.disabled = false;
-                    btn.textContent = '💾 Save & Activate API Key';
+                    btn.textContent = '💾 Save & Test API Key';
                 }
             } catch (error) {
                 status.style.color = '#e53e3e';
                 status.innerHTML = `❌ Error: ${error.message}`;
                 btn.disabled = false;
-                btn.textContent = '💾 Save & Activate API Key';
+                btn.textContent = '💾 Save & Test API Key';
             }
         };
 
         window.nextStep = function(step) {
             if (step === 1) {
+                // Step 1: Google API Key - already validated by saveAndTestGoogleKey
+                // No additional validation needed, button is only shown after successful save
+            } else if (step === 2) {
+                // Step 2: Addresses
                 const home = document.getElementById('home-address').value;
                 const work = document.getElementById('work-address').value;
 
@@ -592,13 +620,15 @@
 
                 // Show authorities
                 showAuthorities();
-            } else if (step === 2) {
+            } else if (step === 3) {
+                // Step 3: Transit Authority
                 if (!selectedAuthority) {
                     alert('Please select a transit authority');
                     return;
                 }
                 showAPIForm();
-            } else if (step === 3) {
+            } else if (step === 4) {
+                // Step 4: PTV API Credentials
                 // Validate API credentials
                 const apiKey = document.getElementById('api-key')?.value;
                 if (!apiKey && selectedAuthority === 'VIC') {
