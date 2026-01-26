@@ -2106,7 +2106,21 @@ app.get('/admin/preferences/status', (req, res) => {
 });
 
 // Smart Setup - Auto-detect stops and configure journey
+// This endpoint uses FALLBACK data initially - no API keys required
+// Users configure API keys later to enable live real-time data
 app.post('/admin/smart-setup', async (req, res) => {
+  // Set a timeout for the entire request (30 seconds max)
+  const timeoutId = setTimeout(() => {
+    if (!res.headersSent) {
+      console.error('⏱️  Smart setup timeout after 30s');
+      res.status(408).json({
+        success: false,
+        message: 'Request timeout - setup took too long. This could be due to network issues. Please try again.',
+        suggestion: 'Check your internet connection and try again. If the problem persists, try using more specific addresses with suburb and state.'
+      });
+    }
+  }, 30000);
+
   try {
     const { addresses, arrivalTime, coffeeEnabled } = req.body;
 
@@ -2156,12 +2170,14 @@ app.post('/admin/smart-setup', async (req, res) => {
     console.log(`  🗺️  Detected state: ${state}`);
 
     // Step 3: Find nearby stops using smart journey planner
-    console.log('  🔍 Finding nearby transit stops for home...');
-    const nearbyStopsHome = await smartJourneyPlanner.findNearbyStops(homeLocation);
+    // During initial setup, we use fallback data (no API keys required yet)
+    // Users will configure API keys later to enable live data
+    console.log('  🔍 Finding nearby transit stops for home (using fallback data)...');
+    const nearbyStopsHome = await smartJourneyPlanner.findNearbyStops(homeLocation, { key: null, token: null });
     console.log(`  📊 Home stops result:`, nearbyStopsHome ? `${nearbyStopsHome.length} stops` : 'null/undefined');
 
-    console.log('  🔍 Finding nearby transit stops for work...');
-    const nearbyStopsWork = await smartJourneyPlanner.findNearbyStops(workLocation);
+    console.log('  🔍 Finding nearby transit stops for work (using fallback data)...');
+    const nearbyStopsWork = await smartJourneyPlanner.findNearbyStops(workLocation, { key: null, token: null });
     console.log(`  📊 Work stops result:`, nearbyStopsWork ? `${nearbyStopsWork.length} stops` : 'null/undefined');
 
     if (!nearbyStopsHome || nearbyStopsHome.length === 0) {
@@ -2244,6 +2260,9 @@ app.post('/admin/smart-setup', async (req, res) => {
     startAutomaticJourneyCalculation();
     console.log('  🔄 Auto-calculation started');
 
+    // Clear timeout
+    clearTimeout(timeoutId);
+
     // Return success with details
     res.json({
       success: true,
@@ -2252,7 +2271,9 @@ app.post('/admin/smart-setup', async (req, res) => {
       routeMode: bestHomeStop.route_type_name,
       homeStop: bestHomeStop.stop_name,
       workStop: bestWorkStop.stop_name,
-      message: 'Journey planning configured successfully',
+      message: 'Journey planning configured successfully. Configure API keys in the API Settings tab to enable live data.',
+      usingFallbackData: true, // Indicate we're using fallback data initially
+      nextStep: 'Configure API keys to enable real-time transit data',
       validation: {
         homeStop: {
           confidence: homeStopValidation.score,
@@ -2269,10 +2290,20 @@ app.post('/admin/smart-setup', async (req, res) => {
 
   } catch (error) {
     console.error('❌ Smart setup error:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    console.error('Error stack:', error.stack);
+
+    // Clear timeout
+    clearTimeout(timeoutId);
+
+    // Only send response if not already sent
+    if (!res.headersSent) {
+      res.status(500).json({
+        success: false,
+        message: error.message || 'An unexpected error occurred during setup',
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+        suggestion: 'Please check the addresses are correct and try again. If the issue persists, contact support.'
+      });
+    }
   }
 });
 

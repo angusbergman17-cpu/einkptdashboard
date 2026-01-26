@@ -12,6 +12,7 @@ import fetch from 'node-fetch';
 import crypto from 'crypto';
 import CafeBusyDetector from '../services/cafe-busy-detector.js';
 import fallbackTimetables from '../data/fallback-timetables.js';
+import { fetchWithTimeout, fetchWithRetry, CircuitBreaker, RateLimiter } from '../utils/fetch-with-timeout.js';
 
 class SmartJourneyPlanner {
   constructor() {
@@ -47,6 +48,14 @@ class SmartJourneyPlanner {
     this.routeCache = null;
     this.routeCacheExpiry = null;
     this.cacheDuration = 5 * 60 * 1000; // 5 minutes
+
+    // Circuit breakers for external APIs
+    this.ptvCircuitBreaker = new CircuitBreaker(5, 60000); // Open after 5 failures, retry after 60s
+    this.geocodeCircuitBreaker = new CircuitBreaker(3, 30000); // Open after 3 failures, retry after 30s
+
+    // Rate limiters
+    this.ptvRateLimiter = new RateLimiter(10, 1000); // Max 10 requests per second
+    this.geocodeRateLimiter = new RateLimiter(1, 1000); // Max 1 geocode request per second (Nominatim policy)
   }
 
   /**
@@ -271,8 +280,14 @@ class SmartJourneyPlanner {
 
       const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchAddress)}&limit=1&addressdetails=1`;
 
-      const response = await fetch(url, {
-        headers: { 'User-Agent': 'PTV-TRMNL/2.0 (Smart Journey Planner)' }
+      // Rate limit geocoding requests
+      await this.geocodeRateLimiter.acquire();
+
+      // Use circuit breaker and timeout
+      const response = await this.geocodeCircuitBreaker.call(async () => {
+        return await fetchWithRetry(url, {
+          headers: { 'User-Agent': 'PTV-TRMNL/2.0 (Smart Journey Planner)' }
+        }, 2, 8000); // 2 retries, 8s timeout per request
       });
 
       if (!response.ok) {
@@ -333,7 +348,14 @@ class SmartJourneyPlanner {
         });
 
         const url = this.buildPTVUrl(endpoint, params, api.key, api.token);
-        const response = await fetch(url);
+
+        // Rate limit PTV API calls
+        await this.ptvRateLimiter.acquire();
+
+        // Use circuit breaker and timeout for PTV API
+        const response = await this.ptvCircuitBreaker.call(async () => {
+          return await fetchWithRetry(url, {}, 2, 10000); // 2 retries, 10s timeout per request
+        });
 
         if (!response.ok) continue;
 

@@ -1,7 +1,7 @@
 # PTV-TRMNL Development Rules
 **MANDATORY COMPLIANCE DOCUMENT**
 **Last Updated**: 2026-01-26
-**Version**: 1.0.6
+**Version**: 1.0.7
 
 ---
 
@@ -225,6 +225,83 @@ if (detectedModes.includes('tram')) {
   showTramModule();
 }
 // Don't show bus, ferry, lightrail if not available in this location
+```
+
+### N. Robust Error Handling & Resilience
+- **Timeout protection** on all external API calls (max 10-30s)
+- **Retry logic** with exponential backoff for transient failures
+- **Circuit breaker pattern** to prevent cascading failures
+- **Rate limiting** to respect API quotas and prevent throttling
+- **Graceful degradation** when services are unavailable
+- **Detailed error logging** for debugging without exposing to users
+
+**Implementation**:
+```javascript
+// Use fetch utilities with timeout and retry
+import { fetchWithTimeout, fetchWithRetry, CircuitBreaker } from '../utils/fetch-with-timeout.js';
+
+// Circuit breaker for external APIs
+const apiCircuitBreaker = new CircuitBreaker(5, 60000); // Open after 5 failures, retry after 60s
+
+// Protected API call
+const response = await apiCircuitBreaker.call(async () => {
+  return await fetchWithRetry(url, options, 2, 10000); // 2 retries, 10s timeout
+});
+```
+
+### O. Non-Blocking Server Operations
+- **Async processing** for CPU-intensive calculations
+- **Request timeouts** to prevent hanging (30s max for user-facing endpoints)
+- **Background task queues** for long-running operations
+- **Progress indicators** for multi-step processes
+- **Never block the event loop** - use async patterns consistently
+
+**Implementation**:
+```javascript
+// Set request timeout
+const timeoutId = setTimeout(() => {
+  if (!res.headersSent) {
+    res.status(408).json({ error: 'Request timeout' });
+  }
+}, 30000);
+
+try {
+  // Long-running operation
+  const result = await performCalculation();
+  clearTimeout(timeoutId);
+  res.json(result);
+} catch (error) {
+  clearTimeout(timeoutId);
+  if (!res.headersSent) {
+    res.status(500).json({ error: error.message });
+  }
+}
+```
+
+### P. User-First API Key Flow
+- **Fallback data** allows setup WITHOUT API keys initially
+- **API keys requested AFTER** basic journey configuration
+- **Sequential credential gathering** (addresses → API keys → live data)
+- **Clear separation** between setup data (addresses) and live data (API keys)
+- **Progressive enhancement** - system works with fallback, improves with APIs
+
+**Setup Flow**:
+1. **Step 1**: User enters addresses → Uses geocoding (no API keys needed)
+2. **Step 2**: System detects stops using fallback GTFS data
+3. **Step 3**: Journey configured with static data
+4. **Step 4**: User prompted for API keys to enable live transit updates
+5. **Step 5**: System switches from fallback to real-time data
+
+**Implementation**:
+```javascript
+// smart-setup endpoint - Uses fallback data initially
+const nearbyStopsHome = await smartJourneyPlanner.findNearbyStops(
+  homeLocation,
+  { key: null, token: null } // No API keys needed for setup
+);
+
+// After setup, prompt for API keys in separate step
+// Live data endpoints check for API keys and fallback gracefully
 ```
 
 ---
@@ -579,7 +656,7 @@ Before committing, verify:
 
 ---
 
-**Version**: 1.0.0
-**Last Updated**: 2026-01-25
+**Version**: 1.0.7
+**Last Updated**: 2026-01-26
 **Maintained By**: Angus Bergman
 **License**: CC BY-NC 4.0 (matches project license)
