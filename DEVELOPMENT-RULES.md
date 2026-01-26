@@ -1,7 +1,7 @@
 # PTV-TRMNL Development Rules
 **MANDATORY COMPLIANCE DOCUMENT**
 **Last Updated**: 2026-01-26
-**Version**: 1.0.5
+**Version**: 1.0.6
 
 ---
 
@@ -249,7 +249,7 @@ if (detectedModes.includes('tram')) {
 
 ```javascript
 // ✅ CORRECT:
-const transportVictoriaKey = process.env.TRANSPORT_VICTORIA_GTFS_KEY;
+const apiKey = process.env.ODATA_API_KEY;
 const gtfsRealtimeUrl = 'https://api.opendata.transport.vic.gov.au/...';
 const victorianTransitData = await fetchGtfsRealtime();
 
@@ -287,7 +287,7 @@ async function fetchVictorianTransitData(subscriptionKey) {
 # ✅ CORRECT .env structure:
 
 # Victorian Transit Data (Optional)
-TRANSPORT_VICTORIA_GTFS_KEY=your_subscription_key_here
+ODATA_API_KEY=your_api_key_uuid_here
 
 # Enhanced Geocoding (Optional)
 GOOGLE_PLACES_API_KEY=
@@ -299,7 +299,7 @@ MAPBOX_ACCESS_TOKEN=
 PTV_USER_ID=
 PTV_API_KEY=
 PTV_DEV_ID=
-ODATA_KEY=
+TRANSPORT_VICTORIA_GTFS_KEY=
 ```
 
 ---
@@ -356,10 +356,12 @@ ODATA_KEY=
 
 **Victorian Transit**:
 ```javascript
-// ✅ CORRECT: Header-based authentication
+// ✅ CORRECT: KeyId header authentication (case-sensitive)
+const apiKey = process.env.ODATA_API_KEY;
 const response = await fetch(url, {
   headers: {
-    'Ocp-Apim-Subscription-Key': process.env.TRANSPORT_VICTORIA_GTFS_KEY
+    'KeyId': apiKey,
+    'Accept': '*/*'
   }
 });
 ```

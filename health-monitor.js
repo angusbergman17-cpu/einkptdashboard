@@ -248,7 +248,7 @@ class HealthMonitor {
       const response = await fetch(source.url, {
         method: 'HEAD', // Just check if API responds
         headers: {
-          'Ocp-Apim-Subscription-Key': source.apiKey
+          'KeyId': source.apiKey
         },
         timeout: 5000
       });
