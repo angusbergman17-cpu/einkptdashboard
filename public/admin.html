@@ -5023,34 +5023,37 @@
                 console.log('📥 Response data:', result);
 
                 if (result.success) {
-                    progressText.textContent = 'Route configured! Starting journey calculation...';
+                    progressText.textContent = '✅ Journey configured! Loading Live Data...';
 
+                    // Show success toast
+                    showToast('success', 'Journey Configured!',
+                        `${result.state || 'State detected'} | ${result.stopsFound || 0} stops found | ${result.routeMode || 'Route mode'} selected`
+                    );
+
+                    // Immediately switch to Live Data tab (don't wait)
                     setTimeout(() => {
                         progressDiv.style.display = 'none';
-                        showMessage('setup-message',
-                            `✅ Journey planning configured!<br>` +
-                            `📍 State: ${result.state || 'Detected'}<br>` +
-                            `🚉 Stops found: ${result.stopsFound || 'Auto-detected'}<br>` +
-                            `🚆 Route mode: ${result.routeMode || 'Optimized'}<br>` +
-                            `Home stop: ${result.homeStop || 'N/A'}<br>` +
-                            `Work stop: ${result.workStop || 'N/A'}<br>` +
-                            `Redirecting to Live Data...`,
-                            'success'
-                        );
+                        showTab('live');
+                        // Trigger data load immediately
+                        loadAllData();
 
+                        // Show detailed success message in Live Data tab
                         setTimeout(() => {
-                            showTab('live');
-                            loadAllData();
-                        }, 3000);
-                    }, 1000);
+                            showToast('success', 'Live Data Active',
+                                `Home: ${result.homeStop || 'N/A'} | Work: ${result.workStop || 'N/A'}`
+                            );
+                        }, 500);
+                    }, 500); // Reduced from 1000ms to 500ms for faster response
                 } else {
                     console.error('❌ Setup failed:', result.message);
                     progressDiv.style.display = 'none';
+                    showToast('error', 'Setup Failed', result.message || 'Setup failed. Please try again.');
                     showMessage('setup-message', '❌ ' + (result.message || 'Setup failed. Please try again.'), 'error');
                 }
             } catch (error) {
                 console.error('❌ Setup error:', error);
                 progressDiv.style.display = 'none';
+                showToast('error', 'Setup Error', error.message || 'An unexpected error occurred. Check console for details.');
                 showMessage('setup-message', '❌ Error: ' + error.message + '<br>Check browser console for details.', 'error');
             }
         }
