@@ -108,6 +108,26 @@ class PreferencesManager {
         version: '1.0',
         created: new Date().toISOString(),
         lastModified: new Date().toISOString()
+      },
+
+      // Journey Profiles (NEW - Task #6)
+      profiles: {
+        activeProfileId: 'default',
+        profiles: {
+          'default': {
+            id: 'default',
+            name: 'Default Journey',
+            enabled: true,
+            schedule: {
+              type: 'all',  // 'all', 'weekdays', 'weekends', 'custom'
+              days: [0, 1, 2, 3, 4, 5, 6],  // Sunday=0, Monday=1, ..., Saturday=6
+              effectiveFrom: null,  // Date string
+              effectiveUntil: null  // Date string (for vacation mode)
+            },
+            // Profile-specific journey config (inherits from journey section if not specified)
+            journeyConfig: null  // null = use default journey config
+          }
+        }
       }
     };
   }
@@ -406,6 +426,210 @@ class PreferencesManager {
       validation: this.validate()
     };
   }
+
+  // ==================== JOURNEY PROFILES (Task #6) ====================
+
+  /**
+   * Get all profiles
+   */
+  getProfiles() {
+    if (!this.preferences) {
+      return this.defaultPreferences.profiles;
+    }
+    return this.preferences.profiles || this.defaultPreferences.profiles;
+  }
+
+  /**
+   * Get active profile
+   */
+  getActiveProfile() {
+    const profiles = this.getProfiles();
+    const activeId = profiles.activeProfileId || 'default';
+    return profiles.profiles[activeId] || profiles.profiles['default'];
+  }
+
+  /**
+   * Get profile by ID
+   */
+  getProfile(profileId) {
+    const profiles = this.getProfiles();
+    return profiles.profiles[profileId] || null;
+  }
+
+  /**
+   * Create new profile
+   */
+  async createProfile(profileData) {
+    if (!this.preferences) {
+      await this.load();
+    }
+
+    const profileId = profileData.id || `profile_${Date.now()}`;
+    const profiles = this.getProfiles();
+
+    // Create profile with defaults
+    const newProfile = {
+      id: profileId,
+      name: profileData.name || 'New Journey',
+      enabled: profileData.enabled !== false,
+      schedule: {
+        type: profileData.schedule?.type || 'all',
+        days: profileData.schedule?.days || [0, 1, 2, 3, 4, 5, 6],
+        effectiveFrom: profileData.schedule?.effectiveFrom || null,
+        effectiveUntil: profileData.schedule?.effectiveUntil || null
+      },
+      journeyConfig: profileData.journeyConfig || null
+    };
+
+    profiles.profiles[profileId] = newProfile;
+    this.preferences.profiles = profiles;
+
+    await this.save();
+    return newProfile;
+  }
+
+  /**
+   * Update profile
+   */
+  async updateProfile(profileId, updates) {
+    if (!this.preferences) {
+      await this.load();
+    }
+
+    const profiles = this.getProfiles();
+    const profile = profiles.profiles[profileId];
+
+    if (!profile) {
+      throw new Error(`Profile ${profileId} not found`);
+    }
+
+    // Deep merge updates
+    profiles.profiles[profileId] = this.deepMerge(profile, updates);
+    this.preferences.profiles = profiles;
+
+    await this.save();
+    return profiles.profiles[profileId];
+  }
+
+  /**
+   * Delete profile
+   */
+  async deleteProfile(profileId) {
+    if (!this.preferences) {
+      await this.load();
+    }
+
+    if (profileId === 'default') {
+      throw new Error('Cannot delete default profile');
+    }
+
+    const profiles = this.getProfiles();
+
+    if (!profiles.profiles[profileId]) {
+      throw new Error(`Profile ${profileId} not found`);
+    }
+
+    // If deleting active profile, switch to default
+    if (profiles.activeProfileId === profileId) {
+      profiles.activeProfileId = 'default';
+    }
+
+    delete profiles.profiles[profileId];
+    this.preferences.profiles = profiles;
+
+    await this.save();
+    return { success: true };
+  }
+
+  /**
+   * Set active profile
+   */
+  async setActiveProfile(profileId) {
+    if (!this.preferences) {
+      await this.load();
+    }
+
+    const profiles = this.getProfiles();
+
+    if (!profiles.profiles[profileId]) {
+      throw new Error(`Profile ${profileId} not found`);
+    }
+
+    profiles.activeProfileId = profileId;
+    this.preferences.profiles = profiles;
+
+    await this.save();
+    return profiles.profiles[profileId];
+  }
+
+  /**
+   * Get profile that should be active based on current date/time
+   */
+  getScheduledProfile() {
+    const profiles = this.getProfiles();
+    const now = new Date();
+    const dayOfWeek = now.getDay();  // 0=Sunday, 6=Saturday
+    const today = now.toISOString().split('T')[0];
+
+    // Check each enabled profile for schedule match
+    for (const [id, profile] of Object.entries(profiles.profiles)) {
+      if (!profile.enabled) continue;
+
+      const schedule = profile.schedule;
+
+      // Check effective date range
+      if (schedule.effectiveFrom && today < schedule.effectiveFrom) continue;
+      if (schedule.effectiveUntil && today > schedule.effectiveUntil) continue;
+
+      // Check day of week
+      if (schedule.type === 'custom' && schedule.days) {
+        if (schedule.days.includes(dayOfWeek)) {
+          return profile;
+        }
+      } else if (schedule.type === 'weekdays' && [1, 2, 3, 4, 5].includes(dayOfWeek)) {
+        return profile;
+      } else if (schedule.type === 'weekends' && [0, 6].includes(dayOfWeek)) {
+        return profile;
+      } else if (schedule.type === 'all') {
+        return profile;
+      }
+    }
+
+    // Fallback to active profile or default
+    return this.getActiveProfile();
+  }
+
+  /**
+   * Get effective journey config for active/scheduled profile
+   */
+  getEffectiveJourneyConfig() {
+    const profile = this.getScheduledProfile();
+
+    // If profile has custom journey config, use it
+    if (profile.journeyConfig) {
+      return profile.journeyConfig;
+    }
+
+    // Otherwise, use default journey config
+    return this.getJourneyPreferences();
+  }
+
+  /**
+   * List all profiles with their status
+   */
+  listProfiles() {
+    const profiles = this.getProfiles();
+    const activeId = profiles.activeProfileId;
+    const scheduledProfile = this.getScheduledProfile();
+
+    return Object.values(profiles.profiles).map(profile => ({
+      ...profile,
+      isActive: profile.id === activeId,
+      isScheduled: profile.id === scheduledProfile.id
+    }));
+  }
+
+  // ==================== END JOURNEY PROFILES ====================
 }
 
 export default PreferencesManager;

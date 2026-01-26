@@ -1829,6 +1829,155 @@ app.put('/admin/preferences/journey', async (req, res) => {
   }
 });
 
+// ==================== JOURNEY PROFILES API (Task #6) ====================
+
+// Get all profiles
+app.get('/api/profiles', async (req, res) => {
+  try {
+    const profiles = preferences.listProfiles();
+    res.json({
+      success: true,
+      profiles,
+      activeProfileId: preferences.getProfiles().activeProfileId
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get active profile
+app.get('/api/profiles/active', async (req, res) => {
+  try {
+    const profile = preferences.getActiveProfile();
+    res.json({
+      success: true,
+      profile
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get scheduled profile (based on current date/time)
+app.get('/api/profiles/scheduled', async (req, res) => {
+  try {
+    const profile = preferences.getScheduledProfile();
+    res.json({
+      success: true,
+      profile
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get profile by ID
+app.get('/api/profiles/:id', async (req, res) => {
+  try {
+    const profile = preferences.getProfile(req.params.id);
+    if (!profile) {
+      return res.status(404).json({
+        success: false,
+        error: 'Profile not found'
+      });
+    }
+    res.json({
+      success: true,
+      profile
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create new profile
+app.post('/api/profiles', async (req, res) => {
+  try {
+    const profileData = req.body;
+    const profile = await preferences.createProfile(profileData);
+
+    // Show success toast
+    res.json({
+      success: true,
+      profile,
+      message: `Profile "${profile.name}" created successfully`
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Update profile
+app.put('/api/profiles/:id', async (req, res) => {
+  try {
+    const updates = req.body;
+    const profile = await preferences.updateProfile(req.params.id, updates);
+
+    res.json({
+      success: true,
+      profile,
+      message: `Profile "${profile.name}" updated successfully`
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Delete profile
+app.delete('/api/profiles/:id', async (req, res) => {
+  try {
+    if (req.params.id === 'default') {
+      return res.status(400).json({
+        success: false,
+        error: 'Cannot delete default profile'
+      });
+    }
+
+    await preferences.deleteProfile(req.params.id);
+
+    res.json({
+      success: true,
+      message: 'Profile deleted successfully'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Set active profile
+app.put('/api/profiles/:id/activate', async (req, res) => {
+  try {
+    const profile = await preferences.setActiveProfile(req.params.id);
+
+    // Trigger journey recalculation
+    if (journeyCalculationInterval) {
+      await calculateAndCacheJourney();
+    }
+
+    res.json({
+      success: true,
+      profile,
+      message: `Switched to profile "${profile.name}"`
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// ==================== END JOURNEY PROFILES API ====================
+
 // GTFS Realtime API configuration (Victorian users)
 app.post('/admin/apis/gtfs-realtime', async (req, res) => {
   try {
