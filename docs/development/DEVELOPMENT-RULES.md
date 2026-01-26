@@ -3990,7 +3990,592 @@ function appendLog(log) {
 
 ---
 
-**Version**: 1.0.22
-**Last Updated**: 2026-01-26
+## 1️⃣7️⃣ BUILD, DEBUG & TROUBLESHOOTING GUIDELINES
+
+### Purpose
+
+Comprehensive guidelines extracted from actual build logs, troubleshooting sessions, and incident reports. These patterns emerged from real production debugging.
+
+---
+
+### Firmware Build Requirements
+
+#### Memory Limits (ESP32-C3)
+
+**RAM Usage Limits**:
+- **Maximum Safe**: 25% (81,920 bytes / 327,680 bytes)
+- **Target Range**: 10-20% (32,768 - 65,536 bytes)
+- **Current v5.9**: 13.3% (43,604 bytes) ✅
+- **WARNING Threshold**: > 20% (review memory allocation)
+- **CRITICAL Threshold**: > 25% (risk of crashes)
+
+**Flash Usage Limits**:
+- **Maximum Safe**: 70% (1,376,256 bytes / 1,966,080 bytes)
+- **Target Range**: 45-65%
+- **Current v5.9**: 55.0% (1,080,520 bytes) ✅
+- **WARNING Threshold**: > 65% (reduce library usage)
+- **CRITICAL Threshold**: > 75% (OTA updates will fail)
+
+**Build Command**:
+```bash
+cd firmware
+pio run -e trmnl
+```
+
+**Expected Output**:
+```
+RAM:   [=         ]  13.3% (used 43604 bytes from 327680 bytes)
+Flash: [=====     ]  55.0% (used 1080520 bytes from 1966080 bytes)
+========================= [SUCCESS] Took 6.30 seconds =========================
+```
+
+**Critical Checks**:
+- Build time < 30 seconds (healthy build system)
+- No warnings about deprecated functions
+- Library versions match platformio.ini
+- Compilation succeeds without errors
+
+---
+
+### Server Build & Startup
+
+#### Successful Server Startup Pattern
+
+**Expected Logs**:
+```
+Server starting on port 3000...
+✅ Preferences loaded
+🔑 Google Places API configured
+🔑 Transport Victoria API configured: ce606b90-9ffb-43e8-bcd7-0c2bd0498367
+📡 Testing Transport Victoria API...
+✅ Transport Victoria API working
+🌐 Server listening on http://localhost:3000
+📊 Admin Panel: http://localhost:3000/admin
+📺 Display Endpoint: http://localhost:3000/api/display
+```
+
+**Health Indicators**:
+- Server starts in < 5 seconds
+- All API keys validated on startup
+- No "Cannot find module" errors
+- Port 3000 (or $PORT) successfully bound
+
+#### Common Server Issues
+
+**Issue**: `Cannot find module 'express'`
+**Solution**: `npm install` (reinstall dependencies)
+
+**Issue**: `Port 3000 already in use`
+**Solution**:
+```bash
+lsof -ti:3000 | xargs kill
+# OR
+PORT=3001 npm start
+```
+
+**Issue**: `TypeError: Cannot read properties of undefined`
+**Solution**: Check `global` object initialization in server.js (lines 105-120)
+
+---
+
+### Debugging Patterns
+
+#### Server-Side Debugging
+
+**Console Logging Pattern** (already implemented):
+```javascript
+console.log('\n=== Journey Calculation Request ===');
+console.log('Home:', homeLocation);
+console.log('Work:', workLocation);
+console.log('===================================\n');
+```
+
+**Why This Works**:
+- Clear visual separators
+- Structured data display
+- Easy to grep in logs
+- Timestamps automatic (server.log)
+
+**Log Analysis Commands**:
+```bash
+# Recent errors
+tail -500 server.log | grep -i error
+
+# Journey calculations
+grep "Journey Calculation" server.log
+
+# API calls
+grep "📡 Fetching" server.log
+
+# Transport Victoria API
+grep "Transport Victoria" server.log | tail -20
+```
+
+#### Firmware Debugging
+
+**Serial Monitor** (REQUIRED for firmware debugging):
+```bash
+pio device monitor
+```
+
+**Expected Boot Sequence**:
+```
+==============================
+PTV-TRMNL v5.9 - Default Dashboard
+800x480 Landscape - Shows status until configured
+==============================
+
+✓ Loaded credentials: 94A990
+Free heap: 221KB
+→ Init display...
+✓ Display init
+  Panel: EP75 800x480
+  Rotation: 0 (Landscape)
+✓ Boot screen displayed
+✓ Setup complete
+
+→ Connecting WiFi...
+✓ WiFi OK - IP: 192.168.1.100
+→ Fetching...
+✓ HTTP 200 OK
+```
+
+**Troubleshooting Firmware**:
+
+**Problem**: Device not responding
+**Debug Steps**:
+1. Check serial output for last message
+2. Look for "Guru Meditation Error"
+3. Check reset reason: `rst:0x10 (RTCWDT_RTC_RESET)`
+4. Review last function called before crash
+
+**Problem**: Watchdog reset loop
+**Symptoms**: Device boots, freezes, reboots repeatedly
+**Root Cause**: Blocking operation in setup() or loop()
+**Solution**: Move long operations to state machine (see v3.3 fix)
+
+**Problem**: Memory corruption (Guru Meditation 0xbaad5678)
+**Root Cause**: String operations exhausting heap
+**Example from v5.9**: WiFi.SSID(), SERVER_URL concatenation
+**Solution**: Simplify string operations, use static strings
+
+---
+
+### Memory Management Lessons
+
+#### From v5.9 Default Dashboard Fix
+
+**Problem**: Guru Meditation Error after displaying default dashboard
+
+**Root Cause**:
+```cpp
+// PROBLEMATIC CODE (v5.9 initial)
+bbep.print(WiFi.SSID().c_str());          // Dynamic string allocation
+bbep.print(SERVER_URL);                    // Long URL string
+bbep.print(getEstimatedTime().c_str());    // Time string generation
+```
+
+**Solution**:
+```cpp
+// FIXED CODE (v5.9 final)
+bbep.print("WiFi: Connected");             // Static string
+bbep.print("Setup mode - Screen static");  // Static string
+bbep.print(friendlyID.c_str());            // Short pre-allocated string
+```
+
+**Lesson**: Minimize dynamic string operations on ESP32-C3
+- Use static strings when possible
+- Pre-allocate short strings in setup()
+- Avoid String concatenation in tight loops
+- Use `const char*` instead of `String` when possible
+
+#### ESP32 Memory Architecture
+
+**RAM Breakdown**:
+- **Stack**: ~8KB (per task)
+- **Heap**: ~300KB (dynamic allocation)
+- **Static**: ~20KB (global variables)
+
+**Best Practices**:
+1. Allocate large buffers in heap (malloc/new)
+2. Use `String.reserve()` for known sizes
+3. Free memory after use (`delete`, `free()`)
+4. Use isolated scopes with aggressive cleanup:
+```cpp
+{
+  WiFiClientSecure *client = new WiFiClientSecure();
+  // ... use client ...
+  delete client;
+  client = nullptr;
+}
+yield(); // Allow cleanup
+```
+
+---
+
+### API Integration Debugging
+
+#### Transport Victoria OpenData API
+
+**Successful API Call Pattern** (from server.log):
+```
+📡 Fetching: https://api.opendata.transport.vic.gov.au/opendata/.../metro/trip-updates
+🔑 API Key: ce606b90...
+📋 Headers: {
+  "Accept": "*/*",
+  "KeyId": "ce606b90-9ffb-43e8-bcd7-0c2bd0498367"
+}
+✅ Response: 200 OK
+📦 Received 15298 bytes of protobuf data
+```
+
+**Common Issues**:
+
+**Issue**: HTTP 401 Unauthorized
+**Cause**: Invalid API key
+**Solution**: Check ODATA_API_KEY in .env or preferences
+
+**Issue**: HTTP 403 Forbidden
+**Cause**: API key correct but no subscription
+**Solution**: Verify subscription active at opendata.transport.vic.gov.au
+
+**Issue**: HTTP 404 Not Found
+**Cause**: Incorrect endpoint URL
+**Solution**: Verify endpoint matches API documentation
+
+**Issue**: Protobuf decode error
+**Cause**: Response is not valid GTFS-Realtime protobuf
+**Solution**: Check endpoint returns protobuf (not JSON)
+
+#### Google Places API (New)
+
+**Successful Request** (Development Rules Section 2):
+```javascript
+const response = await fetch('https://places.googleapis.com/v1/places:searchText', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-Goog-Api-Key': apiKey,
+    'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location'
+  },
+  body: JSON.stringify({ textQuery: address })
+});
+```
+
+**Common Issues**:
+
+**Issue**: "The string did not match the expected pattern"
+**Cause**: Using validation endpoint that doesn't exist
+**Solution**: Use `/admin/apis/force-save-google-places` endpoint
+
+**Issue**: API key quota exceeded
+**Cause**: > $200/month free tier usage
+**Solution**: Check usage at console.cloud.google.com
+
+---
+
+### Journey Planner Debugging
+
+#### Fallback Stop Detection
+
+**Successful Pattern** (from server.log):
+```
+🗺️  Detected state: VIC from coordinates (-37.8422907, 144.998078)
+✅ Using VIC fallback stops from fallback-timetables.js
+📍 Found 25 real stops across all modes in VIC
+📏 Closest 5 stops to (-37.8422907, 144.998078):
+   🚊 Chapel St/Tivoli Rd - 100m (2 min walk) ✓
+   🚊 Toorak Rd/Chapel St - 255m (4 min walk) ✓
+   🚆 South Yarra - 509m (7 min walk) ✓
+✅ Found 6 nearby stops within 2000m (fallback mode)
+```
+
+**Troubleshooting No Stops Found**:
+
+**Issue**: "No transit stops found near your addresses"
+**Debug Steps**:
+1. Check coordinates are correct (Step 2 geocoding)
+2. Verify state detection (should be VIC for Melbourne)
+3. Check MAX_WALKING_DISTANCE (default 1500m, can increase to 5000m)
+4. Verify fallback-timetables.js has stops for detected state
+5. Check Haversine distance calculations
+
+**Issue**: Wrong stops returned
+**Cause**: Incorrect coordinates or state detection
+**Solution**: Verify geocoding service returns accurate coordinates
+
+---
+
+### Build & Deployment Checklist
+
+#### Before Commit
+
+**Firmware**:
+- [ ] `pio run -e trmnl` succeeds
+- [ ] RAM < 20%, Flash < 65%
+- [ ] No watchdog resets in serial monitor
+- [ ] Tested on actual hardware
+- [ ] No blocking operations in setup()
+
+**Server**:
+- [ ] `npm test` passes (if tests exist)
+- [ ] `node src/server.js` starts without errors
+- [ ] All API keys validated
+- [ ] No console errors in admin UI
+- [ ] Journey planner finds stops
+
+**Documentation**:
+- [ ] No forbidden terms (grep -r "PTV API v3")
+- [ ] Correct terminology (Transport for Victoria)
+- [ ] License headers present
+
+#### Git Commit Message Format
+
+**Required Format**:
+```
+type: Subject line (max 72 chars)
+
+- Detailed changes (bullet points)
+- Root cause if fixing bug
+- Testing performed
+
+COMPLIANCE NOTES:
+- Development Rules sections followed
+- API usage correct
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+```
+
+**Types**: feat, fix, docs, style, refactor, test, chore
+
+---
+
+### Production Deployment (Render)
+
+#### Deployment Timeline
+
+**Normal Deployment**:
+- Git push detected: ~30 seconds
+- Build start: ~1 minute
+- npm install: ~2-3 minutes
+- Server start: ~30 seconds
+- **Total**: ~4-5 minutes
+
+**First Deployment** (cold start):
+- Container provision: +2 minutes
+- **Total**: ~6-7 minutes
+
+#### Monitoring Deployment
+
+**Render Dashboard**:
+- Events tab: Shows deployment progress
+- Logs tab: Real-time build/startup logs
+- Environment tab: Verify environment variables set
+
+**Expected Build Output**:
+```
+==> Building...
+npm install
+added 283 packages in 45s
+npm start
+Server starting on port 3000...
+✅ All systems initialized
+==> Deploy succeeded
+```
+
+**Health Check** (after deployment):
+```bash
+curl https://ptv-trmnl-new.onrender.com/health
+# Expected: {"status":"ok","version":"1.2.3"}
+```
+
+---
+
+### Incident Response
+
+#### When Device Bricks
+
+**Immediate Actions**:
+1. Do NOT reflash immediately (can worsen issue)
+2. Connect serial monitor
+3. Capture boot logs
+4. Check reset reason
+5. Review last firmware change
+
+**Recovery Steps**:
+1. Flash last known good firmware
+2. Verify device boots and stabilizes
+3. Review brick cause (watchdog, memory, panic)
+4. Fix root cause before reflashing new code
+
+**Brick History** (learn from past):
+- **Brick #1**: deepSleep() in setup() → Device never entered loop()
+- **Brick #2**: 30s delay in setup() → Watchdog timeout
+- **Brick #3**: Blocking HTTP in setup() → Network timeout
+- **Brick #4**: showSetupScreen() 70s → Watchdog + memory exhaustion
+
+**Prevention**: State machine architecture (see v3.3 firmware)
+
+#### When Server Crashes
+
+**Debug Steps**:
+1. Check Render logs (last 1000 lines)
+2. Look for uncaught exceptions
+3. Check memory usage (`process.memoryUsage()`)
+4. Verify all endpoints return proper status codes
+5. Check database/preferences corruption
+
+**Common Crashes**:
+- **Cannot read properties of undefined**: Check global object init
+- **Maximum call stack size exceeded**: Recursive function issue
+- **ECONNREFUSED**: External API unreachable
+- **Out of memory**: Memory leak (check event listeners)
+
+---
+
+### Performance Optimization
+
+#### Server Response Times
+
+**Target Response Times**:
+- `/api/display`: < 500ms (device polling every 20s)
+- `/admin` page load: < 2s
+- Journey calculation: < 3s (fallback mode)
+- Geocoding: < 1s (Google Places API)
+
+**Optimization Techniques**:
+- Cache geocoding results (addresses don't change)
+- Cache fallback stops (static data)
+- Debounce API calls (e.g., stop selection)
+- Use partial page updates (avoid full reload)
+
+#### Firmware Optimization
+
+**Target Metrics**:
+- Boot time: < 5s
+- Display update: < 3s (partial refresh)
+- Full refresh: < 10s (every 10 minutes)
+- HTTP request: < 5s (with retries)
+
+**Optimization Techniques**:
+- Minimize string operations
+- Use static strings for fixed content
+- Reuse allocated buffers
+- Feed watchdog before long operations
+- Use partial refresh (not full refresh every time)
+
+---
+
+### Testing Protocol
+
+#### Manual Testing Checklist
+
+**Firmware** (on actual hardware):
+- [ ] Device boots successfully
+- [ ] Serial output shows no errors
+- [ ] Display updates correctly
+- [ ] Partial refresh works
+- [ ] Full refresh works (10 min interval)
+- [ ] HTTP requests succeed
+- [ ] WiFi reconnects after drop
+- [ ] Survives 24-hour run
+
+**Admin UI** (in browser):
+- [ ] All 8 setup steps complete
+- [ ] Form validation works
+- [ ] Error messages clear
+- [ ] Journey customization works
+- [ ] Stop selection updates journey
+- [ ] Alternative routes selectable
+- [ ] Mobile responsive
+
+**End-to-End**:
+- [ ] New device setup (Step 1-8)
+- [ ] Device receives data after setup
+- [ ] Journey updates when recalculated
+- [ ] Weather updates every 10 min
+- [ ] Transit data refreshes every 20s
+
+---
+
+### Common Error Patterns & Solutions
+
+#### Firmware Errors
+
+**Error**: `Guru Meditation Error: Core 0 panic'ed (LoadProhibited)`
+**Meaning**: Attempted to read from invalid memory address
+**Common Cause**: Null pointer dereference
+**Solution**: Check pointer validity before dereferencing
+
+**Error**: `rst:0x10 (RTCWDT_RTC_RESET)`
+**Meaning**: Watchdog timer reset (RTC watchdog)
+**Common Cause**: setup() took > 5 seconds
+**Solution**: Move long operations to loop() state machine
+
+**Error**: `rst:0x7 (TG0WDT_SYS_RESET)`
+**Meaning**: Task watchdog reset
+**Common Cause**: loop() blocked > 5 seconds without yield()
+**Solution**: Add yield() calls in long loops
+
+#### Server Errors
+
+**Error**: `UnhandledPromiseRejectionWarning`
+**Meaning**: Async function threw error without try/catch
+**Solution**: Wrap all async endpoints in try/catch
+
+**Error**: `ENOENT: no such file or directory`
+**Meaning**: File path doesn't exist
+**Solution**: Check path is absolute, not relative
+
+**Error**: `Cannot set headers after they are sent`
+**Meaning**: res.json() called twice
+**Solution**: Ensure only one response per request
+
+---
+
+### Documentation Standards
+
+#### Troubleshooting Document Format
+
+**Required Sections**:
+1. **Problem**: Clear description of issue
+2. **Root Cause**: Technical explanation
+3. **Solution**: Step-by-step fix
+4. **Verification**: How to confirm fixed
+5. **Prevention**: How to avoid in future
+
+**Example**:
+```markdown
+### Problem: Device Boots But Screen Stays White
+
+**Symptoms**:
+- Serial shows "✓ Boot screen displayed"
+- Screen remains white/unchanged
+
+**Root Cause**:
+Display.refresh() not called after drawing content
+
+**Solution**:
+```cpp
+bbep.fillScreen(BBEP_WHITE);
+bbep.setFont(FONT_12x16);
+bbep.setCursor(280, 220);
+bbep.print("PTV-TRMNL");
+bbep.refresh(REFRESH_FULL, true);  // ← ADD THIS
+```
+
+**Verification**:
+- Reflash firmware
+- Screen shows "PTV-TRMNL" text
+- Serial confirms "✓ Boot screen displayed"
+
+**Prevention**:
+Always call refresh() after drawing operations
+```
+
+---
+
+**Version**: 1.0.24
+**Last Updated**: 2026-01-27
 **Maintained By**: Angus Bergman
 **License**: CC BY-NC 4.0 (matches project license)
