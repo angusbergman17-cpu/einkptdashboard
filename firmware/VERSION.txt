@@ -1,51 +1,51 @@
-v5.7
+v5.8
 
-Dashboard Design - Matches dashboard-preview.png Layout
+FIXED Orientation - Complete Rebuild with Verified Dimensions
 
 Date: 2026-01-27
-Status: PRODUCTION
+Status: PRODUCTION - FLASHED AND RUNNING
 
 Key Features:
-- Dashboard layout matching preview design
-- RUSH IT indicator (top left)
-- Large time display (center-left)
-- Side-by-side transit sections (TRAM 58, TRAINS)
-- Weather display (bottom right)
-- Trains approaching indicator (top right)
-- Partial refresh for time and weather updates
+- Complete rebuild from verified 800x480 landscape dimensions
+- Rotation explicitly set to 0 (landscape mode)
+- Simple, horizontal text layout (no rotation issues)
+- All text renders correctly left-to-right
+- Proper coordinate system: X(0-800) Y(0-480)
+- Partial refresh for updated zones
 - Full refresh every 10 minutes
+- Memory stable (~221KB heap)
 
-Design Elements:
-- RUSH IT rounded rectangle when needed
-- Black header bars for transit sections
-- Large 12x16 font for times
-- Small 8x8 font for details
-- Asterisk (*) for scheduled times
-- Clean, minimal layout
+Critical Fixes:
+- setRotation(0) enforced (landscape = 800 wide x 480 tall)
+- Explicit dimension verification in logs
+- Simple dashboard layout for testing
+- Clear coordinate placement for all elements
 
-Layout Structure:
-┌─RUSH IT───────────────────────────┬─Trains─┐
-│                                    │approaching
-│   23:20                            │         │
-│                                    │         │
-│  ┌─TRAM 58────┐  ┌─TRAINS────┐   │         │
-│  │ 2 min*      │  │ 6 min*     │   │         │
-│  │ West Coburg │  │ Parliament │   │         │
-│  │ 12 min*     │  │ 14 min*    │   │         │
-│  │ West Coburg │  │ Parliament │   │         │
-│  └─────────────┘  └────────────┘   │         │
-│                                    │         │
-│                          Clouds    │         │
-│                          15°       │         │
-└────────────────────────────────────┴─────────┘
+Display Layout (v5.8):
+┌─MELBOURNE CENTRAL─────────────────00:00─┐
+│                                          │
+│  Current Time:                           │
+│  00:00                                   │
+│                                          │
+│  TRAMS                  TRAINS           │
+│   Route 58 - 2 min       City Loop - 3min│
+│   Route 96 - 5 min       Parliament - 7min│
+│                                          │
+│                                          │
+│  Weather: Clear         PTV-TRMNL v5.8  │
+└──────────────────────────────────────────┘
 
 Testing:
-✅ Compilation success
-✅ Memory: 13.3% RAM, 55.0% Flash
-✅ Partial refresh working
-✅ Stable with v5.5 memory management base
+✅ Compilation success (v5.8)
+✅ Memory: 13.3% RAM (43,604 bytes), 54.9% Flash (1,079,084 bytes)
+✅ Flash successful to device 94:a9:90:8d:28:d0
+✅ Device booting and connecting to WiFi
+✅ Heap stable at ~222KB
+✅ Fetching from server every 20 seconds
+⚠️  Getting HTTP 500 (device needs system configuration)
 
-Note: Design is a GUIDE for smart journey planner
-- Actual display will show YOUR commute routes
-- Transit modes adapt to your setup
-- Times update based on real PTV data
+Next Steps:
+1. Complete setup wizard at https://ptv-trmnl-new.onrender.com/admin
+2. Add Google Places API key: AIzaSyA9WYpRfLtBiEQfvTD-ac4ImHBohHsv3yQ
+3. Configure home/work/cafe locations
+4. System will generate display data once configured
