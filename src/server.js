@@ -1134,6 +1134,17 @@ app.get('/api/screen', requireConfiguration, async (req, res) => {
 // Region updates endpoint - dynamic data (downloaded every 30 seconds)
 app.get('/api/region-updates', async (req, res) => {
   try {
+    // Check if system is configured
+    const prefs = preferences.get();
+    if (!prefs.system_configured) {
+      console.log('⚠️ Device requesting updates but system not configured');
+      return res.status(503).json({
+        error: 'System not configured',
+        message: 'Please complete setup at /setup',
+        setupRequired: true
+      });
+    }
+
     // Track device ping from user-agent or generate ID
     const deviceId = req.headers['user-agent']?.includes('ESP32') ? 'TRMNL-Device' : 'Unknown';
     trackDevicePing(deviceId, req.ip);
@@ -5512,11 +5523,16 @@ app.post('/admin/setup/complete', async (req, res) => {
     // Update preferences using the proper API
     const prefs = await preferences.update(updates);
 
+    // Mark system as configured (for firmware check)
+    prefs.system_configured = true;
+    await preferences.save();
+
     console.log(`✅ Setup completed for ${authority} (${cityData?.name || 'Unknown City'})`);
     console.log(`   Location: ${cityData?.name}, ${cityData?.stateName}`);
     console.log(`   Coordinates: ${cityData?.lat}, ${cityData?.lon}`);
+    console.log(`   System configured flag: ${prefs.system_configured}`);
 
-    // Mark system as configured
+    // Mark system as configured (in-memory flag)
     isConfigured = true;
 
     // Start automatic journey calculation now that setup is complete

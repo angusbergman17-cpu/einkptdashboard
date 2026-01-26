@@ -123,7 +123,64 @@ void setup() {
     // Normal boot sequence continues below...
 
     // ========================================
-    // STEP 1: Clear screen and show initial status
+    // STEP 1: Check if system is configured
+    // ========================================
+    bool systemConfigured = preferences.getBool("system_configured", false);
+
+    Serial.print("System configured: ");
+    Serial.println(systemConfigured);
+
+    if (!systemConfigured) {
+        Serial.println("System NOT configured - showing setup instructions");
+
+        // Close preferences
+        preferences.end();
+
+        // Show setup message
+        bbep.fillScreen(BBEP_WHITE);
+
+        bbep.setFont(FONT_12x16);
+        bbep.setCursor(200, 150);
+        bbep.print("System Not Configured");
+
+        bbep.setFont(FONT_8x8);
+        bbep.setCursor(180, 190);
+        bbep.print("Please complete setup at:");
+
+        bbep.setFont(FONT_12x16);
+        bbep.setCursor(120, 220);
+        bbep.print(SERVER_URL);
+        bbep.setCursor(320, 250);
+        bbep.print("/setup");
+
+        bbep.setFont(FONT_8x8);
+        bbep.setCursor(200, 300);
+        bbep.print("1. Enter your Google Places API key");
+        bbep.setCursor(200, 320);
+        bbep.print("2. Enter your home address");
+        bbep.setCursor(200, 340);
+        bbep.print("3. Configure your journey");
+
+        bbep.setCursor(250, 380);
+        bbep.print("Device will check again in 60s");
+
+        bbep.setCursor(280, 430);
+        bbep.print("(c) 2026 Angus Bergman");
+
+        bbep.refresh(REFRESH_FULL, true);
+
+        Serial.println("Setup message displayed - entering loop()");
+        Serial.println("Device will NOT reboot - waiting for configuration");
+
+        // Stay awake and check periodically
+        delay(2000);
+        return;  // Exit setup(), enter loop() which will just idle
+    }
+
+    Serial.println("System IS configured - proceeding with normal boot");
+
+    // ========================================
+    // STEP 2: Clear screen and show initial status
     // ========================================
     bbep.fillScreen(BBEP_WHITE);
 
@@ -143,7 +200,7 @@ void setup() {
     delay(500);
 
     // ========================================
-    // STEP 2: Connect WiFi
+    // STEP 3: Connect WiFi
     // ========================================
     WiFiManager wm;
     wm.setConfigPortalTimeout(30);
@@ -164,7 +221,7 @@ void setup() {
     logY += lineHeight;
 
     // ========================================
-    // STEP 3: Fetch data
+    // STEP 4: Fetch data
     // ========================================
     bbep.setCursor(10, logY);
     bbep.print("Fetching data...");
