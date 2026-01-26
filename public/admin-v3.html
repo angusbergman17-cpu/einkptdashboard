@@ -647,34 +647,42 @@
             <div class="step" id="step-4">
                 <h2>🧠 Step 4: Smart Journey Planning</h2>
 
+                <p style="margin-bottom: 20px;">The system will automatically calculate your optimal journey, including coffee stop timing if you entered a cafe in Step 2.</p>
+
                 <div class="form-group">
                     <label for="work-start-time">Work Start Time:</label>
                     <input type="time" id="work-start-time" value="09:00">
                     <small>When do you need to arrive at work?</small>
                 </div>
 
-                <div class="checkbox-group">
-                    <input type="checkbox" id="include-cafe" checked>
-                    <label for="include-cafe" style="margin: 0;">Include cafe stop in journey</label>
+                <div class="info-box" id="cafe-info" style="display: none; margin-top: 20px;">
+                    <h4>☕ Coffee Stop Detected</h4>
+                    <p id="cafe-address-display"></p>
+                    <p style="font-size: 13px; margin-top: 10px;">
+                        💡 The system will analyze cafe busyness patterns and suggest optimal times to avoid queues.
+                        It automatically determines if there's time for coffee based on live transit connections.
+                    </p>
                 </div>
 
-                <div id="cafe-options" style="margin-top: 20px;">
-                    <div class="form-group">
-                        <label for="cafe-name">Cafe Business Name:</label>
-                        <input type="text" id="cafe-name" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="cafe-duration">How long do you spend at the cafe? (minutes)</label>
-                        <input type="number" id="cafe-duration" value="10" min="5" max="60">
-                    </div>
-
-                    <div class="recommendation-box">
-                        <p>💡 The system will analyze cafe busyness patterns and suggest optimal times to avoid queues.</p>
-                    </div>
+                <div class="recommendation-box" style="margin-top: 20px;">
+                    <h3>How Journey Planning Works</h3>
+                    <p><strong>The system automatically:</strong></p>
+                    <ul style="margin: 10px 0 0 20px; font-size: 13px;">
+                        <li>Finds nearby transit stops for your addresses</li>
+                        <li>Calculates walking times</li>
+                        <li>Determines optimal departure time working backwards from your arrival time</li>
+                        <li>Analyzes cafe busy periods to suggest when to get coffee</li>
+                        <li>Factors in transit connections and buffer time</li>
+                    </ul>
                 </div>
 
-                <div class="actions">
+                <div id="journey-no-cafe-note" style="display: none; margin-top: 20px; padding: 15px; background: rgba(99, 102, 241, 0.1); border-radius: 8px;">
+                    <p style="margin: 0; font-size: 13px;">
+                        <strong>Note:</strong> No cafe address was entered in Step 2. Journey will be calculated for direct home → work route.
+                    </p>
+                </div>
+
+                <div class="actions" style="margin-top: 30px;">
                     <button class="btn btn-primary" onclick="calculateJourney()">
                         Calculate Smart Journey
                     </button>
@@ -1284,6 +1292,19 @@
         // Step 3: Transit Authority
         function proceedToJourneyPlanning() {
             goToStep(4);
+
+            // Show cafe info if cafe was geocoded in Step 2
+            if (setupData.cafeLocation) {
+                document.getElementById('cafe-info').style.display = 'block';
+                document.getElementById('cafe-address-display').innerHTML = `
+                    <strong>Cafe:</strong> ${setupData.cafeLocation.formattedAddress}<br>
+                    <small>Source: ${setupData.cafeLocation.source}</small>
+                `;
+                document.getElementById('journey-no-cafe-note').style.display = 'none';
+            } else {
+                document.getElementById('cafe-info').style.display = 'none';
+                document.getElementById('journey-no-cafe-note').style.display = 'block';
+            }
         }
 
         // Step 4: Smart Journey Planning
@@ -1292,17 +1313,35 @@
             showLoading('Calculating optimal journey...');
 
             const workStartTime = document.getElementById('work-start-time').value;
-            const includeCafe = document.getElementById('include-cafe').checked;
-            const cafeDuration = parseInt(document.getElementById('cafe-duration').value);
+            // Automatically include cafe if it was geocoded in Step 2
+            const includeCafe = !!setupData.cafeLocation;
+            const cafeDuration = 10; // Default 10 minutes for coffee
+
+            console.log('Calculating journey:', {
+                home: setupData.homeLocation,
+                work: setupData.workLocation,
+                cafe: setupData.cafeLocation,
+                workStartTime,
+                includeCafe
+            });
 
             try {
                 const response = await fetch('/admin/smart-journey/calculate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        homeLocation: setupData.homeLocation,
-                        workLocation: setupData.workLocation,
-                        cafeLocation: includeCafe ? setupData.cafeLocation : null,
+                        homeLocation: {
+                            lat: setupData.homeLocation.lat,
+                            lon: setupData.homeLocation.lon
+                        },
+                        workLocation: {
+                            lat: setupData.workLocation.lat,
+                            lon: setupData.workLocation.lon
+                        },
+                        cafeLocation: includeCafe ? {
+                            lat: setupData.cafeLocation.lat,
+                            lon: setupData.cafeLocation.lon
+                        } : null,
                         workStartTime,
                         cafeDuration,
                         transitAuthority: setupData.detectedState,
@@ -1311,6 +1350,8 @@
                 });
 
                 const journey = await response.json();
+
+                console.log('Journey response:', journey);
 
                 if (!journey.success) {
                     throw new Error(journey.error || 'Failed to calculate journey');
@@ -1325,7 +1366,9 @@
                 document.getElementById('journey-actions').style.display = 'flex';
 
             } catch (error) {
+                hideLoading();
                 showError('Failed to calculate journey: ' + error.message);
+                console.error('Journey calculation error:', error);
             }
         }
 
