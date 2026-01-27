@@ -287,7 +287,13 @@ class JourneyPlanner {
     const nearbyStops = allStops
       .filter(stop => stop.distance <= this.MAX_WALKING_DISTANCE)
       .sort((a, b) => {
-        // Sort by priority (train > tram > bus), then distance
+        // Sort by distance first (closest stops are usually best)
+        // Then by priority only if distances are very close (<100m difference)
+        const distanceDiff = Math.abs(a.distance - b.distance);
+        if (distanceDiff > 100) {
+          return a.distance - b.distance; // Use closest stop
+        }
+        // If distances are similar, prefer higher-priority modes
         if (a.priority !== b.priority) return a.priority - b.priority;
         return a.distance - b.distance;
       });
@@ -375,9 +381,19 @@ class JourneyPlanner {
       score += 15; // Transfer penalty
     }
 
-    // Prefer trains (most reliable)
+    // Mode preferences: Prioritize by efficiency for short/medium urban trips
+    // Trams and trains are equally good for urban commutes (0-10km)
+    // For longer trips, trains naturally win due to higher average speed
+    // NO artificial bias - let the actual trip time determine the best route
     if (originStop.routeType === 0) {
-      score -= 5;
+      // Trains: No bonus/penalty (let speed advantage speak for itself)
+      score += 0;
+    } else if (originStop.routeType === 1) {
+      // Trams: No penalty for short urban trips where they excel
+      score += 0;
+    } else if (originStop.routeType === 2) {
+      // Buses: Small penalty for less reliable schedules
+      score += 2;
     }
 
     return {

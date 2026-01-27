@@ -2148,19 +2148,32 @@ app.post('/admin/transit/validate-api', async (req, res) => {
     // Test API key with simple request
     // For VIC, test with Transport Victoria OpenData API
     if (state === 'VIC') {
-      const testUrl = 'https://api.opendata.transport.vic.gov.au/v1/gtfsrt-metro-trains';
+      // Use correct OpenData API URL format
+      const testUrl = 'https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1/metro-trains/vehicle-positions';
       const response = await fetch(testUrl, {
         headers: {
           'KeyId': apiKey,
-          'Accept': '*/*'
-        }
+          'Accept': 'application/x-protobuf'
+        },
+        timeout: 10000
       });
 
-      if (response.status !== 200) {
-        throw new Error(`API test failed: ${response.statusText}`);
+      if (!response.ok) {
+        const statusText = response.statusText || 'Unknown error';
+        throw new Error(`API validation failed (${response.status}): ${statusText}. Check your API key at https://discover.data.vic.gov.au/`);
       }
 
-      res.json({ success: true, message: 'API key validated successfully' });
+      // Check if we got protobuf data (correct format)
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('protobuf')) {
+        throw new Error('API key accepted but received unexpected data format. API may be misconfigured.');
+      }
+
+      res.json({
+        success: true,
+        message: 'Transport Victoria API key validated successfully',
+        apiUrl: 'https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1/'
+      });
     } else {
       // For other states, assume valid (implement state-specific validation as needed)
       res.json({ success: true, message: 'API key accepted' });

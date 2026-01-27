@@ -11,7 +11,30 @@
          * Copyright (c) 2026 Angus Bergman
          * Licensed under CC BY-NC 4.0
          * https://creativecommons.org/licenses/by-nc/4.0/
+         *
+         * Color Palette: Compliant with Development Rules v1.0.24 Section 9
          */
+
+        :root {
+            /* Primary Background - Dark Slate */
+            --color-bg-primary: #0f172a;       /* slate-900 - Main background */
+            --color-bg-secondary: #1e293b;     /* slate-800 - Cards, panels */
+            --color-bg-tertiary: #334155;      /* slate-700 - Hover states */
+
+            /* Primary Accent - Indigo */
+            --color-accent-primary: #6366f1;   /* indigo-500 - Buttons, links */
+            --color-accent-hover: #4f46e5;     /* indigo-600 - Hover states */
+
+            /* Status Colors */
+            --color-success: #22c55e;          /* green-500 */
+            --color-warning: #f59e0b;          /* amber-500 */
+            --color-error: #ef4444;            /* red-500 */
+
+            /* Text Colors */
+            --color-text-primary: #f8fafc;     /* slate-50 - Primary text */
+            --color-text-secondary: #cbd5e1;   /* slate-300 - Secondary text */
+            --color-text-muted: #64748b;       /* slate-500 - Muted */
+        }
 
         * {
             margin: 0;
@@ -21,26 +44,30 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--color-bg-primary);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
+            color: var(--color-text-primary);
         }
 
         .container {
-            background: white;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
             max-width: 900px;
             width: 100%;
             overflow: hidden;
+            backdrop-filter: blur(10px);
         }
 
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: var(--color-bg-secondary);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--color-text-primary);
             padding: 30px;
             text-align: center;
         }
@@ -48,22 +75,24 @@
         .header h1 {
             font-size: 2em;
             margin-bottom: 10px;
+            color: var(--color-text-primary);
         }
 
         .header p {
             opacity: 0.9;
             font-size: 1.1em;
+            color: var(--color-text-secondary);
         }
 
         .progress-bar {
             height: 8px;
-            background: rgba(255,255,255,0.3);
+            background: rgba(255, 255, 255, 0.1);
             position: relative;
         }
 
         .progress-fill {
             height: 100%;
-            background: white;
+            background: var(--color-accent-primary);
             transition: width 0.3s ease;
         }
 
@@ -86,47 +115,116 @@
         }
 
         .step h2 {
-            color: #333;
+            color: var(--color-text-primary);
             margin-bottom: 20px;
             font-size: 1.8em;
         }
 
+        .step h3 {
+            color: var(--color-text-primary);
+        }
+
+        .step h4 {
+            color: var(--color-text-primary);
+        }
+
+        .step p {
+            color: var(--color-text-secondary);
+        }
+
         .recommendation-box {
-            background: #e3f2fd;
-            border-left: 4px solid #2196f3;
+            background: rgba(99, 102, 241, 0.2);
+            border-left: 4px solid var(--color-accent-primary);
             padding: 20px;
             margin: 20px 0;
             border-radius: 8px;
         }
 
         .recommendation-box h3 {
-            color: #1976d2;
+            color: var(--color-accent-primary);
             margin-bottom: 10px;
         }
 
+        .recommendation-box p {
+            color: var(--color-text-secondary);
+        }
+
+        .recommendation-box strong {
+            color: var(--color-text-primary);
+        }
+
+        .recommendation-box ul {
+            color: var(--color-text-secondary);
+        }
+
         .warning-box {
-            background: #fff3e0;
-            border-left: 4px solid #ff9800;
+            background: rgba(245, 158, 11, 0.2);
+            border-left: 4px solid var(--color-warning);
             padding: 20px;
             margin: 20px 0;
             border-radius: 8px;
+        }
+
+        .warning-box h3 {
+            color: var(--color-warning);
+        }
+
+        .warning-box p {
+            color: var(--color-text-secondary);
+        }
+
+        .warning-box strong {
+            color: var(--color-text-primary);
         }
 
         .success-box {
-            background: #e8f5e9;
-            border-left: 4px solid #4caf50;
+            background: rgba(34, 197, 94, 0.2);
+            border-left: 4px solid var(--color-success);
             padding: 20px;
             margin: 20px 0;
             border-radius: 8px;
         }
 
+        .success-box strong {
+            color: var(--color-success);
+        }
+
+        .success-box p {
+            color: var(--color-text-secondary);
+        }
+
         .error-box {
-            background: #ffebee;
-            border-left: 4px solid #f44336;
+            background: rgba(239, 68, 68, 0.2);
+            border-left: 4px solid var(--color-error);
             padding: 20px;
             margin: 20px 0;
             border-radius: 8px;
             display: none;
+        }
+
+        .error-box strong {
+            color: var(--color-error);
+        }
+
+        .error-box p {
+            color: var(--color-text-secondary);
+        }
+
+        .info-box {
+            background: rgba(99, 102, 241, 0.2);
+            border-left: 4px solid var(--color-accent-primary);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .info-box h4 {
+            color: var(--color-accent-primary);
+            margin-bottom: 10px;
+        }
+
+        .info-box p {
+            color: var(--color-text-secondary);
         }
 
         .form-group {
@@ -137,7 +235,7 @@
             display: block;
             margin-bottom: 8px;
             font-weight: 600;
-            color: #555;
+            color: var(--color-text-secondary);
         }
 
         .form-group input[type="text"],
@@ -147,23 +245,40 @@
         .form-group select {
             width: 100%;
             padding: 12px;
-            border: 2px solid #ddd;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 8px;
             font-size: 1em;
-            transition: border-color 0.3s;
+            color: var(--color-text-primary);
+            transition: all 0.3s;
+        }
+
+        .form-group input::placeholder {
+            color: var(--color-text-muted);
         }
 
         .form-group input:focus,
         .form-group select:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: rgba(99, 102, 241, 0.5);
+            background: rgba(30, 41, 59, 0.7);
         }
 
         .form-group small {
             display: block;
             margin-top: 5px;
-            color: #666;
+            color: var(--color-text-muted);
             font-size: 0.9em;
+        }
+
+        .form-group small a {
+            color: var(--color-accent-primary);
+            text-decoration: none;
+        }
+
+        .form-group small a:hover {
+            color: var(--color-accent-hover);
+            text-decoration: underline;
         }
 
         .btn {
@@ -178,22 +293,24 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--color-accent-primary);
             color: white;
         }
 
         .btn-primary:hover {
+            background: var(--color-accent-hover);
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
         }
 
         .btn-secondary {
-            background: #f5f5f5;
-            color: #666;
+            background: var(--color-bg-tertiary);
+            color: var(--color-text-secondary);
         }
 
         .btn-secondary:hover {
-            background: #e0e0e0;
+            background: rgba(51, 65, 85, 0.8);
+            color: var(--color-text-primary);
         }
 
         .btn:disabled {
@@ -210,9 +327,11 @@
         .geocode-result {
             margin-top: 10px;
             padding: 15px;
-            background: #f5f5f5;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 8px;
             display: none;
+            color: var(--color-text-secondary);
         }
 
         .geocode-result.show {
@@ -220,7 +339,8 @@
         }
 
         .device-option {
-            border: 2px solid #ddd;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            background: rgba(30, 41, 59, 0.3);
             border-radius: 8px;
             padding: 20px;
             margin: 15px 0;
@@ -232,13 +352,13 @@
         }
 
         .device-option:hover {
-            border-color: #667eea;
-            background: #f5f7ff;
+            border-color: var(--color-accent-primary);
+            background: rgba(99, 102, 241, 0.1);
         }
 
         .device-option.selected {
-            border-color: #667eea;
-            background: #e8eeff;
+            border-color: var(--color-accent-primary);
+            background: rgba(99, 102, 241, 0.2);
         }
 
         .device-option input[type="radio"] {
@@ -248,7 +368,11 @@
 
         .device-details h4 {
             margin-bottom: 5px;
-            color: #333;
+            color: var(--color-text-primary);
+        }
+
+        .device-details p {
+            color: var(--color-text-secondary);
         }
 
         .badge {
@@ -261,17 +385,18 @@
         }
 
         .badge.compatible {
-            background: #e8f5e9;
-            color: #2e7d32;
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--color-success);
         }
 
         .badge.incompatible {
-            background: #fff3e0;
-            color: #e65100;
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--color-warning);
         }
 
         .journey-visualization {
-            background: #f9f9f9;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 12px;
             padding: 25px;
             margin: 20px 0;
@@ -281,22 +406,23 @@
             display: flex;
             gap: 20px;
             padding: 15px;
-            background: white;
+            background: rgba(30, 41, 59, 0.7);
             border-radius: 8px;
             margin: 10px 0;
-            border-left: 4px solid #667eea;
+            border-left: 4px solid var(--color-accent-primary);
         }
 
         .leg-mode {
             font-weight: 600;
             min-width: 80px;
-            color: #667eea;
+            color: var(--color-accent-primary);
         }
 
         .leg-details {
             flex: 1;
             font-size: 0.95em;
             line-height: 1.6;
+            color: var(--color-text-secondary);
         }
 
         .stop-options {
@@ -310,21 +436,21 @@
             align-items: center;
             justify-content: space-between;
             padding: 12px 15px;
-            background: white;
-            border: 2px solid #e5e7eb;
+            background: rgba(30, 41, 59, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.1);
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s ease;
         }
 
         .stop-option:hover {
-            border-color: #667eea;
-            background: rgba(102, 126, 234, 0.05);
+            border-color: var(--color-accent-primary);
+            background: rgba(99, 102, 241, 0.1);
         }
 
         .stop-option.selected {
-            border-color: #667eea;
-            background: rgba(102, 126, 234, 0.1);
+            border-color: var(--color-accent-primary);
+            background: rgba(99, 102, 241, 0.2);
         }
 
         .stop-option .stop-icon {
@@ -339,18 +465,18 @@
         .stop-option .stop-name {
             font-weight: 600;
             font-size: 0.95em;
-            color: #1f2937;
+            color: var(--color-text-primary);
         }
 
         .stop-option .stop-details {
             font-size: 0.85em;
-            color: #6b7280;
+            color: var(--color-text-muted);
             margin-top: 2px;
         }
 
         .stop-option .stop-badge {
             padding: 4px 8px;
-            background: #667eea;
+            background: var(--color-accent-primary);
             color: white;
             border-radius: 4px;
             font-size: 0.75em;
@@ -359,8 +485,8 @@
 
         .alternative-route {
             padding: 15px;
-            background: white;
-            border: 2px solid #e5e7eb;
+            background: rgba(30, 41, 59, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.1);
             border-radius: 8px;
             margin: 10px 0;
             cursor: pointer;
@@ -368,8 +494,8 @@
         }
 
         .alternative-route:hover {
-            border-color: #667eea;
-            background: rgba(102, 126, 234, 0.05);
+            border-color: var(--color-accent-primary);
+            background: rgba(99, 102, 241, 0.1);
         }
 
         .alternative-route-header {
@@ -378,13 +504,14 @@
             justify-content: space-between;
             font-weight: 600;
             margin-bottom: 8px;
+            color: var(--color-text-primary);
         }
 
         .alternative-route-details {
             display: flex;
             gap: 15px;
             font-size: 0.9em;
-            color: #6b7280;
+            color: var(--color-text-secondary);
         }
 
         .loading {
@@ -397,9 +524,13 @@
             display: block;
         }
 
+        .loading p {
+            color: var(--color-text-secondary);
+        }
+
         .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid var(--color-accent-primary);
             border-radius: 50%;
             width: 50px;
             height: 50px;
@@ -420,17 +551,18 @@
         }
 
         .dashboard-panel {
-            background: white;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 12px;
             padding: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
 
         .dashboard-panel h3 {
-            color: #333;
+            color: var(--color-text-primary);
             margin-bottom: 15px;
             padding-bottom: 10px;
-            border-bottom: 2px solid #f0f0f0;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
         }
 
         .api-key-item {
@@ -438,13 +570,15 @@
             align-items: center;
             gap: 15px;
             padding: 15px;
-            background: #f9f9f9;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 8px;
             margin: 10px 0;
         }
 
         .api-key-item.active {
-            background: #e8f5e9;
+            background: rgba(34, 197, 94, 0.2);
+            border-color: var(--color-success);
         }
 
         .api-icon {
@@ -454,6 +588,7 @@
         .api-name {
             flex: 1;
             font-weight: 600;
+            color: var(--color-text-primary);
         }
 
         .api-status {
@@ -463,20 +598,21 @@
         }
 
         .api-status.active {
-            background: #4caf50;
+            background: var(--color-success);
             color: white;
         }
 
         .api-status.inactive {
-            background: #ff9800;
+            background: var(--color-warning);
             color: white;
         }
 
         .log-stream {
-            background: #1e1e1e;
-            color: #d4d4d4;
+            background: rgba(15, 23, 42, 0.8);
+            color: var(--color-text-secondary);
             padding: 15px;
             border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
             font-family: 'Courier New', monospace;
             font-size: 0.85em;
             max-height: 300px;
@@ -488,7 +624,7 @@
         }
 
         .log-time {
-            color: #808080;
+            color: var(--color-text-muted);
         }
 
         .log-level {
@@ -497,19 +633,19 @@
         }
 
         .log-info {
-            color: #4fc3f7;
+            color: var(--color-accent-primary);
         }
 
         .log-success {
-            color: #81c784;
+            color: var(--color-success);
         }
 
         .log-warning {
-            color: #ffb74d;
+            color: var(--color-warning);
         }
 
         .log-error {
-            color: #e57373;
+            color: var(--color-error);
         }
 
         .status-indicator {
@@ -521,18 +657,18 @@
         }
 
         .status-indicator.operational {
-            background: #4caf50;
-            box-shadow: 0 0 8px rgba(76, 175, 80, 0.5);
+            background: var(--color-success);
+            box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
         }
 
         .status-indicator.degraded {
-            background: #ff9800;
-            box-shadow: 0 0 8px rgba(255, 152, 0, 0.5);
+            background: var(--color-warning);
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
         }
 
         .status-indicator.down {
-            background: #f44336;
-            box-shadow: 0 0 8px rgba(244, 67, 54, 0.5);
+            background: var(--color-error);
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
         }
 
         .qr-code-display {
@@ -542,16 +678,16 @@
 
         .qr-code-display img {
             max-width: 250px;
-            border: 2px solid #ddd;
+            border: 2px solid rgba(255, 255, 255, 0.1);
             border-radius: 8px;
         }
 
         .copyright {
             text-align: center;
             padding: 20px;
-            color: #666;
+            color: var(--color-text-muted);
             font-size: 0.9em;
-            border-top: 1px solid #eee;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
             margin-top: 30px;
         }
 
@@ -567,6 +703,10 @@
             height: 20px;
         }
 
+        .checkbox-group label {
+            color: var(--color-text-secondary);
+        }
+
         .inline-group {
             display: flex;
             gap: 15px;
@@ -578,15 +718,24 @@
         }
 
         .detected-state {
-            background: #f0f4ff;
+            background: rgba(99, 102, 241, 0.2);
+            border: 1px solid rgba(99, 102, 241, 0.3);
             border-radius: 12px;
             padding: 20px;
             margin: 20px 0;
         }
 
         .detected-state h3 {
-            color: #667eea;
+            color: var(--color-accent-primary);
             margin-bottom: 10px;
+        }
+
+        .detected-state p {
+            color: var(--color-text-secondary);
+        }
+
+        .detected-state strong {
+            color: var(--color-text-primary);
         }
     </style>
 </head>
@@ -656,7 +805,7 @@
                     </button>
                 </div>
 
-                <div class="recommendation-box" style="margin-top: 20px; background: #fff9c4; border-color: #fbc02d;">
+                <div class="warning-box" style="margin-top: 20px;">
                     <strong>Note:</strong> Skipping will use free Nominatim geocoding, which may be
                     less accurate for specific buildings and businesses.
                 </div>
@@ -794,7 +943,7 @@
                         <h3 style="margin: 0;">Customize Your Preferred Route</h3>
                         <span style="background: rgba(99, 102, 241, 0.1); color: #6366f1; padding: 5px 12px; border-radius: 15px; font-size: 12px; font-weight: 600;">OPTIONAL</span>
                     </div>
-                    <p style="font-size: 14px; color: #666; margin-bottom: 20px;">
+                    <p style="font-size: 14px; color: var(--color-text-secondary); margin-bottom: 20px;">
                         Select different transit stops or choose an alternative route. Your selection will become your new <strong>preferred route</strong>.
                     </p>
 
@@ -1575,7 +1724,7 @@
                     html += `<strong>${seg.from}</strong> → <strong>${seg.to}</strong><br>`;
                     html += `${seg.minutes} minutes<br>`;
                     html += `Depart: ${seg.time}<br>`;
-                    if (seg.note) html += `<small style="color: #6366f1;">${seg.note}</small>`;
+                    if (seg.note) html += `<small style="color: var(--color-accent-primary);">${seg.note}</small>`;
                     html += `</div>`;
                 } else if (seg.type === 'coffee') {
                     html += `<div class="leg-mode">${icon} Coffee Stop</div>`;
@@ -1601,12 +1750,12 @@
             resultDiv.innerHTML = `
                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
                     <h3 style="margin: 0;">✓ Your Optimized Journey</h3>
-                    <span style="background: #4caf50; color: white; padding: 5px 12px; border-radius: 15px; font-size: 12px; font-weight: 600;">PREFERRED ROUTE</span>
+                    <span style="background: var(--color-success); color: white; padding: 5px 12px; border-radius: 15px; font-size: 12px; font-weight: 600;">PREFERRED ROUTE</span>
                 </div>
                 <div style="margin-top: 20px;">
                     ${segmentsHTML}
                 </div>
-                <div style="margin-top: 20px; padding: 20px; background: white; border-radius: 8px; border: 2px solid #4caf50;">
+                <div style="margin-top: 20px; padding: 20px; background: rgba(34, 197, 94, 0.2); border-radius: 8px; border: 2px solid var(--color-success);">
                     <h4>Summary</h4>
                     <p><strong>🏠 Leave home:</strong> ${journey.departureTime}</p>
                     <p><strong>🏢 Arrive at work:</strong> ${journey.arrivalTime}</p>
@@ -1674,8 +1823,8 @@
                 const altRoutesList = document.getElementById('alternative-routes-list');
 
                 altRoutesList.innerHTML = `
-                    <div style="margin-bottom: 15px; padding: 12px; background: rgba(99, 102, 241, 0.05); border-left: 3px solid #6366f1; border-radius: 4px;">
-                        <p style="margin: 0; font-size: 14px; color: #1e293b;">
+                    <div style="margin-bottom: 15px; padding: 12px; background: rgba(99, 102, 241, 0.1); border-left: 3px solid var(--color-accent-primary); border-radius: 4px;">
+                        <p style="margin: 0; font-size: 14px; color: var(--color-text-secondary);">
                             <strong>ℹ️ Other Available Routes:</strong> These alternatives use different transit modes or stops.
                             Click any route to make it your preferred route.
                         </p>
@@ -1684,12 +1833,12 @@
                         <div class="alternative-route"
                              onclick="selectAlternativeRoute('${alt.originStopId}', '${alt.destinationStopId}')"
                              style="position: relative;">
-                            <span style="position: absolute; top: 10px; right: 10px; background: rgba(99, 102, 241, 0.1); color: #6366f1; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">
+                            <span style="position: absolute; top: 10px; right: 10px; background: rgba(99, 102, 241, 0.2); color: var(--color-accent-primary); padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">
                                 ALTERNATIVE ${index + 1}
                             </span>
                             <div class="alternative-route-header">
                                 <span>${alt.icon} ${alt.mode}</span>
-                                <span style="color: #667eea;">${alt.totalMinutes} min total</span>
+                                <span style="color: var(--color-accent-primary);">${alt.totalMinutes} min total</span>
                             </div>
                             <div class="alternative-route-details">
                                 <span><strong>From:</strong> ${alt.originStopName}</span>
@@ -1701,7 +1850,7 @@
                                 <span>•</span>
                                 <span>Walking: ${alt.walkingMinutes} min</span>
                             </div>
-                            <div style="margin-top: 8px; font-size: 12px; color: #6366f1; font-weight: 500;">
+                            <div style="margin-top: 8px; font-size: 12px; color: var(--color-accent-primary); font-weight: 500;">
                                 → Click to make this your preferred route
                             </div>
                         </div>
@@ -2139,7 +2288,7 @@
                 <p><strong>Resolution:</strong> ${device.resolution.width}×${device.resolution.height}</p>
                 <p><strong>Last Refresh:</strong> ${now.toLocaleTimeString()}</p>
                 <p><strong>Next Refresh:</strong> ${nextRefresh.toLocaleTimeString()}</p>
-                <p><strong>Status:</strong> <span style="color: #4caf50;">●</span> Operational</p>
+                <p><strong>Status:</strong> <span style="color: var(--color-success);">●</span> Operational</p>
             `;
         }
 
