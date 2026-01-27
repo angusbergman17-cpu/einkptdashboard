@@ -1,7 +1,7 @@
 # PTV-TRMNL Development Rules
 **MANDATORY COMPLIANCE DOCUMENT**
-**Last Updated**: 2026-01-27
-**Version**: 1.0.28
+**Last Updated**: 2026-01-28
+**Version**: 1.0.29
 
 **📋 [Complete Project Vision →](../../PROJECT-STATEMENT.md)** - Read the comprehensive project statement for context on goals, architecture, and user requirements.
 
@@ -5334,8 +5334,8 @@ Explanation
 
 ---
 
-**Version**: 1.0.28
-**Last Updated**: 2026-01-27
+**Version**: 1.0.29
+**Last Updated**: 2026-01-28
 **Maintained By**: Angus Bergman
 **License**: CC BY-NC 4.0 (matches project license)
 
@@ -5422,3 +5422,274 @@ Before committing code changes:
 - [ ] Version numbering follows Semantic Versioning 2.0.0
 
 ---
+
+---
+
+## 2️⃣0️⃣ SECURITY REQUIREMENTS
+
+### XSS Input Sanitization (MANDATORY)
+
+**Purpose**: Prevent Cross-Site Scripting (XSS) attacks by sanitizing all user-entered content before HTML rendering.
+
+**CRITICAL RULE**: ALL user-entered data displayed in HTML MUST be sanitized before rendering.
+
+**Affected Data Types**:
+- Stop names (from API responses or user selection)
+- Addresses (home, work, cafe - user-entered)
+- Device names (user-configured)
+- Any text from external APIs displayed to users
+
+**Required Implementation**:
+
+**Client-Side (admin.html, admin-v3.html, setup-wizard.html)**:
+```javascript
+// MANDATORY: Add this function to all admin/setup HTML files
+function sanitize(str) {
+    if (str === null || str === undefined) return '';
+    if (typeof str !== 'string') str = String(str);
+    const map = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#x27;','/':'&#x2F;','`':'&#x60;','=':'&#x3D;'};
+    return str.replace(/[&<>"'`=/]/g, c => map[c]);
+}
+```
+
+**Usage Pattern**:
+```javascript
+// ❌ WRONG - Direct interpolation of user data:
+homeStopsDiv.innerHTML = stops.map(stop => `
+    <div class="stop-name">${stop.name}</div>
+`).join('');
+
+// ✅ CORRECT - Sanitized user data:
+homeStopsDiv.innerHTML = stops.map(stop => `
+    <div class="stop-name">${sanitize(stop.name)}</div>
+`).join('');
+```
+
+**Server-Side Utility** (src/utils/sanitize-html.js):
+```javascript
+import { sanitizeHTML, sanitizeObject } from './utils/sanitize-html.js';
+
+// Sanitize single string
+const safeName = sanitizeHTML(userInput);
+
+// Sanitize entire object (recursive)
+const safeData = sanitizeObject(apiResponse);
+```
+
+**Data That MUST Be Sanitized**:
+| Data Source | Example | Sanitize? |
+|-------------|---------|----------|
+| `stop.name` | "Flinders Street Station" | ✅ YES |
+| `stop.stopName` | "Chapel St/Tivoli Rd" | ✅ YES |
+| `device.name` | "My TRMNL" | ✅ YES |
+| `location.address` | "1 Clara St, South Yarra" | ✅ YES |
+| `location.formattedAddress` | "1 Clara Street..." | ✅ YES |
+| `result.display_name` | Search result | ✅ YES |
+| `cafe.name` | "Norman Hotel" | ✅ YES |
+| Hard-coded strings | "Loading..." | ❌ NO (trusted) |
+| System-generated text | Error codes | ❌ NO (trusted) |
+
+**Verification Checklist**:
+```bash
+# Check for unsanitized user data in HTML files:
+grep -n '\${stop\.name}' public/*.html  # Should return 0 results
+grep -n '\${sanitize(stop.name)}' public/*.html  # Should find all usages
+
+# Check sanitize function exists:
+grep -n 'function sanitize' public/*.html  # Should find in all admin HTML
+```
+
+**Why This Matters**:
+- Even single-user deployments can receive malicious data from APIs
+- Stop names from transit APIs could contain HTML/JavaScript
+- User-entered addresses could contain script tags
+- Prevention is simple (sanitize function) and eliminates entire attack class
+
+---
+
+## 2️⃣1️⃣ COLOR PALETTE COMPLIANCE (MANDATORY)
+
+### Approved Colors Only
+
+**CRITICAL**: All UI elements MUST use the approved color palette. Non-compliant colors create visual inconsistency and violate design standards.
+
+**✅ APPROVED Colors**:
+```css
+/* Primary Background - Dark Slate */
+--color-bg-primary: #0f172a;       /* slate-900 */
+--color-bg-secondary: #1e293b;     /* slate-800 */
+--color-bg-tertiary: #334155;      /* slate-700 */
+
+/* Primary Accent - Indigo (ONLY APPROVED ACCENT) */
+--color-accent-primary: #6366f1;   /* indigo-500 ✅ */
+--color-accent-hover: #4f46e5;     /* indigo-600 ✅ */
+--color-accent-light: #818cf8;     /* indigo-400 ✅ */
+
+/* Status Colors */
+--color-success: #22c55e;          /* green-500 */
+--color-warning: #f59e0b;          /* amber-500 */
+--color-error: #ef4444;            /* red-500 */
+--color-info: #0ea5e9;             /* sky-500 */
+
+/* Text Colors */
+--color-text-primary: #f8fafc;     /* slate-50 */
+--color-text-secondary: #cbd5e1;   /* slate-300 */
+--color-text-muted: #64748b;       /* slate-500 */
+```
+
+**❌ FORBIDDEN Colors** (MUST be replaced):
+```css
+/* PURPLE TONES - DO NOT USE */
+#667eea  /* ❌ Purple - Replace with #6366f1 */
+#764ba2  /* ❌ Purple gradient - Remove entirely */
+#8b5cf6  /* ❌ Violet-500 - Replace with #6366f1 */
+#7c3aed  /* ❌ Violet-600 - Replace with #4f46e5 */
+#a78bfa  /* ❌ Violet-400 - Replace with #818cf8 */
+purple   /* ❌ Named color - Replace with indigo equivalent */
+violet   /* ❌ Named color - Replace with indigo equivalent */
+
+/* BACKGROUND RGBA with violet */
+rgba(139, 92, 246, 0.1)  /* ❌ Violet background - Replace with rgba(99, 102, 241, 0.1) */
+rgba(139, 92, 246, 0.2)  /* ❌ Violet background - Replace with rgba(99, 102, 241, 0.2) */
+```
+
+**Replacement Mapping**:
+| Forbidden Color | Replace With | Reason |
+|-----------------|--------------|--------|
+| `#667eea` | `#6366f1` | Purple → Indigo-500 |
+| `#8b5cf6` | `#6366f1` | Violet → Indigo-500 |
+| `#7c3aed` | `#4f46e5` | Violet-600 → Indigo-600 |
+| `rgba(139,92,246,X)` | `rgba(99,102,241,X)` | Violet RGBA → Indigo RGBA |
+
+**Verification Commands**:
+```bash
+# Find forbidden purple/violet colors:
+grep -rn '#667eea\|#764ba2\|#8b5cf6\|#7c3aed' public/
+grep -rn 'purple\|violet' public/ --include='*.html' --include='*.css'
+
+# Should return 0 results after compliance
+```
+
+**Why Indigo, Not Purple?**:
+- Indigo (#6366f1) conveys trust and professionalism
+- Purple tones were from earlier prototype designs
+- Consistent Tailwind CSS indigo-500 across all components
+- Better contrast ratios for accessibility
+- Matches modern design system standards
+
+---
+
+## 2️⃣2️⃣ DOCUMENTATION MAINTENANCE
+
+### Historical Notices for Deprecated Content
+
+**REQUIREMENT**: Any documentation referencing deprecated APIs, methods, or configurations MUST include a historical notice at the top.
+
+**Standard Historical Notice Format**:
+```markdown
+> ⚠️ **Historical Notice**: This document references [DEPRECATED_ITEM]. 
+> The current system uses [CURRENT_ITEM]. 
+> See `docs/development/DEVELOPMENT-RULES.md` for authoritative guidance.
+```
+
+**Example - API Documentation**:
+```markdown
+# Transport Victoria Open Data API Guide
+**Last Updated**: 2026-01-28
+
+> ⚠️ **Historical Notice**: This guide documents the Transport Victoria Open Data API. 
+> The legacy "PTV Timetable API v3" (Developer ID + API Key with HMAC signing) is 
+> **deprecated** and should not be used in new development. The current system uses 
+> GTFS Realtime feeds with simple KeyID header authentication. 
+> See `docs/development/DEVELOPMENT-RULES.md` for authoritative guidance.
+```
+
+**When to Add Historical Notices**:
+- Documentation mentions legacy PTV API v3
+- Files reference deprecated environment variables (PTV_DEV_ID, PTV_KEY)
+- Guides describe old authentication methods (HMAC-SHA1 signing)
+- Content predates current architecture
+
+**Files That MUST Have Historical Notices** (if they exist):
+- `docs/DEPLOYMENT_GUIDE.md` - Old architecture references
+- `docs/guides/OPENDATA-VIC-API-GUIDE.md` - Legacy API sections
+- Any file in `docs/archive/` referencing legacy APIs
+
+---
+
+## 2️⃣3️⃣ AUDIT COMPLIANCE CHECKLIST
+
+### Pre-Commit Audit Verification
+
+**MANDATORY**: Run this checklist before committing any UI or security-related changes.
+
+**Security**:
+```bash
+# 1. Check XSS sanitization in place:
+grep -c 'function sanitize' public/admin.html public/admin-v3.html
+# Expected: 1 per file
+
+# 2. Check user input is sanitized:
+grep '\${stop\.name}' public/*.html  # Should return 0 (unsanitized)
+grep '\${sanitize(stop' public/*.html  # Should find usages
+```
+
+**Color Palette**:
+```bash
+# 3. Check for forbidden colors:
+grep -rn '#667eea\|#8b5cf6\|#7c3aed' public/
+# Expected: 0 results
+
+# 4. Verify correct accent color used:
+grep -c '#6366f1' public/admin.html public/admin-v3.html public/setup-wizard.html
+# Expected: Multiple occurrences per file
+```
+
+**License Compliance**:
+```bash
+# 5. Check license headers:
+grep -l 'CC BY-NC 4.0' src/**/*.js | wc -l
+# Expected: All JS files in src/
+
+# 6. No "All rights reserved":
+grep -r 'All rights reserved' src/
+# Expected: 0 results
+```
+
+**API Terminology**:
+```bash
+# 7. No forbidden PTV terms:
+grep -r 'PTV Timetable API\|PTV_USER_ID\|PTV_API_KEY' src/ public/
+# Expected: 0 results
+
+# 8. Correct environment variable:
+grep -r 'ODATA_API_KEY\|TRANSPORT_VICTORIA_GTFS_KEY' src/
+# Expected: Uses ODATA_API_KEY
+```
+
+**Documentation**:
+```bash
+# 9. Historical notices where needed:
+grep -l 'Historical Notice' docs/guides/ docs/
+# Expected: Deprecated docs have notices
+```
+
+### Compliance Score Calculation
+
+| Category | Weight | Criteria |
+|----------|--------|----------|
+| XSS Sanitization | 20% | sanitize() function + usage |
+| Color Palette | 15% | No forbidden colors |
+| License Headers | 15% | CC BY-NC 4.0 in all files |
+| API Terminology | 20% | No legacy PTV references |
+| Documentation | 15% | Historical notices present |
+| Syntax Validity | 15% | All files pass syntax check |
+
+**Scoring**:
+- **95-100%**: A+ (Production Ready)
+- **85-94%**: B+ (Production Ready with notes)
+- **70-84%**: C (Requires fixes before deploy)
+- **Below 70%**: F (Do not deploy)
+
+---
+
