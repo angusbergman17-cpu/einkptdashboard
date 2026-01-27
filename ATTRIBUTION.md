@@ -270,9 +270,9 @@ Be aware of rate limits and quotas:
 
 ## 📝 Updates
 
-This attribution file is current as of: **2026-01-25**
+This attribution file is current as of: **2026-01-27**
 
-**Version**: v2.5.2
+**Version**: v2.5.3
 
 If data sources change, this file must be updated accordingly.
 

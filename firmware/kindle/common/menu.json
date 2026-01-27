@@ -1,0 +1,41 @@
+{
+    "items": [
+        {
+            "name": "PTV-TRMNL",
+            "priority": 1,
+            "items": [
+                {
+                    "name": "Start Dashboard",
+                    "priority": 1,
+                    "action": "./ptv-trmnl-launcher.sh start",
+                    "exitmenu": true
+                },
+                {
+                    "name": "Stop Dashboard",
+                    "priority": 2,
+                    "action": "./ptv-trmnl-launcher.sh stop"
+                },
+                {
+                    "name": "Refresh Now",
+                    "priority": 3,
+                    "action": "./ptv-trmnl-launcher.sh once",
+                    "exitmenu": true
+                },
+                {
+                    "name": "Status",
+                    "priority": 4,
+                    "action": "./ptv-trmnl-launcher.sh status"
+                },
+                {
+                    "name": "---",
+                    "priority": 5
+                },
+                {
+                    "name": "Configure Server",
+                    "priority": 6,
+                    "action": "./configure.sh"
+                }
+            ]
+        }
+    ]
+}

@@ -58,23 +58,54 @@
 
 ---
 
+## ✅ Supported via Jailbreak (WinterBreak)
+
+### 3. Amazon Kindle Devices (6th Gen+)
+
+**Status:** ✅ **SUPPORTED** via WinterBreak jailbreak + TRMNL Kindle extension
+
+**Supported Models:**
+- Kindle 6th generation and later (e-ink displays only)
+- Tested on: 10th gen, 12th gen Kindle
+- **Firmware requirement:** 5.18.0 or earlier (Mesquito jailbreak incompatible with 5.18.1+)
+
+**Display Specifications by Model:**
+
+| Model | Resolution | Orientation | Notes |
+|-------|------------|-------------|-------|
+| Kindle Paperwhite 3 (7th gen) | 1072×1448 | Portrait | 300 PPI |
+| Kindle Paperwhite 4 (10th gen) | 1072×1448 | Portrait | Waterproof |
+| Kindle Paperwhite 5 (11th gen) | 1236×1648 | Portrait | 300 PPI, USB-C |
+| Kindle Basic (10th gen) | 600×800 | Portrait | 167 PPI |
+| Kindle (11th gen) | 1072×1448 | Portrait | 300 PPI |
+
+**Jailbreak Process (WinterBreak):**
+1. Enable Airplane Mode, restart Kindle
+2. Download WinterBreak files from MobileRead forums
+3. Extract to Kindle root via USB
+4. Run jailbreak through Kindle Store search
+5. Install hotfix update (required after any OTA)
+6. Install KUAL (Kindle Unified Application Launcher) + MRPI
+7. Download TRMNL Kindle extension package
+
+**Server Integration (BYOS):**
+- Kindle fetches images from server at configured interval
+- API endpoint: `/api/kindle/image` (returns PNG at device resolution)
+- Supports custom server via `apikey.txt` configuration
+- MAC address registration required for authentication
+
+**Installation Resources:**
+- GitHub: https://github.com/usetrmnl/trmnl-kindle
+- TRMNL Guide: https://usetrmnl.com/guides/turn-your-amazon-kindle-into-a-trmnl
+
+**Alternatives (No Jailbreak):**
+- Use Kindle experimental browser to load `/api/dashboard`
+- Limited refresh capability via browser
+- No background updates
+
+---
+
 ## ❌ NOT Compatible (Different Architecture)
-
-### 3. Amazon Kindle Devices
-
-**Why NOT Compatible:**
-- Kindle uses proprietary Amazon hardware (i.MX6 or MTK ARM processors)
-- Locked bootloader with signed firmware verification
-- Different e-ink controller (TI/Freescale proprietary)
-- No official firmware development kit available
-- Jailbreaking voids warranty and is legally questionable
-
-**Alternatives:**
-- Use Kindle as a display via local web browser
-- Access PTV-TRMNL dashboard at `http://your-server:3000/dashboard`
-- Kindle's experimental browser can load the dashboard HTML
-
-**Status:** ❌ Custom firmware impossible without jailbreak
 
 ---
 

@@ -1223,8 +1223,28 @@ app.get('/api/dashboard', async (req, res) => {
   try {
     const data = await getData();
     const prefs = preferences.get();
-    const config = dataManager.getConfig();
-    const apis = dataManager.getApis();
+
+    // Build config from preferences (replaces undefined dataManager.getConfig())
+    const config = {
+      location: {
+        state: prefs?.journey?.transitRoute?.mode1?.originStation?.state || 'VIC',
+        stateCode: prefs?.journey?.transitRoute?.mode1?.originStation?.state || 'VIC'
+      },
+      preferences: {
+        transitMode: 'train',
+        walkingTime: prefs?.manualWalkingTimes?.homeToStation || 5
+      },
+      stops: {
+        home: { name: prefs?.journey?.transitRoute?.mode1?.originStation?.name },
+        work: { name: prefs?.journey?.transitRoute?.mode1?.destinationStation?.name }
+      }
+    };
+
+    // Check if APIs are configured (replaces undefined dataManager.getApis())
+    const apis = {
+      transitAuthority: { configured: !!process.env.ODATA_API_KEY },
+      victorianGTFS: { configured: !!process.env.ODATA_API_KEY }
+    };
 
     // Get device configuration (Development Rules v1.0.14 Section U - Device-First Design)
     const deviceConfig = prefs?.deviceConfig || {
@@ -1606,8 +1626,8 @@ app.get('/api/setup', async (req, res) => {
   });
 });
 
-// Display content endpoint
-app.get('/api/display', (req, res) => {
+// Display content endpoint (compatible with custom firmware v5.9+)
+app.get('/api/display', async (req, res) => {
   const friendlyID = req.headers.id || req.headers['ID'];
   const accessToken = req.headers['access-token'] || req.headers['Access-Token'];
   const refreshRate = req.headers['refresh-rate'] || req.headers['Refresh-Rate'] || '900';
@@ -1645,7 +1665,34 @@ app.get('/api/display', (req, res) => {
     });
   }
 
-  // Return display content (TRMNL uses screen_url for markup-based displays)
+  // Get current time and weather for firmware display
+  const prefs = preferences.get();
+  const state = prefs?.journey?.transitRoute?.mode1?.originStation?.state || 'VIC';
+  const timezone = getTimezoneForState(state);
+
+  const now = new Date();
+  const currentTime = now.toLocaleTimeString('en-AU', {
+    timeZone: timezone,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
+
+  // Get weather data
+  let weatherText = 'N/A';
+  try {
+    const weatherData = await weather.getCurrentWeather();
+    if (weatherData) {
+      weatherText = weatherData.condition?.short || 'N/A';
+      if (weatherData.temperature !== null) {
+        weatherText = `${weatherText} ${weatherData.temperature}°`;
+      }
+    }
+  } catch (e) {
+    // Weather unavailable - silent fail
+  }
+
+  // Return display content with firmware-compatible fields
   res.json({
     status: 0,
     screen_url: `https://${req.get('host')}/api/screen`,
@@ -1653,8 +1700,157 @@ app.get('/api/display', (req, res) => {
     refresh_rate: refreshRate,
     update_firmware: false,
     firmware_url: null,
-    reset_firmware: false
+    reset_firmware: false,
+    // Firmware-compatible fields (v5.9+)
+    current_time: currentTime,
+    weather: weatherText
   });
+});
+
+// ========== KINDLE DEVICE SUPPORT ==========
+// Supports Kindle devices via WinterBreak jailbreak + TRMNL extension
+
+// Kindle device resolutions
+const KINDLE_DEVICES = {
+  'kindle-pw3': { width: 1072, height: 1448, name: 'Kindle Paperwhite 3' },
+  'kindle-pw4': { width: 1072, height: 1448, name: 'Kindle Paperwhite 4' },
+  'kindle-pw5': { width: 1236, height: 1648, name: 'Kindle Paperwhite 5' },
+  'kindle-basic-10': { width: 600, height: 800, name: 'Kindle Basic (10th gen)' },
+  'kindle-11': { width: 1072, height: 1448, name: 'Kindle (11th gen)' },
+  'default': { width: 1072, height: 1448, name: 'Default Kindle' }
+};
+
+// Kindle image endpoint - returns PNG at device resolution
+// Used by TRMNL Kindle extension on jailbroken devices
+app.get('/api/kindle/image', async (req, res) => {
+  const macAddress = req.query.mac || req.headers['x-device-mac'];
+  const deviceModel = req.query.model || 'default';
+  const apiKey = req.query.key || req.headers['x-api-key'];
+
+  // Get device config
+  const deviceConfig = KINDLE_DEVICES[deviceModel] || KINDLE_DEVICES['default'];
+
+  console.log(`📱 Kindle image request: ${deviceConfig.name} (${deviceConfig.width}x${deviceConfig.height})`);
+
+  // Track device if MAC provided
+  if (macAddress) {
+    trackDevicePing(`kindle-${macAddress.replace(/:/g, '')}`, req.ip);
+  }
+
+  try {
+    // Generate dashboard image at Kindle resolution
+    const prefs = preferences.get();
+    const state = prefs?.journey?.transitRoute?.mode1?.originStation?.state || 'VIC';
+    const timezone = getTimezoneForState(state);
+
+    const now = new Date();
+    const currentTime = now.toLocaleTimeString('en-AU', {
+      timeZone: timezone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+
+    const currentDate = now.toLocaleDateString('en-AU', {
+      timeZone: timezone,
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short'
+    });
+
+    // For Kindle, return HTML that can be rendered to image
+    // The TRMNL Kindle extension handles conversion
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=${deviceConfig.width}, height=${deviceConfig.height}">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: ${deviceConfig.width}px;
+      height: ${deviceConfig.height}px;
+      background: white;
+      color: black;
+      font-family: 'Bookerly', 'Georgia', serif;
+      display: flex;
+      flex-direction: column;
+      padding: 30px;
+    }
+    .header {
+      text-align: center;
+      border-bottom: 2px solid black;
+      padding-bottom: 20px;
+      margin-bottom: 20px;
+    }
+    .time {
+      font-size: 72px;
+      font-weight: bold;
+    }
+    .date {
+      font-size: 28px;
+      margin-top: 10px;
+    }
+    .content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .section {
+      border: 1px solid #333;
+      padding: 15px;
+      border-radius: 8px;
+    }
+    .section-title {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .departure {
+      display: flex;
+      justify-content: space-between;
+      font-size: 20px;
+      padding: 8px 0;
+      border-bottom: 1px solid #ddd;
+    }
+    .footer {
+      text-align: center;
+      font-size: 16px;
+      padding-top: 20px;
+      border-top: 1px solid black;
+      opacity: 0.7;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="time">${currentTime}</div>
+    <div class="date">${currentDate}</div>
+  </div>
+  <div class="content">
+    <div class="section">
+      <div class="section-title">🚂 Next Departures</div>
+      <div class="departure"><span>Train to City</span><span>Loading...</span></div>
+      <div class="departure"><span>Tram to Work</span><span>Loading...</span></div>
+    </div>
+  </div>
+  <div class="footer">
+    PTV-TRMNL | Kindle Edition | ${deviceConfig.name}
+  </div>
+</body>
+</html>`;
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('X-Device-Model', deviceModel);
+    res.setHeader('X-Device-Resolution', `${deviceConfig.width}x${deviceConfig.height}`);
+    res.send(htmlContent);
+
+  } catch (error) {
+    console.error('Kindle image error:', error);
+    res.status(500).json({ error: 'Failed to generate Kindle image' });
+  }
 });
 
 // Device logging endpoint
@@ -1713,58 +1909,8 @@ app.get('/api/config', (req, res) => {
 // Device configuration endpoint - SERVER-DRIVEN SETTINGS
 // Following DEVELOPMENT-RULES.md Section X: Firmware Flash Once Philosophy
 // Returns all device settings so user can change them in admin panel without reflashing
-app.get('/api/device-config', (req, res) => {
-  const prefs = preferences.get();
-  const state = prefs.state || 'VIC';
-  const timezone = getTimezoneForState(state);
-
-  // Get refresh settings from preferences (or use defaults)
-  const refreshSettings = prefs.refreshSettings || {
-    displayRefresh: { interval: 20000 },  // 20 seconds default
-    journeyRecalc: { interval: 120000 },  // 2 minutes default
-    dataFetch: { interval: 30000 }        // 30 seconds default
-  };
-
-  // Get device settings
-  const device = prefs.device || { type: 'trmnl-og' };
-
-  // Device-specific resolution
-  const deviceResolutions = {
-    'trmnl-og': { width: 800, height: 480, orientation: 'landscape' },
-    'kindle-pw5': { width: 1236, height: 1648, orientation: 'portrait' },
-    'kindle-pw3': { width: 758, height: 1024, orientation: 'portrait' }
-  };
-
-  const resolution = deviceResolutions[device.type] || { width: 800, height: 480, orientation: 'landscape' };
-
-  res.json({
-    // Refresh intervals (user-customizable via admin panel)
-    refreshInterval: refreshSettings.displayRefresh.interval,
-    fullRefreshInterval: 600000,  // 10 minutes
-
-    // Device specifications
-    resolution: {
-      width: resolution.width,
-      height: resolution.height
-    },
-    orientation: resolution.orientation,
-
-    // Server info
-    timezone: timezone,
-    serverVersion: VERSION,
-
-    // Feature flags
-    features: {
-      partialRefresh: device.type === 'trmnl-og',
-      colorDisplay: false,
-      touchscreen: false
-    },
-
-    // Update info
-    lastConfigUpdate: new Date().toISOString(),
-    configVersion: '3.0.0'
-  });
-});
+// Supports: TRMNL BYOS, Kindle Paperwhite 3/4/5, Kindle Basic, Kindle 11
+// NOTE: Second definition at ~line 3256 provides extended config - keeping both for compatibility
 
 /* =========================================================
    ADMIN PANEL ROUTES
@@ -2654,6 +2800,45 @@ app.post('/admin/apis/gtfs-realtime/test', async (req, res) => {
   }
 });
 
+// Transport Victoria API key configuration
+app.post('/admin/apis/transport', async (req, res) => {
+  try {
+    const { apiKey } = req.body;
+
+    if (!apiKey) {
+      return res.status(400).json({
+        success: false,
+        error: 'API key is required'
+      });
+    }
+
+    // Update preferences with the transport API key
+    const prefs = preferences.get();
+    prefs.api = prefs.api || {};
+    prefs.api.key = apiKey;
+    prefs.api.provider = 'Transport Victoria OpenData';
+
+    await preferences.save();
+
+    // Update environment variable for immediate use
+    process.env.ODATA_API_KEY = apiKey;
+
+    console.log('✅ Transport Victoria API key saved successfully');
+    console.log(`   Key: ${apiKey.substring(0, 8)}...`);
+
+    res.json({
+      success: true,
+      message: 'Transport Victoria API key saved successfully'
+    });
+  } catch (error) {
+    console.error('Error saving transport API key:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // Additional APIs configuration (Google Places, Mapbox, RSS feeds)
 app.post('/admin/apis/additional', async (req, res) => {
   try {
@@ -3041,6 +3226,208 @@ app.post('/admin/smart-setup', async (req, res) => {
   }
 });
 
+// ========== MULTI-MODAL JOURNEY CONFIGURATION ==========
+// Supports complex journeys with up to 4 transit modes
+// Example: Home → Cafe → Tram → Train → Walk → Office
+app.post('/admin/multi-modal-journey/configure', async (req, res) => {
+  try {
+    const {
+      addresses,      // { home, cafe, work }
+      arrivalTime,    // "09:00"
+      coffeeEnabled,  // true/false
+      cafeLocation,   // 'before-transit-1', 'between-transit-1-2', 'after-last-transit'
+      transitModes    // Array of { type, origin, destination, estimatedDuration }
+    } = req.body;
+
+    console.log('\n=== MULTI-MODAL JOURNEY CONFIGURATION ===');
+    console.log('Addresses:', addresses);
+    console.log('Arrival Time:', arrivalTime);
+    console.log('Coffee Enabled:', coffeeEnabled);
+    console.log('Cafe Location:', cafeLocation);
+    console.log('Transit Modes:', JSON.stringify(transitModes, null, 2));
+
+    // Validate required fields
+    if (!addresses?.home || !addresses?.work || !arrivalTime) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: addresses.home, addresses.work, and arrivalTime are required'
+      });
+    }
+
+    if (!transitModes || !Array.isArray(transitModes) || transitModes.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'At least one transit mode is required'
+      });
+    }
+
+    if (transitModes.length > 4) {
+      return res.status(400).json({
+        success: false,
+        error: 'Maximum 4 transit modes supported'
+      });
+    }
+
+    // Build transit route configuration
+    const transitRoute = {
+      numberOfModes: transitModes.length,
+      mode1: null,
+      mode2: null,
+      mode3: null,
+      mode4: null
+    };
+
+    // Configure each transit mode
+    for (let i = 0; i < transitModes.length; i++) {
+      const mode = transitModes[i];
+      const modeKey = `mode${i + 1}`;
+
+      // Validate mode data
+      if (!mode.origin || !mode.destination) {
+        return res.status(400).json({
+          success: false,
+          error: `Mode ${i + 1} must have origin and destination`
+        });
+      }
+
+      transitRoute[modeKey] = {
+        type: mode.type ?? 0,  // Default to train (0)
+        originStation: {
+          name: mode.origin.name || mode.origin,
+          id: mode.origin.id || null,
+          lat: mode.origin.lat || null,
+          lon: mode.origin.lon || null
+        },
+        destinationStation: {
+          name: mode.destination.name || mode.destination,
+          id: mode.destination.id || null,
+          lat: mode.destination.lat || null,
+          lon: mode.destination.lon || null
+        },
+        estimatedDuration: mode.estimatedDuration || null
+      };
+    }
+
+    // Validate cafe location for multi-modal journeys
+    const validCafeLocations = [
+      'before-transit-1',
+      'between-transit-1-2',
+      'between-transit-2-3',
+      'between-transit-3-4',
+      'after-last-transit'
+    ];
+    const effectiveCafeLocation = coffeeEnabled
+      ? (validCafeLocations.includes(cafeLocation) ? cafeLocation : 'before-transit-1')
+      : null;
+
+    // Update preferences
+    const configData = {
+      addresses: {
+        home: addresses.home,
+        cafe: addresses.cafe || '',
+        cafeName: addresses.cafeName || '',
+        work: addresses.work
+      },
+      journey: {
+        arrivalTime: arrivalTime,
+        coffeeEnabled: coffeeEnabled === true,
+        cafeLocation: effectiveCafeLocation,
+        transitRoute: transitRoute
+      }
+    };
+
+    await preferences.update(configData);
+
+    // Start automatic journey calculation
+    startAutomaticJourneyCalculation();
+
+    console.log('✅ Multi-modal journey configured successfully');
+    console.log(`   Modes: ${transitModes.length}`);
+    console.log(`   Coffee: ${coffeeEnabled ? effectiveCafeLocation : 'disabled'}`);
+
+    res.json({
+      success: true,
+      message: 'Multi-modal journey configured successfully',
+      configuration: {
+        numberOfModes: transitRoute.numberOfModes,
+        modes: transitModes.map((m, i) => ({
+          modeNumber: i + 1,
+          type: ['Train', 'Tram', 'Bus', 'V/Line', 'Ferry', 'Light Rail'][m.type] || 'Unknown',
+          from: m.origin.name || m.origin,
+          to: m.destination.name || m.destination
+        })),
+        coffeeLocation: effectiveCafeLocation
+      }
+    });
+
+  } catch (error) {
+    console.error('Multi-modal configuration error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Get example multi-modal journey configurations
+app.get('/admin/multi-modal-journey/examples', (req, res) => {
+  res.json({
+    success: true,
+    examples: [
+      {
+        name: 'South Yarra to Parliament (Tram + Train)',
+        description: 'Home → Cafe → Tram → Train → Office',
+        config: {
+          addresses: {
+            home: '1 Clara Street, South Yarra VIC',
+            cafe: 'Norman, Toorak Road, South Yarra',
+            work: 'Collins Street, Melbourne VIC'
+          },
+          arrivalTime: '09:00',
+          coffeeEnabled: true,
+          cafeLocation: 'before-transit-1',
+          transitModes: [
+            {
+              type: 1,  // Tram
+              origin: { name: 'Toorak Rd/Chapel St', id: '2803', lat: -37.8400, lon: 144.9980 },
+              destination: { name: 'South Yarra', id: '1159', lat: -37.8397, lon: 144.9933 },
+              estimatedDuration: 5
+            },
+            {
+              type: 0,  // Train
+              origin: { name: 'South Yarra', id: '1159', lat: -37.8397, lon: 144.9933 },
+              destination: { name: 'Parliament', id: '1120', lat: -37.8110, lon: 144.9730 },
+              estimatedDuration: 8
+            }
+          ]
+        }
+      },
+      {
+        name: 'Richmond to CBD (Single Train)',
+        description: 'Home → Cafe → Train → Office',
+        config: {
+          addresses: {
+            home: '100 Church Street, Richmond VIC',
+            cafe: 'Axil Coffee, Church Street, Richmond',
+            work: 'Bourke Street, Melbourne VIC'
+          },
+          arrivalTime: '09:00',
+          coffeeEnabled: true,
+          cafeLocation: 'before-transit-1',
+          transitModes: [
+            {
+              type: 0,  // Train
+              origin: { name: 'Richmond', id: '1104', lat: -37.8210, lon: 145.0037 },
+              destination: { name: 'Flinders Street Station', id: '1071', lat: -37.8183, lon: 144.9671 },
+              estimatedDuration: 5
+            }
+          ]
+        }
+      }
+    ]
+  });
+});
+
 // Helper function to get transit authority for state
 function getTransitAuthorityForState(state) {
   const authorities = {
@@ -3057,14 +3444,90 @@ function getTransitAuthorityForState(state) {
 }
 
 // Get device configuration for firmware (Development Rules v1.0.15 Section X)
+// Supports: TRMNL BYOS, Kindle Paperwhite 3/4/5, Kindle Basic, Kindle 11
 app.get('/api/device-config', (req, res) => {
   try {
     const prefs = preferences.get();
+
+    // All supported device specifications
+    const DEVICE_SPECS = {
+      'trmnl-byos': {
+        name: 'TRMNL BYOS (7.5")',
+        resolution: { width: 800, height: 480 },
+        orientation: 'landscape',
+        ppi: 117,
+        colorDepth: '1-bit',
+        refreshMethod: 'webhook',
+        partialRefreshSupported: true,
+        firmwarePath: '/firmware/src/main.cpp',
+        jailbreakRequired: false
+      },
+      'kindle-pw3': {
+        name: 'Kindle Paperwhite 3 (6")',
+        resolution: { width: 1072, height: 1448 },
+        orientation: 'portrait',
+        ppi: 300,
+        colorDepth: '4-bit grayscale',
+        refreshMethod: 'trmnl_extension',
+        partialRefreshSupported: false,
+        firmwarePath: '/firmware/kindle/kindle-pw3/',
+        jailbreakRequired: true
+      },
+      'kindle-pw4': {
+        name: 'Kindle Paperwhite 4 (6")',
+        resolution: { width: 1072, height: 1448 },
+        orientation: 'portrait',
+        ppi: 300,
+        colorDepth: '4-bit grayscale',
+        refreshMethod: 'trmnl_extension',
+        partialRefreshSupported: false,
+        firmwarePath: '/firmware/kindle/kindle-pw4/',
+        jailbreakRequired: true
+      },
+      'kindle-pw5': {
+        name: 'Kindle Paperwhite 5 (6.8")',
+        resolution: { width: 1236, height: 1648 },
+        orientation: 'portrait',
+        ppi: 300,
+        colorDepth: '4-bit grayscale',
+        refreshMethod: 'trmnl_extension',
+        partialRefreshSupported: false,
+        firmwarePath: '/firmware/kindle/kindle-pw5/',
+        jailbreakRequired: true
+      },
+      'kindle-basic-10': {
+        name: 'Kindle Basic (10th gen)',
+        resolution: { width: 600, height: 800 },
+        orientation: 'portrait',
+        ppi: 167,
+        colorDepth: '4-bit grayscale',
+        refreshMethod: 'trmnl_extension',
+        partialRefreshSupported: false,
+        firmwarePath: '/firmware/kindle/kindle-basic-10/',
+        jailbreakRequired: true
+      },
+      'kindle-11': {
+        name: 'Kindle (11th gen)',
+        resolution: { width: 1072, height: 1448 },
+        orientation: 'portrait',
+        ppi: 300,
+        colorDepth: '4-bit grayscale',
+        refreshMethod: 'trmnl_extension',
+        partialRefreshSupported: false,
+        firmwarePath: '/firmware/kindle/kindle-11/',
+        jailbreakRequired: true
+      }
+    };
+
     const deviceConfig = prefs.deviceConfig || {
       selectedDevice: 'trmnl-byos',
       resolution: { width: 800, height: 480 },
       orientation: 'landscape'
     };
+
+    const selectedDevice = deviceConfig.selectedDevice || 'trmnl-byos';
+    const deviceSpec = DEVICE_SPECS[selectedDevice] || DEVICE_SPECS['trmnl-byos'];
+
     const refreshSettings = prefs.refreshSettings || {
       displayRefresh: { interval: 900000, unit: 'minutes' },
       journeyRecalc: { interval: 120000, unit: 'minutes' },
@@ -3074,20 +3537,31 @@ app.get('/api/device-config', (req, res) => {
 
     // Get partial refresh settings if enabled
     const partialRefresh = refreshSettings.partialRefresh || null;
-    const enabledZones = preferences.getEnabledRefreshZones();
+    const enabledZones = preferences.getEnabledRefreshZones ? preferences.getEnabledRefreshZones() : [];
+
+    // Determine correct endpoint based on device type
+    const isKindle = selectedDevice.startsWith('kindle-');
+    const webhookEndpoint = isKindle ? '/api/kindle/image' : '/api/screen';
 
     res.json({
       success: true,
-      device: deviceConfig.selectedDevice,
-      resolution: deviceConfig.resolution,
-      orientation: deviceConfig.orientation,
+      device: selectedDevice,
+      deviceName: deviceSpec.name,
+      resolution: deviceSpec.resolution,
+      orientation: deviceSpec.orientation,
+      ppi: deviceSpec.ppi,
+      colorDepth: deviceSpec.colorDepth,
+      refreshMethod: deviceSpec.refreshMethod,
+      jailbreakRequired: deviceSpec.jailbreakRequired,
+      firmwarePath: deviceSpec.firmwarePath,
       refreshInterval: refreshSettings.displayRefresh.interval,
-      webhookEndpoint: '/api/screen',
+      webhookEndpoint: webhookEndpoint,
       dashboardEndpoint: '/api/dashboard',
+      kindleImageEndpoint: isKindle ? `/api/kindle/image?model=${selectedDevice}` : null,
       serverVersion: process.env.npm_package_version || '3.0.0',
 
-      // Partial refresh configuration
-      partialRefresh: partialRefresh ? {
+      // Partial refresh configuration (TRMNL only)
+      partialRefresh: deviceSpec.partialRefreshSupported && partialRefresh ? {
         enabled: partialRefresh.enabled,
         interval: partialRefresh.interval,
         zones: enabledZones.map(zone => ({
@@ -3098,7 +3572,13 @@ app.get('/api/device-config', (req, res) => {
         })),
         fullRefreshInterval: partialRefresh.fullRefreshInterval,
         smartCoalescing: partialRefresh.smartCoalescing
-      } : null
+      } : null,
+
+      // All available devices for setup wizard
+      availableDevices: Object.keys(DEVICE_SPECS).map(key => ({
+        id: key,
+        ...DEVICE_SPECS[key]
+      }))
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -4517,8 +4997,30 @@ app.get('/admin/live-display', async (req, res) => {
     const data = await getData();
     const regionUpdates = await getRegionUpdates();
     const prefs = preferences.get();
-    const config = dataManager.getConfig();
-    const apis = dataManager.getApis();
+
+    // Build config from preferences (replaces undefined dataManager.getConfig())
+    const config = {
+      location: {
+        state: prefs?.journey?.transitRoute?.mode1?.originStation?.state || 'VIC',
+        stateCode: prefs?.journey?.transitRoute?.mode1?.originStation?.state || 'VIC',
+        stateName: prefs?.journey?.transitRoute?.mode1?.originStation?.state || 'Victoria'
+      },
+      preferences: {
+        transitMode: 'train',
+        walkingTime: prefs?.manualWalkingTimes?.homeToStation || 5
+      },
+      stops: {
+        home: { name: prefs?.journey?.transitRoute?.mode1?.originStation?.name },
+        work: { name: prefs?.journey?.transitRoute?.mode1?.destinationStation?.name }
+      }
+    };
+
+    // Check if APIs are configured (replaces undefined dataManager.getApis())
+    const apis = {
+      transitAuthority: { configured: !!process.env.ODATA_API_KEY },
+      victorianGTFS: { configured: !!process.env.ODATA_API_KEY }
+    };
+
     const cachedRoute = routePlanner.getCachedRoute();
     const cachedAutoJourney = cachedJourney; // Use compliant auto-calculated journey
 
@@ -5334,9 +5836,29 @@ app.post('/admin/system/reset-all', async (req, res) => {
  * - Clear data source indicators (fallback vs live)
  */
 app.get('/preview', requireConfiguration, (req, res) => {
-  const config = dataManager.getConfig();
-  const apis = dataManager.getApis();
   const prefs = preferences.get();
+
+  // Build config from preferences (replaces undefined dataManager.getConfig())
+  const config = {
+    location: {
+      state: prefs?.journey?.transitRoute?.mode1?.originStation?.state || 'VIC',
+      stateCode: prefs?.journey?.transitRoute?.mode1?.originStation?.state || 'VIC'
+    },
+    preferences: {
+      transitMode: 'train',
+      walkingTime: prefs?.manualWalkingTimes?.homeToStation || 5
+    },
+    stops: {
+      home: { name: prefs?.journey?.transitRoute?.mode1?.originStation?.name },
+      work: { name: prefs?.journey?.transitRoute?.mode1?.destinationStation?.name }
+    }
+  };
+
+  // Check if APIs are configured (replaces undefined dataManager.getApis())
+  const apis = {
+    transitAuthority: { configured: !!process.env.ODATA_API_KEY },
+    victorianGTFS: { configured: !!process.env.ODATA_API_KEY }
+  };
 
   // Get device configuration (Development Rules v1.0.14 Section U - Device-First Design)
   const deviceConfig = prefs?.deviceConfig || {

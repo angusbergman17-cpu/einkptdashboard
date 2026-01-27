@@ -1,7 +1,7 @@
 # PTV-TRMNL Development Rules
 **MANDATORY COMPLIANCE DOCUMENT**
-**Last Updated**: 2026-01-26 Evening
-**Version**: 1.0.23
+**Last Updated**: 2026-01-27
+**Version**: 1.0.24
 
 **📋 [Complete Project Vision →](../../PROJECT-STATEMENT.md)** - Read the comprehensive project statement for context on goals, architecture, and user requirements.
 
@@ -1394,6 +1394,34 @@ app.get('/api/screen', async (req, res) => {
 - Plugin API: TRMNL BYOS plugin specification
 - Server Requirements: Consult TRMNL BYOS server guidelines
 
+**Kindle Jailbreak Support (WinterBreak)**:
+Kindle devices (6th generation and later) are **SUPPORTED** via WinterBreak jailbreak + TRMNL Kindle extension.
+
+**Requirements**:
+- Kindle firmware 5.18.0 or earlier (Mesquito jailbreak incompatible with 5.18.1+)
+- WinterBreak jailbreak installed
+- KUAL (Kindle Unified Application Launcher) + MRPI
+- TRMNL Kindle extension package
+
+**Jailbreak Process**:
+1. Enable Airplane Mode, restart Kindle
+2. Download WinterBreak files from MobileRead forums
+3. Extract to Kindle root via USB
+4. Run jailbreak through Kindle Store search
+5. Install hotfix update (required after any OTA)
+6. Install KUAL + MRPI
+7. Download and install TRMNL Kindle extension
+
+**Server Integration**:
+- Endpoint: `/api/kindle/image` (returns PNG at device resolution)
+- Supports custom server via `apikey.txt` configuration
+- MAC address registration required for authentication
+- Fetches at configured interval (default: 15 minutes)
+
+**Resources**:
+- GitHub: https://github.com/usetrmnl/trmnl-kindle
+- TRMNL Guide: https://usetrmnl.com/guides/turn-your-amazon-kindle-into-a-trmnl
+
 **Future Device Compatibility (To Be Expanded)**:
 This section will be updated as additional e-ink displays are tested:
 - Waveshare e-Paper displays
@@ -1881,35 +1909,53 @@ const SUPPORTED_DEVICES = {
   },
   'kindle-pw3': {
     name: 'Kindle Paperwhite 3 (6")',
-    resolution: { width: 758, height: 1024 },
+    resolution: { width: 1072, height: 1448 },
     orientation: 'portrait',
-    format: 'HTML/PNG',
+    format: 'PNG',
     colorDepth: '4-bit grayscale',
-    refreshMethod: 'kiosk_browser'
+    refreshMethod: 'trmnl_extension',  // Via WinterBreak jailbreak
+    ppi: 300,
+    jailbreakRequired: true
   },
   'kindle-pw4': {
     name: 'Kindle Paperwhite 4 (6")',
-    resolution: { width: 758, height: 1024 },
+    resolution: { width: 1072, height: 1448 },
     orientation: 'portrait',
-    format: 'HTML/PNG',
+    format: 'PNG',
     colorDepth: '4-bit grayscale',
-    refreshMethod: 'kiosk_browser'
+    refreshMethod: 'trmnl_extension',  // Via WinterBreak jailbreak
+    ppi: 300,
+    jailbreakRequired: true
   },
   'kindle-pw5': {
     name: 'Kindle Paperwhite 5 (6.8")',
     resolution: { width: 1236, height: 1648 },
     orientation: 'portrait',
-    format: 'HTML/PNG',
+    format: 'PNG',
     colorDepth: '4-bit grayscale',
-    refreshMethod: 'kiosk_browser'
+    refreshMethod: 'trmnl_extension',  // Via WinterBreak jailbreak
+    ppi: 300,
+    jailbreakRequired: true
   },
-  'kindle-4': {
-    name: 'Kindle 4 (6" non-touch)',
+  'kindle-basic-10': {
+    name: 'Kindle Basic (10th gen)',
     resolution: { width: 600, height: 800 },
     orientation: 'portrait',
-    format: 'HTML/PNG',
+    format: 'PNG',
     colorDepth: '4-bit grayscale',
-    refreshMethod: 'kiosk_browser'
+    refreshMethod: 'trmnl_extension',  // Via WinterBreak jailbreak
+    ppi: 167,
+    jailbreakRequired: true
+  },
+  'kindle-11': {
+    name: 'Kindle (11th gen)',
+    resolution: { width: 1072, height: 1448 },
+    orientation: 'portrait',
+    format: 'PNG',
+    colorDepth: '4-bit grayscale',
+    refreshMethod: 'trmnl_extension',  // Via WinterBreak jailbreak
+    ppi: 300,
+    jailbreakRequired: true
   }
 };
 ```
@@ -1944,9 +1990,13 @@ const previewHeight = config.resolution.height;
 
   <select id="device-select">
     <option value="trmnl-byos">TRMNL BYOS (7.5" - 800×480)</option>
-    <option value="kindle-pw3">Kindle Paperwhite 3/4 (6" - 758×1024)</option>
-    <option value="kindle-pw5">Kindle Paperwhite 5 (6.8" - 1236×1648)</option>
-    <option value="kindle-4">Kindle 4 (6" - 600×800)</option>
+    <optgroup label="Kindle (Jailbreak Required)">
+      <option value="kindle-pw3">Kindle Paperwhite 3 (6" - 1072×1448)</option>
+      <option value="kindle-pw4">Kindle Paperwhite 4 (6" - 1072×1448)</option>
+      <option value="kindle-pw5">Kindle Paperwhite 5 (6.8" - 1236×1648)</option>
+      <option value="kindle-basic-10">Kindle Basic 10th gen (6" - 600×800)</option>
+      <option value="kindle-11">Kindle 11th gen (6" - 1072×1448)</option>
+    </optgroup>
   </select>
 
   <div id="device-preview">
@@ -2577,6 +2627,98 @@ const response = await fetch(url, {
 ---
 
 ## 9️⃣ UI/UX MANDATES
+
+### Design System Principles (MANDATORY)
+
+**CRITICAL**: All interface pages MUST have matching design and intuitive interface. Consistency across all pages is non-negotiable.
+
+**Core Design Philosophy**:
+1. **Visual Consistency**: All pages (admin, setup, dashboard, journey) MUST use identical styling
+2. **Intuitive Navigation**: Users should understand interface without instruction
+3. **Dark & Comforting Tones**: Prioritize dark backgrounds that reduce eye strain
+4. **Information Hierarchy**: Clear visual distinction between primary, secondary, and tertiary elements
+
+### Color Palette (MANDATORY)
+
+**Primary Palette (Dark/Comforting Base)**:
+```css
+/* Primary Background - Dark Slate */
+--color-bg-primary: #0f172a;       /* slate-900 - Main background */
+--color-bg-secondary: #1e293b;     /* slate-800 - Cards, panels */
+--color-bg-tertiary: #334155;      /* slate-700 - Hover states */
+
+/* Primary Accent - Indigo (Trust/Professionalism) */
+--color-accent-primary: #6366f1;   /* indigo-500 - Buttons, links */
+--color-accent-hover: #4f46e5;     /* indigo-600 - Hover states */
+--color-accent-light: #818cf8;     /* indigo-400 - Highlights */
+```
+
+**Secondary Palette (Status/Feedback)**:
+```css
+/* Success - Green */
+--color-success: #22c55e;          /* green-500 - Success states */
+--color-success-bg: rgba(34, 197, 94, 0.2);  /* Success background */
+
+/* Warning - Amber */
+--color-warning: #f59e0b;          /* amber-500 - Warnings */
+--color-warning-bg: rgba(245, 158, 11, 0.2); /* Warning background */
+
+/* Error - Red */
+--color-error: #ef4444;            /* red-500 - Errors */
+--color-error-bg: rgba(239, 68, 68, 0.2);    /* Error background */
+
+/* Info - Sky Blue */
+--color-info: #0ea5e9;             /* sky-500 - Information */
+--color-info-bg: rgba(14, 165, 233, 0.1);    /* Info background */
+```
+
+**Tertiary Palette (Text/Borders)**:
+```css
+/* Text Colors */
+--color-text-primary: #f8fafc;     /* slate-50 - Primary text */
+--color-text-secondary: #cbd5e1;   /* slate-300 - Secondary text */
+--color-text-muted: #64748b;       /* slate-500 - Muted/disabled */
+
+/* Borders */
+--color-border-default: rgba(255, 255, 255, 0.1);
+--color-border-focus: rgba(99, 102, 241, 0.5);
+```
+
+**Implementation Requirements**:
+```css
+/* ALL pages MUST include these base styles */
+body {
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.card, .panel {
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid var(--color-border-default);
+    border-radius: 12px;
+}
+
+.btn-primary {
+    background: var(--color-accent-primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--color-accent-hover);
+}
+```
+
+### Design Consistency Checklist
+
+**Before committing ANY UI changes**:
+- [ ] Page uses same color palette as admin.html
+- [ ] Fonts match other pages (Inter or system fonts)
+- [ ] Button styles are consistent
+- [ ] Card/panel styling matches
+- [ ] Status colors use standard palette
+- [ ] Dark theme is maintained (no jarring white backgrounds)
+- [ ] Spacing and border-radius are consistent
 
 ### Admin Panel Structure
 

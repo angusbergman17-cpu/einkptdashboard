@@ -40,7 +40,7 @@ pip install platformio
 Edit `include/config.h` and update the server URL:
 
 ```cpp
-#define SERVER_URL "https://your-app.onrender.com"
+#define SERVER_URL "https://ptv-trmnl-new.onrender.com"
 ```
 
 ### 3. Build Firmware

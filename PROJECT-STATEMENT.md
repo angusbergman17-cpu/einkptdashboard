@@ -124,12 +124,14 @@ Full refresh every 20s:    ~150mA average → 12 hours battery life ❌
 - Battery: 2500mAh (2-3 days with 20s refresh)
 - Firmware: `trmnl` (release) and `trmnl-debug` (development)
 
-**Kindle Devices (Planned/In Progress)**
-- Kindle Paperwhite
-- Kindle Basic
-- Kindle Oasis
-- Kindle Scribe
-- Custom firmware for each model with jailbreak instructions
+**Kindle Devices (Supported via WinterBreak Jailbreak)**
+- Kindle Paperwhite 3 (7th gen) - 1072×1448, 300 PPI
+- Kindle Paperwhite 4 (10th gen) - 1072×1448, 300 PPI
+- Kindle Paperwhite 5 (11th gen) - 1236×1648, 300 PPI
+- Kindle Basic (10th gen) - 600×800, 167 PPI
+- Kindle (11th gen) - 1072×1448, 300 PPI
+- Requires: WinterBreak jailbreak + KUAL + TRMNL extension
+- Firmware path: `firmware/kindle/[device-model]/`
 
 **Common Features Across Devices:**
 - 20-second partial refresh (hardcoded)
@@ -345,7 +347,34 @@ BOM Weather API
 
 ---
 
-## 🎨 User Experience Flow
+## 🎨 Design System
+
+### Visual Design Principles
+
+**MANDATORY**: All interface pages must have matching design with dark, comforting tones.
+
+**Color Palette**:
+- **Primary Background**: `#0f172a` (slate-900) - Main background
+- **Secondary Background**: `#1e293b` (slate-800) - Cards, panels
+- **Primary Accent**: `#6366f1` (indigo-500) - Buttons, links
+- **Success**: `#22c55e` (green-500) - Positive states
+- **Warning**: `#f59e0b` (amber-500) - Caution states
+- **Error**: `#ef4444` (red-500) - Error states
+- **Text Primary**: `#f8fafc` (slate-50) - Main text
+- **Text Secondary**: `#cbd5e1` (slate-300) - Secondary text
+
+**Design Consistency Requirements**:
+1. All pages (admin, setup, dashboard, journey) use identical styling
+2. Dark theme maintained across all interfaces
+3. Consistent button styles, card layouts, and spacing
+4. No jarring white backgrounds
+5. Clear information hierarchy with primary/secondary/tertiary elements
+
+**Reference**: See `DEVELOPMENT-RULES.md` Section 9 for complete design specifications.
+
+---
+
+## 🚶 User Experience Flow
 
 ### Morning Commute Scenario
 
@@ -566,7 +595,8 @@ ACTUAL (with safety):    5+ years (conservative estimate)
 - [x] Public documentation (README, guides)
 
 ### Should Have
-- [ ] Kindle device support (Paperwhite, Oasis, Basic)
+- [x] Kindle device support (Paperwhite 3/4/5, Basic, 11th gen)
+- [x] Device-specific firmware packages
 - [ ] Installation wizard with auto-device detection
 - [ ] One-click firmware flashing
 - [ ] Reddit post with community guide
@@ -759,18 +789,22 @@ Make e-ink transit displays the standard for smart homes in cities worldwide. Lo
 
 ## 📞 Contact & Community
 
-**Project Repository:** https://github.com/[username]/PTV-TRMNL-NEW
+**Project Repository:** https://github.com/angusbergman17-cpu/PTV-TRMNL-NEW
 **Reddit:** r/melbourne, r/eink, r/TRMNL (pending posts)
 **Developer:** Angus Bergman
 
-**License:** MIT (keep it open and free)
+**License:** Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)
+- See LICENSE file for full terms
+- Non-commercial use only
+- Attribution required
 
 ---
 
-**Last Updated:** 2026-01-26
-**Project Version:** 2.5.2
-**Status:** Production Ready (98/100)
-**Device Status:** Operational (flashed 2026-01-26 21:23)
+**Last Updated:** 2026-01-27
+**Project Version:** 2.5.3
+**Status:** Production Ready (99/100)
+**Device Status:** Operational
+**Kindle Support:** Complete (5 device variants)
 
 ---
 
