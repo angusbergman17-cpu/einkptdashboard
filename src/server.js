@@ -2800,6 +2800,45 @@ app.post('/admin/apis/gtfs-realtime/test', async (req, res) => {
   }
 });
 
+// Transport Victoria API key configuration
+app.post('/admin/apis/transport', async (req, res) => {
+  try {
+    const { apiKey } = req.body;
+
+    if (!apiKey) {
+      return res.status(400).json({
+        success: false,
+        error: 'API key is required'
+      });
+    }
+
+    // Update preferences with the transport API key
+    const prefs = preferences.get();
+    prefs.api = prefs.api || {};
+    prefs.api.key = apiKey;
+    prefs.api.provider = 'Transport Victoria OpenData';
+
+    await preferences.save();
+
+    // Update environment variable for immediate use
+    process.env.ODATA_API_KEY = apiKey;
+
+    console.log('✅ Transport Victoria API key saved successfully');
+    console.log(`   Key: ${apiKey.substring(0, 8)}...`);
+
+    res.json({
+      success: true,
+      message: 'Transport Victoria API key saved successfully'
+    });
+  } catch (error) {
+    console.error('Error saving transport API key:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // Additional APIs configuration (Google Places, Mapbox, RSS feeds)
 app.post('/admin/apis/additional', async (req, res) => {
   try {
