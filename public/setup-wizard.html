@@ -782,10 +782,33 @@
                 const result = await response.json();
 
                 if (result.success) {
+                    // Generate webhook URL for TRMNL device
+                    const webhookResponse = await fetch('/admin/generate-webhook', { method: 'POST' });
+                    const webhookResult = await webhookResponse.json();
+                    
+                    let webhookHtml = '';
+                    if (webhookResult.success) {
+                        webhookHtml = `
+                            <div style="margin-top: 20px; padding: 15px; background: rgba(99, 102, 241, 0.1); border-radius: 8px; border: 1px solid rgba(99, 102, 241, 0.3);">
+                                <h4 style="color: #6366f1; margin-bottom: 10px;">📱 Your TRMNL Webhook URL:</h4>
+                                <input type="text" value="${webhookResult.webhookUrl}" readonly 
+                                    style="width: 100%; padding: 10px; font-family: monospace; font-size: 12px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; color: #f1f5f9;"
+                                    onclick="this.select(); document.execCommand('copy'); alert('Copied!');">
+                                <p style="color: #94a3b8; font-size: 12px; margin-top: 10px;">
+                                    1. Copy this URL<br>
+                                    2. In TRMNL app → Create Private Plugin<br>
+                                    3. Paste as webhook URL<br>
+                                    4. Your display will show live transit data!
+                                </p>
+                            </div>
+                        `;
+                    }
+                    
                     document.getElementById('setup-status').innerHTML = `
-                        <div class="success-box">
-                            <h3 style="color: #22543d; margin-bottom: 10px;">✅ Setup Complete!</h3>
-                            <p style="color: #22543d;">Your intelligent transit display is ready.</p>
+                        <div class="success-box" style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); padding: 20px; border-radius: 12px;">
+                            <h3 style="color: #22c55e; margin-bottom: 10px;">✅ Setup Complete!</h3>
+                            <p style="color: #86efac;">Your intelligent transit display is ready.</p>
+                            ${webhookHtml}
                             <button class="btn" onclick="window.location.href='/admin'" style="margin-top: 15px;">Go to Dashboard →</button>
                         </div>
                     `;
