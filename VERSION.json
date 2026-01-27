@@ -55,8 +55,8 @@
     }
   },
   "firmware": {
-    "version": "5.9.0",
-    "description": "ESP32-C3 TRMNL Firmware",
+    "version": "5.10.0",
+    "description": "ESP32-C3 TRMNL Firmware - Watchdog + Anti-Brick Compliance",
     "lastUpdated": "2026-01-27"
   },
   "versioningScheme": {

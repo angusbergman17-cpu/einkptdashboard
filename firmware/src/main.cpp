@@ -1,5 +1,6 @@
 /**
- * PTV-TRMNL v5.9 - Default Dashboard
+ * PTV-TRMNL v5.10 - Watchdog + Anti-Brick Compliance
+ * Adds critical watchdog timer to prevent device bricking
  * Shows time and status info while setup is in progress
  * Gracefully handles "system not configured" state
  *
@@ -15,7 +16,11 @@
 #include <Preferences.h>
 #include <ArduinoJson.h>
 #include <bb_epaper.h>
+#include <esp_task_wdt.h>
 #include "../include/config.h"
+
+// Watchdog timer configuration
+#define WDT_TIMEOUT 30  // 30 seconds (WiFi + HTTP can take up to 25s)
 
 // Screen dimensions: 800 (width) x 480 (height) LANDSCAPE
 #define SCREEN_W 800
@@ -58,9 +63,17 @@ void setup() {
     delay(500);
 
     Serial.println("\n==============================");
-    Serial.println("PTV-TRMNL v5.9 - Default Dashboard");
+    Serial.println("PTV-TRMNL v5.10 - Watchdog + Anti-Brick");
     Serial.println("800x480 Landscape - Shows status until configured");
     Serial.println("==============================\n");
+
+    // Initialize watchdog timer (CRITICAL - Anti-Brick Rule #12)
+    Serial.print("→ Init watchdog timer (");
+    Serial.print(WDT_TIMEOUT);
+    Serial.println("s timeout)...");
+    esp_task_wdt_init(WDT_TIMEOUT, true);
+    esp_task_wdt_add(NULL);
+    Serial.println("✓ Watchdog enabled");
 
     bootTime = millis();
     preferences.begin("trmnl", false);
@@ -86,10 +99,14 @@ void setup() {
 
     showBootScreen();
 
-    Serial.println("✓ Setup complete\n");
+    Serial.println("✓ Setup complete");
+    Serial.println("→ Entering loop() - device ready\n");
 }
 
 void loop() {
+    // Feed watchdog at start of every loop iteration (Anti-Brick Rule #12)
+    esp_task_wdt_reset();
+
     if (!wifiConnected) {
         connectWiFiSafe();
         if (!wifiConnected) {
@@ -172,6 +189,9 @@ void showBootScreen() {
 void connectWiFiSafe() {
     Serial.println("→ Connecting WiFi...");
 
+    // Feed watchdog before long WiFi operation (can take 20-30s)
+    esp_task_wdt_reset();
+
     WiFiManager wm;
     wm.setConfigPortalTimeout(30);
     wm.setConnectTimeout(20);
@@ -189,6 +209,9 @@ void connectWiFiSafe() {
 
 void registerDeviceSafe() {
     Serial.println("→ Registering device...");
+
+    // Feed watchdog before HTTP operation (can take 10s)
+    esp_task_wdt_reset();
 
     WiFiClient client;
     HTTPClient http;
@@ -249,6 +272,9 @@ void registerDeviceSafe() {
 void fetchAndDisplaySafe() {
     Serial.println("→ Fetching...");
 
+    // Feed watchdog before HTTP operation (can take 10s)
+    esp_task_wdt_reset();
+
     String payload = "";
     {
         WiFiClientSecure *client = new WiFiClientSecure();
@@ -270,7 +296,7 @@ void fetchAndDisplaySafe() {
 
         http.addHeader("ID", friendlyID);
         http.addHeader("Access-Token", apiKey);
-        http.addHeader("FW-Version", "5.9");
+        http.addHeader("FW-Version", "5.10");
 
         int httpCode = http.GET();
         if (httpCode != 200) {
