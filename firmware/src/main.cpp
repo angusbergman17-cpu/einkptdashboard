@@ -32,7 +32,7 @@ unsigned int refreshCount = 0;
 bool wifiConnected = false;
 bool deviceRegistered = false;
 bool firstDataLoaded = false;
-bool systemConfigured = false;
+bool systemConfigured = true; // Pre-configured with token endpoint
 
 String friendlyID = "";
 String apiKey = "";
@@ -306,7 +306,7 @@ void fetchAndDisplaySafe() {
 
         client->setInsecure();
         HTTPClient http;
-        String url = String(SERVER_URL) + "/api/display";
+        String url = String(SERVER_URL) + API_DISPLAY_ENDPOINT;
         http.setTimeout(10000);
 
         if (!http.begin(*client, url)) {

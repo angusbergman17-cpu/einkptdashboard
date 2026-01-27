@@ -3,28 +3,27 @@
 
 // ============================================
 // PTV-TRMNL Custom Firmware Configuration
+// PERSONALIZED FOR ANGUS - South Yarra → Parliament
 // Copyright (c) 2026 Angus Bergman
 // All rights reserved.
 // ============================================
 
-// BYOS Server Configuration
-#define SERVER_URL "https://ptv-trmnl-new.onrender.com"
+// BYOS Server Configuration - Personalized Endpoint
+#define SERVER_URL "https://ptvtrmnl.vercel.app"
+#define API_DISPLAY_ENDPOINT "/api/device/eyJhIjp7ImhvbWUiOiIxIENsYXJhIFN0cmVldCwgU291dGggWWFycmEgVklDIDMxNDEiLCJjYWZlIjoiTm9ybWFuIFNvdXRoIFlhcnJhIiwiY2FmZU5hbWUiOiJOb3JtYW4iLCJ3b3JrIjoiODAgQ29sbGlucyBTdHJlZXQsIE1lbGJvdXJuZSBWSUMgMzAwMCJ9LCJqIjp7Im51bWJlck9mTW9kZXMiOjIsIm1vZGUxIjp7InR5cGUiOjEsIm9yaWdpblN0YXRpb24iOnsibmFtZSI6IlRvb3JhayBSZC9DaGFwZWwgU3QiLCJpZCI6IjI4MDMiLCJsYXQiOi0zNy44NCwibG9uIjoxNDQuOTk4fX0sIm1vZGUyIjp7InR5cGUiOjAsIm9yaWdpblN0YXRpb24iOnsibmFtZSI6IlNvdXRoIFlhcnJhIiwiaWQiOiIxMTU5IiwibGF0IjotMzcuODM4NSwibG9uIjoxNDQuOTkyOX0sImRlc3RpbmF0aW9uU3RhdGlvbiI6eyJuYW1lIjoiUGFybGlhbWVudCIsImlkIjoiMTEyMCIsImxhdCI6LTM3LjgxMSwibG9uIjoxNDQuOTczfX19LCJsIjp7fSwicyI6IlZJQyIsImsiOiJjZTYwNmI5MC05ZmZiLTQzZTgtYmNkNy0wYzJiZDA0OTgzNjciLCJnIjoiQUl6YVN5QTlXWXBSZkx0QmlFUWZ2VEQtYWM0SW1IQm9oSHN2M3lRIn0"
 #define API_SETUP_ENDPOINT "/api/setup"
-#define API_DISPLAY_ENDPOINT "/api/display"
 #define API_LOG_ENDPOINT "/api/log"
-#define API_DEVICE_CONFIG_ENDPOINT "/api/device-config"  // Server-driven configuration
+#define API_DEVICE_CONFIG_ENDPOINT "/api/device-config"
 
-// WiFi Configuration (will use WiFiManager for setup)
+// WiFi Configuration
 #define WIFI_AP_NAME "PTV-TRMNL-Setup"
 #define WIFI_AP_PASSWORD "transport123"
 
 // Refresh Timing (milliseconds)
-// ⚠️ SERVER-DRIVEN: Refresh intervals are fetched from server on boot
-// Defaults used if server unreachable - user can customize via admin panel
-#define DEFAULT_REFRESH_INTERVAL 20000    // 20 seconds default (server can override)
-#define DEFAULT_FULL_REFRESH 600000       // 10 minutes default (server can override)
-#define WIFI_TIMEOUT 30000                // 30 seconds WiFi connection timeout
-#define CONFIG_FETCH_TIMEOUT 10000        // 10 seconds to fetch device config from server
+#define DEFAULT_REFRESH_INTERVAL 30000
+#define DEFAULT_FULL_REFRESH 600000
+#define WIFI_TIMEOUT 30000
+#define CONFIG_FETCH_TIMEOUT 10000
 
 // Display Configuration (TRMNL 7.5" Waveshare)
 #define DISPLAY_WIDTH 800
@@ -42,43 +41,32 @@
 #define PIN_INTERRUPT 2
 #define PIN_BATTERY 3
 
-// Partial Refresh Regions (where dynamic content is)
-// Time display region
+// Regions for partial refresh
 #define TIME_X 20
 #define TIME_Y 10
 #define TIME_W 135
 #define TIME_H 50
 
-// Train departures region
 #define TRAIN_X 15
 #define TRAIN_Y 105
 #define TRAIN_W 200
 #define TRAIN_H 60
 
-// Tram departures region
 #define TRAM_X 15
 #define TRAM_Y 215
 #define TRAM_W 200
 #define TRAM_H 60
 
-// Coffee decision region
 #define COFFEE_X 480
 #define COFFEE_Y 10
 #define COFFEE_W 310
 #define COFFEE_H 30
 
-// Battery monitoring
 #define BATTERY_PIN 1
 #define LOW_BATTERY_MV 3300
-
-// Sleep configuration
-#define SLEEP_BETWEEN_PARTIALS_MS 18000  // Light sleep between partial updates (20s total cycle)
-
-// Memory safety limits (ESP32-C3 has ~238KB free RAM)
-#define MIN_FREE_HEAP 100000  // Require 100KB free heap before allocating
-#define MAX_PNG_SIZE 81920    // Legacy: 80KB max (kept for compilation)
-
-// JSON buffer size for API responses
-#define JSON_BUFFER_SIZE 4096  // 4KB for region-updates JSON
+#define SLEEP_BETWEEN_PARTIALS_MS 18000
+#define MIN_FREE_HEAP 100000
+#define MAX_PNG_SIZE 81920
+#define JSON_BUFFER_SIZE 4096
 
 #endif // CONFIG_H
