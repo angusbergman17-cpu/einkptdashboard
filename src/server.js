@@ -1172,12 +1172,23 @@ app.get('/api/device/:token', async (req, res) => {
     const apiKey = config.api?.key || process.env.ODATA_API_KEY;
     const transitRoute = config.journey?.transitRoute;
     
+    // Temporarily set preferences from token for this request
+    const tempPrefs = { journey: { transitRoute }, addresses: config.addresses || {}, state: config.state || 'VIC' };
+    preferences.setTemporary(tempPrefs);
+    
     // Get data using the decoded config
     const data = await getData(apiKey);
+    
+    // Clear temporary preferences
+    preferences.clearTemporary();
 
     // Get station names from decoded config
     const mode1Name = transitRoute?.mode1?.originStation?.name || 'TRANSIT 1';
     const mode2Name = transitRoute?.mode2?.originStation?.name || 'TRANSIT 2';
+    // Get correct data based on mode type (0=train, 1=tram)
+    const mode1Data = transitRoute?.mode1?.type === 0 ? data.trains : data.trams;
+    const mode2Data = transitRoute?.mode2?.type === 0 ? data.trains : data.trams;
+
     // Get correct data based on mode type (0=train, 1=tram)
     const mode1Data = transitRoute?.mode1?.type === 0 ? data.trains : data.trams;
     const mode2Data = transitRoute?.mode2?.type === 0 ? data.trains : data.trams;

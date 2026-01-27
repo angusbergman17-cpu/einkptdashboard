@@ -364,11 +364,29 @@ class PreferencesManager {
    * Get all preferences
    */
   get() {
+    // If temporary preferences are set (for zero-config token requests), use those
+    if (this.temporaryPreferences) {
+      return this.temporaryPreferences;
+    }
     if (!this.preferences) {
       console.warn('⚠️  Preferences not loaded, returning defaults');
       return { ...this.defaultPreferences };
     }
     return this.preferences;
+  }
+
+  /**
+   * Set temporary preferences for a single request (zero-config token support)
+   */
+  setTemporary(tempPrefs) {
+    this.temporaryPreferences = { ...this.defaultPreferences, ...tempPrefs };
+  }
+
+  /**
+   * Clear temporary preferences after request completes
+   */
+  clearTemporary() {
+    this.temporaryPreferences = null;
   }
 
   /**
