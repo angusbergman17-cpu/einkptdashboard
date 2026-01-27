@@ -1,21 +1,24 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-// ============================================
-// PTV-TRMNL Custom Firmware Configuration
-// PERSONALIZED FOR ANGUS - South Yarra → Parliament
-// Copyright (c) 2026 Angus Bergman
-// All rights reserved.
-// ============================================
+/**
+ * PTV-TRMNL Firmware Configuration
+ * Generic template - device fetches personalized config from server
+ *
+ * Copyright (c) 2026 Angus Bergman
+ * Licensed under CC BY-NC 4.0 (Creative Commons Attribution-NonCommercial 4.0 International License)
+ * https://creativecommons.org/licenses/by-nc/4.0/
+ */
 
-// BYOS Server Configuration - Personalized Endpoint
+// BYOS Server Configuration
+// Device will fetch personalized config token from setup wizard
 #define SERVER_URL "https://ptvtrmnl.vercel.app"
-#define API_DISPLAY_ENDPOINT "/api/device/eyJhIjp7ImhvbWUiOiIxIENsYXJhIFN0cmVldCwgU291dGggWWFycmEgVklDIDMxNDEiLCJjYWZlIjoiTm9ybWFuIFNvdXRoIFlhcnJhIiwiY2FmZU5hbWUiOiJOb3JtYW4iLCJ3b3JrIjoiODAgQ29sbGlucyBTdHJlZXQsIE1lbGJvdXJuZSBWSUMgMzAwMCJ9LCJqIjp7Im51bWJlck9mTW9kZXMiOjIsIm1vZGUxIjp7InR5cGUiOjEsIm9yaWdpblN0YXRpb24iOnsibmFtZSI6IlRvb3JhayBSZC9DaGFwZWwgU3QiLCJpZCI6IjI4MDMiLCJsYXQiOi0zNy44NCwibG9uIjoxNDQuOTk4fX0sIm1vZGUyIjp7InR5cGUiOjAsIm9yaWdpblN0YXRpb24iOnsibmFtZSI6IlNvdXRoIFlhcnJhIiwiaWQiOiIxMTU5IiwibGF0IjotMzcuODM4NSwibG9uIjoxNDQuOTkyOX0sImRlc3RpbmF0aW9uU3RhdGlvbiI6eyJuYW1lIjoiUGFybGlhbWVudCIsImlkIjoiMTEyMCIsImxhdCI6LTM3LjgxMSwibG9uIjoxNDQuOTczfX19LCJsIjp7fSwicyI6IlZJQyIsImsiOiJjZTYwNmI5MC05ZmZiLTQzZTgtYmNkNy0wYzJiZDA0OTgzNjciLCJnIjoiQUl6YVN5QTlXWXBSZkx0QmlFUWZ2VEQtYWM0SW1IQm9oSHN2M3lRIn0"
+#define API_DISPLAY_ENDPOINT "/api/display"  // Generic endpoint, device fetches config
 #define API_SETUP_ENDPOINT "/api/setup"
 #define API_LOG_ENDPOINT "/api/log"
 #define API_DEVICE_CONFIG_ENDPOINT "/api/device-config"
 
-// WiFi Configuration
+// WiFi Configuration (Access Point for initial setup)
 #define WIFI_AP_NAME "PTV-TRMNL-Setup"
 #define WIFI_AP_PASSWORD "transport123"
 
@@ -29,7 +32,7 @@
 #define DISPLAY_WIDTH 800
 #define DISPLAY_HEIGHT 480
 
-// E-ink SPI Pins (OG TRMNL ESP32-C3 - CORRECT PINS)
+// E-ink SPI Pins (OG TRMNL ESP32-C3)
 #define EPD_SCK_PIN  7
 #define EPD_MOSI_PIN 8
 #define EPD_CS_PIN   6
