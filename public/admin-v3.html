@@ -114,6 +114,22 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        #floating-recalculate-btn button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 32px rgba(99, 102, 241, 0.5) !important;
+        }
+
         .step h2 {
             color: var(--color-text-primary);
             margin-bottom: 20px;
@@ -815,13 +831,21 @@
             <div class="step" id="step-2">
                 <h2>📍 Step 2: Your Locations</h2>
 
-                <p style="margin-bottom: 20px;">Enter your addresses. We'll use the best available geocoding service to find exact coordinates.</p>
+                <div style="background: rgba(99, 102, 241, 0.1); border-left: 4px solid var(--color-accent-primary); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <strong style="color: var(--color-accent-primary);">💡 Tip:</strong>
+                    Your home address will be auto-detected using your device's location for maximum accuracy.
+                </div>
 
                 <div class="form-group">
                     <label for="home-address">Home Address:</label>
-                    <input type="text" id="home-address" placeholder="Enter your home address">
-                    <div class="actions" style="margin-top: 10px;">
-                        <button class="btn btn-secondary" onclick="geocodeAddress('home')">Find Location</button>
+                    <input type="text" id="home-address" placeholder="Auto-detecting your location...">
+                    <div class="actions" style="margin-top: 10px; display: flex; gap: 10px;">
+                        <button class="btn btn-secondary" onclick="geocodeAddress('home')">
+                            🔍 Find Location
+                        </button>
+                        <button class="btn btn-accent" onclick="autopopulateHomeAddress()" style="background: var(--color-accent-primary);">
+                            📍 Use My Current Location
+                        </button>
                     </div>
                     <div class="geocode-result" id="home-result"></div>
                 </div>
@@ -1428,6 +1452,14 @@
             window.scrollTo(0, 0);
 
             hideError();
+
+            // Auto-populate home address when entering Step 2
+            if (stepNumber === 2 && !setupData.homeLocation) {
+                // Small delay to let the UI render first
+                setTimeout(() => {
+                    autopopulateHomeAddress();
+                }, 500);
+            }
         }
 
         function updateProgress() {
@@ -1548,6 +1580,85 @@
 
             } catch (error) {
                 showError(`Failed to geocode ${type} address: ` + error.message);
+            }
+        }
+
+        // Auto-populate home address using browser geolocation
+        async function autopopulateHomeAddress() {
+            // Check if geolocation is available
+            if (!navigator.geolocation) {
+                showError('Geolocation is not supported by your browser');
+                return;
+            }
+
+            showLoading('Detecting your current location...');
+            hideError();
+
+            try {
+                // Get current position
+                const position = await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0
+                    });
+                });
+
+                const { latitude, longitude } = position.coords;
+                console.log(`Current location: ${latitude}, ${longitude}`);
+
+                // Reverse geocode to get address
+                const response = await fetch('/admin/reverse-geocode', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ lat: latitude, lon: longitude })
+                });
+
+                const result = await response.json();
+
+                if (!result.success) {
+                    throw new Error(result.error || 'Could not find address');
+                }
+
+                // Populate home address field
+                document.getElementById('home-address').value = result.formattedAddress;
+
+                // Store location data
+                setupData.homeLocation = result;
+
+                // Display result
+                const resultDiv = document.getElementById('home-result');
+                resultDiv.innerHTML = `
+                    <strong>✓ Auto-detected:</strong> ${result.formattedAddress}<br>
+                    <small>Coordinates: ${result.lat.toFixed(4)}, ${result.lon.toFixed(4)}</small><br>
+                    <small>Source: ${result.source}</small>
+                `;
+                resultDiv.classList.add('show');
+
+                hideLoading();
+
+                // Detect state from home address
+                detectState(result.lat, result.lon);
+
+                // Enable continue button if both home and work are set
+                if (setupData.homeLocation && setupData.workLocation) {
+                    document.getElementById('continue-transit').disabled = false;
+                }
+
+                showSuccess('Home address auto-detected! You can edit it if needed.');
+
+            } catch (error) {
+                hideLoading();
+
+                if (error.code === 1) {
+                    showError('Location access denied. Please enter your address manually or enable location permissions.');
+                } else if (error.code === 2) {
+                    showError('Location unavailable. Please enter your address manually.');
+                } else if (error.code === 3) {
+                    showError('Location request timeout. Please enter your address manually.');
+                } else {
+                    showError('Failed to auto-detect location: ' + error.message);
+                }
             }
         }
 

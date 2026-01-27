@@ -2029,6 +2029,32 @@ app.post('/admin/geocode', async (req, res) => {
   }
 });
 
+// Reverse geocode coordinates to address
+app.post('/admin/reverse-geocode', async (req, res) => {
+  try {
+    const { lat, lon } = req.body;
+
+    if (!lat || !lon) {
+      return res.status(400).json({ success: false, error: 'Latitude and longitude required' });
+    }
+
+    const result = await global.geocodingService.reverseGeocode(lat, lon);
+
+    if (!result) {
+      return res.status(404).json({ success: false, error: 'Could not find address for coordinates' });
+    }
+
+    res.json({
+      success: true,
+      ...result
+    });
+
+  } catch (error) {
+    console.error('Reverse geocode error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Calculate smart journey
 app.post('/admin/smart-journey/calculate', async (req, res) => {
   try {

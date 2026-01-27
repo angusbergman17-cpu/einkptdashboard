@@ -371,6 +371,185 @@ class GeocodingService {
   }
 
   /**
+   * Reverse geocoding - Convert coordinates to address
+   * Tries services in priority order based on accuracy
+   * @param {number} lat - Latitude
+   * @param {number} lon - Longitude
+   * @returns {object} { lat, lon, formattedAddress, source }
+   */
+  async reverseGeocode(lat, lon) {
+    // Validate coordinates
+    if (!lat || !lon || isNaN(lat) || isNaN(lon)) {
+      throw new Error('Valid latitude and longitude required');
+    }
+
+    // Check cache first
+    const cacheKey = `reverse:${lat.toFixed(6)}:${lon.toFixed(6)}`;
+    if (this.cache.has(cacheKey)) {
+      const cached = this.cache.get(cacheKey);
+      if (Date.now() - cached.timestamp < this.cacheExpiry) {
+        console.log(`✓ Reverse geocode cache hit: ${lat}, ${lon}`);
+        if (global.decisionLogger) {
+          global.decisionLogger.logCacheUsage('Reverse Geocoding', true, cacheKey);
+        }
+        return cached.result;
+      }
+    }
+
+    // Cache miss
+    if (global.decisionLogger) {
+      global.decisionLogger.logCacheUsage('Reverse Geocoding', false, cacheKey);
+    }
+
+    let result = null;
+    const attempts = [];
+
+    // Sequential fallback chain for reverse geocoding
+    const services = [
+      // Tier 1: Google Places (best accuracy)
+      { name: 'Google Places', fn: () => this.reverseGeocodeGooglePlaces(lat, lon) },
+
+      // Tier 2: Mapbox (excellent for addresses)
+      { name: 'Mapbox', fn: () => this.reverseGeocodeMapbox(lat, lon) },
+
+      // Tier 3: HERE (good for Australian addresses)
+      { name: 'HERE', fn: () => this.reverseGeocodeHERE(lat, lon) },
+
+      // Tier 4: OpenStreetMap Nominatim (always available)
+      { name: 'Nominatim', fn: () => this.reverseGeocodeNominatim(lat, lon) }
+    ].filter(Boolean);
+
+    for (const service of services) {
+      try {
+        console.log(`Trying ${service.name} for reverse geocode: ${lat}, ${lon}`);
+        result = await service.fn();
+
+        if (result && result.formattedAddress) {
+          result.source = service.name;
+          result.lat = lat;
+          result.lon = lon;
+          attempts.push({ service: service.name, success: true });
+          console.log(`✅ ${service.name} succeeded: ${result.formattedAddress}`);
+
+          if (global.decisionLogger) {
+            global.decisionLogger.logGeocoding(`${lat},${lon}`, service.name, result, attempts);
+          }
+
+          break;
+        }
+      } catch (error) {
+        attempts.push({ service: service.name, success: false, error: error.message });
+        console.log(`❌ ${service.name} failed: ${error.message}`);
+      }
+    }
+
+    if (!result) {
+      if (global.decisionLogger) {
+        global.decisionLogger.logGeocoding(`${lat},${lon}`, 'FAILED', null, attempts);
+      }
+      throw new Error(`All reverse geocoding services failed for ${lat}, ${lon}`);
+    }
+
+    // Cache the result
+    this.cache.set(cacheKey, {
+      result,
+      timestamp: Date.now()
+    });
+
+    return result;
+  }
+
+  /**
+   * Google Places API - Reverse geocode
+   * Uses Geocoding API (not Places API)
+   */
+  async reverseGeocodeGooglePlaces(lat, lon) {
+    if (!this.googlePlacesKey) {
+      throw new Error('Google Places API key not configured');
+    }
+
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${this.googlePlacesKey}`;
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.status === 'OK' && data.results && data.results.length > 0) {
+      return {
+        formattedAddress: data.results[0].formatted_address
+      };
+    }
+
+    throw new Error(`Google Geocoding API: ${data.status}`);
+  }
+
+  /**
+   * Mapbox - Reverse geocode
+   */
+  async reverseGeocodeMapbox(lat, lon) {
+    if (!this.mapboxToken) {
+      throw new Error('Mapbox token not configured');
+    }
+
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lon},${lat}.json?access_token=${this.mapboxToken}`;
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.features && data.features.length > 0) {
+      return {
+        formattedAddress: data.features[0].place_name
+      };
+    }
+
+    throw new Error('Mapbox: No results');
+  }
+
+  /**
+   * HERE - Reverse geocode
+   */
+  async reverseGeocodeHERE(lat, lon) {
+    if (!this.hereApiKey) {
+      throw new Error('HERE API key not configured');
+    }
+
+    const url = `https://revgeocode.search.hereapi.com/v1/revgeocode?at=${lat},${lon}&apiKey=${this.hereApiKey}`;
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.items && data.items.length > 0) {
+      return {
+        formattedAddress: data.items[0].address.label
+      };
+    }
+
+    throw new Error('HERE: No results');
+  }
+
+  /**
+   * Nominatim - Reverse geocode
+   */
+  async reverseGeocodeNominatim(lat, lon) {
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`;
+
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'PTV-TRMNL/1.0 (Educational; Contact: github.com/angusbergman17-cpu)'
+      }
+    });
+
+    const data = await response.json();
+
+    if (data && data.display_name) {
+      return {
+        formattedAddress: data.display_name
+      };
+    }
+
+    throw new Error('Nominatim: No results');
+  }
+
+  /**
    * Get available geocoding services
    */
   getAvailableServices() {
