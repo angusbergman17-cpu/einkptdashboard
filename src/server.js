@@ -1626,8 +1626,8 @@ app.get('/api/setup', async (req, res) => {
   });
 });
 
-// Display content endpoint
-app.get('/api/display', (req, res) => {
+// Display content endpoint (compatible with custom firmware v5.9+)
+app.get('/api/display', async (req, res) => {
   const friendlyID = req.headers.id || req.headers['ID'];
   const accessToken = req.headers['access-token'] || req.headers['Access-Token'];
   const refreshRate = req.headers['refresh-rate'] || req.headers['Refresh-Rate'] || '900';
@@ -1665,7 +1665,34 @@ app.get('/api/display', (req, res) => {
     });
   }
 
-  // Return display content (TRMNL uses screen_url for markup-based displays)
+  // Get current time and weather for firmware display
+  const prefs = preferences.get();
+  const state = prefs?.journey?.transitRoute?.mode1?.originStation?.state || 'VIC';
+  const timezone = getTimezoneForState(state);
+
+  const now = new Date();
+  const currentTime = now.toLocaleTimeString('en-AU', {
+    timeZone: timezone,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
+
+  // Get weather data
+  let weatherText = 'N/A';
+  try {
+    const weatherData = await weather.getCurrentWeather();
+    if (weatherData) {
+      weatherText = weatherData.condition?.short || 'N/A';
+      if (weatherData.temperature !== null) {
+        weatherText = `${weatherText} ${weatherData.temperature}°`;
+      }
+    }
+  } catch (e) {
+    // Weather unavailable - silent fail
+  }
+
+  // Return display content with firmware-compatible fields
   res.json({
     status: 0,
     screen_url: `https://${req.get('host')}/api/screen`,
@@ -1673,7 +1700,10 @@ app.get('/api/display', (req, res) => {
     refresh_rate: refreshRate,
     update_firmware: false,
     firmware_url: null,
-    reset_firmware: false
+    reset_firmware: false,
+    // Firmware-compatible fields (v5.9+)
+    current_time: currentTime,
+    weather: weatherText
   });
 });
 
