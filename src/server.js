@@ -354,6 +354,10 @@ function getFallbackTimetable() {
     tramSchedule.push(60 + m); // 01:xx
   }
 
+  // Sort schedules (night services added out of order)
+  trainSchedule.sort((a, b) => a - b);
+  tramSchedule.sort((a, b) => a - b);
+
   // Find next departures
   const nextTrains = trainSchedule.filter(t => t > currentMinutes).slice(0, 3).map(t => ({
     minutes: Math.max(1, t - currentMinutes),
