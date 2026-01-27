@@ -485,7 +485,1483 @@ async function fetchData(providedApiKey = null) {
       };
     });
 
-  // Coffee decisionn  const coffeeDecision = transitData.coffee?.canGet ? "STOP FOR COFFEE" : "GO DIRECT";nn  // Journey planning data for v5.18+ firmwaren  const homeAddress = prefs?.journey?.homeAddress || prefs?.addresses?.home || "Home";n  const workAddress = prefs?.journey?.workAddress || prefs?.addresses?.work || "Work";n  n  // Calculate leave by and arrive by timesn  const transferTime = 5;n  const walkToTram = prefs?.manualWalkingTimes?.homeToStation || 3;n  const walkFromTrain = prefs?.manualWalkingTimes?.stationToWork || 5;n  const trainJourneyTime = 3;n  n  const nextTram = trams[0]?.minutes || 10;n  const totalJourneyTime = walkToTram + nextTram + transferTime + trainJourneyTime + walkFromTrain;n  n  const now = new Date();n  const leaveByMs = Math.max(0, (nextTram - walkToTram)) * 60000;n  const leaveByTime = new Date(now.getTime() + leaveByMs);n  const arriveByTime = new Date(now.getTime() + totalJourneyTime * 60000);n  n  const leaveBy = leaveByTime.toLocaleTimeString("en-AU", { timeZone: timezone, hour: "2-digit", minute: "2-digit", hour12: false });n  const arriveBy = arriveByTime.toLocaleTimeString("en-AU", { timeZone: timezone, hour: "2-digit", minute: "2-digit", hour12: false });n  n  const leg1Type = prefs?.journey?.transitRoute?.mode1?.type === 1 ? "tram" : "train";n  const leg2Type = prefs?.journey?.transitRoute?.mode2?.type === 0 ? "train" : "tram";n  const leg2Dest = prefs?.journey?.transitRoute?.mode2?.destinationStation?.name || "Parliament";n
+    // Coffee decision
+    const nextTrain = trains[0] ? trains[0].minutes : 15;
+    const coffee = coffeeEngine.calculate(nextTrain, trams, null);
+
+    // Weather placeholder
+    const weather = {
+      temp: process.env.WEATHER_KEY ? '--' : '--',
+      condition: 'Partly Cloudy',
+      icon: '☁️'
+    };
+
+    // Service alerts
+    const news = snapshot.alerts.metro > 0
+      ? `⚠️ ${snapshot.alerts.metro} Metro alert(s)`
+      : null;
+
+    return {
+      trains,
+      trams,
+      weather,
+      news,
+      coffee,
+      meta: snapshot.meta
+    };
+  } catch (error) {
+    console.error('⚠️ API unavailable, using fallback timetable:', error.message);
+
+    // Use fallback static timetable
+    const fallback = getFallbackTimetable();
+
+    return {
+      trains: fallback.trains,
+      trams: fallback.trams,
+      weather: { temp: '--', condition: 'Partly Cloudy', icon: '☁️' },
+      news: null,
+      coffee: { canGet: false, decision: 'SCHEDULED', subtext: 'Using timetable', urgent: false },
+      meta: { generatedAt: new Date().toISOString(), mode: 'fallback' }
+    };
+  }
+}
+
+/**
+ * Get cached or fresh data
+ */
+async function getData(providedApiKey = null) {
+  const now = Date.now();
+  if (cachedData && (now - lastUpdate) < CACHE_MS) {
+    return cachedData;
+  }
+
+  const data = await fetchData(providedApiKey);
+  if (!providedApiKey) { cachedData = data; lastUpdate = now; }
+  return data;
+}
+
+/**
+ * Get region updates (dynamic data for firmware)
+ * Server does ALL calculation - firmware just displays these values
+ */
+async function getRegionUpdates() {
+  const data = await getData();
+  const prefs = preferences.get();
+  const state = prefs.state || 'VIC';
+  const timezone = getTimezoneForState(state);
+
+  const now = new Date();
+  const timeFormatter = new Intl.DateTimeFormat('en-AU', {
+    timeZone: timezone,
+    hour: '2-digit', minute: '2-digit', hour12: false
+  });
+
+  // Fetch weather data (cached for 15 minutes)
+  let weatherData = null;
+  try {
+    weatherData = await weather.getCurrentWeather();
+  } catch (error) {
+    console.error('Weather fetch failed:', error.message);
+  }
+
+  // Get station names from preferences
+  const stationName = prefs?.journey?.transitRoute?.mode1?.originStation?.name || 'STATION';
+  const destName = prefs?.journey?.transitRoute?.mode1?.destinationStation?.name || 'CITY';
+
+  // Calculate "leave by" time (server does the math!)
+  const nextTrain = data.trains[0];
+  const walkBuffer = 5; // 5 min walk to station
+  let leaveTime = '--:--';
+  if (nextTrain) {
+    const leaveInMins = Math.max(0, nextTrain.minutes - walkBuffer);
+    leaveTime = new Date(now.getTime() + leaveInMins * 60000).toLocaleTimeString('en-AU', {
+      timeZone: timezone,
+      hour: '2-digit', minute: '2-digit', hour12: false
+    });
+  }
+
+  // Define regions for firmware (simple format: id + text only)
+  const regions = [];
+
+  // Station name
+  regions.push({ id: 'station', text: stationName.toUpperCase() });
+
+  // Current time
+  regions.push({ id: 'time', text: timeFormatter.format(now) });
+
+  // LEAVE BY time (most important - server calculates this!)
+  regions.push({ id: 'leaveTime', text: leaveTime });
+
+  // Coffee decision (server decides!)
+  regions.push({ id: 'coffee', text: data.coffee.canGet ? 'YES' : 'NO' });
+
+  // Train times (2 departures)
+  for (let i = 0; i < 2; i++) {
+    regions.push({
+      id: `train${i + 1}`,
+      text: data.trains[i] ? `${data.trains[i].minutes}` : '--'
+    });
+  }
+
+  // Tram times (2 departures)
+  for (let i = 0; i < 2; i++) {
+    regions.push({
+      id: `tram${i + 1}`,
+      text: data.trams[i] ? `${data.trams[i].minutes}` : '--'
+    });
+  }
+
+  // Weather data (optional - display on right sidebar)
+  if (weatherData) {
+    regions.push({
+      id: 'weather',
+      text: weatherData.condition.short || weatherData.condition.full || 'N/A'
+    });
+
+    regions.push({
+      id: 'temperature',
+      text: weatherData.temperature !== null ? `${weatherData.temperature}` : '--'
+    });
+  } else {
+    // Send placeholder weather if unavailable
+    regions.push({
+      id: 'weather',
+      text: 'N/A'
+    });
+
+    regions.push({
+      id: 'temperature',
+      text: '--'
+    });
+  }
+
+  return {
+    timestamp: now.toISOString(),
+    regions,
+    weather: weatherData // Include full weather data for admin/debugging
+  };
+}
+
+/* =========================================================
+   ROUTES
+   ========================================================= */
+
+// Health check
+app.get('/', (req, res) => {
+  res.send('✅ PTV-TRMNL service running');
+});
+
+// Keep-alive endpoint (for cron pings to prevent cold starts)
+app.get('/api/keepalive', (req, res) => {
+  res.json({
+    status: 'ok',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+    devices: devices.size
+  });
+});
+
+// Version control endpoint
+app.get('/api/version', (req, res) => {
+  try {
+    // Load VERSION.json for comprehensive version info
+    const versionJsonPath = path.join(process.cwd(), 'VERSION.json');
+    let versionData = null;
+
+    try {
+      versionData = JSON.parse(readFileSync(versionJsonPath, 'utf-8'));
+    } catch (e) {
+      console.log('VERSION.json not found, using package.json version only');
+    }
+
+    const gitDate = execSync('git log -1 --format="%ci"', { encoding: 'utf-8' }).trim().split(' ')[0];
+    const gitHash = execSync('git rev-parse --short HEAD', { encoding: 'utf-8' }).trim();
+
+    res.json({
+      version: `v${VERSION}`,
+      date: gitDate,
+      build: gitHash,
+      system: versionData?.system || null,
+      components: versionData?.components || null,
+      backend: versionData?.backend || null,
+      firmware: versionData?.firmware || null
+    });
+  } catch (error) {
+    // Fallback if not in a git repository
+    const versionJsonPath = path.join(process.cwd(), 'VERSION.json');
+    let versionData = null;
+
+    try {
+      versionData = JSON.parse(readFileSync(versionJsonPath, 'utf-8'));
+    } catch (e) {
+      // Ignore if VERSION.json doesn't exist
+    }
+
+    res.json({
+      version: `v${VERSION}`,
+      date: new Date().toISOString().split('T')[0],
+      build: 'dev',
+      system: versionData?.system || null,
+      components: versionData?.components || null,
+      backend: versionData?.backend || null,
+      firmware: versionData?.firmware || null
+    });
+  }
+});
+
+/**
+ * Get API Status and Configuration
+ * Returns status of all configured APIs and services
+ */
+app.get('/api/system-status', (req, res) => {
+  try {
+    const prefs = preferences.get();
+
+    // Gather all API and service statuses
+    const status = {
+      configured: isConfigured,
+      location: {
+        city: prefs?.location?.city || 'Not configured',
+        state: prefs?.location?.stateName || 'Not configured',
+        transitAuthority: prefs?.location?.authorityName || 'Not configured',
+        timezone: prefs?.location?.timezone || 'Not configured'
+      },
+      apis: {
+        transitAuthority: {
+          name: prefs?.location?.authorityName || 'Not configured',
+          baseUrl: prefs?.api?.baseUrl || 'Not configured',
+          configured: !!(prefs?.api?.key && prefs?.api?.token),
+          status: (prefs?.api?.key && prefs?.api?.token) ? 'active' : 'not-configured'
+        },
+        weather: {
+          name: 'Bureau of Meteorology',
+          service: weather.stationName || 'Not configured',
+          configured: true,
+          status: 'active',
+          cacheStatus: weather.getCacheStatus ? weather.getCacheStatus() : null
+        },
+        geocoding: {
+          name: 'Multi-Tier Geocoding',
+          services: global.geocodingService ? global.geocodingService.getAvailableServices() : [],
+          configured: true,
+          status: 'active'
+        },
+        googlePlaces: {
+          name: 'Google Places API',
+          configured: !!process.env.GOOGLE_PLACES_API_KEY,
+          status: process.env.GOOGLE_PLACES_API_KEY ? 'active' : 'optional'
+        },
+        mapbox: {
+          name: 'Mapbox Geocoding',
+          configured: !!process.env.MAPBOX_TOKEN,
+          status: process.env.MAPBOX_TOKEN ? 'active' : 'optional'
+        },
+        here: {
+          name: 'HERE Geocoding',
+          configured: !!process.env.HERE_API_KEY,
+          status: process.env.HERE_API_KEY ? 'active' : 'optional'
+        }
+      },
+      journey: {
+        addresses: {
+          home: !!prefs?.addresses?.home,
+          cafe: !!prefs?.addresses?.cafe,
+          work: !!prefs?.addresses?.work
+        },
+        configured: !!(prefs?.addresses?.home && prefs?.addresses?.work),
+        arrivalTime: prefs?.journey?.arrivalTime || 'Not set',
+        coffeeEnabled: prefs?.journey?.coffeeEnabled || false,
+        autoCalculation: {
+          active: !!journeyCalculationInterval,
+          lastCalculated: cachedJourney?.calculatedAt || null,
+          nextCalculation: journeyCalculationInterval ? 'In 2 minutes' : 'Not active'
+        }
+      },
+      transitStations: {
+        mode1: {
+          origin: prefs?.journey?.transitRoute?.mode1?.originStation?.name || 'Not configured',
+          destination: prefs?.journey?.transitRoute?.mode1?.destinationStation?.name || 'Not configured',
+          type: prefs?.journey?.transitRoute?.mode1?.type !== undefined ?
+            ['Train', 'Tram', 'Bus', 'V/Line'][prefs.journey.transitRoute.mode1.type] : 'Not configured'
+        },
+        mode2: prefs?.journey?.transitRoute?.numberOfModes === 2 ? {
+          origin: prefs?.journey?.transitRoute?.mode2?.originStation?.name || 'Not configured',
+          destination: prefs?.journey?.transitRoute?.mode2?.destinationStation?.name || 'Not configured',
+          type: prefs?.journey?.transitRoute?.mode2?.type !== undefined ?
+            ['Train', 'Tram', 'Bus', 'V/Line'][prefs.journey.transitRoute.mode2.type] : 'Not configured'
+        } : null
+      }
+    };
+
+    res.json(status);
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+      configured: false
+    });
+  }
+});
+
+/**
+ * Get Required Attributions
+ * Returns data source attributions based on configured transit authority
+ */
+app.get('/api/attributions', (req, res) => {
+  try {
+    const prefs = preferences.get();
+    const attributions = [];
+
+    // Software attribution (always shown)
+    attributions.push({
+      name: 'PTV-TRMNL',
+      text: 'Created by Angus Bergman',
+      license: 'CC BY-NC 4.0',
+      required: true,
+      priority: 1
+    });
+
+    // Transit Authority (based on configuration)
+    const transitAuthority = prefs?.location?.transitAuthority || prefs?.location?.state;
+    if (transitAuthority) {
+      const authorityMappings = {
+        'VIC': { name: 'Transport Victoria', text: 'Data © Transport Victoria', license: 'CC BY 4.0' },
+        'NSW': { name: 'Transport for NSW', text: 'Data © Transport for NSW', license: 'CC BY 4.0' },
+        'QLD': { name: 'TransLink', text: 'Data © TransLink Queensland', license: 'Open Data License' },
+        'WA': { name: 'Transperth', text: 'Data © Transperth', license: 'Creative Commons' },
+        'SA': { name: 'Adelaide Metro', text: 'Data © Adelaide Metro', license: 'Data.SA License' },
+        'TAS': { name: 'Metro Tasmania', text: 'Data © Metro Tasmania', license: 'Open Data' },
+        'ACT': { name: 'Transport Canberra', text: 'Data © Transport Canberra', license: 'CC BY 4.0' },
+        'NT': { name: 'Department of Infrastructure', text: 'Data © NT Government', license: 'Open Data' }
+      };
+
+      const authority = authorityMappings[transitAuthority];
+      if (authority) {
+        attributions.push({
+          name: authority.name,
+          text: authority.text,
+          license: authority.license,
+          required: true,
+          priority: 2
+        });
+      }
+    }
+
+    // Weather data (always used)
+    attributions.push({
+      name: 'Bureau of Meteorology',
+      text: 'Weather data © Commonwealth of Australia, Bureau of Meteorology',
+      license: 'CC BY 3.0 AU',
+      required: true,
+      priority: 3
+    });
+
+    // Geocoding services (based on what's configured)
+    // Always show OpenStreetMap as it's the fallback
+    attributions.push({
+      name: 'OpenStreetMap',
+      text: '© OpenStreetMap contributors',
+      license: 'ODbL',
+      required: true,
+      priority: 4
+    });
+
+    // Optional services (only if API keys are configured)
+    if (process.env.GOOGLE_PLACES_API_KEY) {
+      attributions.push({
+        name: 'Google Places',
+        text: 'Powered by Google',
+        license: 'Google Maps Platform ToS',
+        required: false,
+        priority: 5
+      });
+    }
+
+    res.json({
+      attributions: attributions.sort((a, b) => a.priority - b.priority),
+      transitAuthority: transitAuthority || 'Not configured',
+      location: prefs?.location?.city || prefs?.location?.stateName || 'Not configured'
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+      attributions: []
+    });
+  }
+});
+
+/**
+ * Get Fallback Transit Stops for a State
+ * Returns default stops/stations when live API is unavailable
+ */
+app.get('/api/fallback-stops/:stateCode', (req, res) => {
+  try {
+    const { stateCode } = req.params;
+    const { mode, search, lat, lon } = req.query;
+
+    if (search) {
+      // Search for stops by name
+      const results = fallbackTimetables.searchStops(stateCode, search);
+      return res.json({
+        success: true,
+        stateCode,
+        query: search,
+        results,
+        count: results.length
+      });
+    }
+
+    if (lat && lon) {
+      // Find nearest stop
+      const nearest = fallbackTimetables.findNearestStop(
+        stateCode,
+        parseFloat(lat),
+        parseFloat(lon),
+        mode || null
+      );
+      return res.json({
+        success: true,
+        stateCode,
+        nearest
+      });
+    }
+
+    if (mode) {
+      // Get stops for specific mode
+      const stops = fallbackTimetables.getStopsByMode(stateCode, mode);
+      return res.json({
+        success: true,
+        stateCode,
+        mode,
+        stops,
+        count: stops.length
+      });
+    }
+
+    // Get all stops for state
+    const stateData = fallbackTimetables.getFallbackStops(stateCode);
+    if (!stateData) {
+      return res.status(404).json({
+        success: false,
+        error: `No fallback data available for state: ${stateCode}`
+      });
+    }
+
+    res.json({
+      success: true,
+      stateCode,
+      name: stateData.name,
+      authority: stateData.authority,
+      modes: stateData.modes
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+/**
+ * Get All States with Fallback Data
+ */
+app.get('/api/fallback-stops', (req, res) => {
+  try {
+    const states = fallbackTimetables.getAllStates();
+    res.json({
+      success: true,
+      states,
+      count: states.length
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Decision log endpoints (transparency and troubleshooting)
+app.get('/api/decisions', (req, res) => {
+  try {
+    const { category, since, limit } = req.query;
+
+    let logs;
+    if (category) {
+      logs = global.decisionLogger.getLogsByCategory(category);
+    } else if (since) {
+      logs = global.decisionLogger.getLogsSince(since);
+    } else {
+      const count = limit ? parseInt(limit) : 100;
+      logs = global.decisionLogger.getRecentLogs(count);
+    }
+
+    res.json({
+      success: true,
+      stats: global.decisionLogger.getStats(),
+      logs
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+app.get('/api/decisions/export', (req, res) => {
+  try {
+    const exported = global.decisionLogger.export();
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="decisions-${new Date().toISOString().split('T')[0]}.json"`);
+    res.send(exported);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+app.post('/api/decisions/clear', (req, res) => {
+  try {
+    global.decisionLogger.clear();
+    res.json({
+      success: true,
+      message: 'Decision log cleared'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Feedback submission endpoint
+app.post('/api/feedback', async (req, res) => {
+  try {
+    const { name, email, type, message, timestamp } = req.body;
+
+    if (!message || !message.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Message is required'
+      });
+    }
+
+    // Log feedback to console and decision logger
+    const feedbackLog = {
+      from: name || 'Anonymous',
+      email: email || 'No email provided',
+      type: type || 'other',
+      message: message.trim(),
+      timestamp: timestamp || new Date().toISOString()
+    };
+
+    console.log('📨 FEEDBACK RECEIVED:');
+    console.log(JSON.stringify(feedbackLog, null, 2));
+
+    // Log to decision logger for record keeping
+    if (global.decisionLogger) {
+      global.decisionLogger.log({
+        category: 'User Feedback',
+        decision: `Feedback received: ${type}`,
+        details: feedbackLog
+      });
+    }
+
+    // Send email if transporter is configured
+    if (emailTransporter) {
+      try {
+        await emailTransporter.sendMail({
+          from: `"PTV-TRMNL System" <${process.env.SMTP_USER}>`,
+          to: process.env.FEEDBACK_EMAIL || 'angusbergman17@gmail.com',
+          subject: `PTV-TRMNL Feedback: ${type}`,
+          text: `New feedback received from PTV-TRMNL system:
+
+From: ${feedbackLog.from}
+Email: ${feedbackLog.email}
+Type: ${feedbackLog.type}
+Timestamp: ${feedbackLog.timestamp}
+
+Message:
+${feedbackLog.message}
+
+---
+Sent via PTV-TRMNL Admin Panel`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #667eea;">New PTV-TRMNL Feedback</h2>
+              <div style="background: #f7fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <p><strong>From:</strong> ${feedbackLog.from}</p>
+                <p><strong>Email:</strong> ${feedbackLog.email}</p>
+                <p><strong>Type:</strong> ${feedbackLog.type}</p>
+                <p><strong>Timestamp:</strong> ${feedbackLog.timestamp}</p>
+              </div>
+              <div style="background: white; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+                <h3>Message:</h3>
+                <p style="white-space: pre-wrap;">${feedbackLog.message}</p>
+              </div>
+              <p style="color: #718096; font-size: 12px; margin-top: 20px;">
+                Sent via PTV-TRMNL Admin Panel
+              </p>
+            </div>
+          `
+        });
+
+        console.log('✅ Feedback email sent successfully');
+
+        res.json({
+          success: true,
+          message: 'Feedback received and emailed. Thank you for your input!'
+        });
+      } catch (emailError) {
+        console.error('❌ Email sending failed:', emailError.message);
+
+        // Still return success since feedback was logged
+        res.json({
+          success: true,
+          message: 'Feedback received and logged (email delivery failed). Thank you for your input!'
+        });
+      }
+    } else {
+      // No email configured - just log
+      res.json({
+        success: true,
+        message: 'Feedback received and logged. Thank you for your input!'
+      });
+    }
+
+  } catch (error) {
+    console.error('Feedback submission error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to submit feedback: ' + error.message
+    });
+  }
+});
+
+// Status endpoint (enhanced for monitoring and troubleshooting)
+app.get('/api/status', async (req, res) => {
+  try {
+    const data = await getData();
+
+    // Get enhanced health status
+    const healthStatus = safeguards.getHealthStatus({
+      version: VERSION,
+      configured: isConfigured,
+      dataMode: data.meta?.mode === 'fallback' ? 'Fallback' : 'Live',
+      cache: {
+        age: Math.round((Date.now() - lastUpdate) / 1000),
+        maxAge: Math.round(CACHE_MS / 1000)
+      },
+      data: {
+        trains: data.trains,
+        trams: data.trams,
+        alerts: data.news ? 1 : 0,
+        coffee: data.coffee,
+        weather: data.weather
+      },
+      geocoding: {
+        circuitBreaker: safeguards.getCircuitBreakerStatus(global.geocodingService),
+        rateLimiter: safeguards.getRateLimiterStatus(global.geocodingService)
+      },
+      meta: data.meta
+    });
+
+    res.json(healthStatus);
+  } catch (error) {
+    safeguards.trackError('health-check', error.message);
+    safeguards.log(safeguards.LOG_LEVELS.ERROR, 'Health check failed', { error: error.message });
+    res.status(500).json({
+      status: 'error',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Token-based device endpoint (config embedded in URL)
+// This allows zero-setup deployment - user gets a unique URL after setup wizard
+app.get('/api/device/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+    
+    // Decode config from token
+    const config = decodeConfigToken(token);
+    if (!config) {
+      return res.status(400).json({ error: 'Invalid config token' });
+    }
+
+    // Temporarily apply config for this request
+    const apiKey = config.api?.key || process.env.ODATA_API_KEY;
+    const transitRoute = config.journey?.transitRoute;
+    
+    // Temporarily set preferences from token for this request
+    const tempPrefs = { journey: { transitRoute }, addresses: config.addresses || {}, state: config.state || 'VIC' };
+    preferences.setTemporary(tempPrefs);
+    
+    // Get data using the decoded config
+    let data = await getData(apiKey);
+    
+    // Clear temporary preferences
+    preferences.clearTemporary();
+    
+    // If real-time data is empty, use fallback timetable
+    if ((!data.trains || data.trains.length === 0) && (!data.trams || data.trams.length === 0)) {
+      console.log('Zero-config: Real-time data empty, using fallback timetable');
+      const fallback = getFallbackTimetable();
+      data = { ...data, trains: fallback.trains, trams: fallback.trams };
+    }
+
+    // Get station names from decoded config
+    const mode1Name = transitRoute?.mode1?.originStation?.name || 'TRANSIT 1';
+    const mode2Name = transitRoute?.mode2?.originStation?.name || 'TRANSIT 2';
+    // Get correct data based on mode type (0=train, 1=tram)
+    const mode1Data = transitRoute?.mode1?.type === 0 ? data.trains : data.trams;
+    const mode2Data = transitRoute?.mode2?.type === 0 ? data.trains : data.trams;
+
+    const mode1Type = transitRoute?.mode1?.type === 0 ? 'TRAINS' : 'TRAMS';
+    const mode2Type = transitRoute?.mode2?.type === 0 ? 'TRAINS' : 'TRAMS';
+
+    // Build TRMNL markup
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Australia/Melbourne' });
+
+    const markup = [
+      `**${timeStr}** | ${data.weather?.icon || '☁️'} ${data.weather?.temp || '--'}°C`,
+      '',
+      data.coffee?.canGet ? '☕ **YOU HAVE TIME FOR COFFEE!**' : '⚡ **NO COFFEE - GO DIRECT**',
+      '',
+      `**${mode1Name.toUpperCase()}** (${mode1Type})`,
+      mode1Data?.length > 0 ? mode1Data.slice(0, 2).map(t => `→ ${t.minutes} min`).join('\n') : '→ Checking...',
+      '',
+      `**${mode2Name.toUpperCase()}** (${mode2Type})`,
+      mode2Data?.length > 0 ? mode2Data.slice(0, 2).map(t => `→ ${t.minutes} min`).join('\n') : '→ Checking...',
+      '',
+      data.coffee?.subtext || '✓ Good service'
+    ];
+
+    // Get Melbourne time for firmware
+    const melbTime = new Date().toLocaleTimeString('en-AU', { 
+      hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Australia/Melbourne' 
+    });
+
+    res.json({
+      // For TRMNL web display
+      merge_variables: {
+        screen_text: markup.join('\n'),
+        device: 'trmnl-byos',
+        width: 800,
+        height: 480,
+        orientation: 'landscape'
+      },
+      // For firmware parsing (flat structure)
+      current_time: melbTime,
+      weather: data.weather?.condition || 'Clear',
+      location: (config.addresses?.home || 'South Yarra').split(',')[0],
+      setup_addresses: true,
+      setup_transit_api: !!apiKey,
+      setup_journey: !!transitRoute,
+      coffee_decision: data.coffee?.canGet ? 'GET COFFEE' : 'NO COFFEE',
+      trams: (mode1Type === 'TRAMS' ? mode1Data : mode2Data)?.slice(0, 3) || [],
+      trains: (mode1Type === 'TRAINS' ? mode1Data : mode2Data)?.slice(0, 3) || [],
+      tram_stop: mode1Type === 'TRAMS' ? mode1Name : mode2Name,
+      train_stop: mode1Type === 'TRAINS' ? mode1Name : mode2Name
+    });
+  } catch (error) {
+    console.error('Token device endpoint error:', error);
+    res.status(500).json({
+      merge_variables: {
+        screen_text: `⚠️ Error: ${error.message}`
+      }
+    });
+  }
+});
+
+// Generate webhook URL after setup completion
+app.post('/admin/generate-webhook', async (req, res) => {
+  try {
+    // Accept config from request body (for serverless) or fall back to stored prefs
+    const configFromBody = req.body?.config;
+    const prefs = configFromBody || preferences.get();
+    const baseUrl = req.headers.origin || `https://${req.headers.host}`;
+    
+    const webhookUrl = generateWebhookUrl(baseUrl, prefs);
+    
+    if (!webhookUrl) {
+      return res.status(500).json({ success: false, error: 'Failed to generate webhook URL' });
+    }
+
+    res.json({
+      success: true,
+      webhookUrl,
+      instructions: [
+        '1. Copy this webhook URL',
+        '2. In TRMNL app, create a new Private Plugin',
+        '3. Paste the webhook URL',
+        '4. Your device will start showing transit data!'
+      ]
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// TRMNL screen endpoint (JSON markup)
+app.get('/api/screen', requireConfiguration, async (req, res) => {
+  try {
+    const data = await getData();
+
+    // Get station names and device config from preferences
+    const prefs = preferences.get();
+    const trainStation = prefs?.journey?.transitRoute?.mode1?.originStation?.name || 'TRAINS';
+    const tramStation = prefs?.journey?.transitRoute?.mode2?.originStation?.name || 'TRAMS';
+
+    // Get device configuration (Development Rules v1.0.14 Section U)
+    const deviceConfig = prefs?.deviceConfig || {
+      selectedDevice: 'trmnl-byos',
+      resolution: { width: 800, height: 480 },
+      orientation: 'landscape'
+    };
+
+    console.log(`📱 Rendering for device: ${deviceConfig.selectedDevice} (${deviceConfig.resolution.width}×${deviceConfig.resolution.height} ${deviceConfig.orientation})`);
+
+    // Build TRMNL markup
+    const markup = [
+      `**${new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: false })}** | ${data.weather.icon} ${data.weather.temp}°C`,
+      '',
+      data.coffee.canGet ? '☕ **YOU HAVE TIME FOR COFFEE!**' : '⚡ **NO COFFEE - GO DIRECT**',
+      '',
+      `**${trainStation.toUpperCase()}**`,
+      data.trains.length > 0 ? data.trains.slice(0, 3).map(t => `→ ${t.minutes} min`).join('\n') : '→ No departures',
+      '',
+      `**${tramStation.toUpperCase()}**`,
+      data.trams.length > 0 ? data.trams.slice(0, 3).map(t => `→ ${t.minutes} min`).join('\n') : '→ No departures',
+      '',
+      data.news ? `⚠️ ${data.news}` : '✓ Good service on all lines'
+    ];
+
+    res.json({
+      merge_variables: {
+        screen_text: markup.join('\n'),
+        device: deviceConfig.selectedDevice,
+        width: deviceConfig.resolution.width,
+        height: deviceConfig.resolution.height,
+        orientation: deviceConfig.orientation
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      merge_variables: {
+        screen_text: `⚠️ Error: ${error.message}`
+      }
+    });
+  }
+});
+
+// Region updates endpoint - dynamic data (downloaded every 30 seconds)
+app.get('/api/region-updates', async (req, res) => {
+  try {
+    // Check if system is configured
+    const prefs = preferences.get();
+    if (!prefs.system_configured) {
+      console.log('⚠️ Device requesting updates but system not configured');
+      return res.status(503).json({
+        error: 'System not configured',
+        message: 'Please complete setup at /setup',
+        setupRequired: true
+      });
+    }
+
+    // Track device ping from user-agent or generate ID
+    const deviceId = req.headers['user-agent']?.includes('ESP32') ? 'TRMNL-Device' : 'Unknown';
+    trackDevicePing(deviceId, req.ip);
+
+    const updates = await getRegionUpdates();
+
+    res.set('Content-Type', 'application/json');
+    res.set('Cache-Control', 'no-cache');
+    res.json(updates);
+  } catch (error) {
+    console.error('Error generating region updates:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Live PNG image endpoint (legacy - for compatibility)
+// HTML Dashboard endpoint (for TRMNL device - 800x480)
+// Server does ALL the thinking - display just shows simple info
+// Design based on user's template
+/**
+ * ========================================================================
+ * DEVELOPMENT RULES COMPLIANCE: docs/development/DEVELOPMENT-RULES.md v1.0.12
+ * ========================================================================
+ * - Location agnostic (dynamic timezone based on detected state)
+ * - Works with fallback data (no API keys required)
+ * - Transit mode agnostic (supports all 8 Australian states)
+ * - BYOS compliant (800x480 dimensions)
+ * - Clear data source indicators
+ */
+app.get('/api/dashboard', async (req, res) => {
+  try {
+    const data = await getData();
+    const prefs = preferences.get();
+
+    // Build config from preferences (replaces undefined dataManager.getConfig())
+    const config = {
+      location: {
+        state: prefs?.journey?.transitRoute?.mode1?.originStation?.state || 'VIC',
+        stateCode: prefs?.journey?.transitRoute?.mode1?.originStation?.state || 'VIC'
+      },
+      preferences: {
+        transitMode: 'train',
+        walkingTime: prefs?.manualWalkingTimes?.homeToStation || 5
+      },
+      stops: {
+        home: { name: prefs?.journey?.transitRoute?.mode1?.originStation?.name },
+        work: { name: prefs?.journey?.transitRoute?.mode1?.destinationStation?.name }
+      }
+    };
+
+    // Check if APIs are configured (replaces undefined dataManager.getApis())
+    const apis = {
+      transitAuthority: { configured: !!process.env.ODATA_API_KEY },
+      victorianGTFS: { configured: !!process.env.ODATA_API_KEY }
+    };
+
+    // Get device configuration (Development Rules v1.0.14 Section U - Device-First Design)
+    const deviceConfig = prefs?.deviceConfig || {
+      selectedDevice: 'trmnl-byos',
+      resolution: { width: 800, height: 480 },
+      orientation: 'landscape'
+    };
+    const deviceWidth = req.query.width || deviceConfig.resolution.width;
+    const deviceHeight = req.query.height || deviceConfig.resolution.height;
+    const deviceOrientation = req.query.orientation || deviceConfig.orientation;
+
+    console.log(`📱 Dashboard rendering for: ${deviceConfig.selectedDevice} (${deviceWidth}×${deviceHeight} ${deviceOrientation})`);
+
+    // Location-agnostic timezone detection
+    const state = config?.location?.state || config?.location?.stateCode || 'VIC';
+    const timezone = getTimezoneForState(state);
+
+    // Get transit mode and stops (location agnostic)
+    const transitMode = config?.preferences?.transitMode || prefs?.preferences?.transitMode || 'train';
+    const stationName = config?.stops?.home?.name || prefs?.journey?.transitRoute?.mode1?.originStation?.name || 'STATION';
+    const destName = config?.stops?.work?.name || prefs?.journey?.transitRoute?.mode1?.destinationStation?.name || 'DESTINATION';
+
+    // Determine data source mode
+    const hasLiveData = apis?.transitAuthority?.configured || apis?.victorianGTFS?.configured || false;
+    const dataSourceMode = hasLiveData ? 'LIVE' : 'FALLBACK';
+    const dataSourceText = hasLiveData ? 'LIVE DATA' : 'FALLBACK TIMETABLES';
+
+    // Get current time (location agnostic)
+    const now = new Date();
+    const currentTime = now.toLocaleTimeString('en-AU', {
+      timeZone: timezone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+
+    // Calculate "leave by" time based on next departure
+    const nextDeparture = data.trains?.[0] || data.trams?.[0] || data.buses?.[0] || data.ferries?.[0] || null;
+    const walkBuffer = prefs?.manualWalkingTimes?.homeToStation || config?.preferences?.walkingTime || 5;
+    const leaveInMins = nextDeparture ? Math.max(0, nextDeparture.minutes - walkBuffer) : null;
+    const leaveTime = leaveInMins !== null ? new Date(now.getTime() + leaveInMins * 60000).toLocaleTimeString('en-AU', {
+      timeZone: timezone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }) : '--:--';
+
+    // Get weather data (graceful fallback)
+    let weatherText = 'N/A';
+    let tempText = '--';
+    try {
+      const weatherData = await weather.getCurrentWeather();
+      if (weatherData) {
+        weatherText = weatherData.condition?.short || 'N/A';
+        tempText = weatherData.temperature !== null ? weatherData.temperature + '°' : '--';
+      }
+    } catch (e) {
+      // Weather unavailable - silent fail
+    }
+
+    // Dynamic transit mode data (supports all modes)
+    const getModeTimes = (modeData) => {
+      const dep1 = modeData?.[0] ? modeData[0].minutes + ' min' : '-- min';
+      const dep2 = modeData?.[1] ? modeData[1].minutes + ' min' : '-- min';
+      return { dep1, dep2 };
+    };
+
+    const trains = getModeTimes(data.trains);
+    const trams = getModeTimes(data.trams);
+    const buses = getModeTimes(data.buses);
+    const ferries = getModeTimes(data.ferries);
+    const lightRail = getModeTimes(data.lightRail);
+
+    // Determine primary and secondary modes based on state and configuration
+    let primaryMode = 'TRAINS';
+    let primaryTimes = trains;
+    let secondaryMode = 'TRAMS';
+    let secondaryTimes = trams;
+
+    // State-specific mode selection
+    if (state === 'NSW' || state === 'ACT') {
+      primaryMode = 'TRAINS';
+      secondaryMode = 'BUSES';
+      primaryTimes = trains;
+      secondaryTimes = buses;
+    } else if (state === 'QLD') {
+      primaryMode = 'TRAINS';
+      secondaryMode = 'BUSES';
+      primaryTimes = trains;
+      secondaryTimes = buses;
+    } else if (state === 'WA') {
+      primaryMode = 'TRAINS';
+      secondaryMode = 'BUSES';
+      primaryTimes = trains;
+      secondaryTimes = buses;
+    } else if (state === 'SA') {
+      primaryMode = 'TRAMS';
+      secondaryMode = 'BUSES';
+      primaryTimes = trams;
+      secondaryTimes = buses;
+    } else if (state === 'TAS') {
+      primaryMode = 'BUSES';
+      secondaryMode = 'FERRIES';
+      primaryTimes = buses;
+      secondaryTimes = ferries;
+    } else if (state === 'NT') {
+      primaryMode = 'BUSES';
+      secondaryMode = 'BUSES';
+      primaryTimes = buses;
+      secondaryTimes = buses;
+    } else {
+      // VIC - default trains and trams
+      primaryMode = 'TRAINS';
+      secondaryMode = 'TRAMS';
+      primaryTimes = trains;
+      secondaryTimes = trams;
+    }
+
+    // Dashboard HTML - Device-aware (uses device config from preferences), supports fallback data
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=${deviceWidth}, height=${deviceHeight}">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      background: white;
+      color: black;
+      width: ${deviceWidth}px;
+      height: ${deviceHeight}px;
+      overflow: hidden;
+      position: relative;
+    }
+    /* Data Source Indicator (Top Banner) */
+    .data-source-banner {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 20px;
+      background: ${hasLiveData ? '#10b981' : '#fbbf24'};
+      color: ${hasLiveData ? 'white' : '#1f2937'};
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      z-index: 1000;
+    }
+    /* Station Name Box (Top Left) */
+    .station-box {
+      position: absolute;
+      top: 30px;
+      left: 10px;
+      width: 100px;
+      height: 45px;
+      border: 2px solid black;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      font-weight: bold;
+      text-align: center;
+      padding: 5px;
+      line-height: 1.2;
+    }
+    /* Large Time Display (Top Center) */
+    .time {
+      position: absolute;
+      top: 30px;
+      left: 130px;
+      font-size: 32px;
+      font-weight: bold;
+      letter-spacing: 2px;
+    }
+    /* State/Location Badge */
+    .location-badge {
+      position: absolute;
+      top: 32px;
+      left: 290px;
+      font-size: 9px;
+      color: #666;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    /* LEAVE BY Box (Top Right) - KEY FEATURE */
+    .leave-box {
+      position: absolute;
+      top: 30px;
+      right: 10px;
+      width: 180px;
+      height: 45px;
+      background: black;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+    }
+    .leave-label { font-size: 9px; letter-spacing: 0.5px; }
+    .leave-time { font-size: 22px; letter-spacing: 1px; margin-top: 2px; }
+    /* Section Headers (Black Strips) */
+    .section-header {
+      position: absolute;
+      height: 24px;
+      background: black;
+      color: white;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      font-size: 10px;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+    }
+    .secondary-header { top: 100px; left: 10px; width: 360px; }
+    .primary-header { top: 100px; left: 390px; width: 400px; }
+    /* Departure Labels */
+    .departure-label {
+      position: absolute;
+      font-size: 11px;
+      color: #666;
+      font-weight: 600;
+    }
+    /* Departure Times (Large Numbers) */
+    .departure {
+      position: absolute;
+      font-size: 26px;
+      font-weight: bold;
+    }
+    /* Weather (Right Sidebar) */
+    .weather {
+      position: absolute;
+      right: 15px;
+      top: 290px;
+      font-size: 10px;
+      text-align: right;
+      color: #666;
+    }
+    .temperature {
+      position: absolute;
+      right: 15px;
+      top: 308px;
+      font-size: 18px;
+      font-weight: bold;
+      text-align: right;
+    }
+    /* Coffee Strip (Bottom) */
+    .coffee-strip {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      font-weight: bold;
+      border-top: 3px solid black;
+    }
+    .coffee-yes { background: black; color: white; }
+    .coffee-no { background: white; color: black; }
+    /* Status indicator */
+    .status {
+      position: absolute;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <!-- Data Source Banner -->
+  <div class="data-source-banner">${dataSourceText} • ${state}</div>
+
+  <!-- Station Name Box -->
+  <div class="station-box">${stationName.toUpperCase().substring(0, 25)}</div>
+
+  <!-- Large Time -->
+  <div class="time">${currentTime}</div>
+
+  <!-- Location Badge -->
+  <div class="location-badge">${state} ${timezone.split('/')[1].toUpperCase()}</div>
+
+  <!-- LEAVE BY Box -->
+  <div class="leave-box">
+    <div class="leave-label">LEAVE BY</div>
+    <div class="leave-time">${leaveTime}</div>
+  </div>
+
+  <!-- Secondary Mode Section (Left) -->
+  <div class="section-header secondary-header">${secondaryMode}</div>
+  <div class="departure-label" style="top: 132px; left: 20px;">Next:</div>
+  <div class="departure" style="top: 148px; left: 20px;">${secondaryTimes.dep1}</div>
+  <div class="departure-label" style="top: 192px; left: 20px;">Then:</div>
+  <div class="departure" style="top: 208px; left: 20px;">${secondaryTimes.dep2}</div>
+
+  <!-- Primary Mode Section (Right) -->
+  <div class="section-header primary-header">${primaryMode} → ${destName.toUpperCase().substring(0, 18)}</div>
+  <div class="departure-label" style="top: 132px; left: 400px;">Next:</div>
+  <div class="departure" style="top: 148px; left: 400px;">${primaryTimes.dep1}</div>
+  <div class="departure-label" style="top: 192px; left: 400px;">Then:</div>
+  <div class="departure" style="top: 208px; left: 400px;">${primaryTimes.dep2}</div>
+
+  <!-- Weather -->
+  <div class="weather">${weatherText}</div>
+  <div class="temperature">${tempText}</div>
+
+  <!-- Status -->
+  <div class="status">${hasLiveData ? 'LIVE SERVICE DATA' : 'FALLBACK TIMETABLES'}</div>
+
+  <!-- Coffee Strip -->
+  <div class="coffee-strip ${data.coffee?.canGet ? 'coffee-yes' : 'coffee-no'}">
+    ${data.coffee?.canGet ? '☕ TIME FOR COFFEE' : '⚡ GO DIRECT - NO COFFEE'}
+  </div>
+</body>
+</html>`;
+
+    res.set('Content-Type', 'text/html');
+    res.send(html);
+  } catch (error) {
+    console.error('Error generating dashboard:', error);
+    res.status(500).send('Error generating dashboard');
+  }
+});
+
+// ========== BYOS API ENDPOINTS ==========
+// These endpoints implement TRMNL BYOS protocol for custom firmware
+
+// Device database (in-memory for now - use real DB in production)
+const devices = new Map();
+
+// Device setup/registration endpoint
+app.get('/api/setup', async (req, res) => {
+  const macAddress = req.headers.id || req.headers['ID'];
+
+  if (!macAddress) {
+    return res.status(400).json({
+      status: 404,
+      error: 'MAC address required in ID header'
+    });
+  }
+
+  // Check if device exists, create if not
+  let device = devices.get(macAddress);
+  if (!device) {
+    // Generate API key and friendly ID
+    const apiKey = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const friendlyID = macAddress.replace(/:/g, '').substring(0, 6).toUpperCase();
+
+    device = {
+      macAddress,
+      apiKey,
+      friendlyID,
+      registeredAt: new Date().toISOString()
+    };
+
+    devices.set(macAddress, device);
+    console.log(`📱 New device registered: ${friendlyID} (${macAddress})`);
+
+    // Save to persistent storage
+    await saveDevices();
+  }
+
+  res.json({
+    status: 200,
+    api_key: device.apiKey,
+    friendly_id: device.friendlyID,
+    screen_url: `https://${req.get('host')}/api/screen`,
+    dashboard_url: `https://${req.get('host')}/api/dashboard`
+  });
+});
+
+// Version check endpoint for deployment verification
+app.get('/api/version', (req, res) => {
+  const prefs = preferences.get();
+  const setupAddresses = Boolean(prefs?.journey?.homeAddress && prefs?.journey?.workAddress);
+  const setupTransitAPI = Boolean(prefs?.apis?.transport?.apiKey);
+  const setupJourney = Boolean(prefs?.journey?.transitRoute?.mode1?.departure);
+
+  res.json({
+    version: '2.6.0',
+    deployment: 'v5.15-setup-flags',
+    timestamp: new Date().toISOString(),
+    setupFlagsEnabled: true,
+    setupStatus: {
+      addresses: setupAddresses,
+      transitAPI: setupTransitAPI,
+      journey: setupJourney
+    }
+  });
+});
+
+// Display content endpoint (compatible with custom firmware v5.9+)
+app.get('/api/display', async (req, res) => {
+  const friendlyID = req.headers.id || req.headers['ID'];
+  const accessToken = req.headers['access-token'] || req.headers['Access-Token'];
+  const refreshRate = req.headers['refresh-rate'] || req.headers['Refresh-Rate'] || '900';
+  const batteryVoltage = req.headers['battery-voltage'] || req.headers['Battery-Voltage'];
+  const fwVersion = req.headers['fw-version'] || req.headers['FW-Version'];
+  const rssi = req.headers.rssi || req.headers['RSSI'];
+
+  // Track device ping
+  if (friendlyID) {
+    trackDevicePing(friendlyID, req.ip);
+  }
+
+  // Log device status
+  console.log(`📊 Device ${friendlyID}: Battery ${batteryVoltage}V, RSSI ${rssi}dBm, FW ${fwVersion}`);
+
+  // Verify device exists
+  let deviceFound = false;
+  for (const [mac, device] of devices.entries()) {
+    if (device.friendlyID === friendlyID && device.apiKey === accessToken) {
+      deviceFound = true;
+      device.lastSeen = new Date().toISOString();
+      device.batteryVoltage = batteryVoltage;
+      device.rssi = rssi;
+
+      // Save updated device stats (async, don't wait)
+      saveDevices().catch(err => console.error('Error saving devices:', err));
+      break;
+    }
+  }
+
+  if (!deviceFound && !process.env.VERCEL) {
+    return res.status(500).json({
+      status: 500,
+      error: 'Device not found'
+    });
+  }
+
+  // Get current time and weather for firmware display
+  const prefs = preferences.get();
+  const state = prefs?.journey?.transitRoute?.mode1?.originStation?.state || 'VIC';
+  const timezone = getTimezoneForState(state);
+
+  const now = new Date();
+  const currentTime = now.toLocaleTimeString('en-AU', {
+    timeZone: timezone,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
+
+  // Get weather data
+  let weatherText = 'N/A';
+  try {
+    const weatherData = await weather.getCurrentWeather();
+    if (weatherData) {
+      weatherText = weatherData.condition?.short || 'N/A';
+      if (weatherData.temperature !== null) {
+        weatherText = `${weatherText} ${weatherData.temperature}°`;
+      }
+    }
+  } catch (e) {
+    // Weather unavailable - silent fail
+  }
+
+  // Check setup progress for unified setup screen (v5.15+)
+  // These flags tell the firmware whether to show setup screen or live dashboard
+  const setupAddresses = Boolean(prefs?.journey?.homeAddress && prefs?.journey?.workAddress);
+  const setupTransitAPI = Boolean(prefs?.apis?.transport?.apiKey || prefs?.apis?.transport?.devId);
+  const setupJourney = Boolean(prefs?.journey?.transitRoute?.mode1?.departure);
+
+  // Log setup flags for debugging (v5.15 deployment verification)
+  console.log(`[${friendlyID}] Setup flags: addresses=${setupAddresses}, api=${setupTransitAPI}, journey=${setupJourney}`);
+
+  // Get location if available
+  const location = prefs?.journey?.currentContext?.location || 'Melbourne Central';
+
+  // Get transit data for v5.16+ firmware
+  let transitData = { trains: [], trams: [], buses: [], ferries: [], coffee: { canGet: false } };
+  try {
+    transitData = await getData();
+  } catch (e) {
+    console.error('Transit data fetch failed:', e.message);
+  }
+
+  // Get station names from preferences
+  const tramStop = prefs?.journey?.transitRoute?.mode2?.originStation?.name || 
+                   prefs?.journey?.transitRoute?.mode1?.originStation?.name || 'TRAMS';
+  const trainStop = prefs?.journey?.transitRoute?.mode1?.originStation?.name || 'TRAINS';
+
+  // Format trams array for firmware
+  const trams = (transitData.trams || []).slice(0, 3).map(t => ({
+    minutes: t.minutes || 0,
+    destination: t.destination || t.direction || 'City'
+  }));
+
+  // Format trains array for firmware
+  const trains = (transitData.trains || []).slice(0, 3).map(t => ({
+    minutes: t.minutes || 0,
+    destination: t.destination || t.direction || 'City'
+  }));
+
+  
+  // Journey planning data for v5.18+ firmware
+  const homeAddress = prefs?.journey?.homeAddress || prefs?.addresses?.home || 'Home';
+  const workAddress = prefs?.journey?.workAddress || prefs?.addresses?.work || 'Work';
+  
+  // Calculate leave by and arrive by times
+  const transferTime = 5;
+  const walkToTram = prefs?.manualWalkingTimes?.homeToStation || 3;
+  const walkFromTrain = prefs?.manualWalkingTimes?.stationToWork || 5;
+  const trainJourneyTime = 3;
+  
+  const nextTramMins = trams[0]?.minutes || 10;
+  const totalJourneyTime = walkToTram + nextTramMins + transferTime + trainJourneyTime + walkFromTrain;
+  
+  const nowTime = new Date();
+  const leaveByMs = Math.max(0, (nextTramMins - walkToTram)) * 60000;
+  const leaveByTime = new Date(nowTime.getTime() + leaveByMs);
+  const arriveByTime = new Date(nowTime.getTime() + totalJourneyTime * 60000);
+  
+  const leaveBy = leaveByTime.toLocaleTimeString('en-AU', { timeZone: timezone, hour: '2-digit', minute: '2-digit', hour12: false });
+  const arriveBy = arriveByTime.toLocaleTimeString('en-AU', { timeZone: timezone, hour: '2-digit', minute: '2-digit', hour12: false });
+  
+  const leg1Type = prefs?.journey?.transitRoute?.mode1?.type === 1 ? 'tram' : 'train';
+  const leg2Type = prefs?.journey?.transitRoute?.mode2?.type === 0 ? 'train' : 'tram';
+  const leg2Dest = prefs?.journey?.transitRoute?.mode2?.destinationStation?.name || 'Parliament';
+
+  // Coffee decision
+  const coffeeDecision = transitData.coffee?.canGet ? 'STOP FOR COFFEE' : 'GO DIRECT';
+
   // Return display content with firmware-compatible fields
   const response = {
     status: 0,
