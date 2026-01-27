@@ -1220,7 +1220,9 @@ app.get('/api/device/:token', async (req, res) => {
 // Generate webhook URL after setup completion
 app.post('/admin/generate-webhook', async (req, res) => {
   try {
-    const prefs = preferences.get();
+    // Accept config from request body (for serverless) or fall back to stored prefs
+    const configFromBody = req.body?.config;
+    const prefs = configFromBody || preferences.get();
     const baseUrl = req.headers.origin || `https://${req.headers.host}`;
     
     const webhookUrl = generateWebhookUrl(baseUrl, prefs);

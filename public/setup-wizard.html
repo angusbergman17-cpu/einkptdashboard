@@ -783,7 +783,25 @@
 
                 if (result.success) {
                     // Generate webhook URL for TRMNL device
-                    const webhookResponse = await fetch('/admin/generate-webhook', { method: 'POST' });
+                    // Pass the full config so it can be embedded in the URL (for serverless persistence)
+                    const fullConfig = {
+                        addresses: addresses,
+                        journey: {
+                            transitRoute: result.transitRoute || {},
+                            arrivalTime: document.getElementById('arrival-time').value,
+                            coffeeEnabled: document.getElementById('include-coffee').checked
+                        },
+                        locations: result.locations || {},
+                        state: selectedAuthority,
+                        api: { key: document.getElementById('api-key')?.value || '' },
+                        additionalAPIs: { google_places: document.getElementById('google-places-api-key')?.value || '' }
+                    };
+                    
+                    const webhookResponse = await fetch('/admin/generate-webhook', { 
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ config: fullConfig })
+                    });
                     const webhookResult = await webhookResponse.json();
                     
                     let webhookHtml = '';
