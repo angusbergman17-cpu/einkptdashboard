@@ -601,14 +601,13 @@ class PreferencesManager {
       errors.push('Work address is required');
     }
 
-    // Check API credentials
+    // Check API credentials (only API Key required - token is deprecated)
     const api = this.getApiCredentials();
     if (!api.key) {
       errors.push('Transport Victoria API Key is required');
     }
-    if (!api.token) {
-      errors.push('Transport Victoria API Token is required');
-    }
+    // Note: api.token is deprecated for Transport Victoria OpenData API
+    // The KeyId header with UUID format API key is now the only authentication method
 
     // Check journey preferences
     const journey = this.getJourneyPreferences();
@@ -728,7 +727,8 @@ class PreferencesManager {
       },
       api: {
         key: !!api.key,
-        token: !!api.token
+        token: !!api.token,  // Deprecated - not required for Transport Victoria
+        tokenNote: 'Token is deprecated, only API Key (UUID format) is required'
       },
       journey: {
         arrivalTime: !!journey.arrivalTime,
@@ -943,4 +943,9 @@ class PreferencesManager {
   // ==================== END JOURNEY PROFILES ====================
 }
 
+// Export the class for instantiation in server.js
 export default PreferencesManager;
+
+// Export a singleton instance for modules that need shared access
+// This ensures all modules reference the same preferences instance
+export const preferencesInstance = new PreferencesManager();

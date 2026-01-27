@@ -26,8 +26,9 @@ import fetch from 'node-fetch';
 class GeocodingService {
   constructor(config = {}) {
     // API Keys (optional - fallback to free services if not provided)
-    this.googlePlacesKey = config.googlePlacesKey || process.env.GOOGLE_PLACES_KEY;
-    this.mapboxToken = config.mapboxToken || process.env.MAPBOX_TOKEN;
+    // Accept both GOOGLE_PLACES_API_KEY and GOOGLE_PLACES_KEY for compatibility
+    this.googlePlacesKey = config.googlePlacesKey || process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_PLACES_KEY;
+    this.mapboxToken = config.mapboxToken || process.env.MAPBOX_ACCESS_TOKEN || process.env.MAPBOX_TOKEN;
     this.hereApiKey = config.hereApiKey || process.env.HERE_API_KEY;
     this.foursquareApiKey = config.foursquareApiKey || process.env.FOURSQUARE_API_KEY;
     this.locationIqKey = config.locationIqKey || process.env.LOCATIONIQ_KEY;

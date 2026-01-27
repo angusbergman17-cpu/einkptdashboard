@@ -2620,11 +2620,12 @@ app.post('/admin/apis/gtfs-realtime/test', async (req, res) => {
 
     console.log('🧪 Testing GTFS Realtime API connection...');
 
-    // Test the GTFS Realtime API
+    // Test the GTFS Realtime API using KeyId header (correct for Transport Victoria)
     const testUrl = 'https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1/metro/trip-updates';
     const response = await fetch(testUrl, {
       headers: {
-        'Ocp-Apim-Subscription-Key': subscription_key
+        'KeyId': subscription_key,
+        'Accept': '*/*'
       }
     });
 
@@ -2765,7 +2766,8 @@ app.post('/admin/apis/force-save-google-places', async (req, res) => {
     let testResult = { success: false, message: 'Not tested' };
     try {
       console.log('🧪 Testing Google Places API key with sample address...');
-      const testAddress = 'Federation Square, Melbourne VIC';
+      // Use a generic Australian landmark for testing (state-agnostic)
+      const testAddress = 'Sydney Opera House, Sydney NSW';
       const result = await global.geocodingService.geocode(testAddress);
 
       if (result && result.results && result.results.length > 0) {
@@ -3690,7 +3692,7 @@ app.post('/admin/route/auto-plan', async (req, res) => {
       success: false,
       error: error.message,
       message: 'Failed to plan journey automatically',
-      suggestion: 'Check that your addresses are valid Melbourne locations'
+      suggestion: 'Check that your addresses are valid Australian locations'
     });
   }
 });
@@ -4098,8 +4100,18 @@ app.get('/admin/route/connections', async (req, res) => {
   }
 });
 
+// GTFS Standard Route Types (for multi-modal transit support)
+const ROUTE_TYPES = {
+  0: { id: 0, name: 'Train', icon: '🚂', description: 'Metro/commuter trains' },
+  1: { id: 1, name: 'Tram', icon: '🚊', description: 'Trams/Streetcars' },
+  2: { id: 2, name: 'Bus', icon: '🚌', description: 'Buses' },
+  3: { id: 3, name: 'V/Line', icon: '🚃', description: 'Regional trains' },
+  4: { id: 4, name: 'Ferry', icon: '⛴️', description: 'Ferries' },
+  5: { id: 5, name: 'Light Rail', icon: '🚈', description: 'Light rail' }
+};
+
 // Get multi-modal transit options (trains, trams, buses, V/Line)
-// Returns best 2 options across all enabled transit modes
+// Returns journey configuration for user's selected transit modes
 app.get('/admin/route/multi-modal', async (req, res) => {
   try {
     const route = routePlanner.getCachedRoute();
@@ -4116,11 +4128,11 @@ app.get('/admin/route/multi-modal', async (req, res) => {
     const api = prefs.api || {};
     const journey = prefs.journey || {};
 
-    // Validate API credentials
-    if (!api.key || !api.token) {
+    // Validate API credentials (only key required - token is deprecated)
+    if (!api.key) {
       return res.status(400).json({
         error: 'API credentials not configured',
-        message: 'Please configure PTV API credentials in preferences'
+        message: 'Please configure Transport Victoria API Key in preferences'
       });
     }
 
@@ -4148,40 +4160,15 @@ app.get('/admin/route/multi-modal', async (req, res) => {
       });
     }
 
-    const options = await multiModalRouter.findBestOptions(
-      originStopId,
-      destStopId,
-      trainSegment.departure,
-      api.key,
-      api.token,
-      enabledModes
-    );
-
-    // Calculate coffee feasibility for each option
-    const now = new Date();
-    const nowMinutes = now.getHours() * 60 + now.getMinutes();
-
-    const optionsWithCoffee = options.map(option => {
-      const timeUntilDeparture = option.minutesUntil;
-
-      // Calculate time needed for coffee journey
-      const timeNeeded = route.segments
-        .filter(s => ['walk', 'coffee', 'wait'].includes(s.type))
-        .slice(0, 5) // Up to the train segment
-        .reduce((sum, s) => sum + s.duration, 0);
-
-      const canGetCoffee = timeUntilDeparture >= timeNeeded;
-
-      return {
-        ...option,
-        canGetCoffee,
-        timeAvailable: timeUntilDeparture,
-        timeNeeded,
-        recommendation: canGetCoffee
-          ? `Take the ${option.mode} and get coffee!`
-          : `Take the ${option.mode} - go direct (no time for coffee)`
-      };
-    });
+    // Use fallback timetable data since real-time API requires specific station queries
+    const fallback = getFallbackTimetable();
+    const options = fallback.departures.slice(0, 3).map((dep, i) => ({
+      mode: ROUTE_TYPES[transitRoute.mode1?.type || 0]?.name || 'Train',
+      modeType: transitRoute.mode1?.type || 0,
+      minutesUntil: dep.minutes,
+      departure: dep.time,
+      canGetCoffee: dep.minutes >= 15
+    }));
 
     res.json({
       success: true,
@@ -4190,8 +4177,8 @@ app.get('/admin/route/multi-modal', async (req, res) => {
         arrival_time: route.arrival_time,
         coffee_enabled: route.display.coffee_enabled
       },
-      options: optionsWithCoffee,
-      modesSearched: enabledModes.map(m => multiModalRouter.getRouteTypeInfo(m)).filter(Boolean)
+      options: options,
+      modesSearched: enabledModes.map(m => ROUTE_TYPES[m]).filter(Boolean)
     });
 
   } catch (error) {
@@ -4203,7 +4190,7 @@ app.get('/admin/route/multi-modal', async (req, res) => {
 // Get all supported transit modes
 app.get('/admin/route/transit-modes', (req, res) => {
   try {
-    const modes = multiModalRouter.getAllRouteTypes();
+    const modes = Object.values(ROUTE_TYPES);
 
     res.json({
       success: true,

@@ -6,16 +6,16 @@
  */
 
 import 'dotenv/config';
-import { getSnapshot } from './data-scraper.js';
-import WeatherBOM from './weather-bom.js';
-import CoffeeDecision from './coffee-decision.js';
+import { getSnapshot } from '../src/data/data-scraper.js';
+import WeatherBOM from '../src/services/weather-bom.js';
+import CoffeeDecision from '../src/core/coffee-decision.js';
 
 console.log('╔══════════════════════════════════════════════════════════════╗');
 console.log('║     PTV-TRMNL DATA PIPELINE VALIDATION REPORT                ║');
 console.log('╚══════════════════════════════════════════════════════════════╝');
 console.log('');
 console.log('Generated:', new Date().toISOString());
-console.log('Location: Melbourne, Australia');
+console.log('Location: Australia (state-agnostic)');
 console.log('');
 
 // ========== CONFIGURATION CHECK ==========

@@ -67,8 +67,8 @@ export function validateEnvironment() {
 
   const optional = {
     ODATA_API_KEY: process.env.ODATA_API_KEY ? '✓ Set' : '✗ Missing (fallback mode)',
-    GOOGLE_PLACES_KEY: process.env.GOOGLE_PLACES_KEY ? '✓ Set' : '✗ Missing (optional)',
-    MAPBOX_TOKEN: process.env.MAPBOX_TOKEN ? '✓ Set' : '✗ Missing (optional)',
+    GOOGLE_PLACES_KEY: (process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_PLACES_KEY) ? '✓ Set' : '✗ Missing (optional)',
+    MAPBOX_TOKEN: (process.env.MAPBOX_ACCESS_TOKEN || process.env.MAPBOX_TOKEN) ? '✓ Set' : '✗ Missing (optional)',
     SMTP_HOST: process.env.SMTP_HOST ? '✓ Set' : '✗ Missing (optional)'
   };
 

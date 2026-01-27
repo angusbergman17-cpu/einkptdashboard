@@ -10,7 +10,7 @@
 
 import dayjs from "dayjs";
 import config from "../utils/config.js";
-import preferences from "./preferences-manager.js";
+import { preferencesInstance as preferences } from "./preferences-manager.js";
 import {
   getMetroTripUpdates,
   getMetroServiceAlerts,
