@@ -1,7 +1,7 @@
 # PTV-TRMNL Development Rules
 **MANDATORY COMPLIANCE DOCUMENT**
-**Last Updated**: 2026-01-26 Evening
-**Version**: 1.0.23
+**Last Updated**: 2026-01-27
+**Version**: 1.0.24
 
 **📋 [Complete Project Vision →](../../PROJECT-STATEMENT.md)** - Read the comprehensive project statement for context on goals, architecture, and user requirements.
 
@@ -2627,6 +2627,98 @@ const response = await fetch(url, {
 ---
 
 ## 9️⃣ UI/UX MANDATES
+
+### Design System Principles (MANDATORY)
+
+**CRITICAL**: All interface pages MUST have matching design and intuitive interface. Consistency across all pages is non-negotiable.
+
+**Core Design Philosophy**:
+1. **Visual Consistency**: All pages (admin, setup, dashboard, journey) MUST use identical styling
+2. **Intuitive Navigation**: Users should understand interface without instruction
+3. **Dark & Comforting Tones**: Prioritize dark backgrounds that reduce eye strain
+4. **Information Hierarchy**: Clear visual distinction between primary, secondary, and tertiary elements
+
+### Color Palette (MANDATORY)
+
+**Primary Palette (Dark/Comforting Base)**:
+```css
+/* Primary Background - Dark Slate */
+--color-bg-primary: #0f172a;       /* slate-900 - Main background */
+--color-bg-secondary: #1e293b;     /* slate-800 - Cards, panels */
+--color-bg-tertiary: #334155;      /* slate-700 - Hover states */
+
+/* Primary Accent - Indigo (Trust/Professionalism) */
+--color-accent-primary: #6366f1;   /* indigo-500 - Buttons, links */
+--color-accent-hover: #4f46e5;     /* indigo-600 - Hover states */
+--color-accent-light: #818cf8;     /* indigo-400 - Highlights */
+```
+
+**Secondary Palette (Status/Feedback)**:
+```css
+/* Success - Green */
+--color-success: #22c55e;          /* green-500 - Success states */
+--color-success-bg: rgba(34, 197, 94, 0.2);  /* Success background */
+
+/* Warning - Amber */
+--color-warning: #f59e0b;          /* amber-500 - Warnings */
+--color-warning-bg: rgba(245, 158, 11, 0.2); /* Warning background */
+
+/* Error - Red */
+--color-error: #ef4444;            /* red-500 - Errors */
+--color-error-bg: rgba(239, 68, 68, 0.2);    /* Error background */
+
+/* Info - Sky Blue */
+--color-info: #0ea5e9;             /* sky-500 - Information */
+--color-info-bg: rgba(14, 165, 233, 0.1);    /* Info background */
+```
+
+**Tertiary Palette (Text/Borders)**:
+```css
+/* Text Colors */
+--color-text-primary: #f8fafc;     /* slate-50 - Primary text */
+--color-text-secondary: #cbd5e1;   /* slate-300 - Secondary text */
+--color-text-muted: #64748b;       /* slate-500 - Muted/disabled */
+
+/* Borders */
+--color-border-default: rgba(255, 255, 255, 0.1);
+--color-border-focus: rgba(99, 102, 241, 0.5);
+```
+
+**Implementation Requirements**:
+```css
+/* ALL pages MUST include these base styles */
+body {
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.card, .panel {
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid var(--color-border-default);
+    border-radius: 12px;
+}
+
+.btn-primary {
+    background: var(--color-accent-primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--color-accent-hover);
+}
+```
+
+### Design Consistency Checklist
+
+**Before committing ANY UI changes**:
+- [ ] Page uses same color palette as admin.html
+- [ ] Fonts match other pages (Inter or system fonts)
+- [ ] Button styles are consistent
+- [ ] Card/panel styling matches
+- [ ] Status colors use standard palette
+- [ ] Dark theme is maintained (no jarring white backgrounds)
+- [ ] Spacing and border-radius are consistent
 
 ### Admin Panel Structure
 
