@@ -1908,6 +1908,34 @@ app.get('/api/display', async (req, res) => {
   // Get location if available
   const location = prefs?.journey?.currentContext?.location || 'Melbourne Central';
 
+  // Get transit data for v5.16+ firmware
+  let transitData = { trains: [], trams: [], buses: [], ferries: [], coffee: { canGet: false } };
+  try {
+    transitData = await getData();
+  } catch (e) {
+    console.error('Transit data fetch failed:', e.message);
+  }
+
+  // Get station names from preferences
+  const tramStop = prefs?.journey?.transitRoute?.mode2?.originStation?.name || 
+                   prefs?.journey?.transitRoute?.mode1?.originStation?.name || 'TRAMS';
+  const trainStop = prefs?.journey?.transitRoute?.mode1?.originStation?.name || 'TRAINS';
+
+  // Format trams array for firmware
+  const trams = (transitData.trams || []).slice(0, 3).map(t => ({
+    minutes: t.minutes || 0,
+    destination: t.destination || t.direction || 'City'
+  }));
+
+  // Format trains array for firmware
+  const trains = (transitData.trains || []).slice(0, 3).map(t => ({
+    minutes: t.minutes || 0,
+    destination: t.destination || t.direction || 'City'
+  }));
+
+  // Coffee decision
+  const coffeeDecision = transitData.coffee?.canGet ? 'STOP FOR COFFEE' : 'GO DIRECT';
+
   // Return display content with firmware-compatible fields
   const response = {
     status: 0,
@@ -1924,7 +1952,13 @@ app.get('/api/display', async (req, res) => {
     // Setup progress flags (v5.15+) - CRITICAL FOR UNIFIED SETUP SCREEN
     setup_addresses: setupAddresses,
     setup_transit_api: setupTransitAPI,
-    setup_journey: setupJourney
+    setup_journey: setupJourney,
+    // Transit data for v5.16+ firmware
+    trams: trams,
+    trains: trains,
+    tram_stop: tramStop,
+    train_stop: trainStop,
+    coffee_decision: coffeeDecision
   };
 
   res.json(response);
