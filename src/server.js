@@ -1223,8 +1223,28 @@ app.get('/api/dashboard', async (req, res) => {
   try {
     const data = await getData();
     const prefs = preferences.get();
-    const config = dataManager.getConfig();
-    const apis = dataManager.getApis();
+
+    // Build config from preferences (replaces undefined dataManager.getConfig())
+    const config = {
+      location: {
+        state: prefs?.journey?.transitRoute?.mode1?.originStation?.state || 'VIC',
+        stateCode: prefs?.journey?.transitRoute?.mode1?.originStation?.state || 'VIC'
+      },
+      preferences: {
+        transitMode: 'train',
+        walkingTime: prefs?.manualWalkingTimes?.homeToStation || 5
+      },
+      stops: {
+        home: { name: prefs?.journey?.transitRoute?.mode1?.originStation?.name },
+        work: { name: prefs?.journey?.transitRoute?.mode1?.destinationStation?.name }
+      }
+    };
+
+    // Check if APIs are configured (replaces undefined dataManager.getApis())
+    const apis = {
+      transitAuthority: { configured: !!process.env.ODATA_API_KEY },
+      victorianGTFS: { configured: !!process.env.ODATA_API_KEY }
+    };
 
     // Get device configuration (Development Rules v1.0.14 Section U - Device-First Design)
     const deviceConfig = prefs?.deviceConfig || {
@@ -4517,8 +4537,30 @@ app.get('/admin/live-display', async (req, res) => {
     const data = await getData();
     const regionUpdates = await getRegionUpdates();
     const prefs = preferences.get();
-    const config = dataManager.getConfig();
-    const apis = dataManager.getApis();
+
+    // Build config from preferences (replaces undefined dataManager.getConfig())
+    const config = {
+      location: {
+        state: prefs?.journey?.transitRoute?.mode1?.originStation?.state || 'VIC',
+        stateCode: prefs?.journey?.transitRoute?.mode1?.originStation?.state || 'VIC',
+        stateName: prefs?.journey?.transitRoute?.mode1?.originStation?.state || 'Victoria'
+      },
+      preferences: {
+        transitMode: 'train',
+        walkingTime: prefs?.manualWalkingTimes?.homeToStation || 5
+      },
+      stops: {
+        home: { name: prefs?.journey?.transitRoute?.mode1?.originStation?.name },
+        work: { name: prefs?.journey?.transitRoute?.mode1?.destinationStation?.name }
+      }
+    };
+
+    // Check if APIs are configured (replaces undefined dataManager.getApis())
+    const apis = {
+      transitAuthority: { configured: !!process.env.ODATA_API_KEY },
+      victorianGTFS: { configured: !!process.env.ODATA_API_KEY }
+    };
+
     const cachedRoute = routePlanner.getCachedRoute();
     const cachedAutoJourney = cachedJourney; // Use compliant auto-calculated journey
 
@@ -5334,9 +5376,29 @@ app.post('/admin/system/reset-all', async (req, res) => {
  * - Clear data source indicators (fallback vs live)
  */
 app.get('/preview', requireConfiguration, (req, res) => {
-  const config = dataManager.getConfig();
-  const apis = dataManager.getApis();
   const prefs = preferences.get();
+
+  // Build config from preferences (replaces undefined dataManager.getConfig())
+  const config = {
+    location: {
+      state: prefs?.journey?.transitRoute?.mode1?.originStation?.state || 'VIC',
+      stateCode: prefs?.journey?.transitRoute?.mode1?.originStation?.state || 'VIC'
+    },
+    preferences: {
+      transitMode: 'train',
+      walkingTime: prefs?.manualWalkingTimes?.homeToStation || 5
+    },
+    stops: {
+      home: { name: prefs?.journey?.transitRoute?.mode1?.originStation?.name },
+      work: { name: prefs?.journey?.transitRoute?.mode1?.destinationStation?.name }
+    }
+  };
+
+  // Check if APIs are configured (replaces undefined dataManager.getApis())
+  const apis = {
+    transitAuthority: { configured: !!process.env.ODATA_API_KEY },
+    victorianGTFS: { configured: !!process.env.ODATA_API_KEY }
+  };
 
   // Get device configuration (Development Rules v1.0.14 Section U - Device-First Design)
   const deviceConfig = prefs?.deviceConfig || {
