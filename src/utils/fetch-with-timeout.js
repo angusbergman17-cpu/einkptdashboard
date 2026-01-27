@@ -1,10 +1,4 @@
 /**
- * Copyright (c) 2026 Angus Bergman
- * Licensed under CC BY-NC 4.0 (Creative Commons Attribution-NonCommercial 4.0 International License)
- * https://creativecommons.org/licenses/by-nc/4.0/
- */
-
-/**
  * Fetch utilities with timeout, retry, and circuit breaker support
  *
  * This module provides robust HTTP request handling to prevent hanging

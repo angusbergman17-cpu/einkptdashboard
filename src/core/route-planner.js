@@ -1,10 +1,4 @@
 /**
- * Copyright (c) 2026 Angus Bergman
- * Licensed under CC BY-NC 4.0 (Creative Commons Attribution-NonCommercial 4.0 International License)
- * https://creativecommons.org/licenses/by-nc/4.0/
- */
-
-/**
  * Smart Route Planner
  * Calculates optimal multi-segment journey: Home → Coffee → Work
  * Uses real transit data and walking times to ensure on-time arrival
@@ -419,8 +413,7 @@ class RoutePlanner {
    * @param {Object} params.journeyConfig - Journey configuration (cafe location, transit modes)
    */
   async calculateRoute(homeAddress, coffeeAddress, workAddress, arrivalTime, manualWalkingTimes = {}, addressFlags = {}, journeyConfig = {}) {
-    console.log('
-=== CALCULATING FLEXIBLE SMART ROUTE ===');
+    console.log('\n=== CALCULATING FLEXIBLE SMART ROUTE ===');
     console.log(`Home: ${homeAddress}`);
     console.log(`Coffee: ${coffeeAddress}`);
     console.log(`Work: ${workAddress}`);
@@ -448,8 +441,7 @@ class RoutePlanner {
     const hasConnection = numberOfModes >= 2;
 
     if (manualWalkingTimes.useManualTimes) {
-      console.log('
-⚙️  Using manual walking times (override mode)');
+      console.log('\n⚙️  Using manual walking times (override mode)');
     }
 
     console.log(`📍 Cafe Location: ${cafeLocation}`);
@@ -460,8 +452,7 @@ class RoutePlanner {
 
     try {
       // Step 1: Geocode all locations
-      console.log('
-1. Geocoding locations...');
+      console.log('\n1. Geocoding locations...');
 
       const locations = {};
 
@@ -509,8 +500,7 @@ class RoutePlanner {
       }
 
       // Step 2: Calculate walking times dynamically based on cafe location
-      console.log('
-2. Calculating walking times...');
+      console.log('\n2. Calculating walking times...');
 
       const times = {};
       const walkingDistances = {};
@@ -623,8 +613,7 @@ class RoutePlanner {
       let busyData, busyDesc, coffeePurchaseTime;
 
       if (coffeeEnabled && coffeeAddress) {
-        console.log('
-2.5. Checking cafe busy-ness...');
+        console.log('\n2.5. Checking cafe busy-ness...');
         busyData = await this.busyDetector.getCafeBusyness(coffeeAddress, locations.cafe?.lat, locations.cafe?.lon);
         busyDesc = this.busyDetector.getBusyDescription(busyData);
 
@@ -643,8 +632,7 @@ class RoutePlanner {
       }
 
       // Step 3: Work backwards from arrival time
-      console.log('
-3. Working backwards from arrival time...');
+      console.log('\n3. Working backwards from arrival time...');
 
       const arrivalTimeParts = arrivalTime.split(':');
       const arrivalMinutes = parseInt(arrivalTimeParts[0]) * 60 + parseInt(arrivalTimeParts[1]);
@@ -726,8 +714,7 @@ class RoutePlanner {
       console.log(`  🏠 Must leave home: ${this.formatTime(mustLeaveHome)}`);
 
       // Step 4: Build flexible route segments
-      console.log('
-4. Building route segments...');
+      console.log('\n4. Building route segments...');
 
       times.mustLeaveHome = mustLeaveHome;
 
@@ -819,8 +806,7 @@ class RoutePlanner {
       this.routeCache = route;
       this.routeCacheExpiry = Date.now() + this.routeCacheDuration;
 
-      console.log('
-✅ Route calculated successfully');
+      console.log('\n✅ Route calculated successfully');
       console.log(`📊 Summary:`);
       console.log(`  - Total duration: ${route.summary.total_duration} min`);
       console.log(`  - Walking: ${route.summary.walking_time} min`);
@@ -851,8 +837,7 @@ class RoutePlanner {
    * Overlays real PTV departure data onto the calculated route
    */
   async findPTVConnections(route, ptvData) {
-    console.log('
-=== FINDING PTV CONNECTIONS ===');
+    console.log('\n=== FINDING PTV CONNECTIONS ===');
 
     const now = new Date();
     const nowMinutes = now.getHours() * 60 + now.getMinutes();

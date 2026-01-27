@@ -1,10 +1,4 @@
 /**
- * Copyright (c) 2026 Angus Bergman
- * Licensed under CC BY-NC 4.0 (Creative Commons Attribution-NonCommercial 4.0 International License)
- * https://creativecommons.org/licenses/by-nc/4.0/
- */
-
-/**
  * opendata.js
  * Minimal Open Data GTFS‑Realtime client for Metro Trains, Trams & Buses (VIC)
  * Uses Transport Victoria OpenData API with KeyId header authentication (UUID format API key)
