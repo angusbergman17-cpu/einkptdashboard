@@ -1189,10 +1189,6 @@ app.get('/api/device/:token', async (req, res) => {
     const mode1Data = transitRoute?.mode1?.type === 0 ? data.trains : data.trams;
     const mode2Data = transitRoute?.mode2?.type === 0 ? data.trains : data.trams;
 
-    // Get correct data based on mode type (0=train, 1=tram)
-    const mode1Data = transitRoute?.mode1?.type === 0 ? data.trains : data.trams;
-    const mode2Data = transitRoute?.mode2?.type === 0 ? data.trains : data.trams;
-
     const mode1Type = transitRoute?.mode1?.type === 0 ? 'TRAINS' : 'TRAMS';
     const mode2Type = transitRoute?.mode2?.type === 0 ? 'TRAINS' : 'TRAMS';
 
