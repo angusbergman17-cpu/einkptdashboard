@@ -328,19 +328,30 @@ function getFallbackTimetable() {
   const trainDest = prefs?.journey?.transitRoute?.mode1?.destinationStation?.name || 'City';
   const tramDest = prefs?.journey?.transitRoute?.mode2?.destinationStation?.name || 'City';
 
-  // Typical weekday schedule (minutes from midnight)
-  const trainSchedule = []; // Every 5-10 minutes during peak
-  for (let h = 6; h < 23; h++) {
+  // Typical weekday schedule including Night Network
+  const trainSchedule = []; 
+  // Day services: 5am-midnight
+  for (let h = 5; h <= 23; h++) {
     for (let m = 0; m < 60; m += (h >= 7 && h <= 9) || (h >= 16 && h <= 19) ? 5 : 10) {
       trainSchedule.push(h * 60 + m);
     }
   }
+  // Night Network: midnight-1am (Fri/Sat nights)
+  for (let m = 0; m < 60; m += 20) {
+    trainSchedule.push(m); // 00:00, 00:20, 00:40
+    trainSchedule.push(60 + m); // 01:00, 01:20, 01:40
+  }
 
   const tramSchedule = []; // Every 8-12 minutes
-  for (let h = 5; h < 24; h++) {
+  for (let h = 5; h <= 23; h++) {
     for (let m = 0; m < 60; m += 10) {
       tramSchedule.push(h * 60 + m);
     }
+  }
+  // Night Network trams: midnight-2am
+  for (let m = 0; m < 60; m += 15) {
+    tramSchedule.push(m); // 00:xx
+    tramSchedule.push(60 + m); // 01:xx
   }
 
   // Find next departures
