@@ -3187,6 +3187,208 @@ app.post('/admin/smart-setup', async (req, res) => {
   }
 });
 
+// ========== MULTI-MODAL JOURNEY CONFIGURATION ==========
+// Supports complex journeys with up to 4 transit modes
+// Example: Home → Cafe → Tram → Train → Walk → Office
+app.post('/admin/multi-modal-journey/configure', async (req, res) => {
+  try {
+    const {
+      addresses,      // { home, cafe, work }
+      arrivalTime,    // "09:00"
+      coffeeEnabled,  // true/false
+      cafeLocation,   // 'before-transit-1', 'between-transit-1-2', 'after-last-transit'
+      transitModes    // Array of { type, origin, destination, estimatedDuration }
+    } = req.body;
+
+    console.log('\n=== MULTI-MODAL JOURNEY CONFIGURATION ===');
+    console.log('Addresses:', addresses);
+    console.log('Arrival Time:', arrivalTime);
+    console.log('Coffee Enabled:', coffeeEnabled);
+    console.log('Cafe Location:', cafeLocation);
+    console.log('Transit Modes:', JSON.stringify(transitModes, null, 2));
+
+    // Validate required fields
+    if (!addresses?.home || !addresses?.work || !arrivalTime) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: addresses.home, addresses.work, and arrivalTime are required'
+      });
+    }
+
+    if (!transitModes || !Array.isArray(transitModes) || transitModes.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'At least one transit mode is required'
+      });
+    }
+
+    if (transitModes.length > 4) {
+      return res.status(400).json({
+        success: false,
+        error: 'Maximum 4 transit modes supported'
+      });
+    }
+
+    // Build transit route configuration
+    const transitRoute = {
+      numberOfModes: transitModes.length,
+      mode1: null,
+      mode2: null,
+      mode3: null,
+      mode4: null
+    };
+
+    // Configure each transit mode
+    for (let i = 0; i < transitModes.length; i++) {
+      const mode = transitModes[i];
+      const modeKey = `mode${i + 1}`;
+
+      // Validate mode data
+      if (!mode.origin || !mode.destination) {
+        return res.status(400).json({
+          success: false,
+          error: `Mode ${i + 1} must have origin and destination`
+        });
+      }
+
+      transitRoute[modeKey] = {
+        type: mode.type ?? 0,  // Default to train (0)
+        originStation: {
+          name: mode.origin.name || mode.origin,
+          id: mode.origin.id || null,
+          lat: mode.origin.lat || null,
+          lon: mode.origin.lon || null
+        },
+        destinationStation: {
+          name: mode.destination.name || mode.destination,
+          id: mode.destination.id || null,
+          lat: mode.destination.lat || null,
+          lon: mode.destination.lon || null
+        },
+        estimatedDuration: mode.estimatedDuration || null
+      };
+    }
+
+    // Validate cafe location for multi-modal journeys
+    const validCafeLocations = [
+      'before-transit-1',
+      'between-transit-1-2',
+      'between-transit-2-3',
+      'between-transit-3-4',
+      'after-last-transit'
+    ];
+    const effectiveCafeLocation = coffeeEnabled
+      ? (validCafeLocations.includes(cafeLocation) ? cafeLocation : 'before-transit-1')
+      : null;
+
+    // Update preferences
+    const configData = {
+      addresses: {
+        home: addresses.home,
+        cafe: addresses.cafe || '',
+        cafeName: addresses.cafeName || '',
+        work: addresses.work
+      },
+      journey: {
+        arrivalTime: arrivalTime,
+        coffeeEnabled: coffeeEnabled === true,
+        cafeLocation: effectiveCafeLocation,
+        transitRoute: transitRoute
+      }
+    };
+
+    await preferences.update(configData);
+
+    // Start automatic journey calculation
+    startAutomaticJourneyCalculation();
+
+    console.log('✅ Multi-modal journey configured successfully');
+    console.log(`   Modes: ${transitModes.length}`);
+    console.log(`   Coffee: ${coffeeEnabled ? effectiveCafeLocation : 'disabled'}`);
+
+    res.json({
+      success: true,
+      message: 'Multi-modal journey configured successfully',
+      configuration: {
+        numberOfModes: transitRoute.numberOfModes,
+        modes: transitModes.map((m, i) => ({
+          modeNumber: i + 1,
+          type: ['Train', 'Tram', 'Bus', 'V/Line', 'Ferry', 'Light Rail'][m.type] || 'Unknown',
+          from: m.origin.name || m.origin,
+          to: m.destination.name || m.destination
+        })),
+        coffeeLocation: effectiveCafeLocation
+      }
+    });
+
+  } catch (error) {
+    console.error('Multi-modal configuration error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Get example multi-modal journey configurations
+app.get('/admin/multi-modal-journey/examples', (req, res) => {
+  res.json({
+    success: true,
+    examples: [
+      {
+        name: 'South Yarra to Parliament (Tram + Train)',
+        description: 'Home → Cafe → Tram → Train → Office',
+        config: {
+          addresses: {
+            home: '1 Clara Street, South Yarra VIC',
+            cafe: 'Norman, Toorak Road, South Yarra',
+            work: 'Collins Street, Melbourne VIC'
+          },
+          arrivalTime: '09:00',
+          coffeeEnabled: true,
+          cafeLocation: 'before-transit-1',
+          transitModes: [
+            {
+              type: 1,  // Tram
+              origin: { name: 'Toorak Rd/Chapel St', id: '2803', lat: -37.8400, lon: 144.9980 },
+              destination: { name: 'South Yarra', id: '1159', lat: -37.8397, lon: 144.9933 },
+              estimatedDuration: 5
+            },
+            {
+              type: 0,  // Train
+              origin: { name: 'South Yarra', id: '1159', lat: -37.8397, lon: 144.9933 },
+              destination: { name: 'Parliament', id: '1120', lat: -37.8110, lon: 144.9730 },
+              estimatedDuration: 8
+            }
+          ]
+        }
+      },
+      {
+        name: 'Richmond to CBD (Single Train)',
+        description: 'Home → Cafe → Train → Office',
+        config: {
+          addresses: {
+            home: '100 Church Street, Richmond VIC',
+            cafe: 'Axil Coffee, Church Street, Richmond',
+            work: 'Bourke Street, Melbourne VIC'
+          },
+          arrivalTime: '09:00',
+          coffeeEnabled: true,
+          cafeLocation: 'before-transit-1',
+          transitModes: [
+            {
+              type: 0,  // Train
+              origin: { name: 'Richmond', id: '1104', lat: -37.8210, lon: 145.0037 },
+              destination: { name: 'Flinders Street Station', id: '1071', lat: -37.8183, lon: 144.9671 },
+              estimatedDuration: 5
+            }
+          ]
+        }
+      }
+    ]
+  });
+});
+
 // Helper function to get transit authority for state
 function getTransitAuthorityForState(state) {
   const authorities = {
