@@ -1722,6 +1722,14 @@ app.get('/api/display', async (req, res) => {
     // Weather unavailable - silent fail
   }
 
+  // Check setup progress for unified setup screen (v5.15+)
+  const setupAddresses = Boolean(prefs?.journey?.homeAddress && prefs?.journey?.workAddress);
+  const setupTransitAPI = Boolean(prefs?.apis?.transport?.apiKey || prefs?.apis?.transport?.devId);
+  const setupJourney = Boolean(prefs?.journey?.transitRoute?.mode1?.departure);
+
+  // Get location if available
+  const location = prefs?.journey?.currentContext?.location || 'Melbourne Central';
+
   // Return display content with firmware-compatible fields
   res.json({
     status: 0,
@@ -1733,7 +1741,12 @@ app.get('/api/display', async (req, res) => {
     reset_firmware: false,
     // Firmware-compatible fields (v5.9+)
     current_time: currentTime,
-    weather: weatherText
+    weather: weatherText,
+    location: location,
+    // Setup progress flags (v5.15+)
+    setup_addresses: setupAddresses,
+    setup_transit_api: setupTransitAPI,
+    setup_journey: setupJourney
   });
 });
 
