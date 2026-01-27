@@ -1004,6 +1004,44 @@ headers: {
 
 **Note**: The OpenData Transport Victoria API uses the `KeyId` header (case-sensitive) with your UUID format API Key. This is the ONLY credential needed.
 
+**API Endpoints** (UPDATED 2026-01-27):
+```
+Base URL: https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1
+
+Metro Train:
+  - Trip Updates:      {base}/metro/trip-updates
+  - Vehicle Positions: {base}/metro/vehicle-positions
+  - Service Alerts:    {base}/metro/service-alerts
+
+Tram (Yarra Trams):
+  - Trip Updates:      {base}/tram/trip-updates
+  - Vehicle Positions: {base}/tram/vehicle-positions
+  - Service Alerts:    {base}/tram/service-alerts
+
+Bus:
+  - Trip Updates:      {base}/bus/trip-updates
+  - Vehicle Positions: {base}/bus/vehicle-positions
+  - Service Alerts:    {base}/bus/service-alerts
+
+V/Line:
+  - Trip Updates:      {base}/vline/trip-updates
+  - Vehicle Positions: {base}/vline/vehicle-positions
+  - Service Alerts:    {base}/vline/service-alerts
+```
+
+**⚠️ DEPRECATED ENDPOINTS** (Return 404 as of 2026-01-27):
+```
+❌ https://opendata.transport.vic.gov.au/gtfsr/metrotrain-tripupdates
+❌ https://opendata.transport.vic.gov.au/gtfsr/metrotrain-vehiclepositions
+❌ https://opendata.transport.vic.gov.au/gtfsr/metrotrain-servicealerts
+```
+
+**Rate Limits**:
+- Metro Train: 24 calls per 60 seconds
+- Tram: 24 calls per 60 seconds
+- Bus: 24 calls per 60 seconds
+
+
 ### ✅ Geocoding Services - PRIORITY ORDER:
 
 **CRITICAL**: Always use Google Places API (new) when available.
