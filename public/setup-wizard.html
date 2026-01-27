@@ -386,13 +386,13 @@
 
                 <div class="btn-row">
                     <button class="btn btn-secondary" onclick="previousStep(3)">← Back</button>
-                    <button class="btn" onclick="nextStep(3)">Next: PTV API Credentials →</button>
+                    <button class="btn" onclick="nextStep(3)">Next: Transit API Credentials →</button>
                 </div>
             </div>
 
-            <!-- Step 4: PTV API Credentials -->
+            <!-- Step 4: Transit API Credentials -->
             <div class="step-content" id="step-4">
-                <h2 style="margin-bottom: 20px;">🔑 Step 4: PTV API Credentials</h2>
+                <h2 style="margin-bottom: 20px;">🔑 Step 4: Transit API Credentials</h2>
                 <p style="color: #718096; margin-bottom: 25px;">
                     To access real-time transit data, you'll need API credentials from your transit authority.
                 </p>
@@ -740,12 +740,11 @@
             if (selectedAuthority === 'VIC') {
                 html = `
                     <div class="form-group">
-                        <label class="form-label">Developer ID</label>
-                        <input type="text" id="dev-id" class="form-input" placeholder="Your PTV Developer ID">
-                    </div>
-                    <div class="form-group">
                         <label class="form-label">API Key</label>
-                        <input type="password" id="api-key" class="form-input" placeholder="Your PTV API Key">
+                        <input type="password" id="api-key" class="form-input" placeholder="Your Transport Victoria API Key (UUID format)">
+                        <small style="color: #718096; margin-top: 5px; display: block;">
+                            Get from <a href="https://opendata.transport.vic.gov.au/" target="_blank" style="color: #6366f1;">OpenData Transport Victoria</a>
+                        </small>
                     </div>
                 `;
             } else {

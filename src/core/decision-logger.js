@@ -3,7 +3,8 @@
  * Records all system decisions for transparency and troubleshooting
  *
  * Copyright (c) 2026 Angus Bergman
- * All rights reserved.
+ * Licensed under CC BY-NC 4.0 (Creative Commons Attribution-NonCommercial 4.0 International License)
+ * https://creativecommons.org/licenses/by-nc/4.0/
  */
 
 class DecisionLogger {
