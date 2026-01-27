@@ -614,6 +614,12 @@
                 <p id="error-message"></p>
             </div>
 
+            <!-- Success Notification -->
+            <div class="success-box" id="success-notification" style="display:none;">
+                <strong>✅ Success!</strong>
+                <p id="success-message"></p>
+            </div>
+
             <!-- Step 1: Google Places API -->
             <div class="step active" id="step-1">
                 <h2>🗺️ Step 1: Enhanced Location Finding</h2>
@@ -784,9 +790,12 @@
                 </div>
 
                 <div id="journey-customize" style="display:none; margin-top: 30px;">
-                    <h3>Customize Your Journey</h3>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                        <h3 style="margin: 0;">Customize Your Preferred Route</h3>
+                        <span style="background: rgba(99, 102, 241, 0.1); color: #6366f1; padding: 5px 12px; border-radius: 15px; font-size: 12px; font-weight: 600;">OPTIONAL</span>
+                    </div>
                     <p style="font-size: 14px; color: #666; margin-bottom: 20px;">
-                        Click on any stop to select a different option. Alternative routes are shown below.
+                        Select different transit stops or choose an alternative route. Your selection will become your new <strong>preferred route</strong>.
                     </p>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
@@ -814,20 +823,20 @@
 
                     <div class="actions" style="margin-top: 20px;">
                         <button class="btn btn-primary" onclick="recalculateWithSelectedStops()">
-                            Recalculate with Selected Stops
+                            ✓ Set as My Preferred Route
                         </button>
                         <button class="btn btn-secondary" onclick="toggleCustomize()">
-                            Close Customization
+                            ← Back to Current Route
                         </button>
                     </div>
                 </div>
 
                 <div id="journey-actions" class="actions" style="display:none;">
                     <button class="btn btn-primary" onclick="acceptJourney()">
-                        Accept Journey →
+                        ✓ Accept Preferred Route →
                     </button>
                     <button class="btn btn-secondary" onclick="toggleCustomize()">
-                        Customize Journey
+                        ⚙️ Customize Route Options
                     </button>
                 </div>
             </div>
@@ -1208,11 +1217,32 @@
             document.getElementById('error-box').style.display = 'none';
         }
 
+        function showSuccessNotification(message) {
+            document.getElementById('success-message').textContent = message;
+            document.getElementById('success-notification').style.display = 'block';
+            document.getElementById('error-box').style.display = 'none'; // Hide any errors
+            hideLoading();
+
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                hideSuccessNotification();
+            }, 5000);
+        }
+
+        function hideSuccessNotification() {
+            document.getElementById('success-notification').style.display = 'none';
+        }
+
         function showSuccess(elementId, message) {
             const element = document.getElementById(elementId);
-            element.style.display = 'block';
-            if (message) {
-                element.querySelector('p').textContent = message;
+            if (element) {
+                element.style.display = 'block';
+                if (message) {
+                    const paragraph = element.querySelector('p');
+                    if (paragraph) {
+                        paragraph.textContent = message;
+                    }
+                }
             }
         }
 
@@ -1569,22 +1599,28 @@
             const segmentsHTML = segments.map(formatSegment).join('');
 
             resultDiv.innerHTML = `
-                <h3>✓ Your Optimized Journey</h3>
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                    <h3 style="margin: 0;">✓ Your Optimized Journey</h3>
+                    <span style="background: #4caf50; color: white; padding: 5px 12px; border-radius: 15px; font-size: 12px; font-weight: 600;">PREFERRED ROUTE</span>
+                </div>
                 <div style="margin-top: 20px;">
                     ${segmentsHTML}
                 </div>
-                <div style="margin-top: 20px; padding: 20px; background: white; border-radius: 8px;">
+                <div style="margin-top: 20px; padding: 20px; background: white; border-radius: 8px; border: 2px solid #4caf50;">
                     <h4>Summary</h4>
                     <p><strong>🏠 Leave home:</strong> ${journey.departureTime}</p>
                     <p><strong>🏢 Arrive at work:</strong> ${journey.arrivalTime}</p>
                     <p><strong>⏱️ Total journey time:</strong> ${journey.totalMinutes} minutes</p>
                     ${journey.route ? `<p><strong>🚆 Transit mode:</strong> ${journey.route.icon} ${journey.route.mode}</p>` : ''}
+                    ${journey.route ? `<p><strong>📍 Route:</strong> ${journey.route.from || 'Home Stop'} → ${journey.route.to || 'Work Stop'}</p>` : ''}
                     ${journey.cafe?.included ? `<p><strong>☕ Coffee stop:</strong> ${journey.cafe.durationMinutes} minutes</p>` : ''}
                 </div>
                 <div style="margin-top: 15px; padding: 15px; background: rgba(99, 102, 241, 0.1); border-radius: 8px;">
                     <p style="margin: 0; font-size: 13px;">
-                        <strong>Note:</strong> Journey times are estimated using fallback timetables.
-                        Configure Transport Victoria API in Step 6 for live departure times.
+                        <strong>💡 Note:</strong> This is your <strong>preferred route</strong> based on optimal timing and convenience.
+                        ${journeyOptions && journeyOptions.alternativeRoutes?.length > 0 ?
+                            'You can customize stops or view alternative routes below.' :
+                            'Journey times are estimated using fallback timetables. Configure Transport Victoria API in Step 6 for live departure times.'}
                     </p>
                 </div>
             `;
@@ -1637,25 +1673,40 @@
                 const altRoutesDiv = document.getElementById('alternative-routes');
                 const altRoutesList = document.getElementById('alternative-routes-list');
 
-                altRoutesList.innerHTML = journeyOptions.alternativeRoutes.map(alt => `
-                    <div class="alternative-route"
-                         onclick="selectAlternativeRoute('${alt.originStopId}', '${alt.destinationStopId}')">
-                        <div class="alternative-route-header">
-                            <span>${alt.icon} ${alt.mode}</span>
-                            <span style="color: #667eea;">${alt.totalMinutes} min total</span>
-                        </div>
-                        <div class="alternative-route-details">
-                            <span>From: ${alt.originStopName}</span>
-                            <span>•</span>
-                            <span>To: ${alt.destinationStopName}</span>
-                        </div>
-                        <div class="alternative-route-details" style="margin-top: 5px;">
-                            <span>Transit: ${alt.transitMinutes} min</span>
-                            <span>•</span>
-                            <span>Walking: ${alt.walkingMinutes} min</span>
-                        </div>
+                altRoutesList.innerHTML = `
+                    <div style="margin-bottom: 15px; padding: 12px; background: rgba(99, 102, 241, 0.05); border-left: 3px solid #6366f1; border-radius: 4px;">
+                        <p style="margin: 0; font-size: 14px; color: #1e293b;">
+                            <strong>ℹ️ Other Available Routes:</strong> These alternatives use different transit modes or stops.
+                            Click any route to make it your preferred route.
+                        </p>
                     </div>
-                `).join('');
+                    ${journeyOptions.alternativeRoutes.map((alt, index) => `
+                        <div class="alternative-route"
+                             onclick="selectAlternativeRoute('${alt.originStopId}', '${alt.destinationStopId}')"
+                             style="position: relative;">
+                            <span style="position: absolute; top: 10px; right: 10px; background: rgba(99, 102, 241, 0.1); color: #6366f1; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">
+                                ALTERNATIVE ${index + 1}
+                            </span>
+                            <div class="alternative-route-header">
+                                <span>${alt.icon} ${alt.mode}</span>
+                                <span style="color: #667eea;">${alt.totalMinutes} min total</span>
+                            </div>
+                            <div class="alternative-route-details">
+                                <span><strong>From:</strong> ${alt.originStopName}</span>
+                                <span>•</span>
+                                <span><strong>To:</strong> ${alt.destinationStopName}</span>
+                            </div>
+                            <div class="alternative-route-details" style="margin-top: 5px;">
+                                <span>Transit: ${alt.transitMinutes} min</span>
+                                <span>•</span>
+                                <span>Walking: ${alt.walkingMinutes} min</span>
+                            </div>
+                            <div style="margin-top: 8px; font-size: 12px; color: #6366f1; font-weight: 500;">
+                                → Click to make this your preferred route
+                            </div>
+                        </div>
+                    `).join('')}
+                `;
 
                 altRoutesDiv.style.display = 'block';
             } else {
@@ -1789,7 +1840,7 @@
                 document.getElementById('journey-customize').style.display = 'none';
 
                 // Show success message
-                showSuccess('Journey recalculated with your selected stops!');
+                showSuccessNotification('Journey recalculated with your selected stops!');
 
             } catch (error) {
                 hideLoading();
