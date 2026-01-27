@@ -6482,9 +6482,12 @@ app.get('/setup', (req, res) => {
    START SERVER
    ========================================================= */
 
+// Export app for Vercel serverless functions
+export default app;
+
 const HOST = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
 
-// Start server and capture instance for graceful shutdown
+// Start server and capture instance for graceful shutdown (only for local/Render)
 const server = app.listen(PORT, async () => {
   console.log(`🚀 PTV-TRMNL server listening on port ${PORT}`);
   console.log(`📍 Preview: ${HOST}/preview`);
