@@ -25,12 +25,11 @@ console.log('══════════════════════�
 console.log('');
 
 const apiKey = process.env.ODATA_API_KEY || 'NOT SET';
-const apiToken = process.env.ODATA_TOKEN || process.env.ODATA_KEY || 'NOT SET';
 const weatherKey = process.env.WEATHER_KEY || 'NOT SET';
 
 console.log('Environment Variables:');
-console.log(`  ODATA_API_KEY: ${apiKey.substring(0, 8)}...${apiKey.substring(apiKey.length - 4)} (${apiKey.length} chars)`);
-console.log(`  ODATA_TOKEN:   ${apiToken.substring(0, 20)}... (${apiToken.length} chars)`);
+console.log(`  ODATA_API_KEY: ${apiKey === 'NOT SET' ? 'NOT SET' : apiKey.substring(0, 8) + '...' + apiKey.substring(apiKey.length - 4) + ' (' + apiKey.length + ' chars)'}`);
+console.log('  Note: ODATA_TOKEN is deprecated - use ODATA_API_KEY (UUID format) only');
 console.log(`  WEATHER_KEY:   ${weatherKey === 'NOT SET' ? 'NOT SET' : 'SET'}`);
 console.log('');
 
@@ -79,10 +78,10 @@ console.log('');
 
 try {
   console.log('Fetching transport data from Transport Victoria API...');
-  console.log(`Using token: ${apiToken.substring(0, 30)}...`);
+  console.log(`Using API Key: ${apiKey === 'NOT SET' ? 'NOT SET' : apiKey.substring(0, 8) + '...'}`);
   console.log('');
 
-  const snapshot = await getSnapshot(apiToken);
+  const snapshot = await getSnapshot(apiKey);
 
   console.log('✅ Transport Victoria API Fetch: SUCCESS');
   console.log('');
@@ -275,11 +274,11 @@ try {
 
   const checks = [];
 
-  // Check 1: API Token present
+  // Check 1: API Key present
   checks.push({
-    check: 'API Token configured',
-    status: apiToken !== 'NOT SET',
-    details: apiToken !== 'NOT SET' ? 'Token present' : 'Missing ODATA_TOKEN in .env'
+    check: 'API Key configured',
+    status: apiKey !== 'NOT SET',
+    details: apiKey !== 'NOT SET' ? 'API Key present' : 'Missing ODATA_API_KEY in .env'
   });
 
   // Check 2: Weather data valid
@@ -355,8 +354,8 @@ try {
   console.log(`  Stack:   ${error.stack?.split('\n')[0] || 'N/A'}`);
   console.log('');
   console.log('Troubleshooting:');
-  console.log('  1. Check ODATA_TOKEN is set correctly in .env');
-  console.log('  2. Verify token is valid (not expired)');
+  console.log('  1. Check ODATA_API_KEY is set correctly in .env (UUID format)');
+  console.log('  2. Verify API key is valid (from https://opendata.transport.vic.gov.au/)');
   console.log('  3. Check internet connection');
   console.log('  4. Verify Transport Victoria API endpoint is accessible');
   console.log('');

@@ -15,7 +15,5 @@ services:
         value: production
       - key: ODATA_API_KEY
         sync: false
-      - key: ODATA_TOKEN
-        sync: false
-      - key: GOOGLE_PLACES_KEY
+      - key: GOOGLE_PLACES_API_KEY
         sync: false

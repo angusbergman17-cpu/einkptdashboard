@@ -317,4 +317,19 @@ Then restart the server.
 
 ---
 
-**Status**: 🔴 **UNRESOLVED** - Requires code changes to fix architectural mismatch
+**Status**: 🟢 **RESOLVED** - Fixed transit-authorities.js endpoints and standardized ODATA_API_KEY usage
+
+## Resolution (2026-01-27)
+
+The following fixes were applied:
+
+1. **transit-authorities.js**: Updated all Victorian GTFS-Realtime endpoints from web portal URLs to actual API endpoints
+   - Changed baseUrl to `https://api.opendata.transport.vic.gov.au`
+   - Fixed all endpoint URLs to use the correct API paths
+   - Changed authHeaderName from 'Authorization' to 'KeyId'
+
+2. **render.yaml**: Removed legacy ODATA_TOKEN, keeping only ODATA_API_KEY
+
+3. **test files**: Updated to use ODATA_API_KEY consistently
+
+4. **data-scraper.js**: Already reads from preferences (no change needed)

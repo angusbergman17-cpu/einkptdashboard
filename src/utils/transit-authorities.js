@@ -26,32 +26,34 @@ export const TRANSIT_AUTHORITIES = {
       { key: 'apiKey', label: 'API Key', type: 'password', placeholder: 'Your Transport Victoria API Key', required: true }
     ],
 
-    // API Configuration - Updated endpoints
-    baseUrl: 'https://opendata.transport.vic.gov.au',
+    // API Configuration - Correct GTFS-Realtime API endpoints
+    // NOTE: These are the actual API endpoints, NOT the web portal resource pages
+    // Authentication: KeyId header with UUID API Key (ODATA_API_KEY env var)
+    baseUrl: 'https://api.opendata.transport.vic.gov.au',
     gtfsRealtimeEndpoints: {
       metroTrain: {
-        tripUpdates: 'https://opendata.transport.vic.gov.au/dataset/gtfs-realtime/resource/0010d606-47bf-4abb-a04f-63add63a4d23',
-        vehiclePositions: 'https://opendata.transport.vic.gov.au/dataset/gtfs-realtime/resource/d0da6c3c-20f7-4b17-9279-118e34e7f2b5',
-        serviceAlerts: 'https://opendata.transport.vic.gov.au/dataset/gtfs-realtime/resource/7d36a355-1c7e-4cc4-8d06-95ae2f91dbfa'
+        tripUpdates: 'https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1/metro/trip-updates',
+        vehiclePositions: 'https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1/metro/vehicle-positions',
+        serviceAlerts: 'https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1/metro/service-alerts'
       },
       yarraTrams: {
-        tripUpdates: 'https://opendata.transport.vic.gov.au/dataset/gtfs-realtime/resource/17745980-fdd1-4467-9c62-0167eee5cf39',
-        vehiclePositions: 'https://opendata.transport.vic.gov.au/dataset/gtfs-realtime/resource/5bc31eb4-c7af-4d50-b2c7-bcdf8c0b9c4f',
-        serviceAlerts: 'https://opendata.transport.vic.gov.au/dataset/gtfs-realtime/resource/c35521e8-c294-407c-b285-bed8c4222c7c'
+        tripUpdates: 'https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1/tram/trip-updates',
+        vehiclePositions: 'https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1/tram/vehicle-positions',
+        serviceAlerts: 'https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1/tram/service-alerts'
       },
       metroBus: {
-        tripUpdates: 'https://opendata.transport.vic.gov.au/dataset/gtfs-realtime/resource/c2cbf93f-5d29-4f91-86a9-95811291996d',
-        vehiclePositions: 'https://opendata.transport.vic.gov.au/dataset/gtfs-realtime/resource/4583b565-9e35-46ab-a9fb-7c5d396e3c11',
-        serviceAlerts: 'https://opendata.transport.vic.gov.au/dataset/gtfs-realtime/resource/e38c4519-ef63-47b2-8302-05c42fb01c59'
+        tripUpdates: 'https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1/bus/trip-updates',
+        vehiclePositions: 'https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1/bus/vehicle-positions',
+        serviceAlerts: 'https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1/bus/service-alerts'
       },
       regionalBus: {
-        tripUpdates: 'https://opendata.transport.vic.gov.au/dataset/gtfs-realtime/resource/9b6bf4e5-1a9e-4a6c-af8a-88f38efa4857',
-        vehiclePositions: 'https://opendata.transport.vic.gov.au/dataset/gtfs-realtime/resource/4d90bbe1-2b0c-4894-9e14-7e1c83f8d7f2',
-        serviceAlerts: 'https://opendata.transport.vic.gov.au/dataset/gtfs-realtime/resource/47813b81-8ae6-41f1-adc5-19b7f8e2b0c6'
+        tripUpdates: 'https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1/vline/trip-updates',
+        vehiclePositions: 'https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1/vline/vehicle-positions',
+        serviceAlerts: 'https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1/vline/service-alerts'
       }
     },
     authMethod: 'api-key-header',
-    authHeaderName: 'Authorization',
+    authHeaderName: 'KeyId',
     rateLimit: 27, // calls per minute
     cacheDuration: 30, // seconds
 
