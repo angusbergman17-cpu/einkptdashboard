@@ -98,17 +98,41 @@ export async function getSnapshot(apiKey) {
   const journey = prefs.journey;
 
   // Use preferences journey data if available, otherwise fall back to config.js
+  // Supports both legacy (journey.route) and new (journey.transitRoute) formats
   let originStopId = null;
   let destinationStopId = null;
   let originStopName = null;
+  let trainOriginStopId = null;
+  let trainOriginStopName = null;
+  let trainDestinationStopId = null;
 
+  // NEW FORMAT: Multi-modal journey with transitRoute
+  if (journey?.transitRoute?.mode2?.originStation) {
+    // For train departures, use mode2 (train) origin
+    trainOriginStopId = journey.transitRoute.mode2.originStation.id;
+    trainOriginStopName = journey.transitRoute.mode2.originStation.name;
+    trainDestinationStopId = journey.transitRoute.mode2.destinationStation?.id;
+  } else if (journey?.transitRoute?.mode1?.originStation) {
+    // Single mode - use mode1
+    trainOriginStopId = journey.transitRoute.mode1.originStation.id;
+    trainOriginStopName = journey.transitRoute.mode1.originStation.name;
+    trainDestinationStopId = journey.transitRoute.mode1.destinationStation?.id;
+  }
+
+  // LEGACY FORMAT: journey.route (backwards compatibility)
   if (journey?.route?.originStop) {
     originStopId = journey.route.originStop.id;
     originStopName = journey.route.originStop.name;
+  } else {
+    // Map new format to legacy variables for existing code
+    originStopId = trainOriginStopId;
+    originStopName = trainOriginStopName;
   }
 
   if (journey?.route?.destinationStop) {
     destinationStopId = journey.route.destinationStop.id;
+  } else {
+    destinationStopId = trainDestinationStopId;
   }
 
   // Resolve Origin Station ids + preferred platform stop_id
@@ -236,13 +260,25 @@ export async function getSnapshot(apiKey) {
   // Alerts (count only — you can surface text in your renderer if you like)
   snapshotBase.alerts.metro = metroSA?.entity?.length || 0;
 
-  // ==== TRAMS (Yarra Trams) — minimal: earliest system-wide (you can filter Route 58/Tivoli) ====
+  // ==== TRAMS (Yarra Trams) — filter by configured tram stop ====
+  // Get tram stop from preferences (mode1 for tram in multi-modal journey)
+  const tramStopId = journey?.transitRoute?.mode1?.originStation?.id || null;
+  const tramStopName = journey?.transitRoute?.mode1?.originStation?.name || null;
+  
   if (tramTU?.entity?.length) {
     const tramDeps = [];
     for (const ent of tramTU.entity) {
       const tu = ent.trip_update;
       if (!tu?.stop_time_update?.length) continue;
-      const stu = tu.stop_time_update[0];
+      
+      // If tram stop configured, filter for that stop; otherwise take first stop
+      let stu;
+      if (tramStopId) {
+        stu = tu.stop_time_update.find(s => s.stop_id === tramStopId);
+        if (!stu) continue; // Skip if doesn't call at our stop
+      } else {
+        stu = tu.stop_time_update[0];
+      }
       const when = timeFromStu(stu);
       if (!when) continue;
 
