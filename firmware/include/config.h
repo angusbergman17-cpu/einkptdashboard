@@ -65,6 +65,10 @@
 #define NTP_UPDATE_INTERVAL 60000
 
 // Firmware Version
-#define FIRMWARE_VERSION "v5.19"
+#define FIRMWARE_VERSION "v5.25"
+
+// Journey Display endpoints
+#define API_JOURNEY_DISPLAY "/api/journey-display"
+#define API_JOURNEY_DISPLAY_TRMNL "/api/journey-display/trmnl"
 
 #endif // CONFIG_H
