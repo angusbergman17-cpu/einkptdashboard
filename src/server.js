@@ -30,6 +30,7 @@ import { readFileSync } from 'fs';
 import nodemailer from 'nodemailer';
 import safeguards from './utils/deployment-safeguards.js';
 import { decodeConfigToken, encodeConfigToken, generateWebhookUrl } from './utils/config-token.js';
+import { renderDashboard, renderTestPattern } from "./services/image-renderer.js";
 
 // Setup error handlers early (before any async operations)
 safeguards.setupErrorHandlers();
@@ -2022,6 +2023,43 @@ const KINDLE_DEVICES = {
 // Kindle image endpoint - returns PNG at device resolution
 // Used by TRMNL Kindle extension on jailbroken devices
 app.get('/api/kindle/image', async (req, res) => {
+// TRMNL Image Endpoint - Returns 1-bit BMP
+app.get('/api/image', async (req, res) => {
+  try {
+    const isTest = req.query.test === 'true';
+    if (isTest) {
+      const bmp = renderTestPattern();
+      res.setHeader('Content-Type', 'image/bmp');
+      return res.send(bmp);
+    }
+    const data = await getData();
+    const prefs = preferences.get();
+    const dashData = {
+      current_time: new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Australia/Melbourne' }),
+      trains: data.trains || [],
+      trams: data.trams || [],
+      weather: data.weather,
+      coffee: data.coffee
+    };
+    const bmp = renderDashboard(dashData, prefs);
+    res.setHeader('Content-Type', 'image/bmp');
+    res.setHeader('Content-Length', bmp.length);
+    res.send(bmp);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/image/test', async (req, res) => {
+  try {
+    const bmp = renderTestPattern();
+    res.setHeader('Content-Type', 'image/bmp');
+    res.send(bmp);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
   const macAddress = req.query.mac || req.headers['x-device-mac'];
   const deviceModel = req.query.model || 'default';
   const apiKey = req.query.key || req.headers['x-api-key'];
