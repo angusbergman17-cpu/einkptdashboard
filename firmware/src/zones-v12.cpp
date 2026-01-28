@@ -26,7 +26,7 @@
 
 #define SCREEN_W 800
 #define SCREEN_H 480
-#define FIRMWARE_VERSION "5.41"
+#define FIRMWARE_VERSION "5.42"
 #define ZONE_BUFFER_SIZE 16384
 static uint8_t* zoneBuffer = nullptr;
 
@@ -138,7 +138,7 @@ bool fetchAndDrawZone(const ZoneDef& zone, bool doFlash) {
     WiFiClientSecure* client = new WiFiClientSecure(); if (!client) return false;
     client->setInsecure();
     HTTPClient http;
-    String url = String(serverUrl) + "/api/zone/" + zone.id; url.replace("//api", "/api");
+    String url = String(serverUrl) + "/api/zonedata?id=" + zone.id; url.replace("//api", "/api");
     http.setTimeout(15000);
     const char* hk[] = {"X-Zone-X", "X-Zone-Y", "X-Zone-Width", "X-Zone-Height"};
     http.collectHeaders(hk, 4);
