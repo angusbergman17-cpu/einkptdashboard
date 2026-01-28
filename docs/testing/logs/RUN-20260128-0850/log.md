@@ -1,0 +1,4 @@
+# RUN-20260128-0850
+
+- TRMNL OG: 25%
+- Kindle 11th Gen: 25%
