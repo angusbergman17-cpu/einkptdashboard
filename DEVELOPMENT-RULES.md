@@ -1,8 +1,8 @@
 # PTV-TRMNL Development Rules v3.0
 
 **MANDATORY COMPLIANCE DOCUMENT**  
-**Version**: 3.0.0  
-**Last Updated**: 2026-01-28  
+**Version: 3.1.0  
+**Last Updated: 2026-01-29  
 **Copyright (c) 2026 Angus Bergman - Licensed under CC BY-NC 4.0**
 
 ---
@@ -15,6 +15,7 @@
 | V11 Design Spec (Locked) | 🔴 CRITICAL | UI inconsistency, user confusion |
 | API Data Sources | 🟠 HIGH | Incorrect/missing transit data |
 | BMP Rendering Rules | 🟠 HIGH | Display artifacts, memory issues |
+| Location Agnostic Architecture | 🔴 CRITICAL | System fails for non-VIC users |
 | Architecture Boundaries | 🟡 MEDIUM | Maintenance burden, tech debt |
 
 ---
@@ -154,6 +155,85 @@ const apiKey = process.env.ODATA_API_KEY;  // User must configure server
 - Zero-config deployment (no environment variables needed)
 - Self-contained devices (config travels with request)
 - Privacy (API keys stay with device owner)
+
+---
+
+
+### 1.4 Location Agnostic Architecture (🚨 CRITICAL)
+
+**ABSOLUTE REQUIREMENT**: The system MUST work for ANY Australian location and transit mode from first deployment.
+
+**Location Agnostic Principles:**
+
+1. **No Hardcoded Locations**
+   - ❌ Never hardcode Melbourne-specific stops, routes, or coordinates
+   - ❌ Never assume Victorian transit data structure
+   - ✅ All locations determined dynamically from user configuration
+   - ✅ Use geocoding to resolve addresses to coordinates
+
+2. **State Detection at Runtime**
+   - System detects user's state from configured addresses
+   - API endpoints selected based on detected state
+   - Fallback timetables organized by state code
+
+3. **Transit Mode Agnostic**
+   - Support ALL transit modes from day one:
+
+| Mode | route_type | States |
+|------|------------|--------|
+| Metro Train | 0 | VIC, NSW, QLD, WA, SA |
+| Tram/Light Rail | 1 | VIC, NSW, SA |
+| Bus | 2 | ALL |
+| Regional Train | 3 | VIC, NSW, QLD |
+| Ferry | 4 | NSW, QLD, WA |
+
+**Implementation Requirements:**
+
+```javascript
+// ❌ FORBIDDEN - Melbourne-specific:
+const FLINDERS_ST_ID = 1071;
+const stops = getVictorianStops();
+
+// ✅ CORRECT - Location agnostic:
+const userState = detectStateFromCoordinates(lat, lon);
+const stops = getStopsForState(userState);
+const nearbyStops = findStopsNearLocation(lat, lon, userState);
+```
+
+**State Support Matrix:**
+
+| State | Code | Transit Authority | API Status |
+|-------|------|-------------------|------------|
+| Victoria | VIC | Transport Victoria | ✅ GTFS-RT |
+| New South Wales | NSW | Transport for NSW | ✅ GTFS-RT |
+| Queensland | QLD | TransLink | ✅ GTFS-RT |
+| Western Australia | WA | Transperth | ✅ GTFS-RT |
+| South Australia | SA | Adelaide Metro | ✅ GTFS-RT |
+| Tasmania | TAS | Metro Tasmania | 🟡 Static |
+| ACT | ACT | Transport Canberra | 🟡 Static |
+| Northern Territory | NT | - | 🔴 Limited |
+
+**Fallback Data Requirements:**
+
+```javascript
+// fallback-timetables.js MUST include:
+module.exports = {
+  VIC: { train: [...], tram: [...], bus: [...] },
+  NSW: { train: [...], bus: [...], ferry: [...] },
+  QLD: { train: [...], bus: [...], ferry: [...] },
+  WA:  { train: [...], bus: [...], ferry: [...] },
+  SA:  { train: [...], tram: [...], bus: [...] },
+  // ... all states
+};
+```
+
+**Pre-Commit Checklist (Location Agnostic):**
+- [ ] No hardcoded stop IDs outside of fallback data
+- [ ] No hardcoded coordinates (except state bounding boxes)
+- [ ] State detection works for all Australian states
+- [ ] Transit mode selection works for all route_types (0-4)
+- [ ] Fallback data exists for target states
+- [ ] UI labels use generic terms ("Train" not "Metro Trains Melbourne")
 
 ---
 
