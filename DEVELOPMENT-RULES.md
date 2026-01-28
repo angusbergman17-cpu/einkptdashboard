@@ -493,10 +493,127 @@ git push origin v3.0.0        # Push tag
 
 ---
 
+## 📜 Section 10: Mandatory Licensing
+
+**CRITICAL**: All original work MUST use CC BY-NC 4.0 license.
+
+### License Header (Required in all files)
+
+```
+Copyright (c) 2026 Angus Bergman
+Licensed under CC BY-NC 4.0 (Creative Commons Attribution-NonCommercial 4.0 International License)
+https://creativecommons.org/licenses/by-nc/4.0/
+```
+
+**Prohibited licenses for original work:**
+- ❌ MIT, Apache, GPL/LGPL, BSD
+- ✅ Third-party libraries retain their original licenses
+
+---
+
+## 🔄 Section 11: Cross-System Change Propagation
+
+**CRITICAL RULE**: When ANY change is made to ANY part of the system, ALL dependent software, programs, documentation, and configurations MUST be updated accordingly.
+
+**Examples:**
+1. **Schema Changes** → Update: route-planner, admin UI, docs, validation, rendering
+2. **API Changes** → Update: all calling services, docs, error handling, tests
+3. **Config Changes** → Update: setup wizard, preferences, rendering, device firmware
+
+**Verification:**
+```bash
+grep -r "oldValue" src/       # Find code references
+grep -r "oldValue" docs/      # Find doc references  
+grep -r "oldValue" public/    # Find UI references
+```
+
+---
+
+## ⚡ Section 12: Hardcoded 20-Second Partial Refresh
+
+**CRITICAL - DO NOT CHANGE WITHOUT EXPLICIT USER APPROVAL**
+
+| Setting | Value | Location |
+|---------|-------|----------|
+| Partial Refresh | 20,000 ms | firmware/config.h, server.js, preferences |
+| Full Refresh | 600,000 ms (10 min) | Same locations |
+| Sleep Between | 18,000 ms | Same locations |
+
+**Rationale:**
+- < 20s: Excessive e-ink wear
+- > 30s: Stale departure data
+- Balance of freshness and display longevity
+
+---
+
+## 🔒 Section 13: Security Requirements
+
+### XSS Input Sanitization (MANDATORY)
+
+**ALL user-entered data displayed in HTML MUST be sanitized:**
+
+```javascript
+// MANDATORY in all admin/setup HTML files
+function sanitize(str) {
+    if (str === null || str === undefined) return '';
+    if (typeof str !== 'string') str = String(str);
+    const map = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#x27;','/':'&#x2F;','`':'&#x60;','=':'&#x3D;'};
+    return str.replace(/[&<>"'`=/]/g, c => map[c]);
+}
+
+// ❌ WRONG: ${stop.name}
+// ✅ CORRECT: ${sanitize(stop.name)}
+```
+
+---
+
+## 🏗️ Section 14: Distribution Architecture
+
+**Self-hosted model**: Each user owns their complete instance.
+
+```
+Official Repo → User Fork → User's Vercel/Render → User's Device
+     ↓              ↓              ↓                    ↓
+  Source        User Copy      User Server         User Display
+```
+
+**Key Principles:**
+- ✅ Complete data isolation between users
+- ✅ User owns API keys (environment variables)
+- ✅ Server does ALL rendering (device receives images only)
+- ❌ NO central server dependency
+- ❌ NO shared API keys
+
+**Required Endpoints:**
+| Endpoint | Purpose |
+|----------|---------|
+| `/api/zones` | Zone data for TRMNL |
+| `/api/screen` | PNG for TRMNL webhook |
+| `/api/kindle/image` | PNG for Kindle devices |
+| `/api/setup-status` | Setup completion check |
+
+---
+
+## 📚 Section 15: Extended Documentation
+
+For detailed guidance on specific topics, see:
+
+| Topic | Document |
+|-------|----------|
+| Full Development Rules | `docs/development/DEVELOPMENT-RULES.md` |
+| GTFS-RT Protocol | `docs/api/VICTORIA-GTFS-REALTIME-PROTOCOL.md` |
+| System Architecture | `docs/SYSTEM-ARCHITECTURE-V3.md` |
+| V11 Design Spec | `docs/V11-DESIGN-SPECIFICATION.md` |
+| Distribution Guide | `DISTRIBUTION.md` |
+| Firmware Anti-Brick | `firmware/ANTI-BRICK-REQUIREMENTS.md` |
+| Audit Process | `docs/development/AUDIT-PROCESS.md` |
+
+---
+
 **Document Version:** 3.0.0  
 **Maintained By:** Angus Bergman  
 **Last Audit:** 2026-01-28
 
 ---
 
-*This document is the single source of truth for PTV-TRMNL development. All contributors must read and comply with these rules.*
+*This document is the single source of truth for PTV-TRMNL development. All contributors must read and comply with these rules. For extended guidance, see `docs/development/DEVELOPMENT-RULES.md`.*
