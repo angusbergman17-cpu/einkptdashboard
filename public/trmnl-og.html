@@ -12,36 +12,37 @@
         .text { position: absolute; color: #1a1a1a; }
         .text-w { position: absolute; color: #f5f5f0; }
         .text-gray { position: absolute; color: #666; }
+        .text-muted { position: absolute; color: #999; }
         .line { position: absolute; background: #1a1a1a; }
         .box { position: absolute; border: 2px solid #1a1a1a; }
         .fill { position: absolute; background: #1a1a1a; }
         .info { color: #888; text-align: center; margin-top: 15px; font-size: 10px; }
         .mode-icon { position: absolute; }
         .mode-icon svg { width: 100%; height: 100%; }
-        .coffee-box { position: absolute; border: 2px dashed #888; background: #eaeaea; }
+        /* Muted coffee box - no time available */
+        .no-time-box { position: absolute; border: 2px dashed #bbb; background: #e8e8e8; }
+        .no-time-box .mode-icon svg { opacity: 0.5; }
     </style>
 </head>
 <body>
     <div class="device-frame">
-        <div class="device-label">OG TRMNL (800 x 480) - Tiered Information Display</div>
+        <div class="device-label">OG TRMNL (800 x 480) - Full Route with Tram</div>
         <div id="display">
             
-            <!-- TIER 2: Current Time & Arrival (top bar - medium prominence) -->
-            <div class="fill" style="left: 0; top: 0; width: 800px; height: 50px;"></div>
-            <div class="text-w" style="left: 20px; top: 12px; font-size: 24px; font-weight: 700;">8:34</div>
-            <div class="text-w" style="left: 90px; top: 18px; font-size: 14px;">Tue 28 Jan</div>
-            <div class="text-w" style="right: 20px; top: 12px; font-size: 24px; font-weight: 700;">→ 9:00</div>
-            <div class="text-w" style="right: 100px; top: 18px; font-size: 14px;">80 Collins St</div>
+            <!-- TIER 2: Time bar -->
+            <div class="fill" style="left: 0; top: 0; width: 800px; height: 44px;"></div>
+            <div class="text-w" style="left: 16px; top: 10px; font-size: 22px; font-weight: 700;">8:34</div>
+            <div class="text-w" style="left: 80px; top: 14px; font-size: 13px;">Tue 28 Jan</div>
+            <div class="text-w" style="right: 16px; top: 10px; font-size: 22px; font-weight: 700;">→ 9:00</div>
+            <div class="text-w" style="right: 90px; top: 14px; font-size: 13px;">80 Collins St</div>
             
             <!-- ============================================ -->
-            <!-- TIER 1: JOURNEY LEGS - BIGGEST, MOST VISIBLE -->
+            <!-- TIER 1: JOURNEY LEGS -->
             <!-- ============================================ -->
             
-            <!-- LEG 1: WALK TO CAFE -->
-            <div class="box" style="left: 12px; top: 60px; width: 776px; height: 80px;"></div>
-            
-            <!-- Large Walk Icon -->
-            <div class="mode-icon" style="left: 22px; top: 68px; width: 64px; height: 64px;">
+            <!-- LEG 1: WALK TO NORMAN -->
+            <div class="box" style="left: 10px; top: 52px; width: 780px; height: 62px;"></div>
+            <div class="mode-icon" style="left: 18px; top: 57px; width: 52px; height: 52px;">
                 <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <circle cx="32" cy="10" r="7" fill="#000"/>
                     <path d="M26 20h12l6 22-8 4v14h-5V44l-7-8 2-16z" fill="#000"/>
@@ -49,20 +50,15 @@
                     <path d="M42 26l8 26h-6l-6-20" fill="#000"/>
                 </svg>
             </div>
+            <div class="text" style="left: 78px; top: 60px; font-size: 20px; font-weight: 700;">Walk to Norman</div>
+            <div class="text-gray" style="left: 78px; top: 84px; font-size: 12px;">300 Toorak Rd</div>
+            <div class="fill" style="right: 10px; top: 52px; width: 80px; height: 62px;"></div>
+            <div class="text-w" style="right: 28px; top: 58px; font-size: 40px; font-weight: 900;">4</div>
+            <div class="text-w" style="right: 34px; top: 96px; font-size: 11px;">min</div>
             
-            <div class="text" style="left: 96px; top: 72px; font-size: 24px; font-weight: 700;">Walk to Norman</div>
-            <div class="text-gray" style="left: 96px; top: 102px; font-size: 13px;">300 Toorak Rd</div>
-            
-            <!-- BIG MINUTES - Tier 1 prominence -->
-            <div class="fill" style="right: 12px; top: 60px; width: 100px; height: 80px;"></div>
-            <div class="text-w" style="right: 32px; top: 70px; font-size: 48px; font-weight: 900;">4</div>
-            <div class="text-w" style="right: 42px; top: 118px; font-size: 12px;">min</div>
-            
-            <!-- LEG 2: COFFEE - Flexible time -->
-            <div class="coffee-box" style="left: 12px; top: 148px; width: 776px; height: 70px;"></div>
-            
-            <!-- Coffee Icon -->
-            <div class="mode-icon" style="left: 22px; top: 153px; width: 58px; height: 58px;">
+            <!-- LEG 2: COFFEE - NO TIME (visually muted) -->
+            <div class="no-time-box" style="left: 10px; top: 120px; width: 780px; height: 52px;"></div>
+            <div class="mode-icon" style="left: 18px; top: 123px; width: 46px; height: 46px; opacity: 0.4;">
                 <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M10 22h36v6c0 14-7 22-18 22S10 42 10 28v-6z" fill="#000"/>
                     <path d="M46 26h8c5 0 8 3 8 8s-3 8-8 8h-8" stroke="#000" stroke-width="5"/>
@@ -71,19 +67,32 @@
                     <rect x="6" y="54" width="44" height="5" rx="2" fill="#000"/>
                 </svg>
             </div>
+            <div class="text-muted" style="left: 78px; top: 130px; font-size: 18px; font-weight: 600;">Coffee at Norman</div>
+            <div class="text-muted" style="left: 78px; top: 152px; font-size: 11px;">No time today</div>
+            <div class="text-muted" style="right: 30px; top: 136px; font-size: 16px;">—</div>
             
-            <div class="text" style="left: 96px; top: 160px; font-size: 22px; font-weight: 700;">Coffee at Norman</div>
-            <div class="text-gray" style="left: 96px; top: 188px; font-size: 13px;">Quick stop • flexible timing</div>
+            <!-- LEG 3: TRAM -->
+            <div class="box" style="left: 10px; top: 178px; width: 780px; height: 62px;"></div>
+            <div class="mode-icon" style="left: 18px; top: 183px; width: 52px; height: 52px;">
+                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="14" y="16" width="36" height="36" rx="4" fill="#000"/>
+                    <rect x="18" y="20" width="28" height="12" rx="2" fill="#fff"/>
+                    <circle cx="22" cy="44" r="4" fill="#fff"/>
+                    <circle cx="42" cy="44" r="4" fill="#fff"/>
+                    <rect x="28" y="36" width="8" height="10" rx="1" fill="#fff"/>
+                    <path d="M32 8v8" stroke="#000" stroke-width="4" stroke-linecap="round"/>
+                    <path d="M26 4h12" stroke="#000" stroke-width="3" stroke-linecap="round"/>
+                </svg>
+            </div>
+            <div class="text" style="left: 78px; top: 186px; font-size: 20px; font-weight: 700;">Tram to South Yarra Stn</div>
+            <div class="text-gray" style="left: 78px; top: 210px; font-size: 12px;">Route 78 • Chapel St • Then: 8, 15 min</div>
+            <div class="fill" style="right: 10px; top: 178px; width: 80px; height: 62px;"></div>
+            <div class="text-w" style="right: 28px; top: 184px; font-size: 40px; font-weight: 900;">3</div>
+            <div class="text-w" style="right: 34px; top: 222px; font-size: 11px;">min</div>
             
-            <!-- Flex indicator -->
-            <div class="text-gray" style="right: 40px; top: 168px; font-size: 28px; font-weight: 600;">—</div>
-            <div class="text-gray" style="right: 36px; top: 196px; font-size: 11px;">FLEX</div>
-            
-            <!-- LEG 3: TRAIN -->
-            <div class="box" style="left: 12px; top: 226px; width: 776px; height: 80px;"></div>
-            
-            <!-- Train Icon -->
-            <div class="mode-icon" style="left: 22px; top: 234px; width: 64px; height: 64px;">
+            <!-- LEG 4: TRAIN -->
+            <div class="box" style="left: 10px; top: 246px; width: 780px; height: 62px;"></div>
+            <div class="mode-icon" style="left: 18px; top: 251px; width: 52px; height: 52px;">
                 <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <rect x="10" y="6" width="44" height="44" rx="8" fill="#000"/>
                     <rect x="16" y="12" width="32" height="14" rx="3" fill="#fff"/>
@@ -94,20 +103,15 @@
                     <path d="M46 54l-5 10h10l-5-10z" fill="#000"/>
                 </svg>
             </div>
+            <div class="text" style="left: 78px; top: 254px; font-size: 20px; font-weight: 700;">Train to Parliament</div>
+            <div class="text-gray" style="left: 78px; top: 278px; font-size: 12px;">South Yarra • Sandringham Line • Then: 10, 18 min</div>
+            <div class="fill" style="right: 10px; top: 246px; width: 80px; height: 62px;"></div>
+            <div class="text-w" style="right: 28px; top: 252px; font-size: 40px; font-weight: 900;">5</div>
+            <div class="text-w" style="right: 34px; top: 290px; font-size: 11px;">min</div>
             
-            <div class="text" style="left: 96px; top: 238px; font-size: 24px; font-weight: 700;">Train to Parliament</div>
-            <div class="text-gray" style="left: 96px; top: 268px; font-size: 13px;">South Yarra • Sandringham Line</div>
-            
-            <!-- BIG MINUTES -->
-            <div class="fill" style="right: 12px; top: 226px; width: 100px; height: 80px;"></div>
-            <div class="text-w" style="right: 32px; top: 236px; font-size: 48px; font-weight: 900;">5</div>
-            <div class="text-w" style="right: 42px; top: 284px; font-size: 12px;">min</div>
-            
-            <!-- LEG 4: WALK TO WORK -->
-            <div class="box" style="left: 12px; top: 314px; width: 776px; height: 80px;"></div>
-            
-            <!-- Walk Icon -->
-            <div class="mode-icon" style="left: 22px; top: 322px; width: 64px; height: 64px;">
+            <!-- LEG 5: WALK TO WORK -->
+            <div class="box" style="left: 10px; top: 314px; width: 780px; height: 62px;"></div>
+            <div class="mode-icon" style="left: 18px; top: 319px; width: 52px; height: 52px;">
                 <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <circle cx="32" cy="10" r="7" fill="#000"/>
                     <path d="M26 20h12l6 22-8 4v14h-5V44l-7-8 2-16z" fill="#000"/>
@@ -115,40 +119,40 @@
                     <path d="M42 26l8 26h-6l-6-20" fill="#000"/>
                 </svg>
             </div>
-            
-            <div class="text" style="left: 96px; top: 326px; font-size: 24px; font-weight: 700;">Walk to Work</div>
-            <div class="text-gray" style="left: 96px; top: 356px; font-size: 13px;">Parliament → 80 Collins St</div>
-            
-            <!-- BIG MINUTES -->
-            <div class="fill" style="right: 12px; top: 314px; width: 100px; height: 80px;"></div>
-            <div class="text-w" style="right: 32px; top: 324px; font-size: 48px; font-weight: 900;">5</div>
-            <div class="text-w" style="right: 42px; top: 372px; font-size: 12px;">min</div>
+            <div class="text" style="left: 78px; top: 322px; font-size: 20px; font-weight: 700;">Walk to Work</div>
+            <div class="text-gray" style="left: 78px; top: 346px; font-size: 12px;">Parliament → 80 Collins St</div>
+            <div class="fill" style="right: 10px; top: 314px; width: 80px; height: 62px;"></div>
+            <div class="text-w" style="right: 28px; top: 320px; font-size: 40px; font-weight: 900;">5</div>
+            <div class="text-w" style="right: 34px; top: 358px; font-size: 11px;">min</div>
             
             <!-- ============================================ -->
-            <!-- TIER 3: SERVICE DETAILS - Smallest -->
+            <!-- TIER 3: DETAILS -->
             <!-- ============================================ -->
             
-            <div class="line" style="left: 12px; top: 402px; width: 776px; height: 1px;"></div>
-            
-            <!-- Next departures -->
-            <div class="text-gray" style="left: 16px; top: 410px; font-size: 11px;">NEXT TRAINS: 10, 18, 28 min</div>
-            <div class="text-gray" style="left: 220px; top: 410px; font-size: 11px;">|</div>
-            <div class="text-gray" style="left: 235px; top: 410px; font-size: 11px;">ALL SERVICES ON TIME</div>
-            <div class="text-gray" style="left: 420px; top: 410px; font-size: 11px;">|</div>
-            <div class="text-gray" style="left: 435px; top: 410px; font-size: 11px;">22°C Sunny • No umbrella</div>
+            <div class="line" style="left: 10px; top: 384px; width: 780px; height: 1px;"></div>
+            <div class="text-gray" style="left: 14px; top: 390px; font-size: 10px;">NEXT: Tram 8, 15 min | Train 10, 18 min</div>
+            <div class="text-gray" style="left: 280px; top: 390px; font-size: 10px;">|</div>
+            <div class="text-gray" style="left: 295px; top: 390px; font-size: 10px;">ALL SERVICES ON TIME</div>
+            <div class="text-gray" style="left: 470px; top: 390px; font-size: 10px;">|</div>
+            <div class="text-gray" style="left: 485px; top: 390px; font-size: 10px;">22°C Sunny • No umbrella needed</div>
             
             <!-- Summary bar -->
-            <div class="fill" style="left: 0; top: 428px; width: 800px; height: 32px;"></div>
-            <div class="text-w" style="left: 20px; top: 434px; font-size: 14px; font-weight: 600;">TOTAL: 26 min journey</div>
-            <div class="text-w" style="left: 300px; top: 436px; font-size: 11px;">Walk → Coffee → Train → Walk</div>
-            <div class="text-w" style="right: 20px; top: 434px; font-size: 14px; font-weight: 600;">ARRIVE 9:00</div>
+            <div class="fill" style="left: 0; top: 406px; width: 800px; height: 28px;"></div>
+            <div class="text-w" style="left: 16px; top: 410px; font-size: 13px; font-weight: 600;">TOTAL: 17 min</div>
+            <div class="text-w" style="left: 140px; top: 412px; font-size: 10px;">Walk → Tram → Train → Walk</div>
+            <div class="text-w" style="right: 16px; top: 410px; font-size: 13px; font-weight: 600;">ARRIVE 9:00</div>
+            
+            <!-- Destination -->
+            <div class="fill" style="left: 0; top: 434px; width: 800px; height: 28px;"></div>
+            <div class="text-w" style="left: 16px; top: 438px; font-size: 16px; font-weight: 700;">80 COLLINS ST</div>
+            <div class="text-w" style="left: 180px; top: 440px; font-size: 12px;">Melbourne CBD</div>
             
             <!-- Footer -->
-            <div class="text-gray" style="left: 14px; top: 466px; font-size: 9px;">PTV-TRMNL v5.20</div>
-            <div class="text-gray" style="left: 130px; top: 466px; font-size: 9px;">Updated 08:34</div>
-            <div class="text-gray" style="right: 14px; top: 466px; font-size: 9px;">© 2025 Angus Bergman • CC BY-NC 4.0</div>
+            <div class="text-gray" style="left: 12px; top: 468px; font-size: 9px;">PTV-TRMNL v5.21</div>
+            <div class="text-gray" style="left: 120px; top: 468px; font-size: 9px;">Updated 08:34</div>
+            <div class="text-gray" style="right: 12px; top: 468px; font-size: 9px;">© 2025 Angus Bergman • CC BY-NC 4.0</div>
         </div>
-        <div class="info">Tiered information: Journey times (T1) → Time/Arrival (T2) → Details (T3)</div>
+        <div class="info">Full route: Walk → Coffee (no time) → Tram → Train → Walk</div>
     </div>
 </body>
 </html>
