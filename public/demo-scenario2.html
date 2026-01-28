@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Scenario 2: Tram Delayed</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #1e293b; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        .device-frame { background: #333; padding: 30px 20px; border-radius: 20px; }
+        .device-label { color: #888; font-size: 12px; text-align: center; margin-bottom: 15px; }
+        #display { width: 536px; height: 724px; background: #f5f5f0; border: 2px solid #1a1a1a; position: relative; overflow: hidden; font-family: "Courier New", monospace; }
+        .text { position: absolute; color: #1a1a1a; }
+        .text-w { position: absolute; color: #f5f5f0; }
+        .mega { font-size: 64px; font-weight: bold; }
+        .huge { font-size: 42px; font-weight: bold; }
+        .large { font-size: 18px; font-weight: bold; }
+        .medium { font-size: 14px; font-weight: bold; }
+        .small { font-size: 11px; }
+        .line { position: absolute; background: #1a1a1a; }
+        .box { position: absolute; border: 2px solid #1a1a1a; }
+        .fill { position: absolute; background: #1a1a1a; }
+        .info { color: #888; text-align: center; margin-top: 15px; font-size: 10px; }
+    </style>
+</head>
+<body>
+    <div class="device-frame">
+        <div class="device-label">Scenario 2: 8:05 AM - Tram 78 Delayed - Rerouted via Train</div>
+        <div id="display">
+            
+            <!-- HEADER -->
+            <div class="text large" style="left: 20px; top: 12px;">08:05</div>
+            <div class="text medium" style="left: 20px; top: 35px;">Tuesday 28 Jan</div>
+            <div class="text large" style="right: 20px; top: 12px;">21°C</div>
+            <div class="text medium" style="right: 20px; top: 35px;">Partly Cloudy</div>
+            <div class="line" style="left: 0; top: 60px; width: 536px; height: 2px;"></div>
+            
+            <!-- PRIMARY -->
+            <div class="fill" style="left: 0; top: 65px; width: 536px; height: 90px;"></div>
+            <div class="text-w large" style="left: 30px; top: 75px;">LEAVE IN</div>
+            <div class="text-w mega" style="left: 30px; top: 95px;">3 min</div>
+            <div class="text-w medium" style="right: 30px; top: 85px;">52 min journey</div>
+            <div class="text-w medium" style="right: 30px; top: 110px;">Route changed</div>
+            
+            <!-- ALERT -->
+            <div class="fill" style="left: 20px; top: 165px; width: 496px; height: 28px;"></div>
+            <div class="text-w medium" style="left: 100px; top: 171px;">TRAM 78 DELAYED → USING TRAIN</div>
+            
+            <!-- Timeline -->
+            <div class="line" style="left: 30px; top: 215px; width: 4px; height: 280px;"></div>
+            
+            <!-- Step 1: WALK (new) -->
+            <div class="fill" style="left: 22px; top: 210px; width: 20px; height: 20px;"></div>
+            <div class="text large" style="left: 55px; top: 210px;">1</div>
+            <div class="box" style="left: 80px; top: 203px; width: 436px; height: 50px;"></div>
+            <div class="fill" style="left: 80px; top: 203px; width: 80px; height: 50px;"></div>
+            <div class="text-w medium" style="left: 90px; top: 220px;">WALK</div>
+            <div class="text small" style="left: 170px; top: 210px;">Clara St → South Yarra Stn</div>
+            <div class="text medium" style="left: 170px; top: 228px;">Leave now</div>
+            <div class="text large" style="right: 30px; top: 218px;">8 min</div>
+            
+            <!-- Step 2: TRAIN -->
+            <div class="fill" style="left: 22px; top: 268px; width: 20px; height: 20px;"></div>
+            <div class="text large" style="left: 55px; top: 268px;">2</div>
+            <div class="box" style="left: 80px; top: 261px; width: 436px; height: 55px;"></div>
+            <div class="fill" style="left: 80px; top: 261px; width: 80px; height: 55px;"></div>
+            <div class="text-w medium" style="left: 88px; top: 281px;">TRAIN</div>
+            <div class="text small" style="left: 170px; top: 268px;">South Yarra → Parliament</div>
+            <div class="text medium" style="left: 170px; top: 286px;">Departs: 11 min</div>
+            <div class="text small" style="left: 170px; top: 304px;">Next: 21 min</div>
+            <div class="text large" style="right: 30px; top: 278px;">4 min</div>
+            
+            <!-- Step 3: COFFEE -->
+            <div class="fill" style="left: 22px; top: 331px; width: 20px; height: 20px;"></div>
+            <div class="text large" style="left: 55px; top: 331px;">3</div>
+            <div class="box" style="left: 80px; top: 324px; width: 436px; height: 45px;"></div>
+            <div class="fill" style="left: 80px; top: 324px; width: 80px; height: 45px;"></div>
+            <div class="text-w medium" style="left: 85px; top: 339px;">COFFEE</div>
+            <div class="text small" style="left: 170px; top: 331px;">Excello CBD</div>
+            <div class="text medium" style="left: 170px; top: 349px;">~5 min stop</div>
+            
+            <!-- Step 4: TRAM 86 -->
+            <div class="fill" style="left: 22px; top: 384px; width: 20px; height: 20px;"></div>
+            <div class="text large" style="left: 55px; top: 384px;">4</div>
+            <div class="box" style="left: 80px; top: 377px; width: 436px; height: 55px;"></div>
+            <div class="fill" style="left: 80px; top: 377px; width: 80px; height: 55px;"></div>
+            <div class="text-w medium" style="left: 85px; top: 397px;">TRAM</div>
+            <div class="text small" style="left: 170px; top: 384px;">Bourke St → Smith St</div>
+            <div class="text medium" style="left: 170px; top: 402px;">Departs: ~22 min</div>
+            <div class="text small" style="left: 170px; top: 420px;">Next: 28 min</div>
+            <div class="text large" style="right: 30px; top: 394px;">5 min</div>
+            
+            <!-- DESTINATION -->
+            <div class="fill" style="left: 22px; top: 450px; width: 20px; height: 20px;"></div>
+            <div class="fill" style="left: 55px; top: 442px; width: 461px; height: 80px;"></div>
+            <div class="text-w large" style="left: 70px; top: 452px;">SIRCUIT</div>
+            <div class="text-w small" style="left: 70px; top: 475px;">Smith St, Collingwood</div>
+            <div class="text-w medium" style="right: 30px; top: 450px;">ARRIVE</div>
+            <div class="text-w huge" style="right: 30px; top: 470px;">08:57</div>
+            
+            <!-- SUMMARY -->
+            <div class="line" style="left: 20px; top: 535px; width: 496px; height: 2px;"></div>
+            <div class="text small" style="left: 20px; top: 548px;">WALK → TRAIN → COFFEE → TRAM  |  Rerouted: Tram 78 +15 min delay</div>
+            
+            <!-- FOOTER -->
+            <div class="line" style="left: 0; top: 670px; width: 536px; height: 2px;"></div>
+            <div class="text small" style="left: 20px; top: 690px;">PTV-TRMNL</div>
+            <div class="text small" style="left: 150px; top: 690px;">Refresh #28</div>
+            <div class="text small" style="right: 20px; top: 690px;">v5.18</div>
+            
+        </div>
+        <div class="info">Scenario 2: Tram delayed → Auto-rerouted via walking + train</div>
+    </div>
+</body>
+</html>
