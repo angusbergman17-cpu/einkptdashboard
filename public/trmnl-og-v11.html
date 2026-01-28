@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--
+    PTV-TRMNL v11 - OG TRMNL Live Dashboard
+    Copyright (c) 2026 Angus Bergman
+    Licensed under CC BY-NC 4.0
+-->
+<head>
+    <meta charset="UTF-8">
+    <title>PTV-TRMNL v11 - Live Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #1e293b; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        .device-frame { background: #333; padding: 30px 20px; border-radius: 20px; }
+        .device-label { color: #888; font-size: 12px; text-align: center; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .live-indicator { display: flex; align-items: center; gap: 6px; }
+        .live-dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        #display { width: 800px; height: 480px; background: #f5f5f0; border: 2px solid #1a1a1a; position: relative; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+        .text { position: absolute; color: #1a1a1a; }
+        .text-w { position: absolute; color: #f5f5f0; }
+        .text-gray { position: absolute; color: #666; }
+        .line { position: absolute; background: #1a1a1a; }
+        .box { position: absolute; border: 2px solid #1a1a1a; }
+        .fill { position: absolute; background: #1a1a1a; }
+        .timeline { position: absolute; width: 4px; background: #1a1a1a; }
+        .dot { position: absolute; width: 16px; height: 16px; background: #1a1a1a; border-radius: 50%; }
+        .mode-box { position: absolute; background: #1a1a1a; color: #f5f5f0; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; }
+        .info { color: #888; text-align: center; margin-top: 15px; font-size: 11px; }
+        .controls { margin-top: 15px; display: flex; gap: 10px; }
+        .controls button { padding: 8px 16px; background: #6366f1; border: none; border-radius: 6px; color: white; font-size: 12px; cursor: pointer; }
+        .controls button:hover { background: #4f46e5; }
+        .status { color: #888; font-size: 11px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="device-frame">
+        <div class="device-label">
+            <span>OG TRMNL v11 (800 x 480)</span>
+            <span class="live-indicator"><span class="live-dot"></span> LIVE</span>
+        </div>
+        <div id="display"></div>
+    </div>
+    <div class="controls">
+        <button onclick="fetchData()">↻ Refresh Now</button>
+    </div>
+    <div class="status" id="status">Loading...</div>
+    <div class="info">Auto-refreshes every 20 seconds</div>
+
+    <script>
+        const DEFAULT_TOKEN = 'eyJhIjp7ImhvbWUiOiIxIENsYXJhIFN0cmVldCwgU291dGggWWFycmEgVklDIDMxNDEiLCJjYWZlIjoiTm9ybWFuIFNvdXRoIFlhcnJhIiwiY2FmZU5hbWUiOiJOb3JtYW4iLCJ3b3JrIjoiODAgQ29sbGlucyBTdHJlZXQsIE1lbGJvdXJuZSBWSUMgMzAwMCJ9LCJqIjp7Im51bWJlck9mTW9kZXMiOjIsIm1vZGUxIjp7InR5cGUiOjEsIm9yaWdpblN0YXRpb24iOnsibmFtZSI6IlRvb3JhayBSZC9DaGFwZWwgU3QiLCJpZCI6IjI4MDMiLCJsYXQiOi0zNy44NCwibG9uIjoxNDQuOTk4fX0sIm1vZGUyIjp7InR5cGUiOjAsIm9yaWdpblN0YXRpb24iOnsibmFtZSI6IlNvdXRoIFlhcnJhIiwiaWQiOiIxMTU5IiwibGF0IjotMzcuODM4NSwibG9uIjoxNDQuOTkyOX0sImRlc3RpbmF0aW9uU3RhdGlvbiI6eyJuYW1lIjoiUGFybGlhbWVudCIsImlkIjoiMTEyMCIsImxhdCI6LTM3LjgxMSwibG9uIjoxNDQuOTczfX19LCJsIjp7fSwicyI6IlZJQyIsImsiOiJjZTYwNmI5MC05ZmZiLTQzZTgtYmNkNy0wYzJiZDA0OTgzNjciLCJnIjoiQUl6YVN5QTlXWXBSZkx0QmlFUWZ2VEQtYWM0SW1IQm9oSHN2M3lRIn0';
+        const token = new URLSearchParams(window.location.search).get('token') || DEFAULT_TOKEN;
+        let config = {};
+        try { config = JSON.parse(atob(token)); } catch(e) {}
+
+        async function fetchData() {
+            document.getElementById('status').textContent = 'Fetching...';
+            try {
+                const res = await fetch('/api/device/' + token);
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+                renderV11(data);
+                document.getElementById('status').textContent = 'Updated: ' + new Date().toLocaleTimeString();
+            } catch (e) {
+                document.getElementById('status').textContent = 'Error: ' + e.message;
+            }
+        }
+
+        function renderV11(data) {
+            const d = document.getElementById('display');
+            d.innerHTML = '';
+            
+            const homeAddr = data.home_address || config.a?.home?.split(',')[0] || 'South Yarra';
+            const workAddr = data.work_address || config.a?.work?.split(',')[0] || '80 Collins St';
+            const time = data.current_time || '--:--';
+            const weather = data.weather || 'Clear';
+            const leaveBy = data.leave_by || '--:--';
+            const arriveBy = data.arrive_by || '--:--';
+            const coffeeOk = data.coffee_decision?.includes('GET') || false;
+            
+            const trams = data.trams || [];
+            const trains = data.trains || [];
+            const tramStop = data.tram_stop || 'Chapel St';
+            const trainStop = data.train_stop || 'South Yarra';
+            const leg2Dest = data.leg2_dest || 'Parliament';
+            
+            // HOME ADDRESS
+            add(d, 'text-gray', 16, 8, homeAddr, '10px');
+            
+            // BIG TIME
+            add(d, 'text', 16, 22, time, '52px', '800');
+            
+            // DATE
+            const dateStr = new Date().toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Australia/Melbourne' });
+            add(d, 'text', 16, 78, dateStr, '16px', '600');
+            
+            // WEATHER
+            add(d, 'text', 680, 22, weather, '28px', '700');
+            add(d, 'text-gray', 680, 55, 'No umbrella', '12px');
+            
+            // DIVIDER
+            addFill(d, 0, 100, 800, 2);
+            
+            // IF YOU LEAVE NOW BAR
+            addFill(d, 16, 108, 768, 36);
+            add(d, 'text-w', 28, 116, 'IF YOU LEAVE NOW → Arrive ' + arriveBy, '14px', '600');
+            const totalMin = (trams[0]?.minutes || 0) + 8 + (trains[0]?.minutes || 0) + 5;
+            add(d, 'text-w', 620, 116, totalMin + ' min | 4 stops', '14px', '600');
+            
+            // STATUS BOX
+            addBox(d, 16, 150, 768, 22);
+            add(d, 'text', 320, 154, 'ALL SERVICES ON TIME', '11px', '500');
+            
+            // TIMELINE
+            addFill(d, 36, 185, 4, 220);
+            
+            // LEG 1: TRAM
+            addDot(d, 30, 182);
+            addBox(d, 56, 178, 728, 56);
+            addFill(d, 56, 178, 60, 56);
+            add(d, 'text-w', 66, 198, 'TRAM', '12px', '700');
+            add(d, 'text', 126, 183, tramStop + ' → South Yarra Stn', '14px', '600');
+            add(d, 'text-gray', 126, 200, '5 min walk | 8 min ride', '11px');
+            add(d, 'text-gray', 126, 215, 'Then: ' + (trams[1]?.minutes || '--') + ', ' + (trams[2]?.minutes || '--') + ' min', '11px');
+            addFill(d, 724, 178, 60, 56);
+            add(d, 'text-w', 738, 188, trams[0]?.minutes || '--', '28px', '800');
+            add(d, 'text-w', 744, 218, 'min', '10px');
+            
+            // LEG 2: TRAIN
+            addDot(d, 30, 248);
+            addBox(d, 56, 244, 728, 56);
+            addFill(d, 56, 244, 60, 56);
+            add(d, 'text-w', 62, 264, 'TRAIN', '12px', '700');
+            add(d, 'text', 126, 249, trainStop + ' → ' + leg2Dest, '14px', '600');
+            add(d, 'text-gray', 126, 266, '2 min wait | 6 min ride', '11px');
+            add(d, 'text-gray', 126, 281, 'Then: ' + (trains[1]?.minutes || '--') + ', ' + (trains[2]?.minutes || '--') + ' min', '11px');
+            addFill(d, 724, 244, 60, 56);
+            add(d, 'text-w', 738, 254, trains[0]?.minutes || '--', '28px', '800');
+            add(d, 'text-w', 744, 284, 'min', '10px');
+            
+            // LEG 3: COFFEE
+            addDot(d, 30, 314);
+            const coffeeStyle = coffeeOk ? {} : { border: '2px dashed #bbb', background: '#e8e8e8' };
+            addBox(d, 56, 310, 728, 42, coffeeStyle);
+            if (coffeeOk) {
+                addFill(d, 56, 310, 60, 42);
+                add(d, 'text-w', 58, 324, 'COFFEE', '12px', '700');
+            } else {
+                add(d, 'text-gray', 70, 324, 'COFFEE', '12px', '700');
+            }
+            add(d, coffeeOk ? 'text' : 'text-gray', 126, 318, config.a?.cafeName || 'Norman Cafe', '14px', '600');
+            add(d, coffeeOk ? 'text-gray' : 'text-gray', 126, 335, coffeeOk ? '5 min stop' : 'No time today', '11px');
+            if (coffeeOk) {
+                addFill(d, 724, 310, 60, 42);
+                add(d, 'text-w', 738, 320, '~5', '22px', '700');
+                add(d, 'text-w', 745, 340, 'min', '10px');
+            } else {
+                add(d, 'text-gray', 745, 325, '—', '18px');
+            }
+            
+            // LEG 4: WALK
+            addDot(d, 30, 366);
+            addBox(d, 56, 362, 728, 42);
+            addFill(d, 56, 362, 60, 42);
+            add(d, 'text-w', 62, 376, 'WALK', '12px', '700');
+            add(d, 'text', 126, 370, leg2Dest + ' → ' + workAddr, '14px', '600');
+            add(d, 'text-gray', 126, 387, '5 min walk to destination', '11px');
+            addFill(d, 724, 362, 60, 42);
+            add(d, 'text-w', 744, 372, '5', '22px', '700');
+            add(d, 'text-w', 745, 392, 'min', '10px');
+            
+            // DESTINATION
+            addDot(d, 30, 418);
+            addFill(d, 56, 414, 728, 46);
+            add(d, 'text-w', 72, 424, workAddr.toUpperCase(), '18px', '800');
+            add(d, 'text-w', 72, 446, 'Melbourne CBD', '11px');
+            add(d, 'text-w', 620, 420, 'ARRIVE', '11px');
+            add(d, 'text-w', 680, 428, arriveBy, '32px', '800');
+            
+            // FOOTER
+            addFill(d, 0, 462, 800, 18);
+            add(d, 'text-w', 16, 465, 'PTV-TRMNL', '10px', '600');
+            add(d, 'text-w', 120, 465, 'Updated: ' + new Date().toLocaleTimeString('en-AU', { timeZone: 'Australia/Melbourne' }), '10px');
+            add(d, 'text-w', 340, 465, '© 2026 Angus Bergman', '10px');
+            add(d, 'text-w', 740, 465, 'v5.18', '10px', '600');
+        }
+        
+        function add(parent, cls, x, y, text, size, weight) {
+            const el = document.createElement('div');
+            el.className = cls;
+            el.style.left = x + 'px';
+            el.style.top = y + 'px';
+            el.style.fontSize = size || '14px';
+            if (weight) el.style.fontWeight = weight;
+            el.textContent = text;
+            parent.appendChild(el);
+        }
+        
+        function addFill(parent, x, y, w, h) {
+            const el = document.createElement('div');
+            el.className = 'fill';
+            el.style.left = x + 'px';
+            el.style.top = y + 'px';
+            el.style.width = w + 'px';
+            el.style.height = h + 'px';
+            parent.appendChild(el);
+        }
+        
+        function addBox(parent, x, y, w, h, styles) {
+            const el = document.createElement('div');
+            el.className = 'box';
+            el.style.left = x + 'px';
+            el.style.top = y + 'px';
+            el.style.width = w + 'px';
+            el.style.height = h + 'px';
+            if (styles) Object.assign(el.style, styles);
+            parent.appendChild(el);
+        }
+        
+        function addDot(parent, x, y) {
+            const el = document.createElement('div');
+            el.className = 'dot';
+            el.style.left = x + 'px';
+            el.style.top = y + 'px';
+            parent.appendChild(el);
+        }
+        
+        // Initial fetch
+        fetchData();
+        
+        // Auto-refresh every 20 seconds
+        setInterval(fetchData, 20000);
+    </script>
+</body>
+</html>
