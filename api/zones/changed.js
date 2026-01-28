@@ -1,9 +1,10 @@
-// Optimized endpoint - only returns zones with data (smaller response for ESP32)
+// Batched endpoint for ESP32 memory limits
+// Use ?batch=0,1,2... to get zones in batches of 6
 import v11Renderer from '../../src/services/zone-renderer-v11.js';
 import CafeBusyDetector from '../../src/services/cafe-busy-detector.js';
 
 const busyDetector = new CafeBusyDetector();
-const ICONS = { walk: '\ud83d\udeb6', train: '\ud83d\ude83', tram: '\ud83d\ude8a', bus: '\ud83d\ude8c', coffee: '\u2615' };
+const BATCH_SIZE = 6;
 
 function getMelbourneTime() {
   const now = new Date();
@@ -37,12 +38,17 @@ async function buildData() {
 export default async function handler(req, res) {
   try {
     const forceAll = req.query.force === 'true';
+    const batch = parseInt(req.query.batch) || 0;
     const data = await buildData();
-    const changedIds = v11Renderer.getChangedZones(data, forceAll);
+    const allIds = v11Renderer.getChangedZones(data, forceAll);
     
-    // ONLY return zones with actual data (reduces response size for ESP32)
+    // Batch zones for ESP32 memory
+    const startIdx = batch * BATCH_SIZE;
+    const batchIds = allIds.slice(startIdx, startIdx + BATCH_SIZE);
+    const hasMore = startIdx + BATCH_SIZE < allIds.length;
+    
     const zones = [];
-    for (const id of changedIds) {
+    for (const id of batchIds) {
       const def = v11Renderer.getZoneDefinition(id, data);
       if (!def) continue;
       const bmp = v11Renderer.renderSingleZone(id, data);
@@ -52,7 +58,13 @@ export default async function handler(req, res) {
     
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Cache-Control', 'no-cache');
-    res.status(200).json({ timestamp: new Date().toISOString(), zones });
+    res.status(200).json({ 
+      timestamp: new Date().toISOString(), 
+      zones,
+      batch,
+      hasMore,
+      total: allIds.length
+    });
   } catch (e) {
     console.error('Zones error:', e);
     res.status(500).json({ error: e.message });
