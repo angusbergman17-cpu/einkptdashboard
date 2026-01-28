@@ -353,13 +353,13 @@ bool fetchZoneUpdates(bool forceAll) {
         return false; 
     }
     
-    String payload = http.getString(); 
+    Serial.printf("Heap before getString: %d\n", ESP.getFreeHeap()); String payload = http.getString(); Serial.printf("Heap after getString: %d, payload len: %d\n", ESP.getFreeHeap(), payload.length()); 
     http.end(); 
     delete client;
     
     // Parse JSON
     JsonDocument doc;
-    DeserializationError err = deserializeJson(doc, payload);
+    Serial.printf("Heap before JSON parse: %d\n", ESP.getFreeHeap()); DeserializationError err = deserializeJson(doc, payload); Serial.printf("Heap after JSON parse: %d\n", ESP.getFreeHeap());
     if (err) {
         Serial.printf("JSON error: %s\n", err.c_str());
         return false;
