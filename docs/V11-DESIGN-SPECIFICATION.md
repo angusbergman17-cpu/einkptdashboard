@@ -180,3 +180,92 @@ The following are **frozen** and must not change:
 **Document Version:** 1.0  
 **Locked By:** Angus Bergman  
 **Lock Date:** 2026-01-28
+
+---
+
+## Additional Status Bar Variants
+
+| Status Type | Icon | Text Format | Example |
+|-------------|------|-------------|---------|
+| Leave Soon | (none) | LEAVE IN X MIN → Arrive X:XX | LEAVE IN 5 MIN → Arrive 3:28 |
+| Tram Diversion | ⚠ | TRAM DIVERSION → Arrive X:XX (+X min) | ⚠ TRAM DIVERSION → Arrive 6:38 (+5 min) |
+| Multiple Delays | ⏱ | DELAYS → Arrive X:XX (+X min) | ⏱ DELAYS → Arrive 9:22 (+15 min) |
+
+---
+
+## Additional Leg States
+
+### Diverted (Tram/Bus)
+- **Vertical stripe pattern** (90deg, alternating colors)
+- Title: "↩ Tram XX Diverted"
+- Subtitle: "Next: X, XX min • [Location]"
+
+### Walk Around Diversion
+- Normal solid border
+- Title: "↩ Walk Around Diversion"
+- Subtitle: "Extra walk due to works"
+
+---
+
+## Coffee Subtitle Variants
+
+| Scenario | Subtitle |
+|----------|----------|
+| Time for coffee | ✓ TIME FOR COFFEE |
+| Extra time from disruption | ✓ EXTRA TIME — Disruption |
+| Friday treat | ✓ FRIDAY TREAT |
+| Skip - running late | ✗ SKIP — Running late |
+
+---
+
+## Destination Variants
+
+Footer can show various destination types:
+- Work: "80 COLLINS ST, MELBOURNE"
+- Home: "HOME — 1 CLARA ST, SOUTH YARRA"
+- Station: "ELSTERNWICK STATION"
+- Location: "CAULFIELD PARK ROTUNDA"
+
+---
+
+## v11 Scenario Examples
+
+### Normal Morning Commute
+- Status: LEAVE NOW → Arrive 8:32 | 47 min
+- Legs: Walk → Coffee → Walk → Train → Walk
+- Coffee: ✓ TIME FOR COFFEE
+
+### Weekend Outing
+- Status: LEAVE NOW → Arrive 11:48 | 33 min
+- Legs: Train → Walk → Walk
+- Destination: CAULFIELD PARK ROTUNDA
+
+### Multi-Modal Journey
+- Status: LEAVE IN 5 MIN → Arrive 3:28 | 53 min
+- Legs: Walk → Tram → Walk → Bus
+- Destination: ELSTERNWICK STATION
+
+### Tram Diversion
+- Status: ⚠ TRAM DIVERSION → Arrive 6:38 (+5 min) | 53 min
+- Legs: Walk → Tram (diverted, vertical stripes) → Walk Around → Bus → Walk
+- Destination: HOME — 18 BURKE RD, CAMBERWELL
+
+### Service Disruption (Rail Replacement)
+- Status: ⚠ DISRUPTION → Arrive 8:52 (+18 min) | 92 min
+- Legs: Coffee → Walk → Cancelled (diagonal stripes) → Rail Replacement Bus → Train
+- Coffee: ✓ EXTRA TIME — Disruption
+
+### Running Late (Skip Coffee)
+- Status: ⏱ DELAY → Arrive 9:18 (+8 min) | 56 min
+- Legs: Walk past cafe → Coffee (dashed, skip) → Walk → Train (delayed) → Walk
+- Coffee: ✗ SKIP — Running late
+
+### Multiple Delays
+- Status: ⏱ DELAYS → Arrive 9:22 (+15 min) | 67 min
+- Legs: Walk → Train (+10 MIN) → Walk → Tram (+5 MIN) → Walk
+- Weather: BRING UMBRELLA (filled black)
+
+---
+
+**v11 Specification Complete**
+**All scenarios locked: 2026-01-28**
