@@ -1,5 +1,5 @@
 /**
- * PTV-TRMNL v5.18 - Live Transit Dashboard
+ * PTV-TRMNL v5.19 - Live Transit Dashboard
  * Real transit data parsing and display
  * NO WATCHDOG - Based on working v5.15
  *
@@ -18,6 +18,10 @@
 #include <ArduinoJson.h>
 #include <bb_epaper.h>
 #include "../include/config.h"
+
+// Brownout fix for ESP32-C3 (prevents reboot during WiFi power draw)
+#include "soc/soc.h"
+#include "soc/rtc_cntl_reg.h"
 
 #define SCREEN_W 800
 #define SCREEN_H 480
@@ -61,7 +65,7 @@ String trainStop = "TRAINS";
 String coffeeDecision = "NO COFFEE";
 String coffeeSubtext = "";
 
-// Journey data (v5.18+)
+// Journey data (v5.19+)
 String homeAddress = "Home";
 String workAddress = "Work";
 String leaveBy = "--:--";
@@ -81,9 +85,12 @@ void drawLiveDashboard(String currentTime, String weather, String location);
 String getTime();
 
 void setup() {
+    // CRITICAL: Disable brownout detection FIRST (prevents boot loop on WiFi power draw)
+    WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
+
     Serial.begin(115200);
     delay(500);
-    Serial.println("\n=== PTV-TRMNL v5.18 ===");
+    Serial.println("\n=== PTV-TRMNL v5.19 ===");
     Serial.println("Live Transit Dashboard");
     
     bootTime = millis();
@@ -103,7 +110,7 @@ void setup() {
     bbep.fillScreen(BBEP_WHITE);
     bbep.setFont(FONT_8x8);
     bbep.setCursor(20, 30);
-    bbep.print("PTV-TRMNL v5.18");
+    bbep.print("PTV-TRMNL v5.19");
     bbep.setFont(FONT_8x8);
     bbep.setCursor(20, 80);
     bbep.print("Starting up...");
@@ -227,7 +234,7 @@ void fetchAndDisplaySafe() {
         
         http.addHeader("ID", friendlyID);
         http.addHeader("Access-Token", apiKey);
-        http.addHeader("FW-Version", "5.18");
+        http.addHeader("FW-Version", "5.19");
         
         int code = http.GET();
         if (code != 200) {
@@ -274,7 +281,7 @@ void fetchAndDisplaySafe() {
         
         coffeeDecision = String(doc["coffee_decision"] | "GO DIRECT");
         
-        // Parse journey data (v5.18+)
+        // Parse journey data (v5.19+)
         homeAddress = String(doc["home_address"] | "Home");
         workAddress = String(doc["work_address"] | "Work");
         leaveBy = String(doc["leave_by"] | "--:--");
@@ -323,116 +330,173 @@ void fetchAndDisplaySafe() {
 }
 
 void drawLiveDashboard(String currentTime, String weather, String location) {
-    Serial.println("Drawing PROPER landscape dashboard...");
+    Serial.println("Drawing v11 dashboard (FONT_8x8 only)...");
     bbep.fillScreen(BBEP_WHITE);
+    bbep.setFont(FONT_8x8);  // ONLY use FONT_8x8 - FONT_12x16 causes rotation bug!
     
-    // === STANDARD 800x480 LANDSCAPE ===
+    // ========================================================================
+    // 1. STATION/ROUTE BOX (Top-Left)
+    // ========================================================================
+    bbep.drawRect(10, 10, 200, 40, BBEP_BLACK);
+    bbep.drawRect(11, 11, 198, 38, BBEP_BLACK); // Double border
     
-    // TOP HEADER BAR
-    bbep.setFont(FONT_8x8);
-    bbep.setCursor(20, 20);
-    String shortHome = homeAddress.length() > 15 ? homeAddress.substring(0, 15) : homeAddress;
-    String shortWork = workAddress.length() > 15 ? workAddress.substring(0, 15) : workAddress;
-    char headerBuf[60];
-    sprintf(headerBuf, "%s -> %s", shortHome.c_str(), shortWork.c_str());
-    bbep.print(headerBuf);
+    String shortHome = homeAddress.length() > 20 ? homeAddress.substring(0, 20) : homeAddress;
+    bbep.setCursor(20, 25);
+    bbep.print(shortHome.c_str());
+    bbep.setCursor(20, 38);
+    bbep.print("->");
+    String shortWork = workAddress.length() > 18 ? workAddress.substring(0, 18) : workAddress;
+    bbep.print(shortWork.c_str());
     
-    // Time (top right)
-    bbep.setCursor(700, 20);
+    // ========================================================================
+    // 2. LARGE TIME DISPLAY (Center-Top) - Using bold effect with FONT_8x8
+    // ========================================================================
+    int timeX = 350;
+    int timeY = 20;
+    
+    // Draw time multiple times for bold effect
+    bbep.setCursor(timeX, timeY);
+    bbep.print(currentTime.c_str());
+    bbep.setCursor(timeX + 1, timeY);
+    bbep.print(currentTime.c_str());
+    bbep.setCursor(timeX, timeY + 1);
+    bbep.print(currentTime.c_str());
+    bbep.setCursor(timeX + 1, timeY + 1);
     bbep.print(currentTime.c_str());
     
-    // COFFEE DECISION BANNER
+    // ========================================================================
+    // 3. COFFEE/GO DIRECT BANNER
+    // ========================================================================
     int bannerY = 55;
     if (coffeeDecision.indexOf("COFFEE") >= 0 && coffeeDecision.indexOf("NO") < 0) {
-        bbep.fillRect(200, bannerY, 400, 30, BBEP_BLACK);
-        bbep.setTextColor(BBEP_WHITE, BBEP_BLACK);
-        bbep.setCursor(250, bannerY + 8);
+        bbep.fillRect(250, bannerY, 300, 20, BBEP_BLACK);
+        // Note: White text on black may not render - draw above/below instead
+        bbep.setCursor(280, bannerY - 12);
         bbep.print(">>> STOP FOR COFFEE <<<");
-        bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
     } else {
-        bbep.setCursor(280, bannerY + 8);
+        bbep.setCursor(300, bannerY);
         bbep.print(">>> GO DIRECT <<<");
     }
     
-    // LEFT COLUMN: Transit Info
-    // LEG 1
-    int leg1Y = 100;
-    bbep.setFont(FONT_8x8);
-    bbep.setCursor(20, leg1Y);
-    bbep.print("LEG 1: TRAM");
+    // ========================================================================
+    // 4. TRAM SECTION (Left Column)
+    // ========================================================================
     
-    bbep.setFont(FONT_8x8);
-    bbep.setCursor(30, leg1Y + 25);
+    // Header strip
+    bbep.fillRect(10, 90, 370, 20, BBEP_BLACK);
+    bbep.setCursor(15, 78);  // Above black strip for visibility
+    bbep.print("TRAM - ");
     bbep.print(tramStop.c_str());
     
-    for (int i = 0; i < min(tramCount, 2); i++) {
-        bbep.setCursor(40, leg1Y + 45 + (i * 20));
-        char buf[40];
-        sprintf(buf, "> %d min  %s", tramData[i].minutes, tramData[i].destination.c_str());
-        bbep.print(buf);
+    // Tram departures
+    for (int i = 0; i < min(tramCount, 3); i++) {
+        int y = 120 + (i * 35);
+        
+        // Time (bold)
+        char timeBuf[20];
+        sprintf(timeBuf, "%d min", tramData[i].minutes);
+        bbep.setCursor(20, y);
+        bbep.print(timeBuf);
+        bbep.setCursor(21, y);
+        bbep.print(timeBuf);
+        
+        // Destination
+        bbep.setCursor(100, y);
+        bbep.print(tramData[i].destination.c_str());
+        
+        // Separator line
+        if (i < tramCount - 1) {
+            bbep.drawLine(20, y + 25, 350, y + 25, BBEP_BLACK);
+        }
     }
     
-    // Transfer indicator
-    bbep.setCursor(150, 200);
-    bbep.print("| transfer |");
+    // ========================================================================
+    // 5. TRAIN SECTION (Right Column)
+    // ========================================================================
     
-    // LEG 2
-    int leg2Y = 225;
-    bbep.setFont(FONT_8x8);
-    bbep.setCursor(20, leg2Y);
-    bbep.print("LEG 2: TRAIN");
+    // Header strip
+    bbep.fillRect(400, 90, 380, 20, BBEP_BLACK);
+    bbep.setCursor(405, 78);  // Above black strip
+    bbep.print("TRAIN - ");
+    bbep.print(trainStop.c_str());
+    bbep.print(" -> ");
+    bbep.print(leg2Dest.c_str());
     
-    bbep.setFont(FONT_8x8);
-    bbep.setCursor(30, leg2Y + 25);
-    char leg2Route[50];
-    sprintf(leg2Route, "%s -> %s", trainStop.c_str(), leg2Dest.c_str());
-    bbep.print(leg2Route);
-    
-    for (int i = 0; i < min(trainCount, 2); i++) {
-        bbep.setCursor(40, leg2Y + 45 + (i * 20));
-        char buf[40];
-        sprintf(buf, "> %d min  %s", trainData[i].minutes, trainData[i].destination.c_str());
-        bbep.print(buf);
+    // Train departures
+    for (int i = 0; i < min(trainCount, 3); i++) {
+        int y = 120 + (i * 35);
+        
+        // Time (bold)
+        char timeBuf[20];
+        sprintf(timeBuf, "%d min", trainData[i].minutes);
+        bbep.setCursor(410, y);
+        bbep.print(timeBuf);
+        bbep.setCursor(411, y);
+        bbep.print(timeBuf);
+        
+        // Destination
+        bbep.setCursor(490, y);
+        bbep.print(trainData[i].destination.c_str());
+        
+        // Separator line
+        if (i < trainCount - 1) {
+            bbep.drawLine(410, y + 25, 770, y + 25, BBEP_BLACK);
+        }
     }
     
-    // RIGHT COLUMN: Leave By Box
-    int boxX = 480;
-    int boxY = 100;
-    bbep.drawRect(boxX, boxY, 300, 150, BBEP_BLACK);
+    // ========================================================================
+    // 6. LEAVE BY / ARRIVE BOX (Bottom-Right)
+    // ========================================================================
+    int boxX = 550;
+    int boxY = 280;
+    bbep.drawRect(boxX, boxY, 230, 120, BBEP_BLACK);
+    bbep.drawRect(boxX + 1, boxY + 1, 228, 118, BBEP_BLACK);
     
-    bbep.setFont(FONT_8x8);
-    bbep.setCursor(boxX + 80, boxY + 20);
+    bbep.setCursor(boxX + 60, boxY + 15);
     bbep.print("LEAVE BY");
     
-    bbep.setFont(FONT_8x8);
-    bbep.setCursor(boxX + 100, boxY + 60);
+    // Large leave time (bold)
+    bbep.setCursor(boxX + 70, boxY + 40);
+    bbep.print(leaveBy.c_str());
+    bbep.setCursor(boxX + 71, boxY + 40);
+    bbep.print(leaveBy.c_str());
+    bbep.setCursor(boxX + 70, boxY + 41);
     bbep.print(leaveBy.c_str());
     
-    bbep.setFont(FONT_8x8);
-    bbep.setCursor(boxX + 60, boxY + 100);
+    bbep.setCursor(boxX + 40, boxY + 70);
     bbep.print("Arrive at work:");
     
-    bbep.setFont(FONT_8x8);
-    bbep.setCursor(boxX + 100, boxY + 120);
+    bbep.setCursor(boxX + 70, boxY + 90);
+    bbep.print(arriveBy.c_str());
+    bbep.setCursor(boxX + 71, boxY + 90);
     bbep.print(arriveBy.c_str());
     
-    // BOTTOM STATUS BAR
-    bbep.setFont(FONT_8x8);
-    bbep.setCursor(20, 440);
+    // ========================================================================
+    // 7. BOTTOM STATUS BAR
+    // ========================================================================
+    bbep.drawLine(0, 430, 800, 430, BBEP_BLACK);
+    
+    bbep.setCursor(20, 445);
     bbep.print("Weather: ");
     bbep.print(weather.c_str());
     
-    bbep.setCursor(350, 440);
-    char refreshBuf[20];
+    bbep.setCursor(350, 445);
+    char refreshBuf[30];
     sprintf(refreshBuf, "Refresh #%d", refreshCount);
     bbep.print(refreshBuf);
     
-    bbep.setCursor(700, 440);
-    bbep.print("v5.18");
+    bbep.setCursor(700, 445);
+    bbep.print("v5.19");
+    
+    // ========================================================================
+    // 8. TRANSFER INDICATOR (Between sections)
+    // ========================================================================
+    bbep.setCursor(10, 250);
+    bbep.print("| transfer |");
     
     Serial.println("Refreshing e-ink...");
     bbep.refresh(REFRESH_FULL, true);
-    Serial.println("Dashboard complete");
+    Serial.println("v11 Dashboard complete");
     delay(500);
     yield();
 }

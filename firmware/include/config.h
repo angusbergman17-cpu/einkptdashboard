@@ -65,6 +65,6 @@
 #define NTP_UPDATE_INTERVAL 60000
 
 // Firmware Version
-#define FIRMWARE_VERSION "v5.18"
+#define FIRMWARE_VERSION "v5.19"
 
 #endif // CONFIG_H
