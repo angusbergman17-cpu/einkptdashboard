@@ -282,6 +282,156 @@ class JourneyPlanner {
   /**
    * Haversine distance in meters
    */
+/**
+ * Build journey segments with multi-modal support
+ * Supports: Home → Coffee → Tram → Train → Office
+ */
+buildMultiModalSegments(params) {
+  const { 
+    homeLocation, 
+    workLocation, 
+    cafeLocation, 
+    tramStop,      // First leg: tram
+    trainStop,     // Second leg: train (interchange)
+    destStop,      // Final destination stop
+    workStartTime, 
+    cafeDuration = 5,
+    interchangeWalk = 3  // Walk time between tram and train
+  } = params;
+  
+  const segments = [];
+
+  // Segment 1: Walk to Cafe
+  if (cafeLocation) {
+    const walkToCafe = Math.ceil(this.haversineDistance(
+      homeLocation.lat, homeLocation.lon,
+      cafeLocation.lat, cafeLocation.lon
+    ) / 80); // 80m/min walking speed
+    
+    segments.push({
+      type: 'walk',
+      from: 'Home',
+      to: cafeLocation.name || 'Cafe',
+      minutes: walkToCafe || 3,
+      time: ''
+    });
+
+    // Segment 2: Coffee stop
+    segments.push({
+      type: 'coffee',
+      location: cafeLocation.name || 'Cafe',
+      minutes: cafeDuration,
+      time: ''
+    });
+
+    // Segment 3: Walk from Cafe to Tram
+    const walkToTram = Math.ceil(this.haversineDistance(
+      cafeLocation.lat, cafeLocation.lon,
+      tramStop.lat, tramStop.lon
+    ) / 80) || 2;
+    
+    segments.push({
+      type: 'walk',
+      from: cafeLocation.name || 'Cafe',
+      to: tramStop.name,
+      minutes: walkToTram,
+      time: ''
+    });
+  } else {
+    // No cafe: walk directly to tram
+    const walkToTram = Math.ceil(this.haversineDistance(
+      homeLocation.lat, homeLocation.lon,
+      tramStop.lat, tramStop.lon
+    ) / 80) || 5;
+    
+    segments.push({
+      type: 'walk',
+      from: 'Home',
+      to: tramStop.name,
+      minutes: walkToTram,
+      time: ''
+    });
+  }
+
+  // Segment 4: Wait for tram
+  segments.push({
+    type: 'wait',
+    location: tramStop.name,
+    minutes: 2,
+    time: ''
+  });
+
+  // Segment 5: Tram leg
+  const tramTime = this.estimateTransitTime(tramStop, trainStop) || 8;
+  segments.push({
+    type: 'transit',
+    mode: 'Tram',
+    icon: '🚋',
+    from: tramStop.name,
+    to: trainStop.name + ' interchange',
+    minutes: tramTime,
+    time: '',
+    routeType: 1  // Tram
+  });
+
+  // Segment 6: Walk to train (interchange)
+  segments.push({
+    type: 'walk',
+    from: tramStop.name + ' (Tram)',
+    to: trainStop.name + ' Station',
+    minutes: interchangeWalk,
+    time: ''
+  });
+
+  // Segment 7: Wait for train
+  segments.push({
+    type: 'wait',
+    location: trainStop.name + ' Station',
+    minutes: 3,
+    time: ''
+  });
+
+  // Segment 8: Train leg
+  const trainTime = this.estimateTransitTime(trainStop, destStop) || 6;
+  segments.push({
+    type: 'transit',
+    mode: 'Train',
+    icon: '🚆',
+    from: trainStop.name,
+    to: destStop.name,
+    minutes: trainTime,
+    time: '',
+    routeType: 0  // Train
+  });
+
+  // Segment 9: Walk to office
+  const walkToWork = Math.ceil(this.haversineDistance(
+    destStop.lat, destStop.lon,
+    workLocation.lat, workLocation.lon
+  ) / 80) || 5;
+  
+  segments.push({
+    type: 'walk',
+    from: destStop.name,
+    to: 'Work',
+    minutes: walkToWork,
+    time: ''
+  });
+
+  // Calculate times backwards from arrival
+  const [hours, mins] = workStartTime.split(':').map(Number);
+  let currentMinutes = hours * 60 + mins;
+  
+  for (let i = segments.length - 1; i >= 0; i--) {
+    currentMinutes -= segments[i].minutes;
+    const h = Math.floor(currentMinutes / 60);
+    const m = currentMinutes % 60;
+    segments[i].time = `${String(h).padStart(2, '0')}:${String(Math.abs(m)).padStart(2, '0')}`;
+  }
+
+  return segments;
+}
+
   haversineDistance(lat1, lon1, lat2, lon2) {
     const R = 6371000;
     const φ1 = lat1 * Math.PI / 180;
@@ -315,3 +465,108 @@ class JourneyPlanner {
 }
 
 export default JourneyPlanner;
+
+/**
+ * Calculate multi-modal journey: Home → Coffee → Tram → Train → Office
+ * This is the preferred route for Angus's commute
+ */
+async calculateMultiModalJourney(params) {
+  const {
+    homeLocation,
+    workLocation,
+    cafeLocation,
+    workStartTime,
+    cafeDuration = 5,
+    transitAuthority = 'VIC',
+    routePreference = 'tram-train'  // 'tram-train', 'train-only', 'tram-only'
+  } = params;
+
+  console.log('🚋🚆 Calculating multi-modal journey (Tram → Train)');
+  console.log('   Home:', homeLocation?.formattedAddress);
+  console.log('   Cafe:', cafeLocation?.name || 'None');
+  console.log('   Work:', workLocation?.formattedAddress);
+  console.log('   Route Preference:', routePreference);
+
+  try {
+    const fallbackStops = global.fallbackTimetables?.getStopsForState?.(transitAuthority) || [];
+    
+    // Find tram stops near home/cafe
+    const tramStops = fallbackStops.filter(s => s.route_type === 1); // Tram
+    const trainStops = fallbackStops.filter(s => s.route_type === 0); // Train
+    
+    // Find nearest tram stop to home (or cafe if specified)
+    const tramOrigin = cafeLocation 
+      ? this.findNearbyStops(cafeLocation, tramStops, 1)[0]
+      : this.findNearbyStops(homeLocation, tramStops, 1)[0];
+    
+    // Find interchange station (train station accessible via tram)
+    // For South Yarra → CBD, Richmond is a common interchange
+    const interchangeStations = trainStops.filter(s => 
+      ['Richmond', 'Flinders Street', 'Southern Cross', 'Melbourne Central'].includes(s.name)
+    );
+    const interchange = interchangeStations[0] || trainStops[0];
+    
+    // Find destination train stop (near work)
+    const destStop = this.findNearbyStops(workLocation, trainStops, 1)[0];
+    
+    if (!tramOrigin || !interchange || !destStop) {
+      return {
+        success: false,
+        error: 'Could not find suitable stops for multi-modal route'
+      };
+    }
+
+    // Build multi-modal segments
+    const segments = this.buildMultiModalSegments({
+      homeLocation,
+      workLocation,
+      cafeLocation,
+      tramStop: tramOrigin,
+      trainStop: interchange,
+      destStop,
+      workStartTime,
+      cafeDuration
+    });
+
+    const totalMinutes = segments.reduce((sum, seg) => sum + (seg.minutes || 0), 0);
+    
+    // Calculate departure time
+    const [hours, mins] = workStartTime.split(':').map(Number);
+    const arrivalMinutes = hours * 60 + mins;
+    const departureMinutes = arrivalMinutes - totalMinutes;
+    const depHours = Math.floor(departureMinutes / 60);
+    const depMins = departureMinutes % 60;
+    const departureTime = `${String(depHours).padStart(2, '0')}:${String(Math.abs(depMins)).padStart(2, '0')}`;
+
+    return {
+      success: true,
+      multiModal: true,
+      routeType: 'tram-train',
+      journey: {
+        departureTime,
+        arrivalTime: workStartTime,
+        totalMinutes,
+        segments,
+        route: {
+          type: 'multi-modal',
+          legs: [
+            { mode: 'Tram', icon: '🚋', stop: tramOrigin },
+            { mode: 'Train', icon: '🚆', stop: destStop }
+          ],
+          interchange: interchange.name
+        },
+        cafe: cafeLocation ? {
+          included: true,
+          name: cafeLocation.name || 'Cafe',
+          duration: cafeDuration
+        } : null
+      }
+    };
+  } catch (error) {
+    console.error('Multi-modal journey calculation failed:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
