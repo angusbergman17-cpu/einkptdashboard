@@ -2131,7 +2131,10 @@ const KINDLE_DEVICES = {
 
 // Kindle image endpoint - returns PNG at device resolution
 // Used by TRMNL Kindle extension on jailbroken devices
-app.get('/api/kindle/image', async (req, res) => {
+app.get("/api/kindle/image", async (req, res) => {
+  res.status(501).json({ error: "Not implemented" });
+});
+
 // TRMNL Image Endpoint - Returns 1-bit BMP
 app.get('/api/image', async (req, res) => {
   try {
@@ -2197,136 +2200,6 @@ app.get('/api/zones/list', (req, res) => {
 app.post('/api/zones/reset', (req, res) => {
   clearZoneCache();
   res.json({ success: true });
-});
-
-  const macAddress = req.query.mac || req.headers['x-device-mac'];
-  const deviceModel = req.query.model || 'default';
-  const apiKey = req.query.key || req.headers['x-api-key'];
-
-  // Get device config
-  const deviceConfig = KINDLE_DEVICES[deviceModel] || KINDLE_DEVICES['default'];
-
-  console.log(`📱 Kindle image request: ${deviceConfig.name} (${deviceConfig.width}x${deviceConfig.height})`);
-
-  // Track device if MAC provided
-  if (macAddress) {
-    trackDevicePing(`kindle-${macAddress.replace(/:/g, '')}`, req.ip);
-  }
-
-  try {
-    // Generate dashboard image at Kindle resolution
-    const prefs = preferences.get();
-    const state = prefs?.journey?.transitRoute?.mode1?.originStation?.state || 'VIC';
-    const timezone = getTimezoneForState(state);
-
-    const now = new Date();
-    const currentTime = now.toLocaleTimeString('en-AU', {
-      timeZone: timezone,
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    });
-
-    const currentDate = now.toLocaleDateString('en-AU', {
-      timeZone: timezone,
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short'
-    });
-
-    // For Kindle, return HTML that can be rendered to image
-    // The TRMNL Kindle extension handles conversion
-    const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=${deviceConfig.width}, height=${deviceConfig.height}">
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      width: ${deviceConfig.width}px;
-      height: ${deviceConfig.height}px;
-      background: white;
-      color: black;
-      font-family: 'Bookerly', 'Georgia', serif;
-      display: flex;
-      flex-direction: column;
-      padding: 30px;
-    }
-    .header {
-      text-align: center;
-      border-bottom: 2px solid black;
-      padding-bottom: 20px;
-      margin-bottom: 20px;
-    }
-    .time {
-      font-size: 72px;
-      font-weight: bold;
-    }
-    .date {
-      font-size: 28px;
-      margin-top: 10px;
-    }
-    .content {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-    .section {
-      border: 1px solid #333;
-      padding: 15px;
-      border-radius: 8px;
-    }
-    .section-title {
-      font-size: 24px;
-      font-weight: bold;
-      margin-bottom: 10px;
-    }
-    .departure {
-      display: flex;
-      justify-content: space-between;
-      font-size: 20px;
-      padding: 8px 0;
-      border-bottom: 1px solid #ddd;
-    }
-    .footer {
-      text-align: center;
-      font-size: 16px;
-      padding-top: 20px;
-      border-top: 1px solid black;
-      opacity: 0.7;
-    }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <div class="time">${currentTime}</div>
-    <div class="date">${currentDate}</div>
-  </div>
-  <div class="content">
-    <div class="section">
-      <div class="section-title">🚂 Next Departures</div>
-      <div class="departure"><span>Train to City</span><span>Loading...</span></div>
-      <div class="departure"><span>Tram to Work</span><span>Loading...</span></div>
-    </div>
-  </div>
-  <div class="footer">
-    PTV-TRMNL | Kindle Edition | ${deviceConfig.name}
-  </div>
-</body>
-</html>`;
-
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.setHeader('X-Device-Model', deviceModel);
-    res.setHeader('X-Device-Resolution', `${deviceConfig.width}x${deviceConfig.height}`);
-    res.send(htmlContent);
-
-  } catch (error) {
-    console.error('Kindle image error:', error);
-    res.status(500).json({ error: 'Failed to generate Kindle image' });
-  }
 });
 
 // Device logging endpoint
