@@ -49,6 +49,22 @@
    - ✅ Even when system not configured, show LIVE default dashboard
    - ❌ NEVER stop refreshing (old behavior: showed default dashboard once)
 
+
+5. **FONT_8x8 ONLY** - MANDATORY (TRMNL OG Hardware)
+   - ❌ NEVER use `FONT_12x16` or larger fonts on TRMNL hardware
+   - ❌ NEVER use `FONT_16x16` or other large fonts
+   - ✅ ALWAYS use `FONT_8x8` for all text rendering
+   - **Reason**: FONT_12x16 causes 90° text rotation bug with EPD_TRMNL_OG preset
+   - **Discovered**: 2026-01-28 (documented in KNOWN-ISSUES.md)
+   - **Library**: bb_epaper v2.0.3+ with EPD_TRMNL_OG preset
+   - **Reference**: See `KNOWN-ISSUES.md` for full diagnosis
+
+6. **NO BROWNOUT DETECTION** - MANDATORY
+   - ✅ MUST disable brownout detection at start of setup()
+   - ✅ Add: `WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);`
+   - ✅ Include: `#include "soc/soc.h"` and `#include "soc/rtc_cntl_reg.h"`
+   - **Reason**: ESP32-C3 brownout triggers during WiFi power draw causing boot loops
+   - **Discovered**: 2026-01-28
 **CRITICAL: Before ANY firmware changes (firmware/src/main.cpp, firmware/include/config.h, or any .cpp/.h files):**
 
 1. **READ** `firmware/ANTI-BRICK-REQUIREMENTS.md` - Review anti-brick patterns

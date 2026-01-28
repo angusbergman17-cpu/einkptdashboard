@@ -1,5 +1,5 @@
 /**
- * PTV-TRMNL v5.21 - FIXED Orientation
+ * PTV-TRMNL v5.24 - FIXED Orientation
  * Complete rebuild with verified 800x480 landscape dimensions
  * Simple, clean layout - text renders HORIZONTALLY
  *
@@ -58,7 +58,7 @@ void setup() {
     delay(500);
 
     Serial.println("\n==============================");
-    Serial.println("PTV-TRMNL v5.21 - FIXED");
+    Serial.println("PTV-TRMNL v5.24 - FIXED");
     Serial.println("800x480 Landscape - Correct Orientation");
     Serial.println("==============================\n");
 
@@ -155,9 +155,9 @@ void showBootScreen() {
     bbep.fillScreen(BBEP_WHITE);
 
     // Center text on 800x480 screen
-    bbep.setFont(FONT_12x16);
+    bbep.setFont(FONT_8x8);
     bbep.setCursor(280, 220);
-    bbep.print("PTV-TRMNL v5.21");
+    bbep.print("PTV-TRMNL v5.24");
 
     bbep.setFont(FONT_8x8);
     bbep.setCursor(300, 250);
@@ -269,7 +269,7 @@ void fetchAndDisplaySafe() {
 
         http.addHeader("ID", friendlyID);
         http.addHeader("Access-Token", apiKey);
-        http.addHeader("FW-Version", "5.21");
+        http.addHeader("FW-Version", "5.22");
 
         int httpCode = http.GET();
         if (httpCode != 200) {
@@ -331,18 +331,18 @@ void drawSimpleDashboard(String currentTime, String weather) {
 
         // === TOP BAR (Y: 0-60) ===
         // Station name - top left
-        bbep.setFont(FONT_12x16);
+        bbep.setFont(FONT_8x8);
         bbep.setCursor(20, 30);
         bbep.print("MELBOURNE CENTRAL");
 
         // Time - top right
-        bbep.setFont(FONT_12x16);
+        bbep.setFont(FONT_8x8);
         bbep.setCursor(650, 30);
         bbep.print(currentTime.c_str());
 
         // === MIDDLE SECTION (Y: 80-400) ===
         // Large time display
-        bbep.setFont(FONT_12x16);
+        bbep.setFont(FONT_8x8);
         bbep.setCursor(50, 150);
         bbep.print("Current Time:");
         bbep.setCursor(50, 180);
@@ -358,7 +358,7 @@ void drawSimpleDashboard(String currentTime, String weather) {
         bbep.print("Route 96 - 5 min");
 
         // Trains section
-        bbep.setFont(FONT_12x16);
+        bbep.setFont(FONT_8x8);
         bbep.setCursor(400, 250);
         bbep.print("TRAINS");
         bbep.setFont(FONT_8x8);
@@ -374,7 +374,7 @@ void drawSimpleDashboard(String currentTime, String weather) {
         bbep.print(weather.c_str());
 
         bbep.setCursor(650, 450);
-        bbep.print("PTV-TRMNL v5.21");
+        bbep.print("PTV-TRMNL v5.24");
 
         Serial.println("  All text placed horizontally");
         Serial.println("  Coordinates: X(0-800) Y(0-480)");
@@ -389,7 +389,7 @@ void drawSimpleDashboard(String currentTime, String weather) {
         // Update time (top right)
         if (currentTime != prevTime) {
             bbep.fillRect(650, 15, 130, 30, BBEP_WHITE);
-            bbep.setFont(FONT_12x16);
+            bbep.setFont(FONT_8x8);
             bbep.setCursor(650, 30);
             bbep.print(currentTime.c_str());
         }
