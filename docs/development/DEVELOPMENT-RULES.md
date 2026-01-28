@@ -1,7 +1,7 @@
 # PTV-TRMNL Development Rules
 **MANDATORY COMPLIANCE DOCUMENT**
 **Last Updated**: 2026-01-28
-**Version**: 1.0.31
+**Version**: 1.1.0
 
 **📋 [Complete Project Vision →](../../PROJECT-STATEMENT.md)** - Read the comprehensive project statement for context on goals, architecture, and user requirements.
 
@@ -5930,3 +5930,458 @@ Before deploying Journey Display changes:
 □ Full refresh every 30 renders
 ```
 
+
+---
+
+## 2️⃣4️⃣ DISTRIBUTION ARCHITECTURE (MANDATORY)
+
+### Overview
+
+PTV-TRMNL uses a **self-hosted distribution model** where each user deploys their own server instance. This section defines the mandatory architecture for server hosting, rendering, route calculation, and device communication.
+
+**Reference Documents:**
+- [DISTRIBUTION.md](../../DISTRIBUTION.md) - User deployment guide
+- [docs/ARCHITECTURE-VALIDATION.md](../ARCHITECTURE-VALIDATION.md) - System validation
+- [docs/api/DISTRIBUTION-ENDPOINTS.md](../api/DISTRIBUTION-ENDPOINTS.md) - Required endpoints
+
+### 🏗️ Architecture Principles
+
+#### 1. User-Owned Infrastructure
+
+**MANDATORY**: Each user runs their own isolated instance.
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  ISOLATION MODEL                                                │
+│                                                                 │
+│  User A                          User B                         │
+│  ┌─────────────────────┐         ┌─────────────────────┐       │
+│  │ Fork: ptv-trmnl-a   │         │ Fork: ptv-trmnl-b   │       │
+│  │ URL: ...a.vercel.app│         │ URL: ...b.vercel.app│       │
+│  │ Device → Server A   │         │ Device → Server B   │       │
+│  │ API Keys: User A's  │         │ API Keys: User B's  │       │
+│  └─────────────────────┘         └─────────────────────┘       │
+│                                                                 │
+│  ❌ NO shared infrastructure                                    │
+│  ❌ NO central server                                           │
+│  ❌ NO cross-user data access                                   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Requirements:**
+- ✅ Each user forks the repository
+- ✅ Each user deploys to Vercel/Render with unique subdomain
+- ✅ Each user's API keys stored in their environment variables
+- ✅ Device firmware configured with user's specific server URL
+- ❌ NEVER hardcode a central/shared server URL
+
+#### 2. Server-Side Rendering (MANDATORY)
+
+**CRITICAL**: ALL rendering happens on the server. Device receives images only.
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  RENDERING FLOW                                                 │
+│                                                                 │
+│  Server (Node.js)                    Device (ESP32-C3/Kindle)   │
+│  ┌─────────────────────────────┐     ┌─────────────────────┐   │
+│  │ 1. Fetch transit data       │     │                     │   │
+│  │ 2. Calculate routes         │     │                     │   │
+│  │ 3. Apply journey logic      │     │                     │   │
+│  │ 4. Render to PNG/zones      │────▶│ Display image       │   │
+│  │ 5. Send to device           │     │ (no processing)     │   │
+│  └─────────────────────────────┘     └─────────────────────┘   │
+│                                                                 │
+│  ✅ Server: All business logic                                  │
+│  ✅ Server: All rendering                                       │
+│  ✅ Server: All API calls                                       │
+│  ❌ Device: NO transit API calls                                │
+│  ❌ Device: NO route calculation                                │
+│  ❌ Device: NO complex rendering                                │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Why Server-Side?**
+- ESP32-C3 has limited memory (320KB SRAM)
+- E-ink rendering requires buffer space
+- API calls need secure key storage
+- Reduces device firmware complexity
+- Enables instant updates without reflashing
+
+#### 3. V11 Dashboard Zone Architecture
+
+**MANDATORY**: Dashboard uses zone-based partial refresh for e-ink efficiency.
+
+```
+┌───────────────────────────────────────────────────────────────┐
+│  V11 DASHBOARD LAYOUT (800×480)                               │
+├───────────────────────────────────────────────────────────────┤
+│  ZONE 1: HEADER (0-60px)                                      │
+│  ┌─────────────────────────────────────────────────────────┐ │
+│  │  PTV-TRMNL                    08:05  Mon 28 Jan         │ │
+│  └─────────────────────────────────────────────────────────┘ │
+├───────────────────────────────────────────────────────────────┤
+│  ZONE 2: STATUS BAR (60-100px)                                │
+│  ┌─────────────────────────────────────────────────────────┐ │
+│  │  Leave by 08:12  •  On time  •  18 min journey          │ │
+│  └─────────────────────────────────────────────────────────┘ │
+├───────────────────────────────────────────────────────────────┤
+│  ZONE 3: TRANSIT INFO (100-380px)                             │
+│  ┌─────────────────────────────────────────────────────────┐ │
+│  │  🚊 Route 58 Tram                                       │ │
+│  │  ┌─────────────────────────────────────────────────┐   │ │
+│  │  │  NOW    Toorak Road        → West Coburg        │   │ │
+│  │  │  3 min  Toorak Road        → West Coburg        │   │ │
+│  │  │  8 min  Toorak Road        → West Coburg        │   │ │
+│  │  └─────────────────────────────────────────────────┘   │ │
+│  │                                                         │ │
+│  │  🚆 Metro Train                                         │ │
+│  │  ┌─────────────────────────────────────────────────┐   │ │
+│  │  │  5 min  South Yarra        → Flinders Street    │   │ │
+│  │  │  15 min South Yarra        → Flinders Street    │   │ │
+│  │  └─────────────────────────────────────────────────┘   │ │
+│  └─────────────────────────────────────────────────────────┘ │
+├───────────────────────────────────────────────────────────────┤
+│  ZONE 4: ALERTS (380-420px) - CONDITIONAL                     │
+│  ┌─────────────────────────────────────────────────────────┐ │
+│  │  ⚠️ Sandringham line: Minor delays                      │ │
+│  └─────────────────────────────────────────────────────────┘ │
+├───────────────────────────────────────────────────────────────┤
+│  ZONE 5: FOOTER (420-480px)                                   │
+│  ┌─────────────────────────────────────────────────────────┐ │
+│  │  ☕ Norman Hotel (optional)  •  🏠→🏢 18 min total       │ │
+│  └─────────────────────────────────────────────────────────┘ │
+└───────────────────────────────────────────────────────────────┘
+```
+
+**Zone Refresh Rules:**
+
+| Zone | Content | Refresh Frequency |
+|------|---------|-------------------|
+| HEADER | Time, date | Every 60 seconds |
+| STATUS_BAR | Leave time, delay status | Every 20 seconds |
+| TRANSIT_INFO | Departures, platforms | Every 20 seconds |
+| ALERTS | Service alerts | Every 60 seconds |
+| FOOTER | Journey summary, coffee | Every 2 minutes |
+
+**Server Response Format:**
+```javascript
+// GET /api/zones
+{
+    "timestamp": "2026-01-28T08:05:00.000Z",
+    "zones": {
+        "header": {
+            "time": "08:05",
+            "date": "Mon 28 Jan",
+            "changed": true
+        },
+        "statusBar": {
+            "leaveBy": "08:12",
+            "status": "on-time",
+            "journeyTime": "18 min",
+            "changed": true
+        },
+        "transitInfo": {
+            "modes": [
+                {
+                    "type": "tram",
+                    "route": "58",
+                    "departures": [...]
+                },
+                {
+                    "type": "train",
+                    "line": "Sandringham",
+                    "departures": [...]
+                }
+            ],
+            "changed": true
+        },
+        "alerts": {
+            "active": true,
+            "messages": ["Sandringham line: Minor delays"],
+            "changed": false
+        },
+        "footer": {
+            "coffeeStop": "Norman Hotel",
+            "coffeeEnabled": true,
+            "totalJourney": "18 min",
+            "changed": false
+        }
+    },
+    "fullRefreshDue": false,
+    "nextRefreshMs": 20000
+}
+```
+
+#### 4. Route Calculation (Server-Side)
+
+**MANDATORY**: All route planning happens on the server.
+
+```javascript
+// Server: src/services/route-planner.js
+class RoutePlanner {
+    constructor(preferences) {
+        this.homeAddress = preferences.homeAddress;
+        this.workAddress = preferences.workAddress;
+        this.homeStop = preferences.homeStop;
+        this.workStop = preferences.workStop;
+        this.arrivalTime = preferences.arrivalTime;
+        this.coffeeStop = preferences.coffeeStop;
+    }
+    
+    async calculateJourney() {
+        // 1. Get real-time departures from home stop
+        const departures = await this.fetchDepartures(this.homeStop);
+        
+        // 2. Calculate optimal departure time
+        const leaveBy = this.calculateLeaveTime(departures);
+        
+        // 3. Check for delays/disruptions
+        const alerts = await this.checkAlerts();
+        
+        // 4. Apply coffee stop logic
+        const coffeeDecision = this.evaluateCoffeeStop(leaveBy, alerts);
+        
+        // 5. Build journey segments
+        return {
+            leaveBy,
+            departures: this.formatDepartures(departures),
+            alerts,
+            coffeeStop: coffeeDecision,
+            totalJourney: this.calculateTotalTime()
+        };
+    }
+}
+```
+
+**Route Calculation Rules:**
+- ✅ Calculate leave time based on arrival requirement
+- ✅ Factor in walking times to/from stops
+- ✅ Apply delay buffers when services disrupted
+- ✅ Coffee stop logic: skip if running late, extend if early
+- ✅ Multi-modal journey support (tram + train)
+
+#### 5. Device Communication Protocol
+
+**MANDATORY**: Devices communicate ONLY with their configured server.
+
+**TRMNL Devices (ESP32-C3):**
+```cpp
+// firmware/include/config.h
+#define SERVER_URL "https://ptv-trmnl-[user].vercel.app"
+
+// firmware/src/main.cpp
+void fetchZoneData() {
+    HTTPClient http;
+    String url = String(SERVER_URL) + "/api/zones";
+    
+    http.begin(url);
+    http.addHeader("X-Device-ID", WiFi.macAddress());
+    http.setTimeout(10000);
+    
+    int httpCode = http.GET();
+    if (httpCode == 200) {
+        String payload = http.getString();
+        processZones(payload);
+    }
+}
+```
+
+**Kindle Devices (Python):**
+```python
+# kindle/ptv-trmnl-kindle.py
+SERVER_URL = "https://ptv-trmnl-[user].vercel.app"
+
+def fetch_image():
+    response = requests.get(
+        f"{SERVER_URL}/api/kindle/image",
+        params={"device": "kindle-pw5"},
+        timeout=15
+    )
+    return response.content  # PNG bytes
+```
+
+**Required Server Endpoints:**
+
+| Endpoint | Device Type | Response |
+|----------|-------------|----------|
+| `/api/zones` | TRMNL | JSON zone data |
+| `/api/screen` | TRMNL (webhook) | PNG image |
+| `/api/kindle/image?device=X` | Kindle | PNG at device resolution |
+| `/api/setup-status` | All | Setup completion status |
+| `/api/status` | All | Server health |
+
+### 🖥️ Server Hosting Requirements
+
+#### Supported Platforms
+
+| Platform | URL Format | Free Tier | Notes |
+|----------|------------|-----------|-------|
+| **Vercel** (Recommended) | `ptv-trmnl-[name].vercel.app` | ✅ Yes | No sleep, instant deploys |
+| **Render** | `ptv-trmnl-[name].onrender.com` | ⚠️ Limited | Sleeps after 15min |
+| **Railway** | `ptv-trmnl-[name].up.railway.app` | ✅ Yes | Good alternative |
+| **Self-hosted** | Custom domain | N/A | Full control |
+
+#### Environment Variables
+
+**MANDATORY** environment variables for server:
+
+```bash
+# Required for real-time data (strongly recommended)
+ODATA_API_KEY=ce606b90-9ffb-43e8-...  # Transport Victoria
+
+# Optional but recommended
+GOOGLE_PLACES_API_KEY=AIzaSy...       # Address autocomplete
+NODE_ENV=production
+```
+
+**PROHIBITED:**
+- ❌ NEVER commit API keys to git
+- ❌ NEVER hardcode keys in source files
+- ❌ NEVER share keys between users
+
+### 📱 Device Firmware Requirements
+
+#### Server URL Configuration
+
+**MANDATORY**: Device must be configurable with user's server URL.
+
+**Methods (in priority order):**
+1. **WiFi Captive Portal** - User enters URL during first-time setup
+2. **Web Flasher** - URL embedded at flash time
+3. **Config Header** - `firmware/include/config.h` before build
+
+```cpp
+// firmware/include/config.h
+// User MUST change this before building
+#define SERVER_URL "https://ptv-trmnl-CHANGEME.vercel.app"
+
+// Validate at compile time
+#if !defined(SERVER_URL) || SERVER_URL == ""
+#error "SERVER_URL must be defined!"
+#endif
+```
+
+#### Refresh Cycle (HARDCODED)
+
+**MANDATORY**: 20-second partial refresh, 10-minute full refresh.
+
+```cpp
+// These values are HARDCODED - do not change
+#define PARTIAL_REFRESH_MS 20000    // 20 seconds
+#define FULL_REFRESH_INTERVAL 30    // Every 30 partials = 10 minutes
+
+void loop() {
+    static int refreshCount = 0;
+    
+    delay(PARTIAL_REFRESH_MS);
+    
+    String zoneData = fetchZoneData();
+    
+    if (++refreshCount >= FULL_REFRESH_INTERVAL) {
+        fullRefresh(zoneData);
+        refreshCount = 0;
+    } else {
+        partialRefresh(zoneData);
+    }
+}
+```
+
+### 🔒 Security Requirements
+
+#### API Key Isolation
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  SECURITY MODEL                                                 │
+│                                                                 │
+│  ✅ CORRECT:                                                    │
+│  ┌─────────────────────┐                                       │
+│  │ User's Server       │                                       │
+│  │ ENV: ODATA_API_KEY  │──▶ Transport Victoria API             │
+│  │ (user's own key)    │                                       │
+│  └─────────────────────┘                                       │
+│                                                                 │
+│  ❌ PROHIBITED:                                                 │
+│  ┌─────────────────────┐                                       │
+│  │ Central Server      │                                       │
+│  │ (shared API key)    │  ❌ NEVER DO THIS                     │
+│  └─────────────────────┘                                       │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### Device-Server Trust
+
+- Device only communicates with configured `SERVER_URL`
+- Device sends MAC address for identification
+- Server validates device before responding
+- HTTPS required for all communication
+
+### 📋 Distribution Compliance Checklist
+
+Before merging distribution-related changes:
+
+```
+□ Server renders all images (no device-side rendering)
+□ Zone data format matches specification
+□ All required endpoints implemented
+□ SERVER_URL configurable (not hardcoded to central server)
+□ API keys stored in environment variables only
+□ 20-second partial refresh maintained
+□ 10-minute full refresh maintained
+□ Kindle endpoint returns correct resolutions
+□ Setup status endpoint exists for device polling
+□ Fork-based deployment documented
+□ Vercel/Render deploy buttons tested
+□ Device firmware accepts custom server URL
+□ No cross-user data leakage possible
+```
+
+### 📚 Reference Implementation
+
+**Server entry point:**
+```javascript
+// server.js
+import express from 'express';
+import { RoutePlanner } from './services/route-planner.js';
+import { DashboardRenderer } from './services/dashboard-renderer.js';
+
+const app = express();
+const planner = new RoutePlanner(loadPreferences());
+const renderer = new DashboardRenderer();
+
+// Zone data for TRMNL devices
+app.get('/api/zones', async (req, res) => {
+    const journey = await planner.calculateJourney();
+    const zones = renderer.toZones(journey);
+    res.json(zones);
+});
+
+// PNG image for TRMNL webhook
+app.get('/api/screen', async (req, res) => {
+    const journey = await planner.calculateJourney();
+    const png = await renderer.toPNG(journey, { width: 800, height: 480 });
+    res.type('image/png').send(png);
+});
+
+// PNG image for Kindle
+app.get('/api/kindle/image', async (req, res) => {
+    const device = req.query.device || 'kindle-pw3';
+    const resolution = KINDLE_RESOLUTIONS[device];
+    const journey = await planner.calculateJourney();
+    const png = await renderer.toPNG(journey, resolution);
+    res.type('image/png').send(png);
+});
+
+// Setup status check
+app.get('/api/setup-status', (req, res) => {
+    const prefs = loadPreferences();
+    res.json({
+        setupComplete: !!(prefs.homeAddress && prefs.homeStop),
+        serverTime: new Date().toISOString(),
+        version: '3.0.0'
+    });
+});
+```
+
+---
