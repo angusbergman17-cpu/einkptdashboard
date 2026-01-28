@@ -38,7 +38,7 @@ async function buildData() {
 export default async function handler(req, res) {
   try {
     const forceAll = req.query.force === 'true';
-    const batch = parseInt(req.query.batch) || 0;
+    const batch = req.query.batch !== undefined ? parseInt(req.query.batch) : 0; // Default to batch 0 for ESP32 compat
     const data = await buildData();
     const allIds = v11Renderer.getChangedZones(data, forceAll);
     
