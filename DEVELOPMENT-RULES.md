@@ -1,7 +1,7 @@
 # PTV-TRMNL Development Rules v3.0
 
 **MANDATORY COMPLIANCE DOCUMENT**  
-**Version: 3.1.0  
+**Version: 3.2.0  
 **Last Updated: 2026-01-29  
 **Copyright (c) 2026 Angus Bergman - Licensed under CC BY-NC 4.0**
 
@@ -16,6 +16,7 @@
 | API Data Sources | 🟠 HIGH | Incorrect/missing transit data |
 | BMP Rendering Rules | 🟠 HIGH | Display artifacts, memory issues |
 | Location Agnostic Architecture | 🔴 CRITICAL | System fails for non-VIC users |
+| Private Data Protection | 🔴 CRITICAL | Security breach, key exposure |
 | Architecture Boundaries | 🟡 MEDIUM | Maintenance burden, tech debt |
 
 ---
@@ -234,6 +235,61 @@ module.exports = {
 - [ ] Transit mode selection works for all route_types (0-4)
 - [ ] Fallback data exists for target states
 - [ ] UI labels use generic terms ("Train" not "Metro Trains Melbourne")
+
+---
+
+
+### 1.5 Private Data Protection (🚨 CRITICAL)
+
+**ABSOLUTE REQUIREMENT**: No private information may appear in public repositories.
+
+**Prohibited in Public Code/Docs:**
+
+| Data Type | Example | Status |
+|-----------|---------|--------|
+| API Keys | `AIzaSy...`, `ce606b90-...` | 🔴 FORBIDDEN |
+| Home/Work Addresses | `1 Clara Street, South Yarra` | 🔴 FORBIDDEN |
+| Personal Coordinates | `-37.8401, 144.9835` | 🔴 FORBIDDEN |
+| Device IDs | Specific TRMNL device identifiers | 🔴 FORBIDDEN |
+| Email Addresses | Personal email addresses | 🔴 FORBIDDEN |
+| Phone Numbers | Any personal phone numbers | 🔴 FORBIDDEN |
+
+**Use Placeholders Instead:**
+
+```javascript
+// ❌ FORBIDDEN in public code:
+const API_KEY = 'AIzaSyA9WYpRfLtBiEQfvTD-ac4ImHBohHsv3yQ';
+const HOME = '1 Clara Street, South Yarra VIC';
+
+// ✅ CORRECT - Use placeholders:
+const API_KEY = process.env.GOOGLE_PLACES_API_KEY || 'YOUR_API_KEY';
+const HOME = config.addresses?.home || '123 Example Street, Melbourne VIC';
+```
+
+**Documentation Examples Must Use:**
+- `YOUR_API_KEY` or `<API_KEY_HERE>`
+- `123 Example Street, Melbourne VIC 3000`
+- `80 Collins Street, Melbourne VIC 3000`
+- `-37.8136, 144.9631` (Melbourne CBD - public landmark)
+- `user@example.com`
+
+**Testing with Real Data:**
+- Real API keys and addresses stored in `PRIVATE-CONFIG.md` (gitignored)
+- CI/CD uses environment secrets, never committed values
+- Test logs must be scrubbed before committing
+
+**Pre-Commit Checklist (Private Data):**
+- [ ] `git diff --cached` shows NO real API keys
+- [ ] `git diff --cached` shows NO personal addresses
+- [ ] `git diff --cached` shows NO private coordinates
+- [ ] All examples use placeholder values
+- [ ] Test output logs are scrubbed
+
+**If Private Data is Accidentally Committed:**
+1. **IMMEDIATELY** rotate the exposed API key
+2. Use `git filter-branch` or BFG Repo Cleaner to purge history
+3. Force push the cleaned history
+4. Document the incident
 
 ---
 

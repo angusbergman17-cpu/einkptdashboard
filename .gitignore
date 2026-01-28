@@ -26,3 +26,4 @@ cache/
 user-preferences.json
 devices.json
 user-preferences.json
+\n# Private configuration (never commit)\nPRIVATE-CONFIG.md\n.env\n.env.local\n*.secret
