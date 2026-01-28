@@ -118,24 +118,76 @@ class JourneyPlanner {
   /**
    * Find stops near a location
    */
-  findNearbyStops(location, allStops, limit = 5) {
+  /**
+   * Find nearby stops with route preference support
+   * @param {Object} location - Location with lat/lon
+   * @param {Array} allStops - All available stops
+   * @param {number} limit - Max stops to return
+   * @param {Object} routePrefs - Optional route preferences from config
+   */
+  findNearbyStops(location, allStops, limit = 5, routePrefs = null) {
     if (!location?.lat || !location?.lon || !allStops?.length) {
       return [];
     }
 
+    // Default preferences (can be overridden by config)
+    const prefs = routePrefs || {
+      optimizeFor: 'minimal-walking',
+      walking: {
+        maxDistanceMeters: 500,
+        idealDistanceMeters: 300,
+        weightFactor: 2.0
+      },
+      modePriority: { train: 1, tram: 2, vline: 2, bus: 3 }
+    };
+
+    // Map route_type to mode name for priority lookup
+    const routeTypeToMode = { 0: 'train', 1: 'tram', 2: 'bus', 3: 'vline' };
+    const maxDist = prefs.walking?.maxDistanceMeters || 500;
+    const idealDist = prefs.walking?.idealDistanceMeters || 300;
+    const walkWeight = prefs.walking?.weightFactor || 2.0;
+
     return allStops
-      .map(stop => ({
-        ...stop,
-        distance: this.haversineDistance(location.lat, location.lon, stop.lat, stop.lon),
-        walkingMinutes: Math.ceil(this.haversineDistance(location.lat, location.lon, stop.lat, stop.lon) / 80),
-        icon: this.getModeIcon(stop.route_type)
-      }))
-      .filter(stop => stop.distance < 2000) // Within 2km
+      .map(stop => {
+        const distance = this.haversineDistance(location.lat, location.lon, stop.lat, stop.lon);
+        const walkingMinutes = Math.ceil(distance / 80); // ~80m/min walking
+        return {
+          ...stop,
+          distance,
+          walkingMinutes,
+          icon: this.getModeIcon(stop.route_type),
+          withinIdeal: distance <= idealDist,
+          withinMax: distance <= maxDist
+        };
+      })
+      .filter(stop => {
+        // When optimizing for minimal walking, strictly enforce max distance
+        if (prefs.optimizeFor === 'minimal-walking') {
+          return stop.distance <= maxDist;
+        }
+        return stop.distance < 2000; // Fallback: 2km max
+      })
       .sort((a, b) => {
-        // Prioritize by mode (train > tram > bus), then by distance
-        const modePriority = { 0: 1, 1: 2, 2: 3, 3: 1.5 }; // train, tram, bus, vline
-        const aPriority = modePriority[a.route_type] || 4;
-        const bPriority = modePriority[b.route_type] || 4;
+        // When optimizing for minimal walking: distance first, then mode
+        if (prefs.optimizeFor === 'minimal-walking') {
+          // Prefer stops within ideal distance
+          if (a.withinIdeal && !b.withinIdeal) return -1;
+          if (!a.withinIdeal && b.withinIdeal) return 1;
+          // Then sort by distance (weighted)
+          const distDiff = (a.distance * walkWeight) - (b.distance * walkWeight);
+          if (Math.abs(distDiff) > 50) return distDiff; // Significant distance difference
+          // If similar distance, prefer better mode
+          const aMode = routeTypeToMode[a.route_type] || 'bus';
+          const bMode = routeTypeToMode[b.route_type] || 'bus';
+          const aPriority = prefs.modePriority[aMode] || 4;
+          const bPriority = prefs.modePriority[bMode] || 4;
+          return aPriority - bPriority;
+        }
+        // Default: mode first, then distance
+        const aMode = routeTypeToMode[a.route_type] || 'bus';
+        const bMode = routeTypeToMode[b.route_type] || 'bus';
+        const aPriority = prefs.modePriority[aMode] || 4;
+        const bPriority = prefs.modePriority[bMode] || 4;
         if (aPriority !== bPriority) return aPriority - bPriority;
         return a.distance - b.distance;
       })
@@ -282,156 +334,6 @@ class JourneyPlanner {
   /**
    * Haversine distance in meters
    */
-/**
- * Build journey segments with multi-modal support
- * Supports: Home → Coffee → Tram → Train → Office
- */
-buildMultiModalSegments(params) {
-  const { 
-    homeLocation, 
-    workLocation, 
-    cafeLocation, 
-    tramStop,      // First leg: tram
-    trainStop,     // Second leg: train (interchange)
-    destStop,      // Final destination stop
-    workStartTime, 
-    cafeDuration = 5,
-    interchangeWalk = 3  // Walk time between tram and train
-  } = params;
-  
-  const segments = [];
-
-  // Segment 1: Walk to Cafe
-  if (cafeLocation) {
-    const walkToCafe = Math.ceil(this.haversineDistance(
-      homeLocation.lat, homeLocation.lon,
-      cafeLocation.lat, cafeLocation.lon
-    ) / 80); // 80m/min walking speed
-    
-    segments.push({
-      type: 'walk',
-      from: 'Home',
-      to: cafeLocation.name || 'Cafe',
-      minutes: walkToCafe || 3,
-      time: ''
-    });
-
-    // Segment 2: Coffee stop
-    segments.push({
-      type: 'coffee',
-      location: cafeLocation.name || 'Cafe',
-      minutes: cafeDuration,
-      time: ''
-    });
-
-    // Segment 3: Walk from Cafe to Tram
-    const walkToTram = Math.ceil(this.haversineDistance(
-      cafeLocation.lat, cafeLocation.lon,
-      tramStop.lat, tramStop.lon
-    ) / 80) || 2;
-    
-    segments.push({
-      type: 'walk',
-      from: cafeLocation.name || 'Cafe',
-      to: tramStop.name,
-      minutes: walkToTram,
-      time: ''
-    });
-  } else {
-    // No cafe: walk directly to tram
-    const walkToTram = Math.ceil(this.haversineDistance(
-      homeLocation.lat, homeLocation.lon,
-      tramStop.lat, tramStop.lon
-    ) / 80) || 5;
-    
-    segments.push({
-      type: 'walk',
-      from: 'Home',
-      to: tramStop.name,
-      minutes: walkToTram,
-      time: ''
-    });
-  }
-
-  // Segment 4: Wait for tram
-  segments.push({
-    type: 'wait',
-    location: tramStop.name,
-    minutes: 2,
-    time: ''
-  });
-
-  // Segment 5: Tram leg
-  const tramTime = this.estimateTransitTime(tramStop, trainStop) || 8;
-  segments.push({
-    type: 'transit',
-    mode: 'Tram',
-    icon: '🚋',
-    from: tramStop.name,
-    to: trainStop.name + ' interchange',
-    minutes: tramTime,
-    time: '',
-    routeType: 1  // Tram
-  });
-
-  // Segment 6: Walk to train (interchange)
-  segments.push({
-    type: 'walk',
-    from: tramStop.name + ' (Tram)',
-    to: trainStop.name + ' Station',
-    minutes: interchangeWalk,
-    time: ''
-  });
-
-  // Segment 7: Wait for train
-  segments.push({
-    type: 'wait',
-    location: trainStop.name + ' Station',
-    minutes: 3,
-    time: ''
-  });
-
-  // Segment 8: Train leg
-  const trainTime = this.estimateTransitTime(trainStop, destStop) || 6;
-  segments.push({
-    type: 'transit',
-    mode: 'Train',
-    icon: '🚆',
-    from: trainStop.name,
-    to: destStop.name,
-    minutes: trainTime,
-    time: '',
-    routeType: 0  // Train
-  });
-
-  // Segment 9: Walk to office
-  const walkToWork = Math.ceil(this.haversineDistance(
-    destStop.lat, destStop.lon,
-    workLocation.lat, workLocation.lon
-  ) / 80) || 5;
-  
-  segments.push({
-    type: 'walk',
-    from: destStop.name,
-    to: 'Work',
-    minutes: walkToWork,
-    time: ''
-  });
-
-  // Calculate times backwards from arrival
-  const [hours, mins] = workStartTime.split(':').map(Number);
-  let currentMinutes = hours * 60 + mins;
-  
-  for (let i = segments.length - 1; i >= 0; i--) {
-    currentMinutes -= segments[i].minutes;
-    const h = Math.floor(currentMinutes / 60);
-    const m = currentMinutes % 60;
-    segments[i].time = `${String(h).padStart(2, '0')}:${String(Math.abs(m)).padStart(2, '0')}`;
-  }
-
-  return segments;
-}
-
   haversineDistance(lat1, lon1, lat2, lon2) {
     const R = 6371000;
     const φ1 = lat1 * Math.PI / 180;
@@ -462,111 +364,509 @@ buildMultiModalSegments(params) {
     const icons = { 0: '🚆', 1: '🚊', 2: '🚌', 3: '🚄', 4: '⛴️' };
     return icons[routeType] || '🚇';
   }
-}
 
-export default JourneyPlanner;
+  /**
+   * Auto-discover route alternatives from home to work
+   * Finds all viable routes and ranks by user preferences
+   * @param {Object} locations - { home, cafe, work } with lat/lon
+   * @param {Array} allStops - All available stops from timetable
+   * @param {Object} routePrefs - Route preferences from config
+   * @returns {Array} Ranked list of route alternatives
+   */
+  discoverRouteAlternatives(locations, allStops, routePrefs) {
+    console.log('🔍 Auto-discovering route alternatives...');
+    
+    const maxWalk = routePrefs?.walking?.maxDistanceMeters || 500;
+    const walkWeight = routePrefs?.walking?.weightFactor || 2.0;
+    const alternatives = [];
 
-/**
- * Calculate multi-modal journey: Home → Coffee → Tram → Train → Office
- * This is the preferred route for Angus's commute
- */
-async calculateMultiModalJourney(params) {
-  const {
-    homeLocation,
-    workLocation,
-    cafeLocation,
-    workStartTime,
-    cafeDuration = 5,
-    transitAuthority = 'VIC',
-    routePreference = 'tram-train'  // 'tram-train', 'train-only', 'tram-only'
-  } = params;
+    // Find all stops near home and work
+    const homeStops = this.findNearbyStops(locations.home, allStops, 10, routePrefs);
+    const workStops = this.findNearbyStops(locations.work, allStops, 10, routePrefs);
+    
+    console.log('  Found', homeStops.length, 'stops near home');
+    console.log('  Found', workStops.length, 'stops near work');
 
-  console.log('🚋🚆 Calculating multi-modal journey (Tram → Train)');
-  console.log('   Home:', homeLocation?.formattedAddress);
-  console.log('   Cafe:', cafeLocation?.name || 'None');
-  console.log('   Work:', workLocation?.formattedAddress);
-  console.log('   Route Preference:', routePreference);
+    // Group stops by route for better alternative discovery
+    const homeByRoute = this.groupStopsByRoute(homeStops);
+    const workByRoute = this.groupStopsByRoute(workStops);
 
-  try {
-    const fallbackStops = global.fallbackTimetables?.getStopsForState?.(transitAuthority) || [];
-    
-    // Find tram stops near home/cafe
-    const tramStops = fallbackStops.filter(s => s.route_type === 1); // Tram
-    const trainStops = fallbackStops.filter(s => s.route_type === 0); // Train
-    
-    // Find nearest tram stop to home (or cafe if specified)
-    const tramOrigin = cafeLocation 
-      ? this.findNearbyStops(cafeLocation, tramStops, 1)[0]
-      : this.findNearbyStops(homeLocation, tramStops, 1)[0];
-    
-    // Find interchange station (train station accessible via tram)
-    // For South Yarra → CBD, Richmond is a common interchange
-    const interchangeStations = trainStops.filter(s => 
-      ['Richmond', 'Flinders Street', 'Southern Cross', 'Melbourne Central'].includes(s.name)
-    );
-    const interchange = interchangeStations[0] || trainStops[0];
-    
-    // Find destination train stop (near work)
-    const destStop = this.findNearbyStops(workLocation, trainStops, 1)[0];
-    
-    if (!tramOrigin || !interchange || !destStop) {
-      return {
-        success: false,
-        error: 'Could not find suitable stops for multi-modal route'
-      };
+    // Strategy 1: Direct routes (same route serves both areas)
+    for (const [routeId, homeRouteStops] of Object.entries(homeByRoute)) {
+      if (workByRoute[routeId]) {
+        const workRouteStops = workByRoute[routeId];
+        const bestHome = homeRouteStops[0];
+        const bestWork = workRouteStops[0];
+        
+        alternatives.push({
+          id: 'direct-' + routeId,
+          name: bestHome.route_name || this.getModeName(bestHome.route_type) + ' ' + (bestHome.route_number || ''),
+          type: 'direct',
+          modes: [{
+            type: bestHome.route_type,
+            routeNumber: bestHome.route_number,
+            routeName: bestHome.route_name,
+            originStation: bestHome,
+            destinationStation: bestWork,
+            estimatedDuration: this.estimateTransitTime(bestHome, bestWork)
+          }],
+          totalWalking: bestHome.distance + bestWork.distance,
+          totalTransit: this.estimateTransitTime(bestHome, bestWork),
+          score: this.scoreRoute([bestHome, bestWork], routePrefs)
+        });
+      }
     }
 
-    // Build multi-modal segments
-    const segments = this.buildMultiModalSegments({
-      homeLocation,
-      workLocation,
-      cafeLocation,
-      tramStop: tramOrigin,
-      trainStop: interchange,
-      destStop,
-      workStartTime,
-      cafeDuration
+    // Strategy 2: Multi-modal via interchange stations
+    const interchanges = this.findInterchangeStations(allStops);
+    
+    for (const homeStop of homeStops.slice(0, 5)) {
+      for (const interchange of interchanges) {
+        // Check if homeStop's route goes to this interchange
+        const interchangeStops = allStops.filter(s => 
+          s.stop_id === interchange.stop_id || 
+          (Math.abs(s.lat - interchange.lat) < 0.001 && Math.abs(s.lon - interchange.lon) < 0.001)
+        );
+        
+        for (const workStop of workStops.slice(0, 5)) {
+          // Check if there's a connecting route from interchange to work
+          const connectingStops = interchangeStops.filter(s => 
+            s.route_type === workStop.route_type || this.routesConnect(s, workStop, allStops)
+          );
+          
+          if (connectingStops.length > 0) {
+            const connecting = connectingStops[0];
+            const walkToInterchange = this.haversineDistance(
+              homeStop.lat, homeStop.lon, connecting.lat, connecting.lon
+            );
+            
+            // Only include if transfer walk is reasonable
+            if (walkToInterchange < 300) {
+              alternatives.push({
+                id: 'multi-' + homeStop.route_number + '-' + interchange.name + '-' + workStop.route_number,
+                name: (homeStop.route_number || this.getModeName(homeStop.route_type)) + 
+                      ' via ' + interchange.name + ' to ' + 
+                      (workStop.route_number || this.getModeName(workStop.route_type)),
+                type: 'multi-modal',
+                via: interchange.name,
+                modes: [
+                  {
+                    type: homeStop.route_type,
+                    routeNumber: homeStop.route_number,
+                    originStation: homeStop,
+                    destinationStation: { ...connecting, name: interchange.name }
+                  },
+                  {
+                    type: workStop.route_type,
+                    routeNumber: workStop.route_number,
+                    originStation: { ...connecting, name: interchange.name },
+                    destinationStation: workStop
+                  }
+                ],
+                totalWalking: homeStop.distance + walkToInterchange + workStop.distance,
+                totalTransit: this.estimateTransitTime(homeStop, connecting) + 
+                              this.estimateTransitTime(connecting, workStop),
+                score: this.scoreRoute([homeStop, connecting, workStop], routePrefs)
+              });
+            }
+          }
+        }
+      }
+    }
+
+    // Sort by score (lower = better)
+    alternatives.sort((a, b) => a.score - b.score);
+    
+    // Remove duplicates and limit
+    const seen = new Set();
+    const unique = alternatives.filter(alt => {
+      const key = alt.modes.map(m => m.routeNumber + '-' + m.originStation?.name).join('|');
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    }).slice(0, 5);
+
+    console.log('✅ Discovered', unique.length, 'route alternatives');
+    unique.forEach((alt, i) => {
+      console.log('  ', i + 1 + '.', alt.name, '- score:', alt.score.toFixed(1));
     });
 
-    const totalMinutes = segments.reduce((sum, seg) => sum + (seg.minutes || 0), 0);
+    return unique;
+  }
+
+  /**
+   * Group stops by their route ID
+   */
+  groupStopsByRoute(stops) {
+    const grouped = {};
+    for (const stop of stops) {
+      const routeId = stop.route_id || stop.route_number || stop.route_type;
+      if (!grouped[routeId]) grouped[routeId] = [];
+      grouped[routeId].push(stop);
+    }
+    return grouped;
+  }
+
+  /**
+   * Find major interchange stations (stations with multiple modes)
+   */
+  findInterchangeStations(allStops) {
+    // Group stops by location (within 200m)
+    const locations = {};
+    for (const stop of allStops) {
+      const key = Math.round(stop.lat * 500) + ',' + Math.round(stop.lon * 500);
+      if (!locations[key]) locations[key] = [];
+      locations[key].push(stop);
+    }
     
-    // Calculate departure time
-    const [hours, mins] = workStartTime.split(':').map(Number);
-    const arrivalMinutes = hours * 60 + mins;
+    // Find locations with multiple route types (interchange)
+    const interchanges = [];
+    for (const stops of Object.values(locations)) {
+      const types = new Set(stops.map(s => s.route_type));
+      if (types.size > 1) {
+        // This is an interchange - has multiple modes
+        const trainStop = stops.find(s => s.route_type === 0);
+        interchanges.push(trainStop || stops[0]);
+      }
+    }
+    
+    return interchanges;
+  }
+
+  /**
+   * Check if two routes connect (share a stop)
+   */
+  routesConnect(stop1, stop2, allStops) {
+    // Simplified: check if they're the same route type or at same location
+    return stop1.route_id === stop2.route_id;
+  }
+
+  /**
+   * Score a route based on preferences (lower = better)
+   */
+  scoreRoute(stops, routePrefs) {
+    const walkWeight = routePrefs?.walking?.weightFactor || 2.0;
+    const modePriority = routePrefs?.modePriority || { train: 1, tram: 2, vline: 2, bus: 3 };
+    const routeTypeToMode = { 0: 'train', 1: 'tram', 2: 'bus', 3: 'vline' };
+    
+    let score = 0;
+    
+    // Walking penalty (weighted)
+    for (const stop of stops) {
+      if (stop.distance) {
+        score += (stop.distance / 100) * walkWeight;
+      }
+    }
+    
+    // Mode preference bonus
+    for (const stop of stops) {
+      const mode = routeTypeToMode[stop.route_type] || 'bus';
+      score += modePriority[mode] || 3;
+    }
+    
+    // Fewer transfers is better
+    score += (stops.length - 2) * 5;
+    
+    return score;
+  }
+
+  /**
+   * Use user's saved/selected route alternative
+   * @param {Object} savedRoute - Saved route config from preferences
+   * @param {Object} locations - { home, cafe, work } with lat/lon
+   * @param {string} arrivalTime - Target arrival time
+   */
+  useSelectedRoute(savedRoute, locations, arrivalTime) {
+    if (!savedRoute?.enabled || !savedRoute?.alternatives?.length) {
+      console.log('⚠️  No saved route configured, using auto-calculation');
+      return null;
+    }
+
+    const selectedIndex = savedRoute.selectedAlternative || 0;
+    const selected = savedRoute.alternatives[selectedIndex];
+    
+    if (!selected) {
+      console.log('⚠️  Selected alternative not found');
+      return null;
+    }
+
+    console.log('📍 Using saved route:', selected.name);
+    
+    // Build modes array from the selected alternative
+    const modes = selected.modes.map(m => ({
+      type: m.type,
+      routeNumber: m.routeNumber,
+      originStation: m.originStation,
+      destinationStation: m.destinationStation,
+      estimatedDuration: m.estimatedDuration || null
+    }));
+
+    return {
+      routeId: selected.id,
+      routeName: selected.name,
+      description: selected.description,
+      modes
+    };
+  }
+
+  /**
+   * Get available route alternatives for display/selection
+   * @param {Object} routePrefs - Route preferences from config
+   */
+  getRouteAlternatives(routePrefs) {
+    const alternatives = routePrefs?.savedRoute?.alternatives || [];
+    const selectedIndex = routePrefs?.savedRoute?.selectedAlternative || 0;
+    
+    return alternatives.map((alt, index) => ({
+      ...alt,
+      isSelected: index === selectedIndex,
+      index
+    }));
+  }
+
+  /**
+   * Smart journey planner - auto-discovers alternatives and uses preferred route
+   * @param {Object} params.locations - { home, cafe, work }
+   * @param {Array} params.allStops - All stops from timetable data
+   * @param {Object} params.routePrefs - User's route preferences
+   * @param {string} params.arrivalTime - Target arrival time
+   * @param {number} params.selectedAlternative - Index of selected alternative (optional)
+   */
+  async calculateWithPreferredRoute(params) {
+    const { locations, allStops, routePrefs, arrivalTime, cafeDuration, selectedAlternative } = params;
+    
+    // Auto-discover route alternatives
+    let alternatives = [];
+    if (allStops?.length > 0) {
+      alternatives = this.discoverRouteAlternatives(locations, allStops, routePrefs);
+    }
+    
+    // Check if user has manually selected an alternative
+    const selectedIndex = selectedAlternative ?? routePrefs?.savedRoute?.selectedAlternative ?? 0;
+    
+    // Use discovered alternative if available
+    if (alternatives.length > 0) {
+      const selected = alternatives[Math.min(selectedIndex, alternatives.length - 1)];
+      console.log('✅ Using discovered route:', selected.name);
+      
+      const result = this.calculateMultiModalJourney({
+        locations,
+        modes: selected.modes,
+        routePrefs,
+        arrivalTime,
+        cafeDuration
+      });
+      
+      // Attach alternatives to result for UI
+      if (result.success) {
+        result.alternatives = alternatives;
+        result.selectedAlternative = selectedIndex;
+      }
+      
+      return result;
+    }
+    
+    // Check for manually saved route
+    const savedRoute = this.useSelectedRoute(routePrefs?.savedRoute, locations, arrivalTime);
+    if (savedRoute?.modes?.length > 0) {
+      console.log('✅ Using saved route:', savedRoute.routeName);
+      return this.calculateMultiModalJourney({
+        locations,
+        modes: savedRoute.modes,
+        routePrefs,
+        arrivalTime,
+        cafeDuration
+      });
+    }
+    
+    // Fall back to basic auto-calculation
+    console.log('🔄 No alternatives found, using basic calculation...');
+    return this.calculateJourney({
+      homeLocation: locations.home,
+      workLocation: locations.work,
+      cafeLocation: locations.cafe,
+      workStartTime: arrivalTime,
+      cafeDuration
+    });
+  }
+
+  /**
+   * Calculate multi-modal journey with up to 4 transit modes
+   * Supports: Walk → Mode1 → [Walk] → Mode2 → [Walk] → Mode3 → [Walk] → Mode4 → Walk
+   * @param {Object} params - Journey parameters
+   * @param {Object} params.locations - { home, cafe, work } with lat/lon
+   * @param {Array} params.modes - Array of mode configs (1-4 modes)
+   * @param {Object} params.routePrefs - Route preferences from config
+   * @param {string} params.arrivalTime - Target arrival time (HH:MM)
+   */
+  calculateMultiModalJourney(params) {
+    const { locations, modes, routePrefs, arrivalTime, cafeDuration = 5 } = params;
+    const segments = [];
+    
+    if (!modes || modes.length === 0 || modes.length > 4) {
+      return { success: false, error: 'Must have 1-4 transit modes' };
+    }
+
+    console.log('🗺️  Calculating multi-modal journey with', modes.length, 'mode(s)');
+
+    // Get walking constraints from preferences
+    const maxWalk = routePrefs?.walking?.maxDistanceMeters || 500;
+    const walkSpeed = 80; // meters per minute
+
+    // Track current position through the journey
+    let currentPos = locations.home;
+    let totalMinutes = 0;
+
+    // Optional: Start with cafe
+    if (locations.cafe) {
+      const walkToCafe = this.haversineDistance(
+        currentPos.lat, currentPos.lon,
+        locations.cafe.lat, locations.cafe.lon
+      );
+      const walkMinutes = Math.ceil(walkToCafe / walkSpeed);
+      
+      segments.push({
+        type: 'walk',
+        from: 'Home',
+        to: 'Cafe',
+        distance: Math.round(walkToCafe),
+        minutes: walkMinutes
+      });
+      totalMinutes += walkMinutes;
+
+      segments.push({
+        type: 'coffee',
+        location: 'Cafe',
+        minutes: cafeDuration
+      });
+      totalMinutes += cafeDuration;
+
+      currentPos = locations.cafe;
+    }
+
+    // Process each transit mode (up to 4)
+    for (let i = 0; i < modes.length; i++) {
+      const mode = modes[i];
+      const isFirstMode = (i === 0 && !locations.cafe) || (i === 0 && locations.cafe);
+      const isLastMode = (i === modes.length - 1);
+
+      // Walk to this mode's origin station
+      const walkToStation = this.haversineDistance(
+        currentPos.lat, currentPos.lon,
+        mode.originStation.lat, mode.originStation.lon
+      );
+
+      // Check walking distance constraint
+      if (walkToStation > maxWalk && routePrefs?.walking?.avoidLongWalks) {
+        console.log('⚠️  Walk to', mode.originStation.name, 'exceeds max (' + Math.round(walkToStation) + 'm)');
+      }
+
+      const walkMinutes = Math.ceil(walkToStation / walkSpeed);
+      segments.push({
+        type: 'walk',
+        from: isFirstMode ? (locations.cafe ? 'Cafe' : 'Home') : modes[i-1].destinationStation.name,
+        to: mode.originStation.name,
+        distance: Math.round(walkToStation),
+        minutes: walkMinutes
+      });
+      totalMinutes += walkMinutes;
+
+      // Wait time (average 2-3 min)
+      const waitMinutes = 2;
+      segments.push({
+        type: 'wait',
+        location: mode.originStation.name,
+        minutes: waitMinutes
+      });
+      totalMinutes += waitMinutes;
+
+      // Transit leg
+      const transitMinutes = mode.estimatedDuration || 
+        this.estimateTransitTime(mode.originStation, mode.destinationStation);
+      
+      segments.push({
+        type: 'transit',
+        mode: this.getModeName(mode.type),
+        icon: this.getModeIcon(mode.type),
+        routeType: mode.type,
+        from: mode.originStation.name,
+        to: mode.destinationStation.name,
+        minutes: transitMinutes,
+        leg: i + 1
+      });
+      totalMinutes += transitMinutes;
+
+      // Update current position to destination station
+      currentPos = mode.destinationStation;
+    }
+
+    // Final walk to work
+    const walkToWork = this.haversineDistance(
+      currentPos.lat, currentPos.lon,
+      locations.work.lat, locations.work.lon
+    );
+    const finalWalkMinutes = Math.ceil(walkToWork / walkSpeed);
+    
+    segments.push({
+      type: 'walk',
+      from: modes[modes.length - 1].destinationStation.name,
+      to: 'Work',
+      distance: Math.round(walkToWork),
+      minutes: finalWalkMinutes
+    });
+    totalMinutes += finalWalkMinutes;
+
+    // Calculate departure time from arrival time
+    const [arrHours, arrMins] = arrivalTime.split(':').map(Number);
+    const arrivalMinutes = arrHours * 60 + arrMins;
     const departureMinutes = arrivalMinutes - totalMinutes;
     const depHours = Math.floor(departureMinutes / 60);
     const depMins = departureMinutes % 60;
-    const departureTime = `${String(depHours).padStart(2, '0')}:${String(Math.abs(depMins)).padStart(2, '0')}`;
+    const departureTime = String(depHours).padStart(2, '0') + ':' + String(depMins).padStart(2, '0');
+
+    // Add times to each segment (working backwards)
+    let currentMinutes = arrivalMinutes;
+    for (let i = segments.length - 1; i >= 0; i--) {
+      currentMinutes -= segments[i].minutes;
+      const h = Math.floor(currentMinutes / 60);
+      const m = currentMinutes % 60;
+      segments[i].time = String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+    }
 
     return {
       success: true,
-      multiModal: true,
-      routeType: 'tram-train',
       journey: {
         departureTime,
-        arrivalTime: workStartTime,
+        arrivalTime,
         totalMinutes,
+        numberOfModes: modes.length,
         segments,
-        route: {
-          type: 'multi-modal',
-          legs: [
-            { mode: 'Tram', icon: '🚋', stop: tramOrigin },
-            { mode: 'Train', icon: '🚆', stop: destStop }
-          ],
-          interchange: interchange.name
-        },
-        cafe: cafeLocation ? {
-          included: true,
-          name: cafeLocation.name || 'Cafe',
-          duration: cafeDuration
-        } : null
+        summary: modes.map(m => this.getModeIcon(m.type)).join(' → ')
       }
     };
-  } catch (error) {
-    console.error('Multi-modal journey calculation failed:', error);
+  }
+
+  /**
+   * Build a mode config for multi-modal journey
+   */
+  buildModeConfig(type, originStation, destinationStation, estimatedDuration = null) {
     return {
-      success: false,
-      error: error.message
+      type,
+      originStation: {
+        name: originStation.name,
+        id: originStation.id,
+        lat: originStation.lat,
+        lon: originStation.lon
+      },
+      destinationStation: {
+        name: destinationStation.name,
+        id: destinationStation.id,
+        lat: destinationStation.lat,
+        lon: destinationStation.lon
+      },
+      estimatedDuration
     };
   }
 }
+
+export default JourneyPlanner;
