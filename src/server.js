@@ -32,6 +32,7 @@ import safeguards from './utils/deployment-safeguards.js';
 import { decodeConfigToken, encodeConfigToken, generateWebhookUrl } from './utils/config-token.js';
 import { renderDashboard, renderTestPattern } from "./services/image-renderer.js";
 import { renderZones, clearCache as clearZoneCache, ZONES } from "./services/zone-renderer.js";
+import { getChangedZones as getChangedZonesV12, renderSingleZone as renderSingleZoneV12, getZoneDefinition as getZoneDefV12, ZONES as ZONES_V12, clearCache as clearZoneCacheV12 } from "./services/zone-renderer-v12.js";
 
 // Setup error handlers early (before any async operations)
 safeguards.setupErrorHandlers();
@@ -6865,3 +6866,52 @@ safeguards.setupGracefulShutdown(server, async () => {
   console.log('✅ Cleanup completed');
 });
 
+
+// V12 ZONE ENDPOINTS - Memory-efficient for ESP32
+app.get('/api/zones/changed', async (req, res) => {
+  try {
+    const forceAll = req.query.force === 'true';
+    const prefs = preferences.get();
+    const now = new Date();
+    const data = {
+      location: prefs?.addresses?.home?.split(',')[0] || 'HOME',
+      current_time: now.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Australia/Melbourne' }),
+      day: now.toLocaleDateString('en-AU', { weekday: 'long', timeZone: 'Australia/Melbourne' }),
+      date: now.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', timeZone: 'Australia/Melbourne' }),
+      temp: cachedJourney?.weather?.temp || '--',
+      condition: cachedJourney?.weather?.condition || 'N/A',
+      status_type: cachedJourney?.hasDisruption ? 'disruption' : 'normal',
+      arrive_by: cachedJourney?.arriveBy || '--:--',
+      total_minutes: cachedJourney?.totalMinutes || '--',
+      journey_legs: cachedJourney?.legs || [],
+      destination: prefs?.addresses?.work?.split(',')[0] || 'WORK'
+    };
+    res.json({ timestamp: new Date().toISOString(), changed: getChangedZonesV12(data, forceAll) });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/zone/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const prefs = preferences.get();
+    const now = new Date();
+    const data = {
+      location: prefs?.addresses?.home?.split(',')[0] || 'HOME',
+      current_time: now.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Australia/Melbourne' }),
+      day: now.toLocaleDateString('en-AU', { weekday: 'long', timeZone: 'Australia/Melbourne' }),
+      date: now.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', timeZone: 'Australia/Melbourne' }),
+      temp: cachedJourney?.weather?.temp || '--',
+      condition: cachedJourney?.weather?.condition || 'N/A',
+      status_type: cachedJourney?.hasDisruption ? 'disruption' : 'normal',
+      arrive_by: cachedJourney?.arriveBy || '--:--',
+      total_minutes: cachedJourney?.totalMinutes || '--',
+      journey_legs: cachedJourney?.legs || [],
+      destination: prefs?.addresses?.work?.split(',')[0] || 'WORK'
+    };
+    const bmp = renderSingleZoneV12(id, data, prefs);
+    if (!bmp) return res.status(404).json({ error: 'Zone not found' });
+    const zoneDef = getZoneDefV12(id, data);
+    res.set({ 'Content-Type': 'application/octet-stream', 'X-Zone-X': zoneDef.x, 'X-Zone-Y': zoneDef.y, 'X-Zone-Width': zoneDef.w, 'X-Zone-Height': zoneDef.h });
+    res.send(bmp);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
