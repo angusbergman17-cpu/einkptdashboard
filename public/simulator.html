@@ -117,9 +117,109 @@
         function addLine(p,x1,y1,x2,y2,s){const e=document.createElement("div");e.style.position="absolute";e.style.left=(x1*s)+"px";e.style.top=(y1*s)+"px";e.style.width=((x2-x1)*s)+"px";e.style.height="1px";e.style.background="#1a1a1a";p.appendChild(e);}
         function doFullRefresh(){const d=document.getElementById("eink-display"),dot=document.getElementById("status-dot");dot.classList.add("refreshing");d.style.background="#1a1a1a";setTimeout(()=>{d.style.background="#f5f5f0";refreshCount++;document.getElementById("refresh-count").textContent="Refresh #"+refreshCount;dot.classList.remove("refreshing");updateDisplay();},400);}
         function doPartialRefresh(){refreshCount++;document.getElementById("refresh-count").textContent="Refresh #"+refreshCount;updateDisplay();}
+                function renderV11Journey(){
+            const d=DEVICES[currentDevice],display=document.getElementById("eink-display"),s=getScale(d);
+            const dot=document.getElementById("status-dot"),st=document.getElementById("status-text");
+            dot.classList.remove("refreshing");
+            st.textContent="V11 Dashboard";
+            refreshCount++;
+            document.getElementById("refresh-count").textContent="Refresh #"+refreshCount;
+            display.style.width=(d.width*s)+"px";
+            display.style.height=(d.height*s)+"px";
+            display.style.background="#f5f5f0";
+            display.innerHTML=`
+            <div style="position:relative;width:100%;height:100%;font-family:-apple-system,BlinkMacSystemFont,sans-serif;color:#000;">
+                <!-- Header -->
+                <div style="position:absolute;left:${16*s}px;top:${8*s}px;font-size:${11*s}px;">68 Cambridge St, Collingwood</div>
+                <div style="position:absolute;left:${16*s}px;top:${28*s}px;font-size:${64*s}px;font-weight:800;">7:32</div>
+                <div style="position:absolute;left:${130*s}px;top:${70*s}px;font-size:${18*s}px;font-weight:600;">AM</div>
+                <div style="position:absolute;left:${280*s}px;top:${32*s}px;font-size:${20*s}px;font-weight:700;">TUESDAY</div>
+                <div style="position:absolute;left:${280*s}px;top:${56*s}px;font-size:${16*s}px;">28 January</div>
+                <!-- Weather Box -->
+                <div style="position:absolute;right:${16*s}px;top:${16*s}px;width:${144*s}px;height:${80*s}px;border:2px solid #000;">
+                    <div style="padding:${8*s}px;">
+                        <div style="font-size:${36*s}px;font-weight:700;">21°</div>
+                        <div style="font-size:${12*s}px;">Clear</div>
+                        <div style="margin-top:${4*s}px;border:1px solid #000;padding:${2*s}px ${8*s}px;font-size:${10*s}px;text-align:center;">NO UMBRELLA</div>
+                    </div>
+                </div>
+                <!-- Status Bar -->
+                <div style="position:absolute;left:0;top:${100*s}px;width:100%;height:${28*s}px;background:#000;display:flex;align-items:center;justify-content:space-between;padding:0 ${16*s}px;box-sizing:border-box;">
+                    <div style="color:#fff;font-size:${14*s}px;font-weight:600;">LEAVE NOW → Arrive 8:14</div>
+                    <div style="color:#fff;font-size:${14*s}px;font-weight:700;">42 min</div>
+                </div>
+                <!-- Journey Legs -->
+                <div style="position:absolute;left:${16*s}px;top:${140*s}px;right:${16*s}px;">
+                    <!-- Leg 1: Walk to Tram -->
+                    <div style="display:flex;align-items:center;border:2px solid #000;padding:${10*s}px;margin-bottom:${8*s}px;background:#fff;">
+                        <div style="width:${24*s}px;height:${24*s}px;background:#000;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:${14*s}px;">1</div>
+                        <div style="font-size:${20*s}px;margin:0 ${12*s}px;">🚶</div>
+                        <div style="flex:1;">
+                            <div style="font-size:${14*s}px;font-weight:700;">Walk to Tram Stop</div>
+                            <div style="font-size:${11*s}px;color:#666;">Smith St / Johnston St</div>
+                        </div>
+                        <div style="background:#000;color:#fff;padding:${8*s}px ${12*s}px;text-align:center;">
+                            <div style="font-size:${20*s}px;font-weight:800;">5</div>
+                            <div style="font-size:${9*s}px;">MIN</div>
+                        </div>
+                    </div>
+                    <!-- Arrow -->
+                    <div style="text-align:center;font-size:${16*s}px;margin:${4*s}px 0;">▼</div>
+                    <!-- Leg 2: Tram 86 -->
+                    <div style="display:flex;align-items:center;border:2px solid #000;padding:${10*s}px;margin-bottom:${8*s}px;background:#fff;">
+                        <div style="width:${24*s}px;height:${24*s}px;background:#000;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:${14*s}px;">2</div>
+                        <div style="font-size:${20*s}px;margin:0 ${12*s}px;">🚊</div>
+                        <div style="flex:1;">
+                            <div style="font-size:${14*s}px;font-weight:700;">Tram 86 → Bourke St</div>
+                            <div style="font-size:${11*s}px;color:#666;">Departs 7:41 • 8 stops</div>
+                        </div>
+                        <div style="background:#000;color:#fff;padding:${8*s}px ${12*s}px;text-align:center;">
+                            <div style="font-size:${20*s}px;font-weight:800;">18</div>
+                            <div style="font-size:${9*s}px;">MIN</div>
+                        </div>
+                    </div>
+                    <!-- Arrow -->
+                    <div style="text-align:center;font-size:${16*s}px;margin:${4*s}px 0;">▼</div>
+                    <!-- Leg 3: Coffee -->
+                    <div style="display:flex;align-items:center;border:2px solid #000;padding:${10*s}px;margin-bottom:${8*s}px;background:#fff;">
+                        <div style="width:${24*s}px;height:${24*s}px;background:#000;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:${14*s}px;">3</div>
+                        <div style="font-size:${20*s}px;margin:0 ${12*s}px;">☕</div>
+                        <div style="flex:1;">
+                            <div style="font-size:${14*s}px;font-weight:700;">Coffee at Proud Mary</div>
+                            <div style="font-size:${11*s}px;color:#666;">172 Oxford St • 2 min detour</div>
+                        </div>
+                        <div style="background:#000;color:#fff;padding:${8*s}px ${12*s}px;text-align:center;">
+                            <div style="font-size:${20*s}px;font-weight:800;">8</div>
+                            <div style="font-size:${9*s}px;">MIN</div>
+                        </div>
+                    </div>
+                    <!-- Arrow -->
+                    <div style="text-align:center;font-size:${16*s}px;margin:${4*s}px 0;">▼</div>
+                    <!-- Leg 4: Walk to Work -->
+                    <div style="display:flex;align-items:center;border:2px solid #000;padding:${10*s}px;background:#fff;">
+                        <div style="width:${24*s}px;height:${24*s}px;background:#000;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:${14*s}px;">4</div>
+                        <div style="font-size:${20*s}px;margin:0 ${12*s}px;">🚶</div>
+                        <div style="flex:1;">
+                            <div style="font-size:${14*s}px;font-weight:700;">Walk to 80 Collins St</div>
+                            <div style="font-size:${11*s}px;color:#666;">Final destination</div>
+                        </div>
+                        <div style="background:#000;color:#fff;padding:${8*s}px ${12*s}px;text-align:center;">
+                            <div style="font-size:${20*s}px;font-weight:800;">6</div>
+                            <div style="font-size:${9*s}px;">MIN</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Footer -->
+                <div style="position:absolute;left:0;bottom:0;width:100%;height:${28*s}px;background:#000;display:flex;align-items:center;justify-content:space-between;padding:0 ${16*s}px;box-sizing:border-box;">
+                    <div style="color:#fff;font-size:${14*s}px;font-weight:700;">80 Collins St, Melbourne</div>
+                    <div style="color:#fff;font-size:${11*s}px;">ARRIVE <span style="font-size:${20*s}px;font-weight:800;margin-left:${8*s}px;">8:14</span></div>
+                </div>
+            </div>`;
+        }
+
         function simulateFlash(){const d=document.getElementById("eink-display"),dev=DEVICES[currentDevice],s=getScale(dev),dot=document.getElementById("status-dot"),st=document.getElementById("status-text");refreshCount=0;partialCount=0;dot.classList.add("refreshing");d.style.background="#000";d.innerHTML='<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:monospace;color:#0f0;"><div style="font-size:'+(24*s)+'px;color:#fff;margin-bottom:'+(25*s)+'px;">⚡ FIRMWARE FLASH</div><div style="width:'+(500*s)+'px;height:'+(25*s)+'px;background:#222;border:2px solid #0f0;border-radius:4px;overflow:hidden;margin-bottom:'+(12*s)+'px;"><div id="flash-progress" style="width:0%;height:100%;background:linear-gradient(90deg,#0a0,#0f0);transition:width 0.3s;"></div></div><div id="flash-text" style="font-size:'+(14*s)+'px;color:#0f0;">Initializing...</div><div style="font-size:'+(10*s)+'px;color:#666;margin-top:'+(15*s)+'px;">DO NOT DISCONNECT DEVICE</div></div>';st.textContent="Flashing firmware...";const steps=[{pct:10,text:"Erasing flash memory...",delay:400},{pct:25,text:"Writing bootloader...",delay:500},{pct:40,text:"Writing firmware_main...",delay:600},{pct:55,text:"Writing firmware_backup...",delay:500},{pct:70,text:"Writing config partition...",delay:400},{pct:85,text:"Verifying checksums...",delay:500},{pct:100,text:"Flash complete!",delay:300}];let i=0;function next(){if(i>=steps.length){setTimeout(()=>simulateSetup(),800);return;}const step=steps[i++];document.getElementById("flash-progress").style.width=step.pct+"%";document.getElementById("flash-text").textContent="Flashing PTV-TRMNL v5.18 ... "+step.pct+"%";st.textContent=step.text;setTimeout(next,step.delay);}next();}
         function simulateSetup(){const d=document.getElementById("eink-display"),dev=DEVICES[currentDevice],s=getScale(dev),st=document.getElementById("status-text");d.style.background="#fff";d.innerHTML='<div style="width:100%;height:100%;padding:'+(30*s)+'px;font-family:-apple-system,sans-serif;color:#000;"><div style="font-size:'+(28*s)+'px;font-weight:800;margin-bottom:'+(8*s)+'px;">🚃 PTV-TRMNL Setup</div><div style="font-size:'+(12*s)+'px;color:#666;margin-bottom:'+(25*s)+'px;">Configure your smart transit display</div><div style="background:#f5f5f5;border:2px solid #000;padding:'+(15*s)+'px;margin-bottom:'+(15*s)+'px;"><div style="font-size:'+(11*s)+'px;font-weight:700;margin-bottom:'+(8*s)+'px;">📍 HOME ADDRESS</div><div style="background:#fff;border:1px solid #ccc;padding:'+(10*s)+'px;font-size:'+(13*s)+'px;" id="setup-home">Detecting location...</div></div><div style="background:#f5f5f5;border:2px solid #000;padding:'+(15*s)+'px;margin-bottom:'+(15*s)+'px;"><div style="font-size:'+(11*s)+'px;font-weight:700;margin-bottom:'+(8*s)+'px;">🏢 WORK ADDRESS</div><div style="background:#fff;border:1px solid #ccc;padding:'+(10*s)+'px;font-size:'+(13*s)+'px;" id="setup-work">Waiting...</div></div><div style="background:#f5f5f5;border:2px solid #000;padding:'+(15*s)+'px;"><div style="font-size:'+(11*s)+'px;font-weight:700;margin-bottom:'+(8*s)+'px;">☕ COFFEE STOP</div><div style="background:#fff;border:1px solid #ccc;padding:'+(10*s)+'px;font-size:'+(13*s)+'px;" id="setup-coffee">Optional</div></div><div style="display:flex;gap:'+(10*s)+'px;margin-top:'+(20*s)+'px;"><div style="flex:1;background:#000;color:#fff;padding:'+(12*s)+'px;text-align:center;font-weight:700;font-size:'+(13*s)+'px;">← BACK</div><div style="flex:2;background:#6366f1;color:#fff;padding:'+(12*s)+'px;text-align:center;font-weight:700;font-size:'+(13*s)+'px;">CONTINUE →</div></div></div>';st.textContent="Setup wizard...";setTimeout(()=>{document.getElementById("setup-home").textContent="68 Cambridge St, Collingwood VIC 3066";st.textContent="Home configured";},600);setTimeout(()=>{document.getElementById("setup-work").textContent="80 Collins St, Melbourne VIC 3000";st.textContent="Work configured";},1200);setTimeout(()=>{document.getElementById("setup-coffee").textContent="Proud Mary, 172 Oxford St";st.textContent="Setup complete!";},1800);setTimeout(()=>simulateBoot(),2500);}
-        function simulateBoot(){const d=document.getElementById("eink-display"),dev=DEVICES[currentDevice],s=getScale(dev),dot=document.getElementById("status-dot"),st=document.getElementById("status-text");d.style.background="#000";d.innerHTML='<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:-apple-system,sans-serif;color:#fff;"><div style="font-size:'+(48*s)+'px;margin-bottom:'+(15*s)+'px;">🚃</div><div style="font-size:'+(24*s)+'px;font-weight:800;margin-bottom:'+(8*s)+'px;">PTV-TRMNL</div><div style="font-size:'+(12*s)+'px;color:#888;margin-bottom:'+(30*s)+'px;">Smart Transit Display</div><div style="display:flex;gap:'+(8*s)+'px;margin-bottom:'+(20*s)+'px;"><div style="width:'+(10*s)+'px;height:'+(10*s)+'px;background:#fff;border-radius:50%;animation:bootPulse 1.5s infinite;"></div><div style="width:'+(10*s)+'px;height:'+(10*s)+'px;background:#fff;border-radius:50%;animation:bootPulse 1.5s infinite 0.2s;"></div><div style="width:'+(10*s)+'px;height:'+(10*s)+'px;background:#fff;border-radius:50%;animation:bootPulse 1.5s infinite 0.4s;"></div></div><div id="boot-status" style="font-size:'+(11*s)+'px;color:#666;">Initializing...</div><div style="position:absolute;bottom:'+(25*s)+'px;font-size:'+(10*s)+'px;color:#444;">v5.18 • E-Ink '+dev.width+'×'+dev.height+'</div></div><style>@keyframes bootPulse{0%,100%{opacity:0.3;transform:scale(0.8);}50%{opacity:1;transform:scale(1);}}</style>';st.textContent="Booting...";const steps=[{text:"Connecting to WiFi...",delay:800},{text:"WiFi connected ✓",delay:500},{text:"Connecting to PTV OpenData API...",delay:700},{text:"Fetching real-time departures...",delay:600},{text:"Loading journey data...",delay:500},{text:"Display ready!",delay:400}];let i=0;function next(){if(i>=steps.length){dot.classList.remove("refreshing");st.textContent="Ready";setTimeout(()=>doFullRefresh(),600);return;}const step=steps[i++];document.getElementById("boot-status").textContent=step.text;st.textContent=step.text;setTimeout(next,step.delay);}next();}
+        function simulateBoot(){const d=document.getElementById("eink-display"),dev=DEVICES[currentDevice],s=getScale(dev),dot=document.getElementById("status-dot"),st=document.getElementById("status-text");d.style.background="#000";d.innerHTML='<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:-apple-system,sans-serif;color:#fff;"><div style="font-size:'+(48*s)+'px;margin-bottom:'+(15*s)+'px;">🚃</div><div style="font-size:'+(24*s)+'px;font-weight:800;margin-bottom:'+(8*s)+'px;">PTV-TRMNL</div><div style="font-size:'+(12*s)+'px;color:#888;margin-bottom:'+(30*s)+'px;">Smart Transit Display</div><div style="display:flex;gap:'+(8*s)+'px;margin-bottom:'+(20*s)+'px;"><div style="width:'+(10*s)+'px;height:'+(10*s)+'px;background:#fff;border-radius:50%;animation:bootPulse 1.5s infinite;"></div><div style="width:'+(10*s)+'px;height:'+(10*s)+'px;background:#fff;border-radius:50%;animation:bootPulse 1.5s infinite 0.2s;"></div><div style="width:'+(10*s)+'px;height:'+(10*s)+'px;background:#fff;border-radius:50%;animation:bootPulse 1.5s infinite 0.4s;"></div></div><div id="boot-status" style="font-size:'+(11*s)+'px;color:#666;">Initializing...</div><div style="position:absolute;bottom:'+(25*s)+'px;font-size:'+(10*s)+'px;color:#444;">v5.18 • E-Ink '+dev.width+'×'+dev.height+'</div></div><style>@keyframes bootPulse{0%,100%{opacity:0.3;transform:scale(0.8);}50%{opacity:1;transform:scale(1);}}</style>';st.textContent="Booting...";const steps=[{text:"Connecting to WiFi...",delay:800},{text:"WiFi connected ✓",delay:500},{text:"Connecting to PTV OpenData API...",delay:700},{text:"Fetching real-time departures...",delay:600},{text:"Loading journey data...",delay:500},{text:"Display ready!",delay:400}];let i=0;function next(){if(i>=steps.length){dot.classList.remove("refreshing");st.textContent="Ready";setTimeout(()=>renderV11Journey(),600);return;}const step=steps[i++];document.getElementById("boot-status").textContent=step.text;st.textContent=step.text;setTimeout(next,step.delay);}next();}
         initDeviceSelector();updateDeviceInfo();updateDisplay();
     </script>
 </body>
