@@ -40,7 +40,7 @@ export default async function handler(req, res) {
     const batchParam = req.query.batch;
     if (batchParam !== undefined) {
       const batchIndex = parseInt(batchParam, 10) || 0;
-      const BATCH_SIZE = 6;  // Match firmware MAX_ZONES
+      const BATCH_SIZE = 2;  // Match firmware MAX_ZONES
       const start = batchIndex * BATCH_SIZE;
       const end = start + BATCH_SIZE;
       const batchedZones = result.zones.slice(start, end);
