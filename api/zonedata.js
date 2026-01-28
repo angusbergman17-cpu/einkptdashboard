@@ -1,4 +1,4 @@
-import { renderZones } from '../../src/services/zone-renderer.js';
+import { renderZones } from '../src/services/zone-renderer.js';
 
 export default async function handler(req, res) {
   // Debug: return version if ping param
