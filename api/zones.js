@@ -11,7 +11,7 @@ export default async function handler(req, res) {
       hour: '2-digit', minute: '2-digit', hour12: false
     });
     
-    // Simple test data
+    // Build data for zones
     const data = {
       current_time: currentTime,
       weather: { temp: 22, condition: 'Clear' },
@@ -29,6 +29,12 @@ export default async function handler(req, res) {
     };
     
     const result = renderZones(data, {}, forceAll);
+    
+    // Fix: Ensure changed is boolean, not object
+    result.zones = result.zones.map(zone => ({
+      ...zone,
+      changed: zone.changed === true || forceAll  // Force boolean
+    }));
     
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Cache-Control', 'no-cache');
