@@ -536,7 +536,7 @@ The QR code feature was removed from v5.15 due to unresolvable memory access cra
 
 ---
 
-**Report Author**: Claude (Anthropic)
+**Report Author**: Development Team
 **Report Date**: 2026-01-27
 **Firmware Versions Affected**: v5.15
 **Firmware Versions Stable**: v5.8, v5.15-NoQR

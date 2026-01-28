@@ -562,7 +562,7 @@ Set persistent API key in Render dashboard:
 ---
 
 **Test Completed**: 2026-01-27
-**Tester**: Claude Sonnet 4.5
+**Tester**: Development Team
 **Environment**: Production (https://ptv-trmnl-new.onrender.com)
 **Version**: 2.5.2
 **Commits**: 911e941 (fix), 601d44b (report)

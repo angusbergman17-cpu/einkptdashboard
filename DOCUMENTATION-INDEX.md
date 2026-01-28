@@ -221,7 +221,7 @@ To update:
 
 **Current Version**: v2.5.0
 **Last Updated**: 2026-01-25
-**Maintained By**: Claude Sonnet 4.5 + Angus Bergman
+**Maintained By**: Development Team + Angus Bergman
 
 ---
 

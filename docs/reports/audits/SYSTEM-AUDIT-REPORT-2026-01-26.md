@@ -1,7 +1,7 @@
 # PTV-TRMNL System Audit Report
 **Date**: 2026-01-26
 **Audit Scope**: Full codebase compliance against DEVELOPMENT-RULES.md v1.0.5
-**Auditor**: Claude Code (Automated System Audit)
+**Auditor**: Automated Audit (Automated System Audit)
 **Result**: ✅ **PASSED** (with 2 critical fixes applied)
 
 ---
@@ -767,7 +767,7 @@ The PTV-TRMNL system demonstrates **excellent compliance** with the DEVELOPMENT-
 ---
 
 **Audit Completed**: 2026-01-26
-**Auditor**: Claude Code - Automated Compliance Audit
+**Auditor**: Automated Audit - Automated Compliance Audit
 **Next Audit**: Recommended every 90 days or after major feature additions
 
 ---

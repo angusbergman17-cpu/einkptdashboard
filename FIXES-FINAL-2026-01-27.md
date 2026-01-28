@@ -440,6 +440,6 @@ https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtim
 
 ---
 
-**Fixes Completed By**: Claude Sonnet 4.5
+**Fixes Completed By**: Development Team
 **Date**: 2026-01-27
 **Commit**: 40b1d82

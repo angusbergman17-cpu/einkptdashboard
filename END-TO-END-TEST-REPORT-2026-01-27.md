@@ -1,7 +1,7 @@
 # End-to-End Test Report
 
 **Test Date**: 2026-01-27
-**Tester**: Claude Sonnet 4.5
+**Tester**: Development Team
 **Environment**: Production (https://ptv-trmnl-new.onrender.com)
 **Status**: 🔄 **IN PROGRESS**
 
@@ -545,7 +545,7 @@ curl https://ptv-trmnl-new.onrender.com/api/screen
 
 ---
 
-**Testing By**: Claude Sonnet 4.5
+**Testing By**: Development Team
 **Test Environment**: Production (Render deployment)
 **Branch**: main
 **Commits Tested**:

@@ -310,7 +310,7 @@ Then restart the server.
 
 ---
 
-**Reported By**: Claude Sonnet 4.5
+**Reported By**: Development Team
 **Test Date**: 2026-01-27
 **Environment**: Production (https://ptv-trmnl-new.onrender.com)
 **API Key Used**: ce606b90-9ffb-43e8-bcd7-0c2bd0498367 (valid, working)

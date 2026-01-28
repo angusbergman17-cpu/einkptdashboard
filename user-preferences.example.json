@@ -1,0 +1,16 @@
+{
+  "device": {
+    "token": "YOUR_DEVICE_TOKEN_HERE",
+    "friendlyId": "my-trmnl"
+  },
+  "transit": {
+    "apiKey": "YOUR_PTV_OPENDATA_API_KEY"
+  },
+  "places": {
+    "apiKey": "YOUR_GOOGLE_PLACES_API_KEY"
+  },
+  "journey": {
+    "homeAddress": "123 Example St, Melbourne VIC",
+    "workAddress": "456 Work Ave, Melbourne VIC"
+  }
+}

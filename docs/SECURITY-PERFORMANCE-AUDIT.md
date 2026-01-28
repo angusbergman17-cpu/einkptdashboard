@@ -500,7 +500,7 @@ app.use((req, res, next) => {
 
 ---
 
-**Audit Performed By**: Claude Sonnet 4.5
+**Audit Performed By**: Development Team
 **Date**: 2026-01-26
 **Next Review**: After production deployment or 3 months
 **Compliance**: Development Rules v1.0.13

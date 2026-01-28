@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PTV-TRMNL Firmware Simulator</title>
+    <title>PTV-TRMNL Multi-Device Simulator</title>
     <style>
         /**
-         * PTV-TRMNL Firmware Simulator
+         * PTV-TRMNL Multi-Device Firmware Simulator
          * Copyright (c) 2026 Angus Bergman
          * Licensed under CC BY-NC 4.0
          */
@@ -21,623 +21,633 @@
             padding: 20px;
         }
         
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
+        .container { max-width: 1600px; margin: 0 auto; }
+        
+        header { text-align: center; margin-bottom: 20px; }
+        header h1 { font-size: 24px; margin-bottom: 8px; }
+        header p { color: #94a3b8; font-size: 14px; }
+        
+        .device-selector {
+            display: flex; gap: 10px; justify-content: center;
+            margin-bottom: 20px; flex-wrap: wrap;
         }
         
-        header {
-            text-align: center;
-            margin-bottom: 30px;
+        .device-btn {
+            padding: 10px 16px; background: #334155; border: 2px solid #475569;
+            border-radius: 8px; color: #f8fafc; font-size: 13px; cursor: pointer;
+            transition: all 0.2s;
         }
+        .device-btn:hover { background: #475569; }
+        .device-btn.active { background: #6366f1; border-color: #818cf8; }
         
-        header h1 {
-            font-size: 28px;
-            margin-bottom: 10px;
-        }
+        .main-layout { display: grid; grid-template-columns: 1fr 350px; gap: 20px; }
         
-        header p {
-            color: #94a3b8;
-        }
-        
-        .main-layout {
-            display: grid;
-            grid-template-columns: 850px 1fr;
-            gap: 30px;
-        }
-        
-        /* E-ink Display Simulation */
-        .display-container {
-            background: #1e293b;
-            padding: 25px;
-            border-radius: 16px;
-            border: 2px solid #334155;
-        }
-        
-        .display-label {
-            font-size: 14px;
-            color: #64748b;
-            margin-bottom: 15px;
-            display: flex;
-            justify-content: space-between;
+        .display-wrapper {
+            background: #1e293b; padding: 20px; border-radius: 12px;
+            border: 2px solid #334155; display: flex; flex-direction: column;
             align-items: center;
         }
         
-        .display-label span {
-            background: #334155;
-            padding: 4px 12px;
-            border-radius: 4px;
-            font-family: monospace;
+        .display-info {
+            display: flex; justify-content: space-between; width: 100%;
+            margin-bottom: 15px; font-size: 12px; color: #64748b;
         }
+        .display-info span { background: #334155; padding: 4px 10px; border-radius: 4px; font-family: monospace; }
         
         #eink-display {
-            width: 800px;
-            height: 480px;
-            background: #f5f5f0;  /* E-ink paper color */
-            border: 3px solid #1a1a1a;
-            border-radius: 4px;
-            position: relative;
-            overflow: hidden;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
+            background: #f5f5f0; border: 3px solid #1a1a1a; border-radius: 4px;
+            position: relative; overflow: hidden;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.08);
+            transition: width 0.3s, height 0.3s;
         }
         
-        /* Text elements on display */
         .display-text {
-            position: absolute;
-            font-family: "Courier New", monospace;
-            color: #1a1a1a;
-            white-space: nowrap;
+            position: absolute; font-family: "Courier New", monospace;
+            color: #1a1a1a; white-space: nowrap;
         }
+        .font-large { font-size: 18px; font-weight: bold; }
+        .font-medium { font-size: 14px; font-weight: bold; }
+        .font-small { font-size: 11px; }
+        .inverted { background: #1a1a1a; color: #f5f5f0; padding: 6px 12px; }
+        .rect-box { position: absolute; border: 2px solid #1a1a1a; }
         
-        .font-12x16 {
-            font-size: 20px;
-            font-weight: bold;
-        }
+        /* Ghosting effect for partial refresh */
+        .ghosting { opacity: 0.15; }
         
-        .font-8x8 {
-            font-size: 13px;
-        }
-        
-        .inverted {
-            background: #1a1a1a;
-            color: #f5f5f0;
-            padding: 8px 15px;
-        }
-        
-        .rect-box {
-            position: absolute;
-            border: 2px solid #1a1a1a;
-        }
-        
-        /* Control Panel */
         .controls {
-            background: #1e293b;
-            padding: 25px;
-            border-radius: 16px;
-            border: 2px solid #334155;
-            max-height: 540px;
-            overflow-y: auto;
+            background: #1e293b; padding: 20px; border-radius: 12px;
+            border: 2px solid #334155; max-height: 700px; overflow-y: auto;
         }
-        
-        .controls h2 {
-            font-size: 18px;
-            margin-bottom: 20px;
-            color: #6366f1;
-        }
+        .controls h2 { font-size: 16px; margin-bottom: 15px; color: #6366f1; }
         
         .control-section {
-            margin-bottom: 25px;
-            padding-bottom: 20px;
+            margin-bottom: 20px; padding-bottom: 15px;
             border-bottom: 1px solid #334155;
         }
-        
-        .control-section:last-child {
-            border-bottom: none;
-        }
-        
+        .control-section:last-child { border-bottom: none; }
         .control-section h3 {
-            font-size: 14px;
-            color: #94a3b8;
-            margin-bottom: 12px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            font-size: 12px; color: #94a3b8; margin-bottom: 10px;
+            text-transform: uppercase; letter-spacing: 1px;
         }
         
-        .control-group {
-            margin-bottom: 12px;
-        }
-        
-        .control-group label {
-            display: block;
-            font-size: 12px;
-            color: #64748b;
-            margin-bottom: 4px;
-        }
-        
+        .control-group { margin-bottom: 10px; }
+        .control-group label { display: block; font-size: 11px; color: #64748b; margin-bottom: 3px; }
         .control-group input, .control-group select {
-            width: 100%;
-            padding: 8px 12px;
-            background: #0f172a;
-            border: 1px solid #334155;
-            border-radius: 6px;
-            color: #f8fafc;
-            font-size: 14px;
+            width: 100%; padding: 8px 10px; background: #0f172a;
+            border: 1px solid #334155; border-radius: 6px;
+            color: #f8fafc; font-size: 13px;
         }
-        
         .control-group input:focus, .control-group select:focus {
-            outline: none;
-            border-color: #6366f1;
+            outline: none; border-color: #6366f1;
         }
         
-        .button-row {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-        
+        .button-row { display: flex; gap: 8px; margin-top: 15px; }
         button {
-            flex: 1;
-            padding: 12px;
-            background: #6366f1;
-            border: none;
-            border-radius: 8px;
-            color: white;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
+            flex: 1; padding: 10px; background: #6366f1; border: none;
+            border-radius: 6px; color: white; font-size: 13px;
+            font-weight: 600; cursor: pointer; transition: background 0.2s;
         }
+        button:hover { background: #4f46e5; }
+        button.secondary { background: #334155; }
+        button.secondary:hover { background: #475569; }
+        button.warning { background: #f59e0b; }
+        button.warning:hover { background: #d97706; }
         
-        button:hover {
-            background: #4f46e5;
-        }
-        
-        button.secondary {
-            background: #334155;
-        }
-        
-        button.secondary:hover {
-            background: #475569;
-        }
-        
-        /* Status Bar */
         .status-bar {
-            margin-top: 20px;
-            background: #1e293b;
-            padding: 15px 25px;
-            border-radius: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 13px;
+            margin-top: 20px; background: #1e293b; padding: 12px 20px;
+            border-radius: 10px; display: flex; justify-content: space-between;
+            align-items: center; font-size: 12px;
         }
+        .status-item { display: flex; align-items: center; gap: 6px; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; }
+        .status-dot.refreshing { background: #f59e0b; animation: pulse 0.5s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
         
-        .status-bar .status-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
+        .refresh-zones {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px;
+            margin-top: 10px;
         }
-        
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #22c55e;
+        .zone {
+            padding: 5px; background: #334155; border-radius: 4px;
+            text-align: center; font-size: 10px; cursor: pointer;
         }
+        .zone.active { background: #6366f1; }
+        .zone.dirty { background: #f59e0b; }
         
-        .status-dot.warning { background: #f59e0b; }
-        .status-dot.error { background: #ef4444; }
-        
-        /* Presets */
-        .presets {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 15px;
-        }
-        
-        .preset-btn {
-            padding: 8px;
-            font-size: 12px;
-            background: #334155;
-        }
-        
-        /* Footer */
         footer {
-            text-align: center;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #334155;
-            color: #64748b;
-            font-size: 13px;
+            text-align: center; margin-top: 20px; padding-top: 15px;
+            border-top: 1px solid #334155; color: #64748b; font-size: 12px;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>📟 PTV-TRMNL Firmware Simulator</h1>
-            <p>Live testing of e-ink display output • 800×480 TRMNL BYOS</p>
+            <h1>📟 PTV-TRMNL Multi-Device Simulator</h1>
+            <p>Firmware simulation for all supported e-ink devices with 20-second zone refresh</p>
         </header>
         
+        <div class="device-selector" id="device-selector"></div>
+        
         <div class="main-layout">
-            <!-- E-ink Display -->
-            <div class="display-container">
-                <div class="display-label">
-                    <span>EP75_800x480</span>
-                    <span id="refresh-mode">REFRESH_FULL</span>
+            <div class="display-wrapper">
+                <div class="display-info">
+                    <span id="device-name">TRMNL OG</span>
+                    <span id="device-res">800×480</span>
+                    <span id="refresh-mode">FULL</span>
+                    <span id="refresh-count">Refresh #0</span>
                 </div>
-                <div id="eink-display">
-                    <!-- Display content rendered by JavaScript -->
-                </div>
+                <div id="eink-display"></div>
+                <div class="refresh-zones" id="refresh-zones"></div>
             </div>
             
-            <!-- Control Panel -->
             <div class="controls">
-                <h2>⚙️ Display Controls</h2>
+                <h2>⚙️ Simulator Controls</h2>
                 
-                <div class="presets">
-                    <button class="preset-btn" onclick="loadPreset('morning')">Morning Commute</button>
-                    <button class="preset-btn" onclick="loadPreset('coffee')">Coffee Stop</button>
-                    <button class="preset-btn" onclick="loadPreset('direct')">Go Direct</button>
-                    <button class="preset-btn" onclick="loadPreset('setup')">Setup Mode</button>
+                <div class="control-section">
+                    <h3>🔄 Refresh Simulation</h3>
+                    <div class="control-group">
+                        <label>Refresh Interval</label>
+                        <select id="refresh-interval" onchange="updateRefreshInterval()">
+                            <option value="20000">20 seconds (production)</option>
+                            <option value="5000">5 seconds (testing)</option>
+                            <option value="2000">2 seconds (fast)</option>
+                            <option value="0">Manual only</option>
+                        </select>
+                    </div>
+                    <div class="button-row">
+                        <button onclick="doFullRefresh()">Full Refresh</button>
+                        <button class="secondary" onclick="doPartialRefresh()">Partial</button>
+                    </div>
+                    <div class="button-row">
+                        <button class="warning" onclick="simulateGhosting()">+ Ghosting</button>
+                        <button class="secondary" onclick="clearGhosting()">Clear</button>
+                    </div>
                 </div>
                 
                 <div class="control-section">
-                    <h3>📍 Header</h3>
+                    <h3>📍 Display Content</h3>
                     <div class="control-group">
                         <label>Location</label>
                         <input type="text" id="input-location" value="South Yarra, VIC" oninput="updateDisplay()">
                     </div>
                     <div class="control-group">
-                        <label>Current Time</label>
+                        <label>Time</label>
                         <input type="text" id="input-time" value="08:15" oninput="updateDisplay()">
                     </div>
-                </div>
-                
-                <div class="control-section">
-                    <h3>☕ Coffee Decision</h3>
                     <div class="control-group">
-                        <label>Show Coffee Banner</label>
+                        <label>Coffee Decision</label>
                         <select id="input-coffee" onchange="updateDisplay()">
-                            <option value="yes">YES - Stop for Coffee</option>
-                            <option value="no">NO - Go Direct</option>
+                            <option value="yes">STOP FOR COFFEE</option>
+                            <option value="no">GO DIRECT</option>
                             <option value="none">Hidden</option>
                         </select>
                     </div>
                 </div>
                 
                 <div class="control-section">
-                    <h3>🚊 Leg 1 - Tram</h3>
+                    <h3>🚊 Transit Data</h3>
                     <div class="control-group">
-                        <label>Stop Name</label>
-                        <input type="text" id="input-tram-stop" value="Chapel St/Tivoli Rd" oninput="updateDisplay()">
+                        <label>Tram Stop</label>
+                        <input type="text" id="input-tram-stop" value="Chapel St/Tivoli" oninput="updateDisplay()">
                     </div>
                     <div class="control-group">
-                        <label>Departures (comma separated)</label>
+                        <label>Tram Departures</label>
                         <input type="text" id="input-tram-deps" value="3,8,15" oninput="updateDisplay()">
                     </div>
-                </div>
-                
-                <div class="control-section">
-                    <h3>🚆 Leg 2 - Train</h3>
                     <div class="control-group">
-                        <label>Stop Name</label>
-                        <input type="text" id="input-train-stop" value="South Yarra Station" oninput="updateDisplay()">
-                    </div>
-                    <div class="control-group">
-                        <label>Destination</label>
+                        <label>Train Destination</label>
                         <input type="text" id="input-train-dest" value="Parliament" oninput="updateDisplay()">
                     </div>
                     <div class="control-group">
-                        <label>Departures (comma separated)</label>
+                        <label>Train Departures</label>
                         <input type="text" id="input-train-deps" value="5,12,19" oninput="updateDisplay()">
                     </div>
                 </div>
                 
                 <div class="control-section">
-                    <h3>⏰ Journey Box</h3>
+                    <h3>⏰ Journey</h3>
                     <div class="control-group">
                         <label>Leave By</label>
                         <input type="text" id="input-leave" value="08:18" oninput="updateDisplay()">
                     </div>
                     <div class="control-group">
-                        <label>Arrive At</label>
+                        <label>Arrive By</label>
                         <input type="text" id="input-arrive" value="08:52" oninput="updateDisplay()">
                     </div>
                 </div>
                 
                 <div class="control-section">
-                    <h3>🌤️ Footer</h3>
-                    <div class="control-group">
-                        <label>Weather</label>
-                        <input type="text" id="input-weather" value="18°C Sunny" oninput="updateDisplay()">
+                    <h3>🎬 Simulation</h3>
+                    <div class="button-row">
+                        <button onclick="simulateBoot()">Boot Sequence</button>
                     </div>
-                    <div class="control-group">
-                        <label>Refresh Count</label>
-                        <input type="number" id="input-refresh" value="42" oninput="updateDisplay()">
+                    <div class="button-row">
+                        <button class="secondary" onclick="exportConfig()">Export</button>
+                        <button class="secondary" onclick="resetToDefaults()">Reset</button>
                     </div>
-                </div>
-                
-                <div class="button-row">
-                    <button onclick="simulateRefresh()">Simulate Refresh</button>
-                    <button class="secondary" onclick="exportConfig()">Export Config</button>
                 </div>
             </div>
         </div>
         
         <div class="status-bar">
             <div class="status-item">
-                <div class="status-dot"></div>
-                <span>Simulator Active</span>
+                <div class="status-dot" id="status-dot"></div>
+                <span id="status-text">Ready</span>
             </div>
-            <div class="status-item">
-                <span>Firmware: v5.18</span>
-            </div>
-            <div class="status-item">
-                <span>Display: 800×480</span>
-            </div>
-            <div class="status-item">
-                <span id="last-update">Last update: --</span>
-            </div>
+            <div class="status-item"><span id="device-ppi">--</span></div>
+            <div class="status-item"><span id="next-refresh">--</span></div>
+            <div class="status-item"><span>v5.18</span></div>
         </div>
         
-        <footer>
-            PTV-TRMNL Firmware Simulator • © 2026 Angus Bergman • CC BY-NC 4.0
-        </footer>
+        <footer>PTV-TRMNL Multi-Device Simulator • © 2026 Angus Bergman • CC BY-NC 4.0</footer>
     </div>
     
     <script>
-        // Display configuration
-        const display = {
-            width: 800,
-            height: 480,
-            bgColor: '#f5f5f0',
-            fgColor: '#1a1a1a'
+        // Device configurations (verified against manufacturer specs)
+        const DEVICES = {
+            "trmnl-og": {
+                name: "TRMNL OG", width: 800, height: 480, ppi: 150,
+                orientation: "landscape", fullRefreshInterval: 10, ditherMode: "none",
+                displayType: "EP75_800x480"
+            },
+            "kindle-pw5": {
+                name: "Kindle Paperwhite 5", width: 1236, height: 1648, ppi: 300,
+                orientation: "portrait", fullRefreshInterval: 12, ditherMode: "ordered",
+                displayType: "Carta 1200 6.8\""
+            },
+            "kindle-pw4": {
+                name: "Kindle Paperwhite 4", width: 1072, height: 1448, ppi: 300,
+                orientation: "portrait", fullRefreshInterval: 10, ditherMode: "ordered",
+                displayType: "Carta 1100 6\""
+            },
+            "kindle-pw3": {
+                name: "Kindle Paperwhite 3", width: 1072, height: 1448, ppi: 300,
+                orientation: "portrait", fullRefreshInterval: 10, ditherMode: "ordered",
+                displayType: "Carta 6\""
+            },
+            "kindle-11": {
+                name: "Kindle 11th Gen", width: 1072, height: 1448, ppi: 300,
+                orientation: "portrait", fullRefreshInterval: 10, ditherMode: "ordered",
+                displayType: "Carta 1200 6\""
+            },
+            "kindle-basic-10": {
+                name: "Kindle Basic 10", width: 600, height: 800, ppi: 167,
+                orientation: "portrait", fullRefreshInterval: 5, ditherMode: "none",
+                displayType: "Pearl 6\""
+            }
         };
         
-        // Font sizes (approximating firmware fonts)
-        const fonts = {
-            'FONT_12x16': { size: 20, weight: 'bold' },
-            'FONT_8x8': { size: 13, weight: 'normal' }
-        };
+        let currentDevice = "trmnl-og";
+        let refreshCount = 0;
+        let partialCount = 0;
+        let refreshTimer = null;
+        let ghostElements = [];
         
-        // Update display based on inputs
+        // Scale factor for display (fit in viewport)
+        function getScale(device) {
+            const maxW = 800, maxH = 600;
+            const scaleW = maxW / device.width;
+            const scaleH = maxH / device.height;
+            return Math.min(scaleW, scaleH, 1);
+        }
+        
+        // Initialize device selector
+        function initDeviceSelector() {
+            const container = document.getElementById("device-selector");
+            container.innerHTML = "";
+            Object.entries(DEVICES).forEach(([id, dev]) => {
+                const btn = document.createElement("button");
+                btn.className = "device-btn" + (id === currentDevice ? " active" : "");
+                btn.textContent = dev.name;
+                btn.onclick = () => selectDevice(id);
+                container.appendChild(btn);
+            });
+        }
+        
+        function selectDevice(id) {
+            currentDevice = id;
+            initDeviceSelector();
+            updateDisplay();
+            updateDeviceInfo();
+        }
+        
+        function updateDeviceInfo() {
+            const dev = DEVICES[currentDevice];
+            document.getElementById("device-name").textContent = dev.name;
+            document.getElementById("device-res").textContent = dev.width + "×" + dev.height;
+            document.getElementById("device-ppi").textContent = dev.ppi + " PPI • " + dev.displayType;
+        }
+        
         function updateDisplay() {
-            const displayEl = document.getElementById('eink-display');
-            displayEl.innerHTML = '';
+            const dev = DEVICES[currentDevice];
+            const display = document.getElementById("eink-display");
+            const scale = getScale(dev);
+            
+            display.style.width = (dev.width * scale) + "px";
+            display.style.height = (dev.height * scale) + "px";
+            display.innerHTML = "";
+            
+            // Re-add ghost elements
+            ghostElements.forEach(g => display.appendChild(g));
             
             const config = getConfig();
+            const isPortrait = dev.orientation === "portrait";
+            const w = dev.width, h = dev.height;
             
+            // Adaptive layout based on orientation
+            if (isPortrait) {
+                drawPortraitLayout(display, config, w, h, scale);
+            } else {
+                drawLandscapeLayout(display, config, w, h, scale);
+            }
+        }
+        
+        function drawLandscapeLayout(display, config, w, h, scale) {
             // Header
-            addText(20, 25, `PTV-TRMNL • ${config.location}`, 'FONT_12x16');
-            addText(680, 25, config.time, 'FONT_12x16');
-            
-            // Horizontal line
-            addLine(0, 50, 800, 50);
+            addText(display, 20, 25, "PTV-TRMNL • " + config.location, "font-large", scale);
+            addText(display, w - 100, 25, config.time, "font-large", scale);
+            addLine(display, 0, 55, w, 55, scale);
             
             // Coffee banner
-            const bannerY = 60;
-            if (config.coffee === 'yes') {
-                addRect(0, bannerY, 800, 35, true);
-                addText(250, bannerY + 10, '>>> STOP FOR COFFEE <<<', 'FONT_12x16', true);
-            } else if (config.coffee === 'no') {
-                addText(280, bannerY + 10, '>>> GO DIRECT <<<', 'FONT_12x16');
+            if (config.coffee === "yes") {
+                addRect(display, 0, 65, w, 40, true, scale);
+                addText(display, w/2 - 120, 78, ">>> STOP FOR COFFEE <<<", "font-large", scale, true);
+            } else if (config.coffee === "no") {
+                addText(display, w/2 - 80, 80, ">>> GO DIRECT <<<", "font-medium", scale);
             }
             
-            // Leg 1 - Tram
-            const leg1Y = 110;
-            addText(20, leg1Y, '🚊 LEG 1: TRAM', 'FONT_12x16');
-            addText(30, leg1Y + 30, config.tramStop, 'FONT_8x8');
-            
-            config.tramDeps.forEach((dep, i) => {
-                const minText = dep === 1 ? 'min' : 'mins';
-                addText(40, leg1Y + 55 + (i * 25), `${dep} ${minText}`, 'FONT_8x8');
+            // Tram section
+            const y1 = 120;
+            addText(display, 20, y1, "🚊 TRAM", "font-large", scale);
+            addText(display, 30, y1 + 28, config.tramStop, "font-small", scale);
+            config.tramDeps.forEach((d, i) => {
+                addText(display, 40, y1 + 50 + i*22, d + " min", "font-small", scale);
             });
             
-            // Transfer indicator
-            const transferY = 220;
-            addText(350, transferY, '| transfer |', 'FONT_8x8');
-            
-            // Leg 2 - Train
-            const leg2Y = 250;
-            addText(20, leg2Y, '🚆 LEG 2: TRAIN', 'FONT_12x16');
-            addText(30, leg2Y + 30, `${config.trainStop} → ${config.trainDest}`, 'FONT_8x8');
-            
-            config.trainDeps.forEach((dep, i) => {
-                const minText = dep === 1 ? 'min' : 'mins';
-                addText(40, leg2Y + 55 + (i * 25), `${dep} ${minText}`, 'FONT_8x8');
+            // Train section
+            const y2 = 250;
+            addText(display, 20, y2, "🚆 TRAIN → " + config.trainDest, "font-large", scale);
+            config.trainDeps.forEach((d, i) => {
+                addText(display, 40, y2 + 28 + i*22, d + " min", "font-small", scale);
             });
             
             // Journey box
-            const boxX = 500;
-            const boxY = 110;
-            addRect(boxX, boxY, 280, 140);
-            addText(boxX + 60, boxY + 20, 'LEAVE BY', 'FONT_12x16');
-            addText(boxX + 80, boxY + 55, config.leaveBy, 'FONT_12x16');
-            addText(boxX + 70, boxY + 90, 'Arrive at work:', 'FONT_8x8');
-            addText(boxX + 90, boxY + 110, config.arriveBy, 'FONT_12x16');
+            const bx = w - 300, by = 120;
+            addRect(display, bx, by, 280, 140, false, scale);
+            addText(display, bx + 80, by + 25, "LEAVE BY", "font-medium", scale);
+            addText(display, bx + 90, by + 60, config.leaveBy, "font-large", scale);
+            addText(display, bx + 60, by + 95, "Arrive: " + config.arriveBy, "font-small", scale);
             
             // Footer
-            addLine(0, 430, 800, 430);
-            addText(20, 450, `Weather: ${config.weather}`, 'FONT_8x8');
-            addText(350, 450, `Refresh #${config.refreshCount}`, 'FONT_8x8');
-            addText(650, 450, 'v5.18', 'FONT_8x8');
+            addLine(display, 0, h - 50, w, h - 50, scale);
+            addText(display, 20, h - 30, "Refresh #" + refreshCount, "font-small", scale);
+            addText(display, w - 80, h - 30, "v5.18", "font-small", scale);
+        }
+        
+        function drawPortraitLayout(display, config, w, h, scale) {
+            // Header
+            addText(display, 20, 30, "PTV-TRMNL", "font-large", scale);
+            addText(display, 20, 60, config.location, "font-small", scale);
+            addText(display, w - 100, 30, config.time, "font-large", scale);
+            addLine(display, 0, 85, w, 85, scale);
             
-            // Update timestamp
-            document.getElementById('last-update').textContent = 
-                `Last update: ${new Date().toLocaleTimeString()}`;
-        }
-        
-        function addText(x, y, text, font, inverted = false) {
-            const displayEl = document.getElementById('eink-display');
-            const el = document.createElement('div');
-            el.className = `display-text ${font === 'FONT_12x16' ? 'font-12x16' : 'font-8x8'}${inverted ? ' inverted' : ''}`;
-            el.style.left = x + 'px';
-            el.style.top = y + 'px';
-            el.textContent = text;
-            displayEl.appendChild(el);
-        }
-        
-        function addRect(x, y, w, h, filled = false) {
-            const displayEl = document.getElementById('eink-display');
-            const el = document.createElement('div');
-            el.className = 'rect-box';
-            el.style.left = x + 'px';
-            el.style.top = y + 'px';
-            el.style.width = w + 'px';
-            el.style.height = h + 'px';
-            if (filled) {
-                el.style.background = '#1a1a1a';
-                el.style.border = 'none';
+            // Coffee banner
+            if (config.coffee === "yes") {
+                addRect(display, 0, 95, w, 50, true, scale);
+                addText(display, w/2 - 130, 112, ">>> STOP FOR COFFEE <<<", "font-large", scale, true);
+            } else if (config.coffee === "no") {
+                addText(display, w/2 - 90, 115, ">>> GO DIRECT <<<", "font-medium", scale);
             }
-            displayEl.appendChild(el);
+            
+            // Journey box (top right area in portrait)
+            const bx = 20, by = 160;
+            addRect(display, bx, by, w - 40, 180, false, scale);
+            addText(display, w/2 - 60, by + 30, "LEAVE BY", "font-large", scale);
+            addText(display, w/2 - 40, by + 80, config.leaveBy, "font-large", scale);
+            addText(display, w/2 - 80, by + 130, "Arrive at: " + config.arriveBy, "font-medium", scale);
+            
+            // Tram section
+            const y1 = 370;
+            addText(display, 20, y1, "🚊 TRAM - " + config.tramStop, "font-medium", scale);
+            let ty = y1 + 35;
+            config.tramDeps.forEach((d, i) => {
+                addText(display, 40, ty + i*30, d + " min", "font-medium", scale);
+            });
+            
+            // Train section
+            const y2 = 520;
+            addText(display, 20, y2, "🚆 TRAIN → " + config.trainDest, "font-medium", scale);
+            let tty = y2 + 35;
+            config.trainDeps.forEach((d, i) => {
+                addText(display, 40, tty + i*30, d + " min", "font-medium", scale);
+            });
+            
+            // Footer
+            addLine(display, 0, h - 60, w, h - 60, scale);
+            addText(display, 20, h - 35, "Refresh #" + refreshCount, "font-small", scale);
+            addText(display, w - 80, h - 35, "v5.18", "font-small", scale);
         }
         
-        function addLine(x1, y1, x2, y2) {
-            const displayEl = document.getElementById('eink-display');
-            const el = document.createElement('div');
-            el.style.position = 'absolute';
-            el.style.left = x1 + 'px';
-            el.style.top = y1 + 'px';
-            el.style.width = (x2 - x1) + 'px';
-            el.style.height = '1px';
-            el.style.background = '#1a1a1a';
-            displayEl.appendChild(el);
+        function addText(parent, x, y, text, font, scale, inverted = false) {
+            const el = document.createElement("div");
+            el.className = "display-text " + font + (inverted ? " inverted" : "");
+            el.style.left = (x * scale) + "px";
+            el.style.top = (y * scale) + "px";
+            el.style.transform = "scale(" + scale + ")";
+            el.style.transformOrigin = "top left";
+            el.textContent = text;
+            parent.appendChild(el);
+        }
+        
+        function addRect(parent, x, y, w, h, filled, scale) {
+            const el = document.createElement("div");
+            el.className = "rect-box";
+            el.style.left = (x * scale) + "px";
+            el.style.top = (y * scale) + "px";
+            el.style.width = (w * scale) + "px";
+            el.style.height = (h * scale) + "px";
+            if (filled) { el.style.background = "#1a1a1a"; el.style.border = "none"; }
+            parent.appendChild(el);
+        }
+        
+        function addLine(parent, x1, y1, x2, y2, scale) {
+            const el = document.createElement("div");
+            el.style.position = "absolute";
+            el.style.left = (x1 * scale) + "px";
+            el.style.top = (y1 * scale) + "px";
+            el.style.width = ((x2 - x1) * scale) + "px";
+            el.style.height = "1px";
+            el.style.background = "#1a1a1a";
+            parent.appendChild(el);
         }
         
         function getConfig() {
             return {
-                location: document.getElementById('input-location').value,
-                time: document.getElementById('input-time').value,
-                coffee: document.getElementById('input-coffee').value,
-                tramStop: document.getElementById('input-tram-stop').value,
-                tramDeps: document.getElementById('input-tram-deps').value.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n)),
-                trainStop: document.getElementById('input-train-stop').value,
-                trainDest: document.getElementById('input-train-dest').value,
-                trainDeps: document.getElementById('input-train-deps').value.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n)),
-                leaveBy: document.getElementById('input-leave').value,
-                arriveBy: document.getElementById('input-arrive').value,
-                weather: document.getElementById('input-weather').value,
-                refreshCount: document.getElementById('input-refresh').value
+                location: document.getElementById("input-location").value,
+                time: document.getElementById("input-time").value,
+                coffee: document.getElementById("input-coffee").value,
+                tramStop: document.getElementById("input-tram-stop").value,
+                tramDeps: document.getElementById("input-tram-deps").value.split(",").map(n => parseInt(n.trim())).filter(n => !isNaN(n)),
+                trainDest: document.getElementById("input-train-dest").value,
+                trainDeps: document.getElementById("input-train-deps").value.split(",").map(n => parseInt(n.trim())).filter(n => !isNaN(n)),
+                leaveBy: document.getElementById("input-leave").value,
+                arriveBy: document.getElementById("input-arrive").value
             };
         }
         
-        function loadPreset(preset) {
-            const presets = {
-                morning: {
-                    location: 'South Yarra, VIC',
-                    time: '07:45',
-                    coffee: 'yes',
-                    tramStop: 'Chapel St/Tivoli Rd',
-                    tramDeps: '3,8,15',
-                    trainStop: 'South Yarra Station',
-                    trainDest: 'Parliament',
-                    trainDeps: '5,12,19',
-                    leaveBy: '07:52',
-                    arriveBy: '08:28',
-                    weather: '16°C Partly Cloudy'
-                },
-                coffee: {
-                    location: 'South Yarra, VIC',
-                    time: '08:15',
-                    coffee: 'yes',
-                    tramStop: 'Chapel St/Tivoli Rd',
-                    tramDeps: '2,9,16',
-                    trainStop: 'South Yarra Station',
-                    trainDest: 'Parliament',
-                    trainDeps: '8,15,22',
-                    leaveBy: '08:18',
-                    arriveBy: '08:52',
-                    weather: '18°C Sunny'
-                },
-                direct: {
-                    location: 'South Yarra, VIC',
-                    time: '08:35',
-                    coffee: 'no',
-                    tramStop: 'Chapel St/Tivoli Rd',
-                    tramDeps: '1,6,13',
-                    trainStop: 'South Yarra Station',
-                    trainDest: 'Parliament',
-                    trainDeps: '4,11,18',
-                    leaveBy: '08:37',
-                    arriveBy: '08:58',
-                    weather: '20°C Clear'
-                },
-                setup: {
-                    location: 'Setup Mode',
-                    time: '--:--',
-                    coffee: 'none',
-                    tramStop: 'Waiting for config...',
-                    tramDeps: '',
-                    trainStop: 'Not configured',
-                    trainDest: '---',
-                    trainDeps: '',
-                    leaveBy: '--:--',
-                    arriveBy: '--:--',
-                    weather: 'Connecting...'
-                }
-            };
+        function doFullRefresh() {
+            const display = document.getElementById("eink-display");
+            const dot = document.getElementById("status-dot");
+            const mode = document.getElementById("refresh-mode");
             
-            const p = presets[preset];
-            document.getElementById('input-location').value = p.location;
-            document.getElementById('input-time').value = p.time;
-            document.getElementById('input-coffee').value = p.coffee;
-            document.getElementById('input-tram-stop').value = p.tramStop;
-            document.getElementById('input-tram-deps').value = p.tramDeps;
-            document.getElementById('input-train-stop').value = p.trainStop;
-            document.getElementById('input-train-dest').value = p.trainDest;
-            document.getElementById('input-train-deps').value = p.trainDeps;
-            document.getElementById('input-leave').value = p.leaveBy;
-            document.getElementById('input-arrive').value = p.arriveBy;
-            document.getElementById('input-weather').value = p.weather;
+            dot.classList.add("refreshing");
+            mode.textContent = "FULL...";
+            display.style.background = "#1a1a1a";
             
+            setTimeout(() => {
+                display.style.background = "#f5f5f0";
+                ghostElements = [];
+                partialCount = 0;
+                refreshCount++;
+                document.getElementById("refresh-count").textContent = "Refresh #" + refreshCount;
+                mode.textContent = "FULL";
+                dot.classList.remove("refreshing");
+                updateDisplay();
+            }, 400);
+        }
+        
+        function doPartialRefresh() {
+            const dev = DEVICES[currentDevice];
+            const mode = document.getElementById("refresh-mode");
+            
+            partialCount++;
+            if (partialCount >= dev.fullRefreshInterval) {
+                doFullRefresh();
+                return;
+            }
+            
+            mode.textContent = "PARTIAL (" + partialCount + "/" + dev.fullRefreshInterval + ")";
+            refreshCount++;
+            document.getElementById("refresh-count").textContent = "Refresh #" + refreshCount;
+            
+            // Add subtle ghosting on partial
+            if (dev.ditherMode !== "none" && Math.random() > 0.7) {
+                addGhostArtifact();
+            }
             updateDisplay();
         }
         
-        function simulateRefresh() {
-            const displayEl = document.getElementById('eink-display');
-            const modeEl = document.getElementById('refresh-mode');
+        function simulateGhosting() {
+            addGhostArtifact();
+            addGhostArtifact();
+            updateDisplay();
+        }
+        
+        function addGhostArtifact() {
+            const dev = DEVICES[currentDevice];
+            const scale = getScale(dev);
+            const el = document.createElement("div");
+            el.className = "display-text font-medium ghosting";
+            el.style.left = (Math.random() * dev.width * 0.8 * scale) + "px";
+            el.style.top = (Math.random() * dev.height * 0.8 * scale) + "px";
+            el.textContent = ["08:15", "3 min", "TRAM", "LEAVE"][Math.floor(Math.random() * 4)];
+            ghostElements.push(el);
+        }
+        
+        function clearGhosting() {
+            ghostElements = [];
+            updateDisplay();
+        }
+        
+        function simulateBoot() {
+            const display = document.getElementById("eink-display");
+            const dev = DEVICES[currentDevice];
+            const scale = getScale(dev);
+            const dot = document.getElementById("status-dot");
+            const status = document.getElementById("status-text");
             
-            // Simulate e-ink flash
-            displayEl.style.background = '#1a1a1a';
-            modeEl.textContent = 'REFRESHING...';
+            refreshCount = 0;
+            partialCount = 0;
+            ghostElements = [];
+            
+            // Stage 1: Flash black
+            display.style.background = "#1a1a1a";
+            display.innerHTML = "";
+            dot.classList.add("refreshing");
+            status.textContent = "Flashing...";
             
             setTimeout(() => {
-                displayEl.style.background = '#f5f5f0';
-                modeEl.textContent = 'REFRESH_FULL';
+                // Stage 2: Flash white
+                display.style.background = "#f5f5f0";
+                status.textContent = "Initializing...";
                 
-                // Increment refresh count
-                const countEl = document.getElementById('input-refresh');
-                countEl.value = parseInt(countEl.value) + 1;
-                updateDisplay();
+                setTimeout(() => {
+                    // Stage 3: Show boot text
+                    display.innerHTML = "";
+                    addText(display, 20, 30, "PTV-TRMNL v5.18", "font-large", scale);
+                    addText(display, 20, 70, "Booting...", "font-small", scale);
+                    status.textContent = "Connecting WiFi...";
+                    
+                    setTimeout(() => {
+                        addText(display, 20, 100, "WiFi: Connected", "font-small", scale);
+                        status.textContent = "Fetching data...";
+                        
+                        setTimeout(() => {
+                            addText(display, 20, 130, "API: OK", "font-small", scale);
+                            status.textContent = "Ready";
+                            dot.classList.remove("refreshing");
+                            
+                            setTimeout(() => {
+                                doFullRefresh();
+                            }, 1000);
+                        }, 800);
+                    }, 1000);
+                }, 600);
             }, 500);
         }
         
+        function updateRefreshInterval() {
+            const interval = parseInt(document.getElementById("refresh-interval").value);
+            if (refreshTimer) clearInterval(refreshTimer);
+            if (interval > 0) {
+                refreshTimer = setInterval(doPartialRefresh, interval);
+                document.getElementById("next-refresh").textContent = "Auto: " + (interval/1000) + "s";
+            } else {
+                document.getElementById("next-refresh").textContent = "Manual";
+            }
+        }
+        
         function exportConfig() {
-            const config = getConfig();
-            const json = JSON.stringify(config, null, 2);
-            
-            const blob = new Blob([json], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'trmnl-simulator-config.json';
+            const config = { device: currentDevice, ...getConfig(), refreshCount };
+            const blob = new Blob([JSON.stringify(config, null, 2)], { type: "application/json" });
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = "ptv-trmnl-simulator-" + currentDevice + ".json";
             a.click();
         }
         
-        // Initial render
-        updateDisplay();
+        function resetToDefaults() {
+            document.getElementById("input-location").value = "South Yarra, VIC";
+            document.getElementById("input-time").value = "08:15";
+            document.getElementById("input-coffee").value = "yes";
+            document.getElementById("input-tram-stop").value = "Chapel St/Tivoli";
+            document.getElementById("input-tram-deps").value = "3,8,15";
+            document.getElementById("input-train-dest").value = "Parliament";
+            document.getElementById("input-train-deps").value = "5,12,19";
+            document.getElementById("input-leave").value = "08:18";
+            document.getElementById("input-arrive").value = "08:52";
+            refreshCount = 0;
+            partialCount = 0;
+            ghostElements = [];
+            updateDisplay();
+        }
         
-        // Live clock option
-        setInterval(() => {
-            const timeInput = document.getElementById('input-time');
-            if (timeInput.value === 'LIVE') {
-                const now = new Date();
-                timeInput.value = now.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: false });
-                updateDisplay();
-            }
-        }, 1000);
+        // Init
+        initDeviceSelector();
+        updateDeviceInfo();
+        updateDisplay();
+        updateRefreshInterval();
     </script>
 </body>
 </html>

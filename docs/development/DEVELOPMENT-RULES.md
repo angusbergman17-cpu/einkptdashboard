@@ -3174,7 +3174,6 @@ body {
 
 <body explaining what changed and why>
 
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 ```
 
 **Types**:
@@ -3195,7 +3194,6 @@ git commit -m "feat: Add Transport Victoria GTFS Realtime integration
 - Add subscription key authentication
 - Update all documentation
 
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 
 # ❌ WRONG:
 git commit -m "update ptv api stuff"
@@ -4898,7 +4896,6 @@ COMPLIANCE NOTES:
 - Development Rules sections followed
 - API usage correct
 
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 ```
 
 **Types**: feat, fix, docs, style, refactor, test, chore

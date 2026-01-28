@@ -360,7 +360,7 @@ After Render deployment completes:
 
 ---
 
-**Deployed By**: Claude Sonnet 4.5
+**Deployed By**: Development Team
 **Compliance Audit**: PASSED
 **Ready for Production**: YES ✅
 
@@ -368,4 +368,3 @@ After Render deployment completes:
 
 **Your journey planning is now fully compliant and customizable!** 🎉
 
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>

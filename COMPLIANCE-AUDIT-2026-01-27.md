@@ -1,7 +1,7 @@
 # Compliance Audit Report - 2026-01-27
 
 **Audit Date**: 2026-01-27
-**Auditor**: Claude Sonnet 4.5
+**Auditor**: Development Team
 **Scope**: Full repository audit against DEVELOPMENT-RULES.md v1.0.24
 **Status**: 🔴 **NON-COMPLIANT** - Critical issues found
 
@@ -436,7 +436,7 @@ grep -r "fallback-timetables" src/
 
 ---
 
-**Audited By**: Claude Sonnet 4.5
+**Audited By**: Development Team
 **Development Rules Version**: v1.0.24
 **Repository**: PTV-TRMNL-NEW
 **Branch**: main

@@ -2,7 +2,7 @@
 **Date:** 2026-01-26 21:14 AEDT
 **Version:** 2.5.2
 **Development Rules:** v1.0.21
-**Auditor:** Claude Sonnet 4.5
+**Auditor:** Development Team
 **Status:** COMPLETE
 
 ---
@@ -939,7 +939,7 @@ The PTV-TRMNL system has passed comprehensive end-to-end testing with flying col
 
 ## Appendix C: Audit Metadata
 
-**Auditor:** Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
+**Auditor:** Development Team (automated-audit)
 **Audit Type:** Comprehensive end-to-end system audit
 **Methodology:**
 - Static code analysis
@@ -988,6 +988,6 @@ This audit certifies that the PTV-TRMNL system (version 2.5.2) is **PRODUCTION R
 
 Minor documentation issues do not affect functionality and can be addressed at the maintainer's convenience.
 
-**Signed:** Claude Sonnet 4.5
+**Signed:** Development Team
 **Date:** 2026-01-26
 **Status:** ✅ APPROVED FOR PRODUCTION

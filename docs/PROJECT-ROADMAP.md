@@ -97,7 +97,7 @@ Complete development and public release roadmap for the Smart E-Ink Dashboard fo
 - [ ] No hardcoded credentials in public code
 - [ ] All personal references removed
 - [ ] CC BY-NC 4.0 license on all original files
-- [ ] No Claude/Clawdbot references
+- [ ] No AI/Assistant references
 - [ ] Device simulator matches real device behavior
 - [ ] Documentation complete for end users
 
@@ -133,7 +133,7 @@ Complete development and public release roadmap for the Smart E-Ink Dashboard fo
 - [ ] Branch protection rules enabled
 - [ ] All code location-agnostic
 - [ ] No personal information (except author attribution)
-- [ ] No Claude/Clawdbot references
+- [ ] No AI/Assistant references
 - [ ] Clean commit history
 - [ ] Proper .gitignore
 - [ ] README with clear setup instructions

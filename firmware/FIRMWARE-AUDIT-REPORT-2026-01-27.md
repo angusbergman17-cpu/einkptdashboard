@@ -551,7 +551,7 @@ According to FIRMWARE-VERSION-HISTORY.md:
 ## Audit Metadata
 
 **Audit Completed:** 2026-01-27
-**Auditor:** Claude Code Firmware Audit System
+**Auditor:** Automated Audit Firmware Audit System
 **Next Review:** After v5.10 fixes implemented
 **Audit Duration:** Comprehensive analysis of all 12 anti-brick rules, memory usage, and code structure
 

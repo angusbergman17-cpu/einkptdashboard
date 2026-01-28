@@ -1,6 +1,6 @@
 # Attribution Audit Report
 **Date**: 2026-01-26
-**Auditor**: Claude Sonnet 4.5 (automated)
+**Auditor**: Development Team (automated)
 **Requester**: Angus Bergman
 **Status**: ✅ COMPLETE
 

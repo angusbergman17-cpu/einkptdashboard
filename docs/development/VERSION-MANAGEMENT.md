@@ -210,6 +210,6 @@ echo "   - Commit and push changes"
 
 ---
 
-**Maintained By**: Claude Sonnet 4.5 + Angus Bergman
+**Maintained By**: Development Team + Angus Bergman
 **Last Updated**: 2026-01-25
 **Current Version**: v2.5.0

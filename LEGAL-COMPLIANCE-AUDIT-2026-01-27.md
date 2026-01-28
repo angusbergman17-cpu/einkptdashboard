@@ -1,7 +1,7 @@
 # Legal Compliance Audit Report
 
 **Audit Date**: 2026-01-27
-**Auditor**: Claude Sonnet 4.5 (Legal Compliance Review)
+**Auditor**: Development Team (Legal Compliance Review)
 **Scope**: Full repository legal compliance audit
 **Status**: 🟢 **COMPLIANT** - Minor improvements recommended
 
@@ -596,7 +596,7 @@ The three recommendations provided are **non-critical enhancements** that would 
 **Compliance Status**: 🟢 **FULLY COMPLIANT** (with minor recommendations)
 **Next Review**: Recommended within 12 months or when significant changes occur
 
-**Audited By**: Claude Sonnet 4.5 (Legal Compliance Analysis)
+**Audited By**: Development Team (Legal Compliance Analysis)
 **Repository**: PTV-TRMNL-NEW
 **Branch**: main
 **Commit**: 107ca4b
