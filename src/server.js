@@ -31,6 +31,7 @@ import nodemailer from 'nodemailer';
 import safeguards from './utils/deployment-safeguards.js';
 import { decodeConfigToken, encodeConfigToken, generateWebhookUrl } from './utils/config-token.js';
 import { renderDashboard, renderTestPattern } from "./services/image-renderer.js";
+import { renderZones, clearCache as clearZoneCache, ZONES } from "./services/zone-renderer.js";
 
 // Setup error handlers early (before any async operations)
 safeguards.setupErrorHandlers();
@@ -2058,6 +2059,36 @@ app.get('/api/image/test', async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
+});
+
+// Zone-based partial refresh endpoint
+app.get('/api/zones', async (req, res) => {
+  try {
+    const forceAll = req.query.force === 'true';
+    const data = await getData();
+    const dashData = {
+      current_time: new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Australia/Melbourne' }),
+      trains: data.trains || [],
+      trams: data.trams || [],
+      weather: data.weather,
+      coffee: data.coffee
+    };
+    const result = renderZones(dashData, forceAll);
+    const changed = result.zones.filter(z => z.changed).length;
+    res.setHeader('X-Zones-Changed', changed.toString());
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/zones/list', (req, res) => {
+  res.json({ zones: Object.entries(ZONES).map(([id, z]) => ({ id, ...z })) });
+});
+
+app.post('/api/zones/reset', (req, res) => {
+  clearZoneCache();
+  res.json({ success: true });
 });
 
   const macAddress = req.query.mac || req.headers['x-device-mac'];
