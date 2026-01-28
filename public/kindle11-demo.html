@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Kindle 11 - Your Route</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #1e293b; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        .device-frame { background: #333; padding: 30px 20px; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+        .device-label { color: #888; font-size: 12px; text-align: center; margin-bottom: 15px; }
+        #display { width: 536px; height: 724px; background: #f5f5f0; border: 2px solid #1a1a1a; border-radius: 2px; position: relative; overflow: hidden; font-family: "Courier New", monospace; }
+        .text { position: absolute; color: #1a1a1a; white-space: nowrap; }
+        .large { font-size: 22px; font-weight: bold; }
+        .medium { font-size: 16px; font-weight: bold; }
+        .small { font-size: 13px; }
+        .xl { font-size: 36px; font-weight: bold; }
+        .inverted { background: #1a1a1a; color: #f5f5f0; padding: 8px 16px; }
+        .box { position: absolute; border: 2px solid #1a1a1a; }
+        .line { position: absolute; background: #1a1a1a; height: 1px; }
+        .info { color: #6b7280; text-align: center; margin-top: 15px; font-size: 11px; }
+    </style>
+</head>
+<body>
+    <div class="device-frame">
+        <div class="device-label">Kindle 11th Gen (1072x1448 @ 300 PPI) - scaled 0.5x</div>
+        <div id="display">
+            <div class="text large" style="left: 20px; top: 25px;">PTV-TRMNL</div>
+            <div class="text small" style="left: 20px; top: 55px;">South Yarra, VIC</div>
+            <div class="text large" style="right: 20px; top: 25px;">08:15</div>
+            <div class="line" style="left: 0; top: 85px; width: 536px;"></div>
+            <div style="position: absolute; left: 0; top: 95px; width: 536px; height: 50px; background: #1a1a1a;"></div>
+            <div class="text large inverted" style="left: 120px; top: 107px;">>>> STOP FOR COFFEE <<<</div>
+            <div class="box" style="left: 20px; top: 160px; width: 496px; height: 180px;"></div>
+            <div class="text large" style="left: 200px; top: 185px;">LEAVE BY</div>
+            <div class="text xl" style="left: 215px; top: 230px;">08:22</div>
+            <div class="text medium" style="left: 175px; top: 295px;">Arrive at: 08:48</div>
+            <div class="text large" style="left: 20px; top: 370px;">🚊 TRAM</div>
+            <div class="text medium" style="left: 20px; top: 400px;">Chapel St / Tivoli Rd</div>
+            <div class="text small" style="left: 40px; top: 435px;">● 2 min</div>
+            <div class="text small" style="left: 40px; top: 458px;">○ 8 min</div>
+            <div class="text small" style="left: 40px; top: 481px;">○ 14 min</div>
+            <div class="box" style="left: 260px; top: 390px; width: 250px; height: 70px; border-style: dashed;"></div>
+            <div class="text medium" style="left: 275px; top: 405px;">☕ Maker South Yarra</div>
+            <div class="text small" style="left: 290px; top: 432px;">3 min walk from tram</div>
+            <div class="text large" style="left: 20px; top: 530px;">🚆 TRAIN → Hawthorn</div>
+            <div class="text medium" style="left: 20px; top: 560px;">South Yarra Station</div>
+            <div class="text small" style="left: 40px; top: 595px;">● 6 min</div>
+            <div class="text small" style="left: 40px; top: 618px;">○ 12 min</div>
+            <div class="text small" style="left: 40px; top: 641px;">○ 18 min</div>
+            <div class="box" style="left: 260px; top: 540px; width: 250px; height: 70px;"></div>
+            <div class="text medium" style="left: 275px; top: 555px;">📍 Bunnings Hawthorn</div>
+            <div class="text small" style="left: 290px; top: 582px;">124 Camberwell Rd</div>
+            <div class="line" style="left: 0; top: 680px; width: 536px;"></div>
+            <div class="text small" style="left: 20px; top: 695px;">☀️ 18°C Sunny</div>
+            <div class="text small" style="left: 220px; top: 695px;">Refresh #42</div>
+            <div class="text small" style="right: 20px; top: 695px;">v5.18</div>
+        </div>
+        <div class="info">🏠 1 Clara St, South Yarra → ☕ Maker South Yarra → 🏪 Bunnings Hawthorn</div>
+    </div>
+</body>
+</html>
