@@ -2,7 +2,7 @@
 import { renderZones } from '../../src/services/zone-renderer.js';
 
 export default async function handler(req, res) {
-  try {
+  try { if (req.query.ping) return res.json({pong: 'v2', ts: Date.now()});
     const { id } = req.query;
     console.log('Requested zone:', id);
     
