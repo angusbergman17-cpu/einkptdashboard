@@ -11,7 +11,7 @@ import { getDepartures, getWeather } from '../src/services/ptv-api.js';
 
 const TRAIN_STOP_ID = 1071;
 const TRAM_STOP_ID = 2500;
-const COFFEE_SHOP = 'Norman Cage';
+const COFFEE_SHOP = 'Norman South Yarra';
 
 export default async function handler(req, res) {
   try {

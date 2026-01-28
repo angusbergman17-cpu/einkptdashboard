@@ -11,7 +11,7 @@ import { getDepartures, getWeather } from '../src/services/ptv-api.js';
 // Configuration - TODO: move to env/config
 const TRAIN_STOP_ID = 1071;  // Flinders Street Station
 const TRAM_STOP_ID = 2500;   // Example tram stop
-const COFFEE_SHOP = 'Norman Cage';  // Coffee shop name
+const COFFEE_SHOP = 'Norman South Yarra';  // Coffee shop name
 
 export default async function handler(req, res) {
   if (req.query.ping) {
