@@ -17,6 +17,74 @@
 import { createCanvas } from 'canvas';
 
 // =============================================================================
+// BMP CONVERSION (1-bit monochrome for e-ink)
+// =============================================================================
+
+/**
+ * Convert canvas to 1-bit BMP for e-ink display
+ * @param {Canvas} canvas - Node canvas
+ * @returns {Buffer} BMP buffer
+ */
+function canvasToBMP(canvas) {
+  const W = canvas.width;
+  const H = canvas.height;
+  const ctx = canvas.getContext('2d');
+  const img = ctx.getImageData(0, 0, W, H);
+  
+  // BMP row size must be multiple of 4 bytes
+  const rowSize = Math.ceil(W / 32) * 4;
+  const pixelSize = rowSize * H;
+  
+  // BMP file: 14 byte header + 40 byte DIB + 8 byte palette + pixels
+  const buf = Buffer.alloc(62 + pixelSize);
+  let o = 0;
+  
+  // BMP Header (14 bytes)
+  buf.write('BM', o); o += 2;                    // Signature
+  buf.writeUInt32LE(62 + pixelSize, o); o += 4;  // File size
+  buf.writeUInt32LE(0, o); o += 4;               // Reserved
+  buf.writeUInt32LE(62, o); o += 4;              // Pixel data offset
+  
+  // DIB Header (40 bytes)
+  buf.writeUInt32LE(40, o); o += 4;              // DIB header size
+  buf.writeInt32LE(W, o); o += 4;                // Width
+  buf.writeInt32LE(-H, o); o += 4;               // Height (negative = top-down)
+  buf.writeUInt16LE(1, o); o += 2;               // Color planes
+  buf.writeUInt16LE(1, o); o += 2;               // Bits per pixel (1-bit)
+  buf.writeUInt32LE(0, o); o += 4;               // Compression (none)
+  buf.writeUInt32LE(pixelSize, o); o += 4;       // Image size
+  buf.writeInt32LE(2835, o); o += 4;             // X pixels per meter
+  buf.writeInt32LE(2835, o); o += 4;             // Y pixels per meter
+  buf.writeUInt32LE(2, o); o += 4;               // Colors in palette
+  buf.writeUInt32LE(0, o); o += 4;               // Important colors
+  
+  // Color palette (2 colors: black and white)
+  buf.writeUInt32LE(0x00000000, o); o += 4;      // Black (BGR + reserved)
+  buf.writeUInt32LE(0x00FFFFFF, o); o += 4;      // White (BGR + reserved)
+  
+  // Pixel data (1-bit per pixel, packed into bytes)
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x += 8) {
+      let byte = 0;
+      for (let bit = 0; bit < 8 && x + bit < W; bit++) {
+        const i = (y * W + x + bit) * 4;
+        // Calculate luminance
+        const lum = 0.299 * img.data[i] + 0.587 * img.data[i + 1] + 0.114 * img.data[i + 2];
+        // White = 1, Black = 0 (threshold at 128)
+        if (lum > 128) byte |= (0x80 >> bit);
+      }
+      buf.writeUInt8(byte, o++);
+    }
+    // Pad row to 4-byte boundary
+    for (let p = 0; p < rowSize - Math.ceil(W / 8); p++) {
+      buf.writeUInt8(0, o++);
+    }
+  }
+  
+  return buf;
+}
+
+// =============================================================================
 // CONSTANTS
 // =============================================================================
 
@@ -95,11 +163,30 @@ class V11JourneyRenderer {
   }
 
   /**
-   * Render complete journey display
+   * Render complete journey display to BMP (for e-ink device)
+   * @param {Object} journey - Journey data
+   * @returns {Buffer} 1-bit BMP buffer
+   */
+  render(journey) {
+    this.renderToCanvas(journey);
+    return canvasToBMP(this.canvas);
+  }
+
+  /**
+   * Render complete journey display to PNG (for web preview)
    * @param {Object} journey - Journey data
    * @returns {Buffer} PNG buffer
    */
-  render(journey) {
+  renderPNG(journey) {
+    this.renderToCanvas(journey);
+    return this.canvas.toBuffer('image/png');
+  }
+
+  /**
+   * Render journey to canvas (internal)
+   * @param {Object} journey - Journey data
+   */
+  renderToCanvas(journey) {
     const ctx = this.ctx;
     
     // Clear canvas
@@ -114,8 +201,6 @@ class V11JourneyRenderer {
     this.renderStatusBar(journey);
     this.renderSteps(journey);
     this.renderFooter(journey);
-
-    return this.canvas.toBuffer('image/png');
   }
 
   // ===========================================================================
@@ -557,10 +642,17 @@ class V11JourneyRenderer {
   // ===========================================================================
 
   /**
-   * Render journey to base64 PNG
+   * Render journey to base64 BMP (for device)
    */
   renderBase64(journey) {
     return this.render(journey).toString('base64');
+  }
+
+  /**
+   * Render journey to base64 PNG (for web preview)
+   */
+  renderBase64PNG(journey) {
+    return this.renderPNG(journey).toString('base64');
   }
 
   /**
