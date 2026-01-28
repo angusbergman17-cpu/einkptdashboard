@@ -28,13 +28,36 @@
 | Forbidden | Reason | Use Instead |
 |-----------|--------|-------------|
 | `PTV API` | Misleading - we use OpenData | `Transport Victoria OpenData API` |
+| `PTV Timetable API v3` | Legacy, deprecated | `GTFS-RT via OpenData` |
+| `PTV Developer ID` | Legacy auth method | `ODATA_API_KEY` |
+| `PTV API Token` | Legacy auth method | `KeyId` header |
+| `PTV_USER_ID` | Forbidden env var | Remove entirely |
+| `PTV_API_KEY` | Forbidden env var | `ODATA_API_KEY` |
+| `PTV_DEV_ID` | Forbidden env var | Remove entirely |
+| `HMAC-SHA1 signing` | Legacy auth | Simple KeyId header |
 | `Metro API` | Doesn't exist | `GTFS-RT via OpenData` |
 | `Real-time API` | Ambiguous | `GTFS-RT Trip Updates` |
 | `deepSleep()` in setup() | Causes brick | State machine in loop() |
 | `esp_task_wdt_*` | Causes freezes | Remove watchdog entirely |
 | `FONT_12x16` | Rotation bug | `FONT_8x8` only |
-| Hardcoded API keys | Security risk | Environment variables |
+| Hardcoded API keys | Security risk | Config token in URL |
 | `while(true)` blocking | Causes freeze | State machine pattern |
+
+### 1.2 Legacy PTV API Prohibition
+
+**🚨 ABSOLUTE PROHIBITION**: Never reference legacy PTV APIs.
+
+```javascript
+// ❌ FORBIDDEN:
+const ptvKey = process.env.PTV_API_KEY;
+const ptvUrl = 'https://timetableapi.ptv.vic.gov.au/...';
+
+// ✅ CORRECT:
+const apiKey = process.env.ODATA_API_KEY;
+const url = 'https://api.opendata.transport.vic.gov.au/...';
+```
+
+**WHY**: Legacy PTV Timetable API v3 is deprecated. System uses Transport Victoria GTFS Realtime exclusively.
 
 ### 1.2 Firmware Anti-Brick Rules
 
@@ -76,6 +99,61 @@ void loop() {
 - [ ] Brownout detection DISABLED
 - [ ] State machine architecture used
 - [ ] `FONT_8x8` only (TRMNL OG)
+
+---
+
+### 1.3 Zero-Config Serverless Architecture (🚨 CRITICAL)
+
+**ABSOLUTE REQUIREMENT**: Users must NEVER need to manually configure server-side environment variables.
+
+**Users must NEVER need to:**
+- ❌ Edit .env files or configuration files
+- ❌ Use command-line tools to set API keys
+- ❌ Manually enter API keys in Vercel/Render environment settings
+- ❌ Configure server-side secrets for the system to function
+- ❌ Touch deployment configuration after initial setup
+
+**ALL API KEYS MUST BE CONFIGURED EXCLUSIVELY THROUGH THE SETUP WIZARD/ADMIN PANEL.**
+
+**How It Works:**
+```
+┌─────────────────┐     ┌─────────────────────────────────────────────────┐
+│   SETUP WIZARD  │────▶│   Personalized URL with embedded config token   │
+│   (Admin Panel) │     │   /api/device/eyJhIjp7ImhvbWUiOiIxIENsYXJhLi4uIn0│
+└─────────────────┘     └─────────────────────────────────────────────────┘
+                                              │
+                                              ▼
+┌─────────────────┐     ┌─────────────────────────────────────────────────┐
+│   DEVICE        │────▶│   Server extracts API keys FROM REQUEST URL     │
+│   (Firmware)    │     │   NOT from environment variables                │
+└─────────────────┘     └─────────────────────────────────────────────────┘
+```
+
+**Config Token Structure:**
+```javascript
+{
+  "a": { /* addresses */ },
+  "j": { /* journey config */ },
+  "k": "api-key-here",        // Transport Victoria API key
+  "g": "google-places-key",   // Google Places API key (optional)
+  "s": "VIC"                  // State
+}
+```
+
+**Implementation:**
+```javascript
+// ✅ CORRECT - Keys from request URL:
+const config = decodeConfigToken(req.params.token);
+const apiKey = config.api?.key || '';  // From URL token
+
+// ❌ PROHIBITED - Keys from server env:
+const apiKey = process.env.ODATA_API_KEY;  // User must configure server
+```
+
+**Benefits:**
+- Zero-config deployment (no environment variables needed)
+- Self-contained devices (config travels with request)
+- Privacy (API keys stay with device owner)
 
 ---
 
