@@ -1,10 +1,13 @@
-// /api/zone/:id - Returns raw BMP for a single zone
 import { renderZones } from '../../src/services/zone-renderer.js';
 
 export default async function handler(req, res) {
-  try { if (req.query.ping) return res.json({pong: 'v2', ts: Date.now()});
+  // Debug: return version if ping param
+  if (req.query.ping) {
+    return res.json({ pong: 'v3', ts: Date.now() });
+  }
+  
+  try {
     const { id } = req.query;
-    console.log('Requested zone:', id);
     
     const now = new Date();
     const currentTime = now.toLocaleTimeString('en-AU', {
@@ -22,21 +25,17 @@ export default async function handler(req, res) {
       coffee: { canGet: true, subtext: 'You have 8 minutes' }
     };
     
-    // forceAll=true to ensure data is rendered
     const result = renderZones(data, true);
-    console.log('Rendered zones:', result.zones.map(z => z.id));
-    
     const zone = result.zones.find(z => z.id === id);
     
-    if (!zone) {
-      return res.status(404).json({ error: 'Zone not found', requested: id, available: result.zones.map(z => z.id) });
+    if (!zone || !zone.data) {
+      return res.status(404).json({ 
+        error: 'Zone not found', 
+        requested: id,
+        available: result.zones.map(z => z.id)
+      });
     }
     
-    if (!zone.data) {
-      return res.status(404).json({ error: 'Zone has no data', zoneId: id });
-    }
-    
-    // Decode base64 to raw BMP
     const bmpBuffer = Buffer.from(zone.data, 'base64');
     
     res.setHeader('X-Zone-X', zone.x);
@@ -47,10 +46,8 @@ export default async function handler(req, res) {
     res.setHeader('Content-Length', bmpBuffer.length);
     res.setHeader('Cache-Control', 'no-cache');
     
-    res.status(200).send(bmpBuffer);
+    return res.status(200).send(bmpBuffer);
   } catch (error) {
-    console.error('Zone error:', error);
-    res.status(500).json({ error: error.message, stack: error.stack });
+    return res.status(500).json({ error: error.message });
   }
 }
-// Deploy trigger 1769616675
