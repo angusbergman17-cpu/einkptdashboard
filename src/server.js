@@ -2284,7 +2284,8 @@ app.get('/setup', (req, res) => {
 
 // Journey demo visualization
 app.get('/journey-demo', (req, res) => {
-  res.sendFile(path.join(process.cwd(), 'public', 'journey-demo.html'));
+app.get('/v11', (req, res) => { res.sendFile(path.join(process.cwd(), 'public', 'trmnl-og-v11.html')); });
+app.get('/trmnl-og-v11', (req, res) => { res.sendFile(path.join(process.cwd(), 'public', 'trmnl-og-v11.html')); });  res.sendFile(path.join(process.cwd(), 'public', 'journey-demo.html'));
 });
 
 // Journey display visualization (legacy - kept for compatibility)
