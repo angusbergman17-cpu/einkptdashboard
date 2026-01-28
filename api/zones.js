@@ -1,3 +1,10 @@
+/**
+ * PTV-TRMNL E-Ink Dashboard
+ * Copyright (c) 2026 Angus Bergman
+ * Licensed under CC BY-NC 4.0
+ * https://github.com/angusbergman17-cpu/einkptdashboard
+ */
+
 // /api/zones - Returns list of changed zone IDs (firmware stage 1)
 import { renderZones } from '../src/services/zone-renderer.js';
 import { getDepartures, getWeather } from '../src/services/ptv-api.js';

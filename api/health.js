@@ -1,3 +1,10 @@
+/**
+ * PTV-TRMNL E-Ink Dashboard
+ * Copyright (c) 2026 Angus Bergman
+ * Licensed under CC BY-NC 4.0
+ * https://github.com/angusbergman17-cpu/einkptdashboard
+ */
+
 // Simple health check that doesn't import the full app
 export default function handler(req, res) {
   res.status(200).json({

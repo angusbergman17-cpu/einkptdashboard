@@ -1,3 +1,10 @@
+/**
+ * PTV-TRMNL E-Ink Dashboard
+ * Copyright (c) 2026 Angus Bergman
+ * Licensed under CC BY-NC 4.0
+ * https://github.com/angusbergman17-cpu/einkptdashboard
+ */
+
 import { createCanvas } from '@napi-rs/canvas';
 
 const ZONES = {
