@@ -1,65 +1,46 @@
-# PTV-TRMNL Audit Registry
-**Last Updated**: 2026-01-28
+# PTV-TRMNL Audit Index
+
+**Project:** PTV-TRMNL Smart Transit Dashboard  
+**Maintainer:** Angus Bergman
 
 ---
 
-## Audit Naming Convention
+## Audit History
 
-**Format**: `AUDIT-{SEQ}-{YYYYMMDD}-{HHMM}.md`
-
-| Component | Description | Example |
-|-----------|-------------|----------|
-| `SEQ` | 3-digit sequential number | 001, 002, 003 |
-| `YYYYMMDD` | Date conducted | 20260128 |
-| `HHMM` | Time conducted (UTC) | 2308 |
-
-**Example**: `AUDIT-001-20260128-2308.md`
+| Audit ID | Date | Time | Auditor | Initial | Final | Status |
+|----------|------|------|---------|---------|-------|--------|
+| [AUDIT-001](AUDIT-001-20260128-2308.md) | 2026-01-28 | 23:08 | Lobby | 65% | 100% | ✅ Complete |
+| [AUDIT-002](AUDIT-002-20260128-1221.md) | 2026-01-28 | 12:21 | Lobby | 65% | - | ⚠️ Issues Found |
 
 ---
 
-## Audit Log
+## Current Status
 
-| ID | Date | Time (UTC) | Auditor | Pre-Score | Post-Score | Status |
-|----|------|------------|---------|-----------|------------|--------|
-| [AUDIT-001](AUDIT-001-20260128-2308.md) | 2026-01-28 | 23:08 | Claude Opus 4.5 | 65% | 100% | ✅ Complete |
+**Latest Audit:** AUDIT-002  
+**Phase:** 5 (Comprehensive System Audit)  
+**Overall Score:** 65%  
+**Status:** Critical issues require remediation
 
----
+### Key Findings (AUDIT-002)
 
-## Version Tracking
-
-### AUDIT-001 (2026-01-28)
-
-**Versions at Audit Start**:
-- Development Rules: v1.0.28
-- Codebase: commit `d953539`
-
-**Versions at Audit End**:
-- Development Rules: v1.0.30
-- Codebase: commit `e204127`
-
-**Files Modified**: 21 files across 10 commits
+1. **Device Specs:** ✅ All 6 devices verified against manufacturer data
+2. **Simulator:** ❌ Only supports TRMNL, missing Kindle devices
+3. **Sanitization:** ❌ 30+ files with Claude/Clawdbot references
+4. **Credentials:** ❌ API keys exposed in user-preferences.json
+5. **License:** ✅ CC BY-NC 4.0 correctly applied
 
 ---
 
-## How to Add New Audits
+## Phase 5 Checklist
 
-1. Determine next sequential number (current max + 1)
-2. Create file: `AUDIT-{SEQ}-{YYYYMMDD}-{HHMM}.md`
-3. Follow template in `docs/development/AUDIT-PROCESS.md`
-4. Update this index with new entry
-5. Commit both files together
-
----
-
-## Quick Stats
-
-| Metric | Value |
-|--------|-------|
-| Total Audits | 1 |
-| Last Audit | 2026-01-28 |
-| Current Compliance | 100% |
-| Next Audit ID | AUDIT-002 |
+- [x] Device specification verification
+- [x] Code consistency audit
+- [ ] Security audit (credentials exposed)
+- [ ] Simulator accuracy (Kindle not supported)
+- [ ] Sanitization (Claude refs remain)
+- [x] Documentation completeness
+- [x] License compliance
 
 ---
 
-*This index is the authoritative record of all system audits.*
+**License:** CC BY-NC 4.0
