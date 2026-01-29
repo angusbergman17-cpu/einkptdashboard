@@ -514,84 +514,54 @@ bool fetchZoneList(bool forceAll) {
     
     feedWatchdog();
     
-    // Isolated scope for HTTP client (memory safety)
+    // Mark all zones for refresh (server decides what to render)
+    // Using lightweight metadata endpoint - server does the thinking
+    for (int i = 0; i < ZONE_COUNT; i++) {
+        zoneChanged[i] = true;  // Always fetch all zones - server renders only what changed
+    }
+    
+    // Quick connectivity check via lightweight metadata endpoint
     {
         WiFiClientSecure* client = new WiFiClientSecure();
         if (!client) {
             Serial.println("✗ Failed to create client");
             return false;
         }
-        client->setInsecure();  // Skip cert validation (self-hosted)
+        client->setInsecure();
         
         HTTPClient http;
         
-        // Build URL
         String url = String(serverUrl);
         if (!url.endsWith("/")) url += "/";
-        url += "api/zones?batch=0&demo=normal";  // Demo mode for testing
-        if (forceAll) url += "&force=1";
-        
-        // Clean up double slashes
+        url += "api/zones?metadata=1";  // Ultra-lightweight check
         url.replace("//api", "/api");
         
-        Serial.printf("→ GET %s\n", url.c_str());
+        Serial.printf("→ Metadata check: %s\n", url.c_str());
         
-        http.setTimeout(HTTP_TIMEOUT_MS);
+        http.setTimeout(10000);  // 10s timeout for metadata
         
         if (!http.begin(*client, url)) {
-            Serial.println("✗ HTTP begin failed");
             delete client;
             return false;
         }
         
         http.addHeader("User-Agent", "PTV-TRMNL/" FIRMWARE_VERSION);
-        http.addHeader("FW-Version", FIRMWARE_VERSION);
         
         feedWatchdog();
         
         int httpCode = http.GET();
+        http.end();
+        delete client;
         
         if (httpCode != 200) {
-            Serial.printf("✗ HTTP error: %d\n", httpCode);
-            http.end();
-            delete client;
+            Serial.printf("✗ Metadata check failed: %d\n", httpCode);
             return false;
         }
         
-        String payload = http.getString();
-        Serial.printf("✓ Received %d bytes\n", payload.length());
-        
-        http.end();
-        delete client;
-        client = nullptr;
-        
-        // Parse changed zones from response
-        // Manual parsing to avoid ArduinoJson memory issues
-        for (int i = 0; i < ZONE_COUNT; i++) {
-            zoneChanged[i] = forceAll;  // Default: refresh all on force
-        }
-        
-        // Look for "changed":["zone1","zone2",...] pattern
-        int changedIdx = payload.indexOf("\"changed\":");
-        if (changedIdx >= 0) {
-            int arrStart = payload.indexOf('[', changedIdx);
-            int arrEnd = payload.indexOf(']', arrStart);
-            if (arrStart >= 0 && arrEnd > arrStart) {
-                String arr = payload.substring(arrStart + 1, arrEnd);
-                
-                // Parse zone IDs
-                for (int i = 0; i < ZONE_COUNT; i++) {
-                    if (arr.indexOf(ZONES[i].id) >= 0) {
-                        zoneChanged[i] = true;
-                        Serial.printf("  Zone '%s' changed\n", ZONES[i].id);
-                    }
-                }
-            }
-        }
+        Serial.println("✓ Server reachable");
     }
     
-    // Heap stabilization delay
-    delay(200);
+    delay(100);
     yield();
     
     return true;

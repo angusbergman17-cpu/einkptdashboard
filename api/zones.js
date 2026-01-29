@@ -232,7 +232,21 @@ export default async function handler(req, res) {
   try {
     const forceAll = req.query?.force === '1' || req.query?.force === 'true';
     const formatJson = req.query?.format === 'json';
+    const metadataOnly = req.query?.metadata === '1';
     const demoScenario = req.query?.demo;
+    
+    // Ultra-lightweight metadata response for ESP32 (tiny JSON)
+    if (metadataOnly) {
+      // Return just zone IDs - firmware fetches each BMP individually
+      const zoneIds = Object.keys(ZONES);
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Cache-Control', 'no-cache');
+      return res.status(200).json({
+        ts: Date.now(),
+        zones: zoneIds,
+        force: forceAll
+      });
+    }
     
     // Clear cache if forced
     if (forceAll) clearCache();
