@@ -366,11 +366,11 @@ function renderHeader(ctx, data) {
   const hour12 = hours % 12 || 12;
   timeStr = `${hour12}:${mins.toString().padStart(2, '0')}`;
   
-  ctx.font = '900 68px Inter';
+  ctx.font = '700 68px Inter';  // Reduced from 900 for readability
   ctx.fillText(timeStr, 16, 82);
   
   // 2.3 AM/PM Indicator
-  ctx.font = '800 18px Inter';
+  ctx.font = '600 18px Inter';
   ctx.fillText(hours >= 12 ? 'PM' : 'AM', 200, 82);
   
   // 2.4 Day of Week (bold)
@@ -388,7 +388,7 @@ function renderHeader(ctx, data) {
   ctx.strokeRect(wxX, wxY, wxW, wxH);
   
   // 2.6.1 Temperature
-  ctx.font = '900 38px Inter';
+  ctx.font = '700 38px Inter';  // Reduced from 900 for readability
   ctx.textAlign = 'center';
   ctx.fillText(`${data.temp ?? '--'}°`, wxX + wxW / 2, wxY + 38);
   
@@ -430,7 +430,7 @@ function renderSummary(ctx, data) {
   
   // Left content (white) - Bolder font
   ctx.fillStyle = '#FFF';
-  ctx.font = '800 14px Inter';
+  ctx.font = '600 14px Inter';
   
   let statusText;
   const arriveTime = data.arrive_by || '--:--';
@@ -454,7 +454,7 @@ function renderSummary(ctx, data) {
   
   // Right content - total time
   ctx.textAlign = 'right';
-  ctx.font = '800 14px Inter';
+  ctx.font = '600 14px Inter';
   ctx.fillText(`${data.total_minutes || '--'} min total`, w - 16, 19);
   ctx.textAlign = 'left';
 }
@@ -522,7 +522,7 @@ function renderLeg(ctx, leg, index, y, legHeight, isLast) {
     ctx.stroke();
     ctx.setLineDash([]);
     ctx.fillStyle = '#000';
-    ctx.font = '900 16px Inter';
+    ctx.font = '700 16px Inter';
     ctx.textAlign = 'center';
     ctx.fillText('X', circleX + circleR, circleY + circleR + 6);
   } else if (isSkip) {
@@ -533,7 +533,7 @@ function renderLeg(ctx, leg, index, y, legHeight, isLast) {
     ctx.stroke();
     ctx.setLineDash([]);
     ctx.fillStyle = '#000';
-    ctx.font = '800 15px Inter';
+    ctx.font = '600 15px Inter';
     ctx.textAlign = 'center';
     ctx.fillText(leg.number?.toString() || (index + 1).toString(), circleX + circleR, circleY + circleR + 6);
   } else {
@@ -541,7 +541,7 @@ function renderLeg(ctx, leg, index, y, legHeight, isLast) {
     ctx.fillStyle = '#000';
     ctx.fill();
     ctx.fillStyle = '#FFF';
-    ctx.font = '800 15px Inter';
+    ctx.font = '600 15px Inter';
     ctx.textAlign = 'center';
     ctx.fillText(leg.number?.toString() || (index + 1).toString(), circleX + circleR, circleY + circleR + 6);
   }
@@ -561,7 +561,7 @@ function renderLeg(ctx, leg, index, y, legHeight, isLast) {
   else if (isDiverted) titlePrefix = 'DIVERTED: ';
   
   ctx.fillStyle = textColor;
-  ctx.font = '800 17px Inter';
+  ctx.font = '600 17px Inter';
   ctx.fillText(titlePrefix + (leg.title || ''), titleX, y + 23);
   
   // 5.5 Leg Subtitle - Use black (1-bit can't do gray)
@@ -591,7 +591,7 @@ function renderLeg(ctx, leg, index, y, legHeight, isLast) {
     ctx.stroke();
     
     ctx.fillStyle = '#000';
-    ctx.font = '900 11px Inter';
+    ctx.font = '700 11px Inter';
     ctx.textAlign = 'center';
     // White background for text
     ctx.fillStyle = '#FFF';
@@ -616,7 +616,7 @@ function renderLeg(ctx, leg, index, y, legHeight, isLast) {
     ctx.stroke();
     
     ctx.fillStyle = '#000';
-    ctx.font = '900 13px Inter';
+    ctx.font = '700 13px Inter';
     ctx.textAlign = 'center';
     ctx.fillText('SKIP', durBoxX + durBoxW / 2, y + legHeight / 2 - 10);
   } else if (isDelayed) {
@@ -631,12 +631,12 @@ function renderLeg(ctx, leg, index, y, legHeight, isLast) {
     ctx.lineWidth = 2;
     
     ctx.fillStyle = '#000';
-    ctx.font = '900 30px Inter';
+    ctx.font = '700 30px Inter';  // Reduced from 900 for readability
     ctx.textAlign = 'center';
     const timeStr = leg.minutes?.toString() || '--';
     ctx.fillText(timeStr, durBoxX + durBoxW / 2, y + legHeight / 2 + 4);
     
-    ctx.font = '800 11px Inter';
+    ctx.font = '600 11px Inter';
     const unitLabel = leg.type === 'walk' ? 'MIN WALK' : 'MIN';
     ctx.fillText(unitLabel, durBoxX + durBoxW / 2, y + legHeight / 2 + 20);
   } else if (isDiverted) {
@@ -648,11 +648,11 @@ function renderLeg(ctx, leg, index, y, legHeight, isLast) {
     ctx.strokeRect(durBoxX, y, durBoxW, durBoxH);
     
     ctx.fillStyle = '#000';
-    ctx.font = '900 30px Inter';
+    ctx.font = '700 30px Inter';  // Reduced from 900 for readability
     ctx.textAlign = 'center';
     ctx.fillText(leg.minutes?.toString() || '--', durBoxX + durBoxW / 2, y + legHeight / 2 + 4);
     
-    ctx.font = '800 11px Inter';
+    ctx.font = '600 11px Inter';
     ctx.fillText(leg.type === 'walk' ? 'MIN WALK' : 'MIN', durBoxX + durBoxW / 2, y + legHeight / 2 + 20);
   } else {
     // Normal: black background, white text
@@ -662,11 +662,11 @@ function renderLeg(ctx, leg, index, y, legHeight, isLast) {
     ctx.fillStyle = '#FFF';
     const isCoffeeTime = leg.type === 'coffee';
     const timeStr = isCoffeeTime ? `~${leg.minutes || 5}` : (leg.minutes?.toString() || '--');
-    ctx.font = isCoffeeTime ? '900 26px Inter' : '900 30px Inter';
+    ctx.font = isCoffeeTime ? '700 26px Inter' : '700 30px Inter';
     ctx.textAlign = 'center';
     ctx.fillText(timeStr, durBoxX + durBoxW / 2, y + legHeight / 2 + 4);
     
-    ctx.font = '800 11px Inter';
+    ctx.font = '600 11px Inter';
     const unitLabel = leg.type === 'walk' ? 'MIN WALK' : 'MIN';
     ctx.fillText(unitLabel, durBoxX + durBoxW / 2, y + legHeight / 2 + 20);
   }
@@ -734,7 +734,7 @@ function renderFooter(ctx, data) {
   
   // 6.1 Destination Address
   ctx.fillStyle = '#FFF';
-  ctx.font = '800 16px Inter';
+  ctx.font = '600 16px Inter';
   const dest = (data.destination || 'WORK').toUpperCase();
   ctx.fillText(dest, 16, 22);
   
@@ -743,7 +743,7 @@ function renderFooter(ctx, data) {
   ctx.fillText('ARRIVE', w - 130, 22);
   
   // 6.3 Arrival Time
-  ctx.font = '900 24px Inter';
+  ctx.font = '700 24px Inter';  // Reduced from 900 for readability
   ctx.textAlign = 'right';
   ctx.fillText(data.arrive_by || '--:--', w - 16, 24);
   ctx.textAlign = 'left';
