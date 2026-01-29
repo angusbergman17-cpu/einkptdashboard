@@ -695,3 +695,37 @@ For detailed guidance on specific topics, see:
 ---
 
 *This document is the single source of truth for PTV-TRMNL development. All contributors must read and comply with these rules. For extended guidance, see `docs/development/DEVELOPMENT-RULES.md`.*
+
+---
+
+## 🚫 Section 16: Repository References (PUBLIC REPO ONLY)
+
+**CRITICAL**: This is the PUBLIC repository. Never reference other repositories.
+
+### Forbidden Repository References
+
+| Forbidden | Reason | Use Instead |
+|-----------|--------|-------------|
+| `PTV-TRMNL-NEW` | Dev repo, not for public | `einkptdashboard` |
+| `PTV-TRMNL` (old) | Deprecated repo | `einkptdashboard` |
+| Any other repo URL | Confuses users | Official public repo only |
+
+### Correct Repository URL
+
+```
+✅ https://github.com/angusbergman17-cpu/einkptdashboard
+❌ https://github.com/angusbergman17-cpu/PTV-TRMNL-NEW
+❌ https://github.com/angusbergman17-cpu/PTV-TRMNL
+```
+
+### Verification Before Commit
+
+```bash
+# Check for old repo references
+grep -r "PTV-TRMNL-NEW" . --include="*.md" --include="*.js" --include="*.json" | grep -v node_modules
+grep -r "PTV-TRMNL" . --include="*.md" --include="*.js" --include="*.json" | grep -v node_modules | grep -v "PTV-TRMNL-NEW"
+
+# All results should be empty or only reference "einkptdashboard"
+```
+
+**WHY**: Users fork and deploy from this repo. References to dev/old repos cause confusion and broken links.
