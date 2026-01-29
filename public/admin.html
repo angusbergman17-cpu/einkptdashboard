@@ -5067,17 +5067,20 @@
 
                 autocompleteDebounce = setTimeout(async () => {
                     try {
-                        // Use Nominatim for geocoding (free, no API key)
-                        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}, Melbourne, Australia&limit=5`;
+                        // Use our API endpoint which checks for Google Places first, falls back to Nominatim
+                        const url = `${BASE_URL}/api/address-search?q=${encodeURIComponent(query)}`;
                         const response = await fetch(url);
-                        const results = await response.json();
+                        const data = await response.json();
 
-                        if (results.length > 0) {
-                            suggestions.innerHTML = results.map(r => `
-                                <div class="autocomplete-item" onclick="selectAddress('${inputId}', '${suggestionsId}', '${r.display_name.replace(/'/g, "\\'")}', ${r.lat}, ${r.lon})">
+                        if (data.results && data.results.length > 0) {
+                            const source = data.source === 'google' ? '🔵 Google Places' : '🟢 OpenStreetMap';
+                            suggestions.innerHTML = data.results.map(r => `
+                                <div class="autocomplete-item" onclick="selectAddress('${inputId}', '${suggestionsId}', '${(r.display_name || '').replace(/'/g, "\\'")}', ${r.lat || 0}, ${r.lon || 0}, '${r.place_id || ''}')">
                                     ${r.display_name}
                                 </div>
                             `).join('');
+                            // Add source indicator at bottom
+                            suggestions.innerHTML += `<div style="padding: 8px 15px; font-size: 11px; opacity: 0.6; border-top: 1px solid rgba(255,255,255,0.1);">${source}</div>`;
                             suggestions.style.display = 'block';
                         } else {
                             suggestions.style.display = 'none';
@@ -5096,10 +5099,11 @@
             });
         }
 
-        function selectAddress(inputId, suggestionsId, address, lat, lon) {
+        function selectAddress(inputId, suggestionsId, address, lat, lon, placeId) {
             document.getElementById(inputId).value = address;
-            document.getElementById(inputId).dataset.lat = lat;
-            document.getElementById(inputId).dataset.lon = lon;
+            document.getElementById(inputId).dataset.lat = lat || '';
+            document.getElementById(inputId).dataset.lon = lon || '';
+            document.getElementById(inputId).dataset.placeId = placeId || '';
             document.getElementById(suggestionsId).style.display = 'none';
         }
 
