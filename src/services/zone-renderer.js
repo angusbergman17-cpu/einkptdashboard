@@ -1,22 +1,33 @@
 /**
- * PTV-TRMNL E-Ink Dashboard - Zone Renderer V10
- * Implements the LOCKED V10 Dashboard Specification exactly
+ * Zone Renderer - V11 Smart Journey Dashboard
+ * Matches PTV-TRMNL v11 Design Spec exactly
+ * 
+ * Layout (800×480):
+ * - Header: location (16,8), time (16,28), AM/PM (130,70), day/date (280,32), weather box (640,16)
+ * - Status bar: (0,100) h=28, black fill
+ * - Legs: (16,136) number circles, (48,y) leg boxes with embedded time
+ * - Footer: (0,452) h=28, black fill
  * 
  * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
- * https://github.com/angusbergman17-cpu/einkptdashboard
  */
 
 import { createCanvas } from '@napi-rs/canvas';
 
-// V10 Zone Layout (800×480)
+// V11 Zone Layout - Matches HTML template exactly
 const ZONES = {
-  'header': { id: 'header', x: 0, y: 0, w: 800, h: 94 },
-  'summary': { id: 'summary', x: 0, y: 96, w: 800, h: 28 },
-  'legs': { id: 'legs', x: 0, y: 132, w: 800, h: 308 },
-  'footer': { id: 'footer', x: 0, y: 448, w: 800, h: 32 }
+  'header': { id: 'header', x: 0, y: 0, w: 800, h: 100 },
+  'status': { id: 'status', x: 0, y: 100, w: 800, h: 28 },
+  'legs': { id: 'legs', x: 0, y: 136, w: 800, h: 316 },
+  'footer': { id: 'footer', x: 0, y: 452, w: 800, h: 28 }
 };
 
+// Leg rendering constants
+const LEG_START_Y = 136;
+const LEG_GAP = 8;
+const MAX_LEGS = 6;
+
+// Cache for change detection
 let previousData = {};
 
 /**
@@ -62,509 +73,262 @@ function canvasToBMP(canvas) {
 }
 
 /**
- * Convert 24h time to 12h format (e.g., "7:45")
- */
-function to12Hour(time24) {
-  const [h, m] = (time24 || '12:00').split(':').map(Number);
-  const hour12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
-  return `${hour12}:${String(m).padStart(2, '0')}`;
-}
-
-/**
- * Get AM/PM from 24h time
- */
-function getAmPm(time24) {
-  const hour = parseInt((time24 || '12:00').split(':')[0]);
-  return hour >= 12 ? 'PM' : 'AM';
-}
-
-/**
- * Draw walk icon (stick figure)
- */
-function drawWalkIcon(ctx, x, y) {
-  ctx.fillStyle = '#000';
-  // Head
-  ctx.beginPath();
-  ctx.arc(x + 16, y + 5, 4, 0, Math.PI * 2);
-  ctx.fill();
-  // Body and limbs
-  ctx.strokeStyle = '#000';
-  ctx.lineWidth = 3;
-  ctx.lineCap = 'round';
-  ctx.beginPath();
-  ctx.moveTo(x + 16, y + 10); ctx.lineTo(x + 16, y + 18); // Body
-  ctx.moveTo(x + 16, y + 18); ctx.lineTo(x + 11, y + 28); // Left leg
-  ctx.moveTo(x + 16, y + 18); ctx.lineTo(x + 21, y + 28); // Right leg
-  ctx.moveTo(x + 16, y + 12); ctx.lineTo(x + 11, y + 17); // Left arm
-  ctx.moveTo(x + 16, y + 12); ctx.lineTo(x + 21, y + 17); // Right arm
-  ctx.stroke();
-}
-
-/**
- * Draw train icon
- */
-function drawTrainIcon(ctx, x, y) {
-  ctx.fillStyle = '#000';
-  // Train body
-  ctx.beginPath();
-  ctx.roundRect(x + 5, y + 4, 22, 22, 5);
-  ctx.fill();
-  // Windows
-  ctx.fillStyle = '#FFF';
-  ctx.beginPath();
-  ctx.roundRect(x + 8, y + 7, 16, 10, 2);
-  ctx.fill();
-  // Lights
-  ctx.beginPath();
-  ctx.roundRect(x + 10, y + 20, 4, 3, 1);
-  ctx.roundRect(x + 18, y + 20, 4, 3, 1);
-  ctx.fill();
-  // Wheels
-  ctx.fillStyle = '#000';
-  ctx.beginPath();
-  ctx.roundRect(x + 7, y + 26, 6, 3, 1);
-  ctx.roundRect(x + 19, y + 26, 6, 3, 1);
-  ctx.fill();
-}
-
-/**
- * Draw tram icon (W-class style)
- */
-function drawTramIcon(ctx, x, y) {
-  ctx.strokeStyle = '#000';
-  ctx.lineWidth = 2;
-  // Pantograph
-  ctx.beginPath();
-  ctx.moveTo(x + 16, y + 2); ctx.lineTo(x + 16, y + 8);
-  ctx.moveTo(x + 12, y + 2); ctx.lineTo(x + 20, y + 2);
-  ctx.stroke();
-  // Body
-  ctx.fillStyle = '#000';
-  ctx.beginPath();
-  ctx.roundRect(x + 4, y + 8, 24, 16, 4);
-  ctx.fill();
-  // Windows
-  ctx.fillStyle = '#FFF';
-  ctx.beginPath();
-  ctx.roundRect(x + 6, y + 11, 6, 6, 1);
-  ctx.roundRect(x + 13, y + 11, 6, 6, 1);
-  ctx.roundRect(x + 20, y + 11, 6, 6, 1);
-  ctx.fill();
-  // Wheels
-  ctx.fillStyle = '#000';
-  ctx.beginPath();
-  ctx.arc(x + 9, y + 26, 2.5, 0, Math.PI * 2);
-  ctx.arc(x + 23, y + 26, 2.5, 0, Math.PI * 2);
-  ctx.fill();
-}
-
-/**
- * Draw bus icon
- */
-function drawBusIcon(ctx, x, y) {
-  ctx.fillStyle = '#000';
-  // Body
-  ctx.beginPath();
-  ctx.roundRect(x + 3, y + 6, 26, 18, 3);
-  ctx.fill();
-  // Windows
-  ctx.fillStyle = '#FFF';
-  ctx.beginPath();
-  ctx.roundRect(x + 5, y + 8, 22, 8, 2);
-  ctx.fill();
-  // Lower windows
-  ctx.beginPath();
-  ctx.roundRect(x + 5, y + 17, 5, 4, 1);
-  ctx.roundRect(x + 11, y + 17, 5, 4, 1);
-  ctx.roundRect(x + 17, y + 17, 5, 4, 1);
-  ctx.fill();
-  // Wheels
-  ctx.fillStyle = '#000';
-  ctx.beginPath();
-  ctx.arc(x + 9, y + 26, 3, 0, Math.PI * 2);
-  ctx.arc(x + 23, y + 26, 3, 0, Math.PI * 2);
-  ctx.fill();
-}
-
-/**
- * Draw coffee icon
- */
-function drawCoffeeIcon(ctx, x, y) {
-  ctx.fillStyle = '#000';
-  // Cup
-  ctx.beginPath();
-  ctx.moveTo(x + 6, y + 10);
-  ctx.lineTo(x + 22, y + 10);
-  ctx.lineTo(x + 22, y + 13);
-  ctx.bezierCurveTo(x + 22, y + 20, x + 18.5, y + 24, x + 14, y + 24);
-  ctx.bezierCurveTo(x + 9.5, y + 24, x + 6, y + 20, x + 6, y + 13);
-  ctx.closePath();
-  ctx.fill();
-  // Handle
-  ctx.strokeStyle = '#000';
-  ctx.lineWidth = 2.5;
-  ctx.beginPath();
-  ctx.moveTo(x + 22, y + 12);
-  ctx.bezierCurveTo(x + 25, y + 12, x + 25.5, y + 15.5, x + 25.5, y + 15.5);
-  ctx.bezierCurveTo(x + 25.5, y + 15.5, x + 25, y + 19, x + 22, y + 19);
-  ctx.stroke();
-  // Saucer
-  ctx.fillStyle = '#000';
-  ctx.beginPath();
-  ctx.roundRect(x + 4, y + 26, 20, 3, 1.5);
-  ctx.fill();
-}
-
-/**
- * Draw mode icon based on type
- */
-function drawModeIcon(ctx, x, y, type) {
-  switch (type) {
-    case 'walk': drawWalkIcon(ctx, x, y); break;
-    case 'train': drawTrainIcon(ctx, x, y); break;
-    case 'tram': drawTramIcon(ctx, x, y); break;
-    case 'bus': drawBusIcon(ctx, x, y); break;
-    case 'coffee': drawCoffeeIcon(ctx, x, y); break;
-    default: drawWalkIcon(ctx, x, y);
-  }
-}
-
-/**
- * Render header zone (V10 spec: 0-94px)
+ * Render header zone (location, time, day/date, weather)
  */
 function renderHeader(ctx, data) {
+  const w = 800, h = 100;
+  
+  // White background
   ctx.fillStyle = '#FFF';
-  ctx.fillRect(0, 0, 800, 94);
+  ctx.fillRect(0, 0, w, h);
   ctx.fillStyle = '#000';
   ctx.strokeStyle = '#000';
+  ctx.lineWidth = 2;
   
-  // Location (16, 8) - 11px, uppercase
+  // Location (top left)
   ctx.font = '11px sans-serif';
-  ctx.letterSpacing = '0.5px';
   ctx.fillText((data.location || 'HOME').toUpperCase(), 16, 18);
   
-  // Time (16, 22) - 68px, weight 900, 12-hour format
-  ctx.font = '900 68px sans-serif';
-  ctx.letterSpacing = '-3px';
-  ctx.fillText(to12Hour(data.current_time), 16, 82);
+  // Time (large)
+  ctx.font = 'bold 64px sans-serif';
+  ctx.fillText(data.current_time || '--:--', 16, 82);
   
-  // AM/PM (200, 72) - 16px, weight 700
-  ctx.font = '700 16px sans-serif';
-  ctx.letterSpacing = '0px';
-  ctx.fillText(getAmPm(data.current_time), 200, 82);
-  
-  // Day (300, 28) - 18px, weight 600
+  // AM/PM
+  const hour = parseInt((data.current_time || '12:00').split(':')[0]);
   ctx.font = '600 18px sans-serif';
-  ctx.fillText(data.day || 'Monday', 300, 40);
+  ctx.fillText(hour >= 12 ? 'PM' : 'AM', 150, 82);
   
-  // Date (300, 50) - 16px, color #444
-  ctx.fillStyle = '#444';
+  // Day (bold)
+  ctx.font = '700 20px sans-serif';
+  ctx.fillText((data.day || 'MONDAY').toUpperCase(), 280, 48);
+  
+  // Date
   ctx.font = '16px sans-serif';
-  ctx.fillText(data.date || '1 January', 300, 62);
-  ctx.fillStyle = '#000';
+  ctx.fillText(data.date || '1 January', 280, 72);
   
-  // Weather box (right:16, top:12) - 140×78px
-  ctx.lineWidth = 2;
-  ctx.strokeRect(644, 12, 140, 78);
+  // Weather box (right side)
+  ctx.strokeRect(640, 16, 144, 80);
   
-  // Temperature - 34px, weight 800
-  ctx.font = '800 34px sans-serif';
-  ctx.fillText(`${data.temp || '--'}°`, 664, 48);
+  // Temperature
+  ctx.font = '700 36px sans-serif';
+  ctx.fillText(`${data.temp || '--'}°`, 656, 50);
   
-  // Condition - 12px
+  // Condition
   ctx.font = '12px sans-serif';
-  ctx.fillText(data.condition || 'N/A', 664, 68);
+  ctx.fillText(data.condition || 'N/A', 656, 70);
   
-  // Umbrella indicator (right:20, top:68) - 132×18px
-  const umbrellaX = 652;
-  const umbrellaY = 72;
+  // Umbrella indicator
   if (data.umbrella) {
     ctx.fillStyle = '#000';
-    ctx.fillRect(umbrellaX, umbrellaY, 132, 18);
+    ctx.fillRect(656, 78, 120, 16);
     ctx.fillStyle = '#FFF';
     ctx.font = '600 10px sans-serif';
-    ctx.fillText('🌧 BRING UMBRELLA', umbrellaX + 8, umbrellaY + 13);
+    ctx.fillText('■ BRING UMBRELLA', 662, 90);
   } else {
-    ctx.strokeRect(umbrellaX, umbrellaY, 132, 18);
+    ctx.strokeRect(656, 78, 120, 16);
     ctx.font = '10px sans-serif';
-    ctx.fillText('☀ NO UMBRELLA', umbrellaX + 12, umbrellaY + 13);
+    ctx.fillText('NO UMBRELLA', 670, 90);
   }
-  
-  // Divider line at y=94
-  ctx.fillStyle = '#000';
-  ctx.fillRect(0, 92, 800, 2);
 }
 
 /**
- * Render summary bar (V10 spec: 96-124px)
+ * Render status bar
  */
-function renderSummary(ctx, data) {
+function renderStatus(ctx, data) {
+  const w = 800, h = 28;
+  
+  // Black background
   ctx.fillStyle = '#000';
-  ctx.fillRect(0, 0, 800, 28);
+  ctx.fillRect(0, 0, w, h);
   
+  // Status text (white)
   ctx.fillStyle = '#FFF';
-  ctx.font = '700 13px sans-serif';
+  ctx.font = '600 13px sans-serif';
   
-  // Left: Status message
-  let statusText = '';
-  const arrive = data.arrive_by || '--:--';
-  
+  let statusText = 'LEAVE NOW → Arrive ' + (data.arrive_by || '--:--');
   if (data.status_type === 'disruption') {
-    statusText = `⚠ DISRUPTION → Arrive ${arrive}`;
-    if (data.delay_minutes) statusText += ` (+${data.delay_minutes} min)`;
+    statusText = '⚠ DISRUPTION → Arrive ' + (data.arrive_by || '--:--');
   } else if (data.status_type === 'delay') {
-    statusText = `⏱ DELAY → Arrive ${arrive}`;
+    statusText = '⏱ DELAY → Arrive ' + (data.arrive_by || '--:--');
     if (data.delay_minutes) statusText += ` (+${data.delay_minutes} min)`;
   } else if (data.leave_in_minutes) {
-    statusText = `LEAVE IN ${data.leave_in_minutes} MIN → Arrive ${arrive}`;
-  } else {
-    statusText = `LEAVE NOW → Arrive ${arrive}`;
+    statusText = `LEAVE IN ${data.leave_in_minutes} MIN → Arrive ${data.arrive_by}`;
   }
   
   ctx.fillText(statusText, 16, 19);
   
-  // Right: Total minutes
+  // Total time (right)
   ctx.textAlign = 'right';
-  ctx.fillText(`${data.total_minutes || '--'} min`, 784, 19);
+  ctx.fillText(`${data.total_minutes || '--'} min`, w - 16, 19);
   ctx.textAlign = 'left';
 }
 
 /**
- * Render journey legs (V10 spec: 132-440px)
+ * Render journey legs
  */
 function renderLegs(ctx, data) {
-  ctx.fillStyle = '#FFF';
-  ctx.fillRect(0, 0, 800, 308);
-  
+  const w = 800, h = 316;
   const legs = data.journey_legs || [];
-  const numLegs = Math.min(legs.length, 5);
+  
+  // White background
+  ctx.fillStyle = '#FFF';
+  ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = '#000';
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 2;
   
   // Calculate leg height based on count
-  // Max 5 legs, height 52-80px depending on count
-  const legHeights = { 1: 80, 2: 80, 3: 64, 4: 56, 5: 52 };
-  const legHeight = legHeights[numLegs] || 52;
-  const arrowHeight = 12;
+  const numLegs = Math.min(legs.length, MAX_LEGS);
+  const totalGaps = (numLegs - 1) * LEG_GAP;
+  const arrowSpace = (numLegs - 1) * 16; // Space for arrows
+  const availableHeight = h - totalGaps - arrowSpace - 8;
+  const legHeight = Math.min(56, Math.floor(availableHeight / numLegs));
   
   let y = 0;
   
-  legs.slice(0, 5).forEach((leg, i) => {
+  legs.slice(0, MAX_LEGS).forEach((leg, i) => {
     const state = leg.state || 'normal';
-    const isSkip = state === 'skip';
-    const isCancelled = state === 'suspended' || state === 'cancelled';
-    const isDelayed = state === 'delayed';
-    const isDiverted = state === 'diverted';
+    const isGray = state === 'skip' || state === 'cancelled';
     
-    ctx.strokeStyle = '#000';
-    ctx.fillStyle = '#000';
-    ctx.lineWidth = 2;
+    // Number circle (at x=16)
+    const circleX = 16;
+    const circleY = y + (legHeight - 24) / 2;
     
-    // Leg container (12px margins)
-    const boxX = 12;
-    const boxW = 776;
-    
-    // Draw box based on state
-    if (isCancelled) {
-      // Striped background
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(boxX, y, boxW, legHeight);
-      ctx.clip();
-      ctx.strokeStyle = '#000';
-      ctx.lineWidth = 2;
-      for (let s = -legHeight; s < boxW + legHeight; s += 10) {
-        ctx.beginPath();
-        ctx.moveTo(boxX + s, y);
-        ctx.lineTo(boxX + s + legHeight, y + legHeight);
-        ctx.stroke();
-      }
-      ctx.restore();
-      ctx.strokeStyle = '#000';
-      ctx.lineWidth = 3;
-      ctx.strokeRect(boxX, y, boxW, legHeight);
-    } else if (isSkip) {
-      ctx.setLineDash([6, 4]);
-      ctx.strokeRect(boxX, y, boxW, legHeight);
-      ctx.setLineDash([]);
-    } else if (isDelayed) {
-      ctx.lineWidth = 3;
-      ctx.setLineDash([6, 4]);
-      ctx.strokeRect(boxX, y, boxW, legHeight);
-      ctx.setLineDash([]);
-    } else if (isDiverted) {
-      // Vertical stripes
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(boxX, y, boxW, legHeight);
-      ctx.clip();
-      for (let s = 0; s < boxW; s += 12) {
-        ctx.fillStyle = s % 24 < 12 ? '#FFF' : '#000';
-        ctx.fillRect(boxX + s, y, 5, legHeight);
-      }
-      ctx.restore();
-      ctx.lineWidth = 3;
-      ctx.strokeRect(boxX, y, boxW, legHeight);
-    } else if (leg.type === 'coffee') {
-      ctx.lineWidth = 3;
-      ctx.strokeRect(boxX, y, boxW, legHeight);
-    } else {
-      ctx.strokeRect(boxX, y, boxW, legHeight);
-    }
-    ctx.lineWidth = 2;
-    
-    // Leg number (10, 14) - 24×24px circle
-    const numX = 22;
-    const numY = y + 14;
     ctx.beginPath();
-    ctx.arc(numX + 12, numY + 12, 12, 0, Math.PI * 2);
+    ctx.arc(circleX + 12, circleY + 12, 12, 0, Math.PI * 2);
     
-    if (isCancelled) {
-      ctx.fillStyle = '#000';
-      ctx.fill();
-      ctx.fillStyle = '#FFF';
-      ctx.font = '700 13px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('✗', numX + 12, numY + 16);
-    } else if (isSkip) {
+    if (leg.num === 'X' || state === 'cancelled') {
+      // Dashed circle with X
       ctx.strokeStyle = '#888';
       ctx.setLineDash([4, 3]);
       ctx.stroke();
       ctx.setLineDash([]);
       ctx.fillStyle = '#888';
-      ctx.font = '700 13px sans-serif';
+      ctx.font = '700 12px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText((i + 1).toString(), numX + 12, numY + 16);
+      ctx.fillText('✗', circleX + 12, circleY + 16);
     } else {
+      // Filled circle with number
       ctx.fillStyle = '#000';
       ctx.fill();
       ctx.fillStyle = '#FFF';
-      ctx.font = '700 13px sans-serif';
+      ctx.font = '700 12px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(leg.number?.toString() || (i + 1).toString(), numX + 12, numY + 16);
+      ctx.fillText(leg.number?.toString() || (i + 1).toString(), circleX + 12, circleY + 16);
     }
     ctx.textAlign = 'left';
     ctx.strokeStyle = '#000';
     
-    // Mode icon (44, 10) - 32×32px
-    const iconX = 56;
-    const iconY = y + (legHeight - 32) / 2;
-    if (!isSkip) {
-      drawModeIcon(ctx, iconX, iconY, leg.type || 'walk');
-    }
+    // Leg box (from x=48 to x=740)
+    const boxX = 48;
+    const boxW = 692;
     
-    // Title (86, 8) - 16px, weight 700
-    ctx.fillStyle = isSkip ? '#888' : '#000';
-    ctx.font = '700 16px sans-serif';
-    let title = leg.title || '';
-    if (isDelayed && !title.startsWith('⏱')) title = '⏱ ' + title;
-    if (isCancelled && !title.startsWith('⚠')) title = '⚠ ' + title;
-    if (isDiverted && !title.startsWith('↩')) title = '↩ ' + title;
-    ctx.fillText(title, 98, y + 22);
-    
-    // Subtitle (86, 28) - 12px
-    ctx.font = '12px sans-serif';
-    ctx.fillStyle = '#888';
-    ctx.fillText(leg.subtitle || '', 98, y + 40);
-    
-    // Duration box (right edge) - 72×52px
-    const durBoxX = 800 - 12 - 72;
-    const durBoxY = y;
-    const durBoxW = 72;
-    const durBoxH = legHeight;
-    
-    if (isCancelled) {
-      ctx.fillStyle = '#888';
-      ctx.font = '700 11px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('CANCELLED', durBoxX + durBoxW / 2, y + legHeight / 2 + 4);
-    } else if (isSkip) {
+    if (state === 'cancelled') {
+      // Striped background for cancelled
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(boxX, y, boxW, legHeight);
+      ctx.clip();
+      ctx.strokeStyle = '#ccc';
+      ctx.lineWidth = 2;
+      for (let stripe = -legHeight; stripe < boxW + legHeight; stripe += 8) {
+        ctx.beginPath();
+        ctx.moveTo(boxX + stripe, y);
+        ctx.lineTo(boxX + stripe + legHeight, y + legHeight);
+        ctx.stroke();
+      }
+      ctx.restore();
+      ctx.strokeStyle = '#888';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(boxX, y, boxW, legHeight);
+    } else if (state === 'skip' || state === 'delayed') {
+      // Dashed border
       ctx.strokeStyle = '#888';
       ctx.setLineDash([6, 4]);
-      ctx.beginPath();
-      ctx.moveTo(durBoxX, durBoxY);
-      ctx.lineTo(durBoxX, durBoxY + durBoxH);
-      ctx.stroke();
+      ctx.strokeRect(boxX, y, boxW, legHeight);
       ctx.setLineDash([]);
-      ctx.fillStyle = '#888';
-      ctx.font = '900 26px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('—', durBoxX + durBoxW / 2, y + legHeight / 2 + 8);
-    } else if (isDiverted) {
-      ctx.fillStyle = '#FFF';
-      ctx.fillRect(durBoxX, durBoxY, durBoxW, durBoxH);
-      ctx.fillStyle = '#000';
-      ctx.font = '900 26px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(leg.minutes?.toString() || '--', durBoxX + durBoxW / 2, y + legHeight / 2 - 2);
-      ctx.font = '8px sans-serif';
-      ctx.fillText(leg.type === 'walk' ? 'MIN WALK' : 'MIN', durBoxX + durBoxW / 2, y + legHeight / 2 + 14);
-    } else if (isDelayed) {
-      ctx.strokeStyle = '#000';
-      ctx.lineWidth = 3;
-      ctx.setLineDash([6, 4]);
-      ctx.beginPath();
-      ctx.moveTo(durBoxX, durBoxY);
-      ctx.lineTo(durBoxX, durBoxY + durBoxH);
-      ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.lineWidth = 2;
-      ctx.fillStyle = '#000';
-      ctx.font = '900 26px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(leg.minutes?.toString() || '--', durBoxX + durBoxW / 2, y + legHeight / 2 - 2);
-      ctx.font = '8px sans-serif';
-      ctx.fillText('MIN', durBoxX + durBoxW / 2, y + legHeight / 2 + 14);
     } else {
-      // Normal: black filled box
+      // Solid border
+      ctx.strokeRect(boxX, y, boxW, legHeight);
+    }
+    ctx.strokeStyle = '#000';
+    
+    // Icon
+    ctx.font = '20px sans-serif';
+    ctx.fillStyle = isGray ? '#888' : '#000';
+    ctx.fillText(leg.icon || '📍', 58, y + legHeight / 2 + 7);
+    
+    // Title
+    ctx.font = '700 16px sans-serif';
+    ctx.fillText(leg.title || '', 90, y + 22);
+    
+    // Subtitle
+    ctx.font = '11px sans-serif';
+    ctx.fillStyle = '#888';
+    let subtitle = leg.subtitle || '';
+    if (state === 'delayed' && leg.delayMinutes) {
+      subtitle += ` (+${leg.delayMinutes} MIN)`;
+    }
+    ctx.fillText(subtitle, 90, y + 40);
+    ctx.fillStyle = '#000';
+    
+    // Time box (inside leg box, at x=680)
+    if (state === 'cancelled') {
+      ctx.fillStyle = '#888';
+      ctx.font = '700 11px sans-serif';
+      ctx.fillText('CANCELLED', 680, y + legHeight / 2 + 4);
+    } else if (state !== 'skip') {
+      // Black filled time box
       ctx.fillStyle = '#000';
-      ctx.fillRect(durBoxX, durBoxY, durBoxW, durBoxH);
+      ctx.fillRect(680, y, 60, legHeight);
+      
+      // Time value
       ctx.fillStyle = '#FFF';
-      const timeStr = leg.type === 'coffee' ? `~${leg.minutes || '--'}` : (leg.minutes?.toString() || '--');
-      ctx.font = leg.type === 'coffee' ? '900 22px sans-serif' : '900 26px sans-serif';
+      ctx.font = '800 28px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(timeStr, durBoxX + durBoxW / 2, y + legHeight / 2 - 2);
-      ctx.font = '8px sans-serif';
-      ctx.fillText(leg.type === 'walk' ? 'MIN WALK' : 'MIN', durBoxX + durBoxW / 2, y + legHeight / 2 + 14);
+      ctx.fillText(leg.minutes?.toString() || '--', 710, y + 28);
+      
+      // Unit label
+      ctx.font = '9px sans-serif';
+      const unit = leg.type === 'walk' ? 'MIN WALK' : 'MIN';
+      ctx.fillText(unit, 710, y + 44);
+      ctx.textAlign = 'left';
     }
-    ctx.textAlign = 'left';
+    ctx.fillStyle = '#000';
     
-    // Arrow connector (centered, below leg)
-    if (i < numLegs - 1 && !isCancelled) {
-      ctx.fillStyle = '#000';
-      ctx.beginPath();
-      const arrowX = 400;
-      const arrowY = y + legHeight + 2;
-      ctx.moveTo(arrowX - 10, arrowY);
-      ctx.lineTo(arrowX + 10, arrowY);
-      ctx.lineTo(arrowX, arrowY + arrowHeight);
-      ctx.closePath();
-      ctx.fill();
+    // Down arrow between legs
+    if (i < numLegs - 1 && state !== 'cancelled') {
+      ctx.font = '900 16px sans-serif';
+      ctx.fillText('▼', 32, y + legHeight + 12);
     }
     
-    y += legHeight + (i < numLegs - 1 ? arrowHeight + 4 : 0);
+    y += legHeight + LEG_GAP + (i < numLegs - 1 ? 16 : 0); // Add arrow space
   });
 }
 
 /**
- * Render footer (V10 spec: 448-480px)
+ * Render footer
  */
 function renderFooter(ctx, data) {
+  const w = 800, h = 28;
+  
+  // Black background
   ctx.fillStyle = '#000';
-  ctx.fillRect(0, 0, 800, 32);
+  ctx.fillRect(0, 0, w, h);
   
+  // Destination
   ctx.fillStyle = '#FFF';
+  ctx.font = '700 14px sans-serif';
+  ctx.fillText((data.destination || 'WORK').toUpperCase(), 16, 19);
   
-  // Destination (16, 454) - 16px, weight 800
-  ctx.font = '800 16px sans-serif';
-  ctx.fillText((data.destination || 'WORK').toUpperCase(), 16, 21);
+  // ARRIVE label
+  ctx.font = '11px sans-serif';
+  ctx.fillText('ARRIVE', 620, 19);
   
-  // ARRIVE label (right:130) - 12px
-  ctx.font = '12px sans-serif';
-  ctx.fillText('ARRIVE', 620, 21);
-  
-  // Arrival time (right:16) - 24px, weight 900
-  ctx.font = '900 24px sans-serif';
+  // Arrival time
+  ctx.font = '800 20px sans-serif';
   ctx.textAlign = 'right';
-  ctx.fillText(to12Hour(data.arrive_by), 784, 24);
+  ctx.fillText(data.arrive_by || '--:--', w - 16, 21);
   ctx.textAlign = 'left';
 }
 
@@ -579,10 +343,18 @@ function renderZone(zoneId, data) {
   const ctx = canvas.getContext('2d');
   
   switch (zoneId) {
-    case 'header': renderHeader(ctx, data); break;
-    case 'summary': renderSummary(ctx, data); break;
-    case 'legs': renderLegs(ctx, data); break;
-    case 'footer': renderFooter(ctx, data); break;
+    case 'header':
+      renderHeader(ctx, data);
+      break;
+    case 'status':
+      renderStatus(ctx, data);
+      break;
+    case 'legs':
+      renderLegs(ctx, data);
+      break;
+    case 'footer':
+      renderFooter(ctx, data);
+      break;
   }
   
   return canvasToBMP(canvas);
@@ -596,17 +368,36 @@ function hasZoneChanged(zoneId, data) {
   
   switch (zoneId) {
     case 'header':
-      hash = JSON.stringify({ t: data.current_time, d: data.day, dt: data.date, w: data.temp, c: data.condition, u: data.umbrella, l: data.location });
+      hash = JSON.stringify({
+        t: data.current_time,
+        d: data.day,
+        dt: data.date,
+        w: data.temp,
+        c: data.condition,
+        u: data.umbrella
+      });
       break;
-    case 'summary':
-      hash = JSON.stringify({ s: data.status_type, a: data.arrive_by, t: data.total_minutes, l: data.leave_in_minutes, d: data.delay_minutes });
+    case 'status':
+      hash = JSON.stringify({
+        s: data.status_type,
+        a: data.arrive_by,
+        t: data.total_minutes,
+        l: data.leave_in_minutes
+      });
       break;
     case 'legs':
-      hash = JSON.stringify(data.journey_legs?.map(l => ({ n: l.number, t: l.title, m: l.minutes, s: l.state, st: l.subtitle })));
+      hash = JSON.stringify(data.journey_legs?.map(l => ({
+        n: l.number,
+        t: l.title,
+        m: l.minutes,
+        s: l.state
+      })));
       break;
     case 'footer':
       hash = JSON.stringify({ d: data.destination, a: data.arrive_by });
       break;
+    default:
+      hash = JSON.stringify(data);
   }
   
   if (hash !== previousData[zoneId]) {
@@ -619,81 +410,16 @@ function hasZoneChanged(zoneId, data) {
 /**
  * Render all zones with change detection
  */
-/**
- * Transform old data format to V10 format if needed
- * Provides backwards compatibility with server.js
- */
-function transformToV10(data) {
-  // If already V10 format (has journey_legs), return as-is
-  if (data.journey_legs) {
-    return data;
-  }
-  
-  // Transform old format to V10
-  const now = new Date();
-  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-  
-  // Build journey legs from old trains/trams/coffee data
-  const legs = [];
-  let n = 1;
-  
-  const trains = data.trains || [];
-  const trams = data.trams || [];
-  const coffee = data.coffee || {};
-  const nextTrain = trains[0];
-  const nextTram = trams[0];
-  
-  // Coffee leg (if enabled)
-  if (coffee.canGet !== undefined) {
-    if (coffee.canGet) {
-      legs.push({ number: n++, type: 'coffee', title: `Coffee at ${coffee.shopName || 'Cafe'}`, subtitle: '✓ TIME FOR COFFEE', minutes: 5, state: 'normal' });
-    } else {
-      legs.push({ number: n++, type: 'coffee', title: `Coffee at ${coffee.shopName || 'Cafe'}`, subtitle: '✗ SKIP — Running late', minutes: 0, state: 'skip' });
-    }
-  }
-  
-  // Walk to station
-  legs.push({ number: n++, type: 'walk', title: 'Walk to Station', subtitle: 'From home', minutes: 8, state: 'normal' });
-  
-  // Train leg
-  if (nextTrain) {
-    const nextTimes = trains.slice(0, 2).map(t => t.minutes).join(', ');
-    legs.push({ number: n++, type: 'train', title: `Train to ${nextTrain.destination || 'City'}`, subtitle: `Next: ${nextTimes} min`, minutes: nextTrain.minutes, state: nextTrain.delayed ? 'delayed' : 'normal' });
-  }
-  
-  // Walk to office
-  legs.push({ number: n++, type: 'walk', title: 'Walk to Office', subtitle: 'From station', minutes: 5, state: 'normal' });
-  
-  const totalMinutes = legs.filter(l => l.state !== 'skip').reduce((s, l) => s + (l.minutes || 0), 0);
-  
-  return {
-    location: data.location || 'HOME',
-    current_time: data.current_time || now.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: false }),
-    day: days[now.getDay()],
-    date: `${now.getDate()} ${months[now.getMonth()]}`,
-    temp: data.weather?.temp ?? '--',
-    condition: data.weather?.condition || 'N/A',
-    umbrella: (data.weather?.condition || '').toLowerCase().includes('rain') || (data.weather?.condition || '').toLowerCase().includes('shower'),
-    status_type: coffee.canGet === false ? 'delay' : 'normal',
-    arrive_by: data.arrive_by || '09:00',
-    total_minutes: totalMinutes,
-    leave_in_minutes: null,
-    journey_legs: legs,
-    destination: data.destination || '80 Collins St, Melbourne'
-  };
-}
-
-export function renderZones(data, prefs = {}, forceAll = false) {
-  // Transform to V10 format if needed
-  const v10Data = transformToV10(data);
-  
-  const zoneIds = ['header', 'summary', 'legs', 'footer'];
-  const changedZones = forceAll ? zoneIds : zoneIds.filter(id => hasZoneChanged(id, v10Data));
+export function renderZones(data, forceAll = false) {
+  const zoneIds = ['header', 'status', 'legs', 'footer'];
+  const changedZones = forceAll 
+    ? zoneIds 
+    : zoneIds.filter(id => hasZoneChanged(id, data));
   
   const zones = changedZones.map(id => {
     const z = ZONES[id];
-    const bmp = renderZone(id, v10Data);
+    const bmp = renderZone(id, data);
+    
     return {
       id,
       x: z.x,
@@ -705,41 +431,63 @@ export function renderZones(data, prefs = {}, forceAll = false) {
     };
   });
   
-  return { timestamp: new Date().toISOString(), zones };
+  return {
+    timestamp: new Date().toISOString(),
+    zones
+  };
 }
 
 /**
- * Render full dashboard as PNG
+ * Render full dashboard as single image
  */
 export function renderFullDashboard(data) {
   const canvas = createCanvas(800, 480);
   const ctx = canvas.getContext('2d');
   
+  // White background
   ctx.fillStyle = '#FFF';
   ctx.fillRect(0, 0, 800, 480);
   
+  // Render each section
   ctx.save();
   renderHeader(ctx, data);
   ctx.restore();
   
   ctx.save();
-  ctx.translate(0, 96);
-  renderSummary(ctx, data);
+  ctx.translate(0, 100);
+  renderStatus(ctx, data);
   ctx.restore();
   
   ctx.save();
-  ctx.translate(0, 132);
+  ctx.translate(0, 136);
   renderLegs(ctx, data);
   ctx.restore();
   
   ctx.save();
-  ctx.translate(0, 448);
+  ctx.translate(0, 452);
   renderFooter(ctx, data);
   ctx.restore();
   
   return canvas.toBuffer('image/png');
 }
 
-export function clearCache() { previousData = {}; }
+/**
+ * Clear cache
+ */
+export function clearCache() {
+  previousData = {};
+}
+
+// Legacy exports for compatibility
+export function getZoneDefinition(id) {
+  return ZONES[id] || null;
+}
+
+export function getChangedZones(data, forceAll = false) {
+  const zoneIds = ['header', 'status', 'legs', 'footer'];
+  return forceAll ? zoneIds : zoneIds.filter(id => hasZoneChanged(id, data));
+}
+
+export const renderSingleZone = renderZone;
 export { ZONES };
-export default { renderZones, renderFullDashboard, clearCache, ZONES };
+export default { renderZones, renderFullDashboard, renderSingleZone, clearCache, ZONES, getChangedZones, getZoneDefinition };

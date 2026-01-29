@@ -1,32 +1,31 @@
 /**
- * PTV-TRMNL E-Ink Dashboard - Zone Data API (V10)
+ * /api/zonedata - V11 Full Zone Data API
  * 
- * Returns all zone data with BMP images in a single request.
+ * Returns all zones with BMP data in a single request.
  * Uses Smart Journey Calculator + Coffee Decision Engine.
  * 
  * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
- * https://github.com/angusbergman17-cpu/einkptdashboard
  */
 
 import { getDepartures, getWeather } from '../src/services/ptv-api.js';
 import CoffeeDecision from '../src/core/coffee-decision.js';
 import { renderZones } from '../src/services/zone-renderer.js';
 
-// Configuration
+// Config
 const TRAIN_STOP_ID = parseInt(process.env.TRAIN_STOP_ID) || 1071;
 const TRAM_STOP_ID = parseInt(process.env.TRAM_STOP_ID) || 2500;
-const COFFEE_SHOP = process.env.COFFEE_SHOP || 'Norman';
+const COFFEE_SHOP = process.env.COFFEE_SHOP || 'Cafe';
 const WORK_ARRIVAL_TIME = process.env.WORK_ARRIVAL || '09:00';
-const HOME_ADDRESS = process.env.HOME_ADDRESS || '1 Clara St, South Yarra';
-const WORK_ADDRESS = process.env.WORK_ADDRESS || '80 Collins St, Melbourne';
 
 const JOURNEY_CONFIG = {
   walkToWork: parseInt(process.env.WALK_TO_WORK) || 5,
-  homeToCafe: parseInt(process.env.HOME_TO_CAFE) || 4,
+  homeToCafe: parseInt(process.env.HOME_TO_CAFE) || 5,
   makeCoffee: parseInt(process.env.MAKE_COFFEE) || 5,
-  cafeToTransit: parseInt(process.env.CAFE_TO_TRANSIT) || 8,
-  trainRide: parseInt(process.env.TRAIN_RIDE) || 12
+  cafeToTransit: parseInt(process.env.CAFE_TO_TRANSIT) || 2,
+  transitRide: parseInt(process.env.TRANSIT_RIDE) || 5,
+  trainRide: parseInt(process.env.TRAIN_RIDE) || 15,
+  platformChange: parseInt(process.env.PLATFORM_CHANGE) || 3
 };
 
 function getMelbourneTime() {
@@ -40,51 +39,56 @@ function formatTime(date) {
 }
 
 function formatDateParts(date) {
-  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-  return { day: days[date.getDay()], date: `${date.getDate()} ${months[date.getMonth()]}` };
+  const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+  const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+  return { day: days[date.getDay()], date: `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}` };
 }
 
 function buildJourneyLegs(trains, trams, coffeeDecision) {
   const legs = [];
-  let n = 1;
+  let legNumber = 1;
   
   const nextTrain = trains[0] || null;
   const nextTram = trams[0] || null;
   const useTram = nextTram && (!nextTrain || nextTram.minutes < nextTrain.minutes);
   const primaryTransit = useTram ? nextTram : nextTrain;
-  const canCoffee = coffeeDecision.canGet;
-  const skipCoffee = !canCoffee && coffeeDecision.urgent;
+  const transitType = useTram ? 'tram' : 'train';
   
-  if (canCoffee || skipCoffee) {
-    legs.push({ number: n++, type: 'walk', title: `Walk past ${COFFEE_SHOP} Cafe`, subtitle: 'From home • Toorak Rd', minutes: JOURNEY_CONFIG.homeToCafe, state: 'normal' });
-    legs.push({ number: n++, type: 'coffee', title: `Coffee at ${COFFEE_SHOP}`, subtitle: canCoffee ? (coffeeDecision.subtext || '✓ TIME FOR COFFEE') : '✗ SKIP — Running late', minutes: canCoffee ? JOURNEY_CONFIG.makeCoffee : 0, state: canCoffee ? 'normal' : 'skip' });
-    legs.push({ number: n++, type: 'walk', title: 'Walk to South Yarra Stn', subtitle: 'Platform 1', minutes: JOURNEY_CONFIG.cafeToTransit, state: 'normal' });
+  if (coffeeDecision.canGet) {
+    legs.push({ number: legNumber++, type: 'walk', icon: '🚶', title: `Walk to ${COFFEE_SHOP}`, subtitle: `${JOURNEY_CONFIG.homeToCafe} min walk`, minutes: JOURNEY_CONFIG.homeToCafe, state: 'normal' });
+    legs.push({ number: legNumber++, type: 'coffee', icon: '☕', title: coffeeDecision.decision, subtitle: coffeeDecision.subtext, minutes: JOURNEY_CONFIG.makeCoffee, state: coffeeDecision.urgent ? 'delayed' : 'normal' });
+    legs.push({ number: legNumber++, type: 'walk', icon: '🚶', title: 'Walk to Station', subtitle: `${JOURNEY_CONFIG.cafeToTransit} min`, minutes: JOURNEY_CONFIG.cafeToTransit, state: 'normal' });
   } else {
-    legs.push({ number: n++, type: 'walk', title: 'Walk to Station', subtitle: 'From home', minutes: JOURNEY_CONFIG.homeToCafe + JOURNEY_CONFIG.cafeToTransit, state: 'normal' });
+    legs.push({ number: legNumber++, type: 'walk', icon: '⚡', title: 'GO DIRECT', subtitle: coffeeDecision.subtext, minutes: JOURNEY_CONFIG.homeToCafe + JOURNEY_CONFIG.cafeToTransit, state: coffeeDecision.urgent ? 'delayed' : 'normal' });
   }
   
   if (primaryTransit) {
-    const type = useTram ? 'tram' : 'train';
-    const nextTimes = [primaryTransit, ...(useTram ? trams : trains).slice(1, 2)].filter(Boolean).map(t => t.minutes).join(', ');
-    legs.push({ number: n++, type, title: `${type === 'train' ? 'Train' : 'Tram'} to ${primaryTransit.destination}`, subtitle: `Next: ${nextTimes} min`, minutes: primaryTransit.minutes, state: primaryTransit.delayed ? 'delayed' : 'normal' });
+    legs.push({ number: legNumber++, type: transitType, icon: useTram ? '🚊' : '🚆', title: `${transitType === 'train' ? 'Train' : 'Tram'} to ${primaryTransit.destination}`, subtitle: primaryTransit.platform ? `Platform ${primaryTransit.platform}` : '', minutes: primaryTransit.minutes, state: primaryTransit.delayed ? 'delayed' : 'normal' });
   }
   
-  legs.push({ number: n++, type: 'walk', title: 'Walk to Office', subtitle: `Parliament → ${WORK_ADDRESS.split(',')[0]}`, minutes: JOURNEY_CONFIG.walkToWork, state: 'normal' });
+  if (useTram && nextTrain) {
+    legs.push({ number: legNumber++, type: 'walk', icon: '🔄', title: 'Connection', subtitle: `${JOURNEY_CONFIG.platformChange} min`, minutes: JOURNEY_CONFIG.platformChange, state: 'normal' });
+    legs.push({ number: legNumber++, type: 'train', icon: '🚆', title: `Train to ${nextTrain.destination}`, subtitle: '', minutes: nextTrain.minutes, state: 'normal' });
+  }
+  
+  legs.push({ number: legNumber++, type: 'walk', icon: '🏢', title: 'Walk to Work', subtitle: `${JOURNEY_CONFIG.walkToWork} min`, minutes: JOURNEY_CONFIG.walkToWork, state: 'normal' });
   
   return legs;
 }
 
-function calcTotal(legs) { return legs.filter(l => l.state !== 'skip').reduce((s, l) => s + (l.minutes || 0), 0); }
+function calculateTotalMinutes(legs) {
+  return legs.reduce((total, leg) => total + (leg.minutes || 0), 0);
+}
 
-function calcLeaveIn(now, total) {
-  const [h, m] = WORK_ARRIVAL_TIME.split(':').map(Number);
-  return Math.max(0, h * 60 + m - total - now.getHours() * 60 - now.getMinutes());
+function calculateLeaveInMinutes(now, totalMinutes) {
+  const [hours, mins] = WORK_ARRIVAL_TIME.split(':').map(Number);
+  const nowMins = now.getHours() * 60 + now.getMinutes();
+  return Math.max(0, hours * 60 + mins - totalMinutes - nowMins);
 }
 
 export default async function handler(req, res) {
   if (req.query.ping) {
-    return res.json({ pong: 'v10-zonedata', ts: Date.now() });
+    return res.json({ pong: 'v11-zonedata', ts: Date.now() });
   }
   
   try {
@@ -99,41 +103,37 @@ export default async function handler(req, res) {
     ]);
     
     const coffeeEngine = new CoffeeDecision(JOURNEY_CONFIG);
-    const [arrH, arrM] = WORK_ARRIVAL_TIME.split(':').map(Number);
-    coffeeEngine.setTargetArrival(arrH, arrM);
+    const [arrHours, arrMins] = WORK_ARRIVAL_TIME.split(':').map(Number);
+    coffeeEngine.setTargetArrival(arrHours, arrMins);
+    
     const coffeeDecision = coffeeEngine.calculate(trains[0]?.minutes || 30, trams, '');
-    
     const journeyLegs = buildJourneyLegs(trains, trams, coffeeDecision);
-    const totalMinutes = calcTotal(journeyLegs);
-    const leaveInMinutes = calcLeaveIn(now, totalMinutes);
-    
-    let statusType = 'normal';
-    if (coffeeDecision.urgent) statusType = 'delay';
-    if (trains.some(t => t.delayed) || trams.some(t => t.delayed)) statusType = 'delay';
+    const totalMinutes = calculateTotalMinutes(journeyLegs);
+    const leaveInMinutes = calculateLeaveInMinutes(now, totalMinutes);
     
     const dashboardData = {
-      location: HOME_ADDRESS,
+      location: 'HOME',
       current_time: currentTime,
       day, date,
       temp: weather?.temp ?? '--',
       condition: weather?.condition || 'N/A',
-      umbrella: (weather?.condition || '').toLowerCase().includes('rain') || (weather?.condition || '').toLowerCase().includes('shower'),
-      status_type: statusType,
+      umbrella: (weather?.condition || '').toLowerCase().includes('rain'),
+      status_type: coffeeDecision.urgent ? 'delay' : 'normal',
       arrive_by: WORK_ARRIVAL_TIME,
       total_minutes: totalMinutes,
       leave_in_minutes: leaveInMinutes > 0 ? leaveInMinutes : null,
       journey_legs: journeyLegs,
-      destination: WORK_ADDRESS
+      destination: 'WORK'
     };
     
-    const result = renderZones(dashboardData, {}, true);
+    const result = renderZones(dashboardData, true);
     
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Cache-Control', 'no-cache');
     
     return res.json({
       timestamp: result.timestamp,
-      version: 'v10',
+      version: 'v11',
       data: dashboardData,
       zones: result.zones
     });

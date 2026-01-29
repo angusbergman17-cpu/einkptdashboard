@@ -3,7 +3,7 @@
 ### Smart Transit Display for Australian Public Transport
 
 ![License](https://img.shields.io/badge/license-CC%20BY--NC%204.0-blue)
-![Version](https://img.shields.io/badge/version-2.8.0-green)
+![Version](https://img.shields.io/badge/version-3.0.0-green)
 ![Platform](https://img.shields.io/badge/platform-TRMNL%20%7C%20Kindle-orange)
 
 > Your personal e-ink transit dashboard. Real-time departures, smart journey planning, and disruption alerts — all rendered server-side and delivered to your display.
@@ -71,11 +71,11 @@ PTV-TRMNL uses a **self-hosted distribution model** where each user deploys thei
 
 ### 1. Fork the Repository
 
-Click **[Fork](https://github.com/angusbergman17-cpu/einkptdashboard/fork)** to create your own copy.
+Click **[Fork](https://github.com/angusbergman17-cpu/PTV-TRMNL-NEW/fork)** to create your own copy.
 
 ### 2. Deploy to Vercel
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/angusbergman17-cpu/einkptdashboard)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/angusbergman17-cpu/PTV-TRMNL-NEW)
 
 Or deploy to [Render](https://render.com) (import your fork).
 
@@ -172,7 +172,7 @@ Both are **optional** — the system works with fallback data.
 ## 📁 Project Structure
 
 ```
-einkptdashboard/
+PTV-TRMNL-NEW/
 ├── api/                    # Vercel serverless functions
 │   ├── zones.js           # Zone data for devices
 │   └── screen.js          # PNG rendering endpoint
@@ -283,6 +283,31 @@ Third-party libraries retain their original licenses.
 
 ---
 
+## 💝 Support the Project
+
+PTV-TRMNL is developed and maintained by **Angus Bergman** as a passion project. If this helps your daily commute, consider supporting its continued development!
+
+<p align="center">
+  <a href="https://buymeacoffee.com/angusbergman">
+    <img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me a Coffee">
+  </a>
+  &nbsp;
+  <a href="https://github.com/sponsors/angusbergman17-cpu">
+    <img src="https://img.shields.io/badge/GitHub%20Sponsors-EA4AAA?style=for-the-badge&logo=github-sponsors&logoColor=white" alt="GitHub Sponsors">
+  </a>
+</p>
+
+**Your support enables:**
+- 🚊 Adding more transit authorities across Australia & beyond
+- 📱 New device support (TRMNL X, more Kindle models)
+- 🔧 Bug fixes and continuous improvements
+- 📖 Better documentation and tutorials
+- ☕ Caffeine to fuel late-night coding sessions
+
+Even a small contribution helps keep the project alive. Thank you! 🙏
+
+---
+
 ## 🙏 Credits
 
 - **Transport for Victoria** — GTFS-RT real-time data
@@ -304,6 +329,8 @@ Issues and feature requests welcome!
 ---
 
 <p align="center">
-  <strong>Built in Melbourne, Australia 🇦🇺</strong><br>
-  <em>Because checking your phone for the next tram is so 2024</em>
+  <strong>Built with ❤️ in Melbourne, Australia 🇦🇺</strong><br>
+  <em>Because checking your phone for the next tram is so 2024</em><br><br>
+  <a href="https://buymeacoffee.com/angusbergman">☕ Buy me a coffee</a> · 
+  <a href="https://github.com/sponsors/angusbergman17-cpu">💖 Sponsor on GitHub</a>
 </p>
