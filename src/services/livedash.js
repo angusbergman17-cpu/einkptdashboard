@@ -542,6 +542,28 @@ export class LiveDash {
     const route = data.route;
     const coffee = data.coffee;
     
+    // Check for pre-computed journey_legs (from SmartJourneyEngine or zone-renderer)
+    if (data.journey_legs && Array.isArray(data.journey_legs) && data.journey_legs.length > 0) {
+      return data.journey_legs.map(leg => ({
+        type: leg.type || 'walk',
+        title: leg.title || '',
+        subtitle: leg.subtitle || '',
+        minutes: leg.minutes || leg.duration || 0,
+        state: leg.state || 'normal'
+      }));
+    }
+    
+    // Check for preferredRoute.segments format (from angus-journey.json)
+    if (this.preferences?.preferredRoute?.segments) {
+      return this.preferences.preferredRoute.segments.map(seg => ({
+        type: seg.type || 'walk',
+        title: this.formatSegmentTitle(seg),
+        subtitle: this.formatSegmentSubtitle(seg),
+        minutes: seg.minutes || 0,
+        state: 'normal'
+      }));
+    }
+    
     // If we have a route with coffee segments
     if (route?.coffeeSegments?.position === 'before-transit') {
       // Walk to cafe
@@ -687,6 +709,61 @@ export class LiveDash {
     };
     
     ctx.fillText(icons[type] || '•', x, y + size);
+  }
+
+  /**
+   * Format segment title from preferredRoute.segments format
+   */
+  formatSegmentTitle(seg) {
+    const type = seg.type || 'walk';
+    const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+    
+    switch (type) {
+      case 'walk':
+        if (seg.to?.toLowerCase().includes('cafe') || seg.to?.toLowerCase().includes('coffee')) {
+          return 'Walk to Cafe';
+        }
+        if (seg.to?.toLowerCase().includes('station') || seg.to?.toLowerCase().includes('platform')) {
+          return 'Walk to Station';
+        }
+        if (seg.to?.toLowerCase().includes('work') || seg.to === 'WORK') {
+          return 'Walk to Office';
+        }
+        return `Walk to ${seg.to || 'destination'}`;
+      case 'coffee':
+        return 'GET COFFEE';
+      case 'tram':
+        return seg.route ? `Tram ${seg.route}` : 'Tram';
+      case 'train':
+        return seg.line ? `${seg.line} Line` : 'Train';
+      case 'bus':
+        return seg.route ? `Bus ${seg.route}` : 'Bus';
+      default:
+        return cap(type);
+    }
+  }
+
+  /**
+   * Format segment subtitle from preferredRoute.segments format
+   */
+  formatSegmentSubtitle(seg) {
+    const type = seg.type || 'walk';
+    
+    switch (type) {
+      case 'walk':
+        return `${seg.minutes || 5} min walk`;
+      case 'coffee':
+        return '☕ TIME FOR COFFEE';
+      case 'tram':
+      case 'train':
+      case 'bus':
+        if (seg.from && seg.to) {
+          return `${seg.from} → ${seg.to}`;
+        }
+        return seg.to ? `To ${seg.to}` : '';
+      default:
+        return seg.minutes ? `${seg.minutes} min` : '';
+    }
   }
 
   /**
