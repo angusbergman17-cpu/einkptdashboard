@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PTV-TRMNL Physical Device Simulator</title>
+    <title>PTV-TRMNL Firmware Simulator v6.0</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #1a1a2e; color: #eee; min-height: 100vh; padding: 20px; }
@@ -11,11 +11,12 @@
         header { text-align: center; margin-bottom: 20px; }
         header h1 { font-size: 24px; margin-bottom: 8px; }
         header p { color: #888; font-size: 14px; }
-        .main-layout { display: grid; grid-template-columns: 1fr 320px; gap: 20px; }
+        .main-layout { display: grid; grid-template-columns: 1fr 350px; gap: 20px; }
         .display-panel { background: #2a2a3e; padding: 20px; border-radius: 12px; }
-        .device-frame { background: #333; padding: 20px; border-radius: 8px; display: inline-block; }
+        .device-frame { background: #333; padding: 15px; border-radius: 8px; display: inline-block; position: relative; }
+        .device-label { position: absolute; top: -10px; left: 10px; background: #333; padding: 2px 8px; font-size: 10px; color: #888; }
         #eink-display { width: 800px; height: 480px; background: #f5f5f0; border: 3px solid #1a1a1a; position: relative; overflow: hidden; image-rendering: pixelated; }
-        #eink-display img { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
+        #eink-canvas { width: 100%; height: 100%; image-rendering: pixelated; }
         .controls { background: #2a2a3e; padding: 20px; border-radius: 12px; }
         .controls h2 { font-size: 16px; margin-bottom: 15px; color: #6366f1; }
         .section { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #444; }
@@ -25,93 +26,110 @@
         button.secondary { background: #444; }
         button.warning { background: #f59e0b; }
         button.success { background: #22c55e; }
-        .status { padding: 10px; background: #1a1a2e; border-radius: 6px; font-family: monospace; font-size: 12px; margin-bottom: 10px; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .status { padding: 10px; background: #1a1a2e; border-radius: 6px; font-family: monospace; font-size: 11px; margin-bottom: 10px; }
         .status .ok { color: #22c55e; }
         .status .error { color: #ef4444; }
-        .status .info { color: #3b82f6; }
-        .log { max-height: 200px; overflow-y: auto; background: #1a1a2e; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 11px; }
-        .log-entry { margin-bottom: 4px; }
-        .zones { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
-        .zone-btn { padding: 8px; font-size: 11px; text-align: center; }
-        .zone-btn.loaded { background: #22c55e; }
-        select, input { width: 100%; padding: 8px; background: #1a1a2e; border: 1px solid #444; border-radius: 6px; color: #fff; margin-bottom: 8px; }
-        .info-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
-        .refresh-indicator { position: absolute; top: 10px; right: 10px; padding: 4px 8px; background: rgba(0,0,0,0.7); color: #fff; font-size: 10px; border-radius: 4px; display: none; }
-        .refresh-indicator.active { display: block; }
+        .status .warn { color: #f59e0b; }
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+        .log { max-height: 250px; overflow-y: auto; background: #0a0a15; padding: 10px; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 10px; line-height: 1.4; }
+        .log-entry { margin-bottom: 2px; white-space: pre-wrap; }
+        .zones { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; }
+        .zone-card { padding: 8px; background: #1a1a2e; border-radius: 6px; font-size: 10px; border: 2px solid #333; }
+        .zone-card.dirty { border-color: #f59e0b; }
+        .zone-card.loaded { border-color: #22c55e; }
+        .zone-card .name { font-weight: bold; margin-bottom: 4px; }
+        .zone-card .meta { color: #666; }
+        select, input { width: 100%; padding: 8px; background: #1a1a2e; border: 1px solid #444; border-radius: 6px; color: #fff; margin-bottom: 8px; font-size: 12px; }
+        .firmware-info { background: #0a0a15; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 10px; margin-bottom: 10px; }
+        .memory-bar { height: 8px; background: #333; border-radius: 4px; overflow: hidden; margin-top: 4px; }
+        .memory-bar .used { height: 100%; background: #22c55e; transition: width 0.3s; }
+        .memory-bar .used.warn { background: #f59e0b; }
+        .memory-bar .used.crit { background: #ef4444; }
+        .checkbox-row { display: flex; align-items: center; gap: 8px; font-size: 12px; margin-top: 8px; }
+        .overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; z-index: 10; }
+        .overlay.hidden { display: none; }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🚃 PTV-TRMNL Physical Device Simulator</h1>
-            <p>Simulates real firmware behavior - fetches zones from API like the ESP32</p>
+            <h1>🚃 PTV-TRMNL Firmware Simulator v6.0</h1>
+            <p>Accurate firmware emulation - same zone fetching, BMP rendering, refresh timing & memory constraints</p>
         </header>
         
         <div class="main-layout">
             <div class="display-panel">
                 <div class="device-frame">
+                    <div class="device-label">TRMNL OG • ESP32-C3 • 800×480</div>
                     <div id="eink-display">
-                        <div class="refresh-indicator" id="refresh-indicator">REFRESHING...</div>
-                        <div style="display:flex;align-items:center;justify-content:center;height:100%;color:#333;font-size:18px;">
-                            Click "Boot Device" to start
-                        </div>
+                        <canvas id="eink-canvas" width="800" height="480"></canvas>
+                        <div class="overlay" id="overlay">Power off - click Boot Device</div>
                     </div>
                 </div>
                 <div style="margin-top: 15px; display: flex; gap: 20px; font-size: 12px; color: #888;">
-                    <span>📐 800×480 @ 1-bit</span>
-                    <span id="refresh-count">Refreshes: 0</span>
+                    <span>📐 800×480 @ 1-bit BMP</span>
+                    <span id="refresh-info">Full: 0 | Partial: 0</span>
                     <span id="last-refresh">Last: --</span>
                 </div>
             </div>
             
             <div class="controls">
-                <h2>⚙️ Device Controls</h2>
+                <h2>⚙️ Firmware Controls</h2>
+                
+                <div class="firmware-info">
+                    <div><strong>=== PTV-TRMNL v6.0 ===</strong></div>
+                    <div>ESP32-C3 • 320KB RAM • 4MB Flash</div>
+                    <div>bb_epaper 2.0.6 • WiFiManager 2.0.17</div>
+                </div>
                 
                 <div class="section">
-                    <h3>🔌 Power</h3>
-                    <button class="warning" onclick="bootDevice()">⚡ Boot Device</button>
+                    <h3>🔌 Device Control</h3>
+                    <button class="warning" onclick="bootDevice()" id="btn-boot">⚡ Boot Device</button>
                     <button class="secondary" onclick="resetDevice()">🔄 Factory Reset</button>
                 </div>
                 
                 <div class="section">
-                    <h3>🔄 Refresh</h3>
-                    <button onclick="fetchAndDisplay(true)">Full Refresh</button>
-                    <button class="secondary" onclick="fetchAndDisplay(false)">Partial Refresh</button>
-                    <label style="display:flex;align-items:center;gap:8px;font-size:12px;margin-top:8px;">
+                    <h3>🔄 Display Refresh</h3>
+                    <button onclick="doRefresh(true)" id="btn-full">Full Refresh (5 min cycle)</button>
+                    <button class="secondary" onclick="doRefresh(false)" id="btn-partial">Partial Refresh (20s)</button>
+                    <div class="checkbox-row">
                         <input type="checkbox" id="auto-refresh" onchange="toggleAutoRefresh()">
-                        Auto-refresh every 20s
-                    </label>
-                </div>
-                
-                <div class="section">
-                    <h3>🌐 Server</h3>
-                    <input type="text" id="server-url" value="https://einkptdashboard.vercel.app" placeholder="Server URL">
-                    <select id="demo-mode">
-                        <option value="">Live Data</option>
-                        <option value="normal">Demo: Normal</option>
-                        <option value="delay-skip-coffee">Demo: Skip Coffee</option>
-                        <option value="disruption">Demo: Disruption</option>
-                        <option value="rain">Demo: Rain</option>
-                    </select>
-                </div>
-                
-                <div class="section">
-                    <h3>📦 Zones</h3>
-                    <div class="zones" id="zone-buttons"></div>
-                </div>
-                
-                <div class="section">
-                    <h3>📊 Status</h3>
-                    <div class="status">
-                        <div class="info-row"><span>State:</span><span id="state">IDLE</span></div>
-                        <div class="info-row"><span>WiFi:</span><span id="wifi-status" class="ok">Connected</span></div>
-                        <div class="info-row"><span>Server:</span><span id="server-status">--</span></div>
-                        <div class="info-row"><span>Heap:</span><span id="heap">320KB</span></div>
+                        <label for="auto-refresh">Auto-refresh (20s partial / 5min full)</label>
                     </div>
                 </div>
                 
                 <div class="section">
-                    <h3>📜 Serial Log</h3>
+                    <h3>🌐 Server Config</h3>
+                    <input type="text" id="server-url" value="https://einkptdashboard.vercel.app">
+                    <select id="demo-mode" onchange="markAllDirty()">
+                        <option value="">Live Data</option>
+                        <option value="normal">Demo: Normal Commute</option>
+                        <option value="delay-skip-coffee">Demo: Delay (Skip Coffee)</option>
+                        <option value="disruption">Demo: Service Disruption</option>
+                        <option value="rain">Demo: Rainy Day</option>
+                    </select>
+                </div>
+                
+                <div class="section">
+                    <h3>📦 Zone Status (like firmware)</h3>
+                    <div class="zones" id="zone-cards"></div>
+                </div>
+                
+                <div class="section">
+                    <h3>📊 System Status</h3>
+                    <div class="status">
+                        <div class="info-row"><span>State:</span><span id="state">OFF</span></div>
+                        <div class="info-row"><span>WiFi:</span><span id="wifi">Disconnected</span></div>
+                        <div class="info-row"><span>Server:</span><span id="server">--</span></div>
+                        <div class="info-row"><span>Errors:</span><span id="errors">0</span></div>
+                        <div class="info-row"><span>Heap Used:</span><span id="heap">0 / 320 KB</span></div>
+                        <div class="memory-bar"><div class="used" id="heap-bar" style="width:0%"></div></div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h3>📜 Serial Monitor (115200 baud)</h3>
                     <div class="log" id="serial-log"></div>
                 </div>
             </div>
@@ -119,165 +137,394 @@
     </div>
     
     <script>
-        const ZONES = ['header', 'summary', 'legs', 'footer'];
-        let refreshCount = 0;
-        let autoRefreshInterval = null;
-        let zoneData = {};
+        // ========== FIRMWARE CONSTANTS (match main-v6.cpp) ==========
+        const FIRMWARE_VERSION = "6.0";
+        const SCREEN_W = 800;
+        const SCREEN_H = 480;
+        const REFRESH_INTERVAL = 20000;      // 20 seconds
+        const FULL_REFRESH_INTERVAL = 300000; // 5 minutes
+        const MAX_PARTIAL_BEFORE_FULL = 30;
+        const HEAP_TOTAL = 320 * 1024;       // 320KB
+        const ZONE_BMP_MAX_SIZE = 40000;     // 40KB per zone
         
+        // Zone definitions (match firmware)
+        const ZONES = {
+            header:  { id: 'header',  x: 0, y: 0,   w: 800, h: 96 },
+            summary: { id: 'summary', x: 0, y: 96,  w: 800, h: 36 },
+            legs:    { id: 'legs',    x: 0, y: 132, w: 800, h: 316 },
+            footer:  { id: 'footer',  x: 0, y: 448, w: 800, h: 32 }
+        };
+        
+        // ========== STATE ==========
+        let state = 'OFF';
+        let wifiConnected = false;
+        let serverConfigured = false;
+        let fullRefreshCount = 0;
+        let partialRefreshCount = 0;
+        let consecutiveErrors = 0;
+        let heapUsed = 0;
+        let lastFullRefresh = 0;
+        let autoRefreshTimer = null;
+        let zoneStates = {};
+        
+        const canvas = document.getElementById('eink-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // ========== LOGGING ==========
         function log(msg, type = 'info') {
             const logEl = document.getElementById('serial-log');
-            const time = new Date().toLocaleTimeString();
-            const color = type === 'ok' ? '#22c55e' : type === 'error' ? '#ef4444' : '#3b82f6';
-            logEl.innerHTML = `<div class="log-entry" style="color:${color}">[${time}] ${msg}</div>` + logEl.innerHTML;
+            const time = new Date().toLocaleTimeString('en-AU', { hour12: false });
+            const colors = { ok: '#22c55e', error: '#ef4444', warn: '#f59e0b', info: '#888' };
+            logEl.innerHTML = `<div class="log-entry" style="color:${colors[type] || colors.info}">[${time}] ${msg}</div>` + logEl.innerHTML;
+            if (logEl.children.length > 100) logEl.lastChild.remove();
         }
         
-        function setState(state) {
-            document.getElementById('state').textContent = state;
+        function setState(newState) {
+            state = newState;
+            document.getElementById('state').textContent = newState;
         }
         
-        function initZoneButtons() {
-            const container = document.getElementById('zone-buttons');
-            container.innerHTML = ZONES.map(z => 
-                `<button class="zone-btn secondary" id="zone-${z}" onclick="fetchZone('${z}')">${z}</button>`
-            ).join('');
+        function updateHeap(delta) {
+            heapUsed = Math.max(0, Math.min(HEAP_TOTAL, heapUsed + delta));
+            const pct = (heapUsed / HEAP_TOTAL * 100).toFixed(1);
+            document.getElementById('heap').textContent = `${(heapUsed/1024).toFixed(0)} / 320 KB`;
+            const bar = document.getElementById('heap-bar');
+            bar.style.width = pct + '%';
+            bar.className = 'used' + (pct > 80 ? ' crit' : pct > 60 ? ' warn' : '');
         }
         
+        // ========== ZONE MANAGEMENT ==========
+        function initZones() {
+            Object.keys(ZONES).forEach(id => {
+                zoneStates[id] = { loaded: false, dirty: true, data: null, size: 0 };
+            });
+            renderZoneCards();
+        }
+        
+        function renderZoneCards() {
+            const container = document.getElementById('zone-cards');
+            container.innerHTML = Object.entries(ZONES).map(([id, z]) => {
+                const s = zoneStates[id] || {};
+                const cls = s.loaded ? 'loaded' : s.dirty ? 'dirty' : '';
+                return `<div class="zone-card ${cls}">
+                    <div class="name">${id}</div>
+                    <div class="meta">${z.w}×${z.h} @ (${z.x},${z.y})</div>
+                    <div class="meta">${s.size ? (s.size/1024).toFixed(1) + 'KB' : '--'}</div>
+                </div>`;
+            }).join('');
+        }
+        
+        function markAllDirty() {
+            Object.keys(zoneStates).forEach(id => {
+                zoneStates[id].dirty = true;
+                zoneStates[id].loaded = false;
+            });
+            renderZoneCards();
+            log('All zones marked dirty');
+        }
+        
+        // ========== BOOT SEQUENCE ==========
         async function bootDevice() {
-            log('=== PTV-TRMNL v6.0 ===', 'ok');
-            setState('BOOTING');
+            document.getElementById('btn-boot').disabled = true;
+            document.getElementById('overlay').classList.add('hidden');
             
-            log('Initializing display...');
-            await sleep(500);
+            // Clear display (like e-ink power on)
+            ctx.fillStyle = '#f5f5f0';
+            ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
             
-            log('Connecting to WiFi...');
-            await sleep(800);
-            log('WiFi connected!', 'ok');
-            document.getElementById('wifi-status').textContent = 'Connected';
-            document.getElementById('wifi-status').className = 'ok';
+            log('');
+            log('=== PTV-TRMNL v' + FIRMWARE_VERSION + ' ===', 'ok');
+            setState('BOOT');
             
-            log('Server: ' + document.getElementById('server-url').value);
-            setState('FETCHING');
+            // Simulate boot sequence
+            log('WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0)');
+            await sleep(100);
             
-            await fetchAndDisplay(true);
+            log('Serial.begin(115200)');
+            await sleep(200);
             
+            log('Loading settings from NVS...');
+            updateHeap(8192); // Preferences
+            await sleep(300);
+            
+            log('Server URL: ' + document.getElementById('server-url').value);
+            serverConfigured = true;
+            
+            log('Allocating BMP buffer (40KB)...');
+            updateHeap(ZONE_BMP_MAX_SIZE);
+            await sleep(200);
+            
+            log('initDisplay() - bb_epaper EP75_800x480');
+            updateHeap(4096);
+            await sleep(300);
+            
+            // Show welcome screen
+            showWelcomeScreen();
+            log('showWelcomeScreen()', 'ok');
+            await sleep(2000);
+            
+            // Connect WiFi
+            log('connectWiFi() - Starting WiFiManager...');
+            setState('WIFI');
+            await sleep(1000);
+            log('WiFi connected! IP: 192.168.1.42', 'ok');
+            wifiConnected = true;
+            document.getElementById('wifi').textContent = 'Connected';
+            document.getElementById('wifi').className = 'ok';
+            
+            log('Setup complete - entering loop()', 'ok');
             setState('RUNNING');
-            log('Boot complete - entering main loop', 'ok');
+            
+            // Initial fetch
+            await doRefresh(true);
+            
+            document.getElementById('btn-boot').disabled = false;
         }
         
-        async function fetchAndDisplay(fullRefresh = false) {
+        function showWelcomeScreen() {
+            ctx.fillStyle = '#f5f5f0';
+            ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
+            
+            // Header bar
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, 800, 60);
+            
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 16px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('PTV-TRMNL SMART TRANSIT DISPLAY', 400, 25);
+            ctx.font = '12px monospace';
+            ctx.fillText('v' + FIRMWARE_VERSION, 400, 45);
+            
+            // Setup box
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(80, 80, 640, 280);
+            
+            ctx.fillStyle = '#000';
+            ctx.font = 'bold 14px monospace';
+            ctx.fillText('FIRST TIME SETUP', 400, 110);
+            
+            ctx.font = '12px monospace';
+            ctx.textAlign = 'left';
+            ctx.fillText('1. Connect to WiFi: PTV-TRMNL-Setup', 100, 150);
+            ctx.fillText('   Password: transport123', 100, 170);
+            ctx.fillText('2. Open browser: 192.168.4.1', 100, 200);
+            ctx.fillText('3. Select your WiFi and enter password', 100, 230);
+            ctx.fillText('4. Server: einkptdashboard.vercel.app', 100, 260);
+            ctx.fillText('5. Save and wait for dashboard', 100, 290);
+            
+            ctx.textAlign = 'center';
+            ctx.font = '10px monospace';
+            ctx.fillText('© 2026 Angus Bergman • CC BY-NC 4.0', 400, 450);
+        }
+        
+        // ========== REFRESH LOGIC (matches firmware) ==========
+        async function doRefresh(full = false) {
+            if (state !== 'RUNNING') return;
+            
+            const now = Date.now();
+            
+            // Force full refresh if too many partials
+            if (!full && partialRefreshCount >= MAX_PARTIAL_BEFORE_FULL) {
+                log('MAX_PARTIAL_BEFORE_FULL reached - forcing full refresh', 'warn');
+                full = true;
+            }
+            
+            // Force full if interval exceeded
+            if (!full && lastFullRefresh && (now - lastFullRefresh > FULL_REFRESH_INTERVAL)) {
+                log('FULL_REFRESH_INTERVAL exceeded - forcing full refresh', 'warn');
+                full = true;
+            }
+            
+            setState('FETCHING');
             const server = document.getElementById('server-url').value;
             const demo = document.getElementById('demo-mode').value;
-            const indicator = document.getElementById('refresh-indicator');
             
-            indicator.textContent = fullRefresh ? 'FULL REFRESH' : 'PARTIAL';
-            indicator.classList.add('active');
-            
-            setState('FETCHING');
-            log(`Fetching /api/screen${demo ? '?demo=' + demo : ''}...`);
+            log(`fetchZoneUpdates(forceAll=${full})`);
             
             try {
-                const url = `${server}/api/screen${demo ? '?demo=' + demo : ''}`;
-                const response = await fetch(url);
+                // Step 1: Fetch zone metadata (lightweight)
+                const metaUrl = `${server}/api/zones?metadata=1${demo ? '&demo=' + demo : ''}`;
+                log(`GET ${metaUrl}`);
+                updateHeap(2048); // HTTP client
                 
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const metaResp = await fetch(metaUrl);
+                if (!metaResp.ok) throw new Error(`HTTP ${metaResp.status}`);
                 
-                const blob = await response.blob();
-                const imgUrl = URL.createObjectURL(blob);
+                const metadata = await metaResp.json();
+                log(`Zone metadata: ${JSON.stringify(metadata.zones || [])}`, 'ok');
                 
-                document.getElementById('server-status').textContent = 'OK';
-                document.getElementById('server-status').className = 'ok';
+                document.getElementById('server').textContent = 'OK';
+                document.getElementById('server').className = 'ok';
                 
-                // Simulate e-ink refresh
-                const display = document.getElementById('eink-display');
+                // Step 2: Fetch each zone BMP
+                const zonesToFetch = full ? Object.keys(ZONES) : (metadata.zones || Object.keys(ZONES));
                 
-                if (fullRefresh) {
-                    display.style.background = '#000';
-                    await sleep(200);
-                    display.style.background = '#fff';
-                    await sleep(200);
-                    display.style.background = '#000';
-                    await sleep(200);
+                for (const zoneId of zonesToFetch) {
+                    if (!ZONES[zoneId]) continue;
+                    
+                    const zone = ZONES[zoneId];
+                    const zoneUrl = `${server}/api/zone/${zoneId}${demo ? '?demo=' + demo : ''}`;
+                    
+                    log(`Fetching zone: ${zoneId} (${zone.w}x${zone.h})`);
+                    
+                    const zoneResp = await fetch(zoneUrl);
+                    if (!zoneResp.ok) {
+                        log(`Zone ${zoneId} failed: HTTP ${zoneResp.status}`, 'error');
+                        continue;
+                    }
+                    
+                    const bmpBlob = await zoneResp.blob();
+                    const bmpSize = bmpBlob.size;
+                    
+                    zoneStates[zoneId] = { loaded: true, dirty: false, size: bmpSize };
+                    log(`Zone ${zoneId}: ${(bmpSize/1024).toFixed(1)}KB BMP loaded`, 'ok');
+                    
+                    // Draw zone to canvas
+                    await drawZoneBMP(bmpBlob, zone);
+                    updateHeap(bmpSize);
+                    await sleep(50); // Simulate processing time
+                    updateHeap(-bmpSize); // Free after draw
                 }
                 
-                display.innerHTML = `<img src="${imgUrl}" alt="Dashboard">`;
-                display.style.background = '#f5f5f0';
+                renderZoneCards();
                 
-                refreshCount++;
-                document.getElementById('refresh-count').textContent = `Refreshes: ${refreshCount}`;
+                // Step 3: Refresh display
+                if (full) {
+                    await doFullRefreshAnimation();
+                    fullRefreshCount++;
+                    partialRefreshCount = 0;
+                    lastFullRefresh = now;
+                } else {
+                    partialRefreshCount++;
+                }
+                
+                document.getElementById('refresh-info').textContent = `Full: ${fullRefreshCount} | Partial: ${partialRefreshCount}`;
                 document.getElementById('last-refresh').textContent = `Last: ${new Date().toLocaleTimeString()}`;
                 
-                log(`Display updated (${fullRefresh ? 'FULL' : 'PARTIAL'})`, 'ok');
+                consecutiveErrors = 0;
+                document.getElementById('errors').textContent = '0';
                 
-                // Update zone buttons
-                ZONES.forEach(z => {
-                    document.getElementById(`zone-${z}`).classList.add('loaded');
-                });
+                log(`Display refreshed (${full ? 'FULL' : 'PARTIAL'})`, 'ok');
                 
             } catch (err) {
-                log(`Error: ${err.message}`, 'error');
-                document.getElementById('server-status').textContent = 'ERROR';
-                document.getElementById('server-status').className = 'error';
+                consecutiveErrors++;
+                document.getElementById('errors').textContent = consecutiveErrors;
+                document.getElementById('errors').className = 'error';
+                log(`ERROR: ${err.message}`, 'error');
+                
+                // Exponential backoff
+                if (consecutiveErrors > 1) {
+                    const backoff = Math.min(30000, 1000 * Math.pow(2, consecutiveErrors - 1));
+                    log(`Backoff: ${backoff}ms before retry`, 'warn');
+                }
             }
             
-            indicator.classList.remove('active');
+            updateHeap(-2048); // Free HTTP client
             setState('RUNNING');
         }
         
-        async function fetchZone(zoneId) {
-            const server = document.getElementById('server-url').value;
-            const demo = document.getElementById('demo-mode').value;
-            
-            log(`Fetching zone: ${zoneId}`);
-            
-            try {
-                const url = `${server}/api/zone/${zoneId}${demo ? '?demo=' + demo : ''}`;
-                const response = await fetch(url);
-                
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                
-                log(`Zone ${zoneId} loaded (${response.headers.get('content-length')} bytes)`, 'ok');
-                document.getElementById(`zone-${zoneId}`).classList.add('loaded');
-                
-            } catch (err) {
-                log(`Zone ${zoneId} error: ${err.message}`, 'error');
-            }
+        async function drawZoneBMP(blob, zone) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    ctx.drawImage(img, zone.x, zone.y, zone.w, zone.h);
+                    URL.revokeObjectURL(img.src);
+                    resolve();
+                };
+                img.onerror = () => {
+                    log(`BMP decode error for zone at (${zone.x},${zone.y})`, 'error');
+                    resolve();
+                };
+                img.src = URL.createObjectURL(blob);
+            });
         }
         
-        function resetDevice() {
-            log('=== FACTORY RESET ===', 'error');
-            refreshCount = 0;
-            zoneData = {};
-            document.getElementById('eink-display').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#333;font-size:18px;">Device reset - Click Boot</div>';
-            document.getElementById('refresh-count').textContent = 'Refreshes: 0';
-            document.getElementById('last-refresh').textContent = 'Last: --';
-            document.getElementById('server-status').textContent = '--';
-            setState('IDLE');
-            ZONES.forEach(z => document.getElementById(`zone-${z}`).classList.remove('loaded'));
-            if (autoRefreshInterval) {
-                clearInterval(autoRefreshInterval);
-                autoRefreshInterval = null;
-                document.getElementById('auto-refresh').checked = false;
-            }
+        async function doFullRefreshAnimation() {
+            // Simulate e-ink full refresh (flash black/white/black/white)
+            log('bbep.refresh(REFRESH_FULL, true)');
+            
+            const overlay = document.getElementById('overlay');
+            overlay.textContent = 'FULL REFRESH';
+            overlay.classList.remove('hidden');
+            overlay.style.background = '#000';
+            await sleep(150);
+            overlay.style.background = '#fff';
+            await sleep(150);
+            overlay.style.background = '#000';
+            await sleep(150);
+            overlay.classList.add('hidden');
         }
         
+        // ========== AUTO REFRESH ==========
         function toggleAutoRefresh() {
             if (document.getElementById('auto-refresh').checked) {
-                log('Auto-refresh enabled (20s interval)', 'ok');
-                autoRefreshInterval = setInterval(() => fetchAndDisplay(false), 20000);
+                if (state !== 'RUNNING') {
+                    document.getElementById('auto-refresh').checked = false;
+                    log('Cannot enable auto-refresh - device not running', 'warn');
+                    return;
+                }
+                log('Auto-refresh enabled (20s partial, 5min full)', 'ok');
+                autoRefreshTimer = setInterval(() => doRefresh(false), REFRESH_INTERVAL);
             } else {
                 log('Auto-refresh disabled');
-                clearInterval(autoRefreshInterval);
-                autoRefreshInterval = null;
+                clearInterval(autoRefreshTimer);
+                autoRefreshTimer = null;
             }
+        }
+        
+        // ========== RESET ==========
+        function resetDevice() {
+            log('');
+            log('=== FACTORY RESET ===', 'error');
+            log('preferences.clear()');
+            log('WiFi.disconnect(true, true)');
+            
+            clearInterval(autoRefreshTimer);
+            autoRefreshTimer = null;
+            document.getElementById('auto-refresh').checked = false;
+            
+            state = 'OFF';
+            wifiConnected = false;
+            serverConfigured = false;
+            fullRefreshCount = 0;
+            partialRefreshCount = 0;
+            consecutiveErrors = 0;
+            heapUsed = 0;
+            lastFullRefresh = 0;
+            
+            initZones();
+            
+            ctx.fillStyle = '#888';
+            ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
+            
+            document.getElementById('overlay').textContent = 'Power off - click Boot Device';
+            document.getElementById('overlay').classList.remove('hidden');
+            document.getElementById('overlay').style.background = 'rgba(0,0,0,0.9)';
+            
+            document.getElementById('state').textContent = 'OFF';
+            document.getElementById('wifi').textContent = 'Disconnected';
+            document.getElementById('wifi').className = '';
+            document.getElementById('server').textContent = '--';
+            document.getElementById('server').className = '';
+            document.getElementById('errors').textContent = '0';
+            document.getElementById('errors').className = '';
+            document.getElementById('heap').textContent = '0 / 320 KB';
+            document.getElementById('heap-bar').style.width = '0%';
+            document.getElementById('refresh-info').textContent = 'Full: 0 | Partial: 0';
+            document.getElementById('last-refresh').textContent = 'Last: --';
         }
         
         function sleep(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
+            return new Promise(r => setTimeout(r, ms));
         }
         
-        // Initialize
-        initZoneButtons();
-        log('Simulator ready - click Boot Device to start');
+        // ========== INIT ==========
+        initZones();
+        log('Simulator ready');
+        log('Firmware emulation: v' + FIRMWARE_VERSION);
+        log('Click "Boot Device" to start');
     </script>
 </body>
 </html>
