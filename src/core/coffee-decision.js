@@ -70,7 +70,9 @@ class CoffeeDecision {
    * Development Rules v1.0.15 Section 4 - Location-Agnostic Design
    */
   getLocalTime() {
-    const prefs = this.preferences ? this.preferences.get() : {};
+    const prefs = this.preferences 
+      ? (typeof this.preferences.get === 'function' ? this.preferences.get() : this.preferences)
+      : {};
     const state = prefs.location?.state || prefs.state || 'VIC';
     const timezone = this.getTimezoneForState(state);
 

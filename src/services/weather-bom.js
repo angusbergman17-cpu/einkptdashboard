@@ -94,7 +94,9 @@ class WeatherBOM {
    */
   getWeatherStation() {
     // Get city and state from preferences
-    const prefs = this.preferences ? this.preferences.get() : {};
+    const prefs = this.preferences 
+      ? (typeof this.preferences.get === 'function' ? this.preferences.get() : this.preferences)
+      : {};
     const city = prefs.location?.city;
     const state = prefs.location?.state || prefs.state || 'VIC';
 

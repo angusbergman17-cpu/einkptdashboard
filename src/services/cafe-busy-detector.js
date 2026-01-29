@@ -183,7 +183,9 @@ class CafeBusyDetector {
    */
   getTimeBasedBusyness() {
     // Get user's timezone from preferences
-    const prefs = this.preferences ? this.preferences.get() : {};
+    const prefs = this.preferences 
+      ? (typeof this.preferences.get === 'function' ? this.preferences.get() : this.preferences)
+      : {};
     const state = prefs.state || 'VIC';
     const timezone = this.getTimezoneForState(state);
 
@@ -303,7 +305,9 @@ class CafeBusyDetector {
    */
   getCurrentPeakInfo() {
     // Get user's timezone from preferences
-    const prefs = this.preferences ? this.preferences.get() : {};
+    const prefs = this.preferences 
+      ? (typeof this.preferences.get === 'function' ? this.preferences.get() : this.preferences)
+      : {};
     const state = prefs.state || 'VIC';
     const timezone = this.getTimezoneForState(state);
 
