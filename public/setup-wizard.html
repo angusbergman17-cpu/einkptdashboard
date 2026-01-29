@@ -574,18 +574,30 @@
 
                 autocompleteDebounce = setTimeout(async () => {
                     try {
-                        const url = `/api/address-search?q=${encodeURIComponent(query)}`;
+                        // Get Google key from localStorage if validated
+                        const googleKey = localStorage.getItem('ptv_google_places_key');
+                        const googleValidated = localStorage.getItem('ptv_google_places_validated') === 'true';
+                        
+                        let url = `/api/address-search?q=${encodeURIComponent(query)}`;
+                        if (googleKey && googleValidated) {
+                            url += `&googleKey=${encodeURIComponent(googleKey)}`;
+                        }
+                        
                         const response = await fetch(url);
                         const data = await response.json();
 
                         if (data.results && data.results.length > 0) {
+                            const sourceIndicator = data.source === 'google' ? '🔵 Google Places' : '🟢 OpenStreetMap';
                             suggestions.innerHTML = data.results.map(r => `
                                 <div class="autocomplete-item" onclick="selectAddress('${inputId}', '${suggestionsId}', '${r.display_name.replace(/'/g, "\\'")}')">
                                     ${r.display_name}
                                 </div>
                             `).join('');
+                            suggestions.innerHTML += `<div style="padding: 6px 12px; font-size: 10px; opacity: 0.5; border-top: 1px solid rgba(255,255,255,0.1); text-align: right;">${sourceIndicator}</div>`;
                             suggestions.style.display = 'block';
                             console.log('Address suggestions from:', data.source);
+                        } else {
+                            suggestions.style.display = 'none';
                         }
                     } catch (e) {
                         console.error('Autocomplete error:', e);
@@ -640,16 +652,14 @@
 
                 const result = await response.json();
 
-                if (result.success) {
+                if (result.success && result.saved) {
+                    // Store validated key in localStorage for use in address searches
+                    localStorage.setItem('ptv_google_places_key', apiKey);
+                    localStorage.setItem('ptv_google_places_validated', 'true');
+                    console.log('✅ Google key saved to localStorage for address searches');
+                    
                     status.style.color = '#48bb78';
-                    if (result.testResult && result.testResult.success) {
-                        status.innerHTML = `✅ API key saved and validated! Google Places is working.<br><small style="color: #718096;">${result.testResult.predictions} test predictions returned</small>`;
-                    } else if (result.testResult && !result.testResult.success) {
-                        status.style.color = '#f59e0b';
-                        status.innerHTML = `⚠️ API key saved but validation failed:<br><small style="color: #e53e3e;">${result.testResult.message}</small><br><small>Check your Google Cloud Console - ensure Places API (New) is enabled and key has no restrictions blocking it.</small>`;
-                    } else {
-                        status.innerHTML = '✅ API key saved (test inconclusive - will be used for address searches)';
-                    }
+                    status.innerHTML = `✅ API key saved and validated! Google Places is working.<br><small style="color: #718096;">${result.testResult?.predictions || 0} test predictions returned</small>`;
                     btn.textContent = '✓ Saved & Tested';
                     btn.style.background = '#48bb78';
 
@@ -658,6 +668,13 @@
 
                     // Re-enable autocomplete with new API key
                     console.log('Google Places API key activated, available services:', result.availableServices);
+                } else if (result.success && !result.saved) {
+                    // Validation failed - key NOT saved
+                    status.style.color = '#e53e3e';
+                    status.innerHTML = `❌ API key validation failed - NOT saved:<br><small>${result.testResult?.message || 'Unknown error'}</small><br><small>Check your Google Cloud Console - ensure Places API (New) is enabled.</small>`;
+                    btn.disabled = false;
+                    btn.textContent = '💾 Save & Test API Key';
+                    return;
                 } else {
                     status.style.color = '#e53e3e';
                     status.innerHTML = `❌ Failed to save: ${result.message}`;

@@ -11,21 +11,29 @@ import PreferencesManager from '../src/data/preferences-manager.js';
 
 export default async function handler(req, res) {
   const query = req.query.q;
+  const googleKeyFromQuery = req.query.googleKey; // Client can pass key directly
   
   if (!query || query.length < 3) {
     return res.status(400).json({ results: [], error: 'Query too short' });
   }
 
   try {
-    // Load preferences to get Google Places API key
-    const prefs = new PreferencesManager();
-    await prefs.load();
-    const currentPrefs = prefs.get();
+    // Try to get Google Places API key from:
+    // 1. Query parameter (passed by client who saved it)
+    // 2. Preferences file (might work locally, not on Vercel)
+    let googleKey = googleKeyFromQuery;
+    let googleValidated = !!googleKeyFromQuery; // If client passes it, they validated it
     
-    const googleKey = currentPrefs?.additionalAPIs?.google_places;
-    const googleValidated = currentPrefs?.additionalAPIs?.google_places_validated === true;
+    if (!googleKey) {
+      // Try preferences (works locally, ephemeral on Vercel serverless)
+      const prefs = new PreferencesManager();
+      await prefs.load();
+      const currentPrefs = prefs.get();
+      googleKey = currentPrefs?.additionalAPIs?.google_places;
+      googleValidated = currentPrefs?.additionalAPIs?.google_places_validated === true;
+    }
     
-    console.log('[address-search] Google key exists:', !!googleKey, 'validated:', googleValidated);
+    console.log('[address-search] Google key exists:', !!googleKey, 'validated:', googleValidated, 'source:', googleKeyFromQuery ? 'query' : 'prefs');
     
     if (googleKey && googleValidated) {
       // Use Google Places API (New) - STRICT: no fallback if key is configured
