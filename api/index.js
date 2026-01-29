@@ -1,6 +1,7 @@
-// Vercel Serverless Function Handler
+// Vercel Serverless Function Handler - V3 (force rebuild 2026-01-29)
 // This wraps the Express app for Vercel's serverless environment
 
+const HANDLER_VERSION = '3.0.0'; // Force rebuild marker
 let app;
 let initError = null;
 let v13Available = false;
@@ -20,6 +21,7 @@ export default function handler(req, res) {
   if (req.url === '/api/debug') {
     return res.status(200).json({
       debug: true,
+      handlerVersion: HANDLER_VERSION,
       timestamp: new Date().toISOString(),
       appLoaded: !!app,
       initError: initError?.message || null,
