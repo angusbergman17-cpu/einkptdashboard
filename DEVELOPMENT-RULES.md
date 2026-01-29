@@ -1,8 +1,8 @@
 # PTV-TRMNL Development Rules
 
 **MANDATORY COMPLIANCE DOCUMENT**  
-**Version:** 1.3  
-**Last Updated:** 2025-01-29  
+**Version:** 1.4  
+**Last Updated:** 2026-01-29  
 **Copyright (c) 2025 Angus Bergman — Licensed under CC BY-NC 4.0**
 
 These rules govern all development on PTV-TRMNL. Compliance is mandatory.
@@ -162,12 +162,14 @@ These rules govern all development on PTV-TRMNL. Compliance is mandatory.
 - 13.2 Error States Must Render
 - 13.3 No Magic Numbers
 - 13.4 Code Comments
+- 13.5 File Naming Consistency
 </details>
 
 <details>
 <summary><strong>Section 14: Testing Requirements</strong></summary>
 
 - 14.1 Pre-Commit Checklist
+  - 14.1.1 Forbidden Terms Verification
 - 14.2 Firmware Testing
 - 14.3 Server Testing
 </details>
@@ -222,6 +224,7 @@ These rules govern all development on PTV-TRMNL. Compliance is mandatory.
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.4 | 2026-01-29 | Angus Bergman | Added: console.log forbidden term (1.1), 12-hour time code pattern (12.2), file naming consistency (13.5), forbidden terms grep verification (14.1.1) |
 | 1.3 | 2025-01-29 | Angus Bergman | Added full document index with version control |
 | 1.2 | 2025-01-29 | Angus Bergman | Complete incorporation of all v3.0 items (17 gaps filled): Anti-brick rules, zero-config architecture, system architecture, BMP rendering, testing requirements, TRMNL Mini dimensions, Tram Diversion status, expanded API/deployment/timing details, documentation standards, appendices A/B/C |
 | 1.1 | 2025-01-29 | Angus Bergman | Added TRMNL/usetrmnl prohibition (Section 2), custom firmware requirements (Section 3), Kindle device compatibility (Section 4), hardware specifications |
@@ -281,6 +284,7 @@ All rules from previous versions have been incorporated. The canonical source is
 | `esp_task_wdt_*` | Causes freezes | Remove watchdog entirely |
 | `FONT_12x16` | Rotation bug | `FONT_8x8` only |
 | `while(true)` blocking | Causes freeze | State machine pattern |
+| `console.log('PTV API...')` | Forbidden in logs | Use `Transport API` or similar |
 
 ### 1.2 Legacy PTV API Prohibition
 
@@ -851,6 +855,19 @@ The CoffeeDecision engine logic is specified exactly in the V10 spec. Implement 
 ### 12.2 12-hour Time Format
 All times displayed to users must be in 12-hour format with am/pm. No 24-hour time, ever. This is a deliberate UX decision.
 
+**Required Conversion Pattern:**
+```javascript
+// ❌ WRONG - 24-hour format
+const timeStr = `${date.getHours()}:${date.getMinutes()}`;
+
+// ✅ CORRECT - 12-hour format with am/pm
+const hours24 = date.getHours();
+const hours12 = hours24 % 12 || 12;  // 12 instead of 0
+const minutes = date.getMinutes().toString().padStart(2, '0');
+const ampm = hours24 >= 12 ? 'pm' : 'am';
+const timeStr = `${hours12}:${minutes}${ampm}`;
+```
+
 ### 12.3 Walking Time Buffer
 Journey calculations must always account for realistic walking time from the display location to the stop. This is core to the product's usefulness.
 
@@ -886,6 +903,17 @@ const CACHE_TTL = 30000;
 const CACHE_TTL = 30000;
 ```
 
+### 13.5 File Naming Consistency
+Files should use consistent terminology aligned with the correct API naming (Section 1.1).
+
+**Preferred naming for service files:**
+| Legacy Name | Preferred Name |
+|-------------|----------------|
+| `ptv-api.js` | `opendata-client.js` or `transport-api.js` |
+| `ptv-service.js` | `opendata-service.js` |
+
+**Note:** Filenames containing "ptv" are acceptable when referring to PTV stop IDs or route types (Transport Victoria's internal naming), but API client/service files should use neutral terminology.
+
 ---
 
 ## ✅ Section 14: Testing Requirements
@@ -898,6 +926,22 @@ const CACHE_TTL = 30000;
 - [ ] No hardcoded API keys
 - [ ] No forbidden terms (Section 1.1)
 - [ ] Documentation updated if API changed
+
+#### 14.1.1 Forbidden Terms Verification (MANDATORY)
+
+Run this grep check before every commit to catch Section 1.1 violations:
+
+```bash
+grep -r "PTV_API_KEY\|PTV_DEV_ID\|PTV_USER_ID\|usetrmnl\.com\|trmnl\.com" \
+  --include="*.js" src/ api/ && echo "❌ FORBIDDEN TERMS FOUND - FIX BEFORE COMMIT" \
+  || echo "✅ No forbidden terms"
+```
+
+This catches the most common violations. For complete verification, also check:
+```bash
+grep -rn "PTV API" --include="*.js" src/ api/  # Should return 0 results
+grep -rn "console.*PTV" --include="*.js" src/ api/  # Check log messages
+```
 
 ### 14.2 Firmware Testing
 
@@ -1155,9 +1199,9 @@ git push origin v3.0.0        # Push tag
 
 ---
 
-**Document Version:** 1.3  
+**Document Version:** 1.4  
 **Maintained By:** Angus Bergman  
-**Last Updated:** 2025-01-29
+**Last Updated:** 2026-01-29
 
 ---
 
