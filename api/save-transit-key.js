@@ -205,40 +205,52 @@ export default async function handler(req, res) {
       });
     }
 
-    console.log(`[save-transit-key] Saving ${state} Transit API key...`);
+    console.log(`[save-transit-key] Testing ${state} Transit API key...`);
 
-    // Step 2: Test the API key (don't fail save if test fails, but report it)
+    // Step 2: Test the API key first
     const testResult = await testApiKey(apiKey, state);
 
-    // Step 3: Save to preferences regardless of test result
-    // (user might be offline, or validator endpoint might be down)
+    // Step 3: Only save if validation passed (consistent with Google key behavior)
+    if (!testResult.success) {
+      console.log(`[save-transit-key] ❌ Validation failed - key NOT saved`);
+      return res.status(200).json({
+        success: false,
+        message: 'API key validation failed - key NOT saved',
+        testResult,
+        saved: false,
+        state,
+        keyMasked: apiKey.trim().substring(0, 8) + '...'
+      });
+    }
+
+    // Validation passed - save to preferences
+    console.log(`[save-transit-key] ✅ Validation passed, saving key...`);
+    
     const prefs = new PreferencesManager();
     await prefs.load();
 
     const currentPrefs = prefs.get();
     
-    // Update API credentials
     if (!currentPrefs.api) {
       currentPrefs.api = {};
     }
     
     currentPrefs.api.key = apiKey.trim();
     currentPrefs.api.state = state;
-    currentPrefs.api.lastValidated = testResult.validated ? new Date().toISOString() : null;
-    currentPrefs.api.validationStatus = testResult.success ? 'valid' : 'unverified';
+    currentPrefs.api.lastValidated = new Date().toISOString();
+    currentPrefs.api.validationStatus = 'valid';
     
     prefs.preferences = currentPrefs;
     await prefs.save();
 
-    console.log(`[save-transit-key] ✅ ${state} Transit API key saved`);
+    console.log(`[save-transit-key] ✅ ${state} Transit API key saved with validated status`);
 
-    // Return comprehensive result
+    // Return success result
     return res.status(200).json({
       success: true,
-      message: testResult.success 
-        ? 'API key saved and validated successfully'
-        : 'API key saved (validation: ' + testResult.message + ')',
+      message: 'API key saved and validated successfully',
       testResult,
+      saved: true,
       state,
       keyMasked: apiKey.trim().substring(0, 8) + '...'
     });
