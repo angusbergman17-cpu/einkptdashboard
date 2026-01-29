@@ -746,7 +746,7 @@ function canvasToBMP(canvas) {
   buf.writeUInt32LE(62, 10);
   buf.writeUInt32LE(40, 14);
   buf.writeInt32LE(w, 18);
-  buf.writeInt32LE(-h, 22);
+  buf.writeInt32LE(h, 22);  // Positive height = bottom-up DIB (bb_epaper compat)
   buf.writeUInt16LE(1, 26);
   buf.writeUInt16LE(1, 28);
   buf.writeUInt32LE(dataSize, 34);
@@ -757,7 +757,8 @@ function canvasToBMP(canvas) {
   buf.writeUInt32LE(0x00FFFFFF, 58);
   
   let off = 62;
-  for (let y = 0; y < h; y++) {
+  // Bottom-up BMP: write rows from bottom to top
+  for (let y = h - 1; y >= 0; y--) {
     for (let x = 0; x < w; x += 8) {
       let byte = 0;
       for (let b = 0; b < 8 && x + b < w; b++) {
