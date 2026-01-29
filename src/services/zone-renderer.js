@@ -13,7 +13,26 @@
  * Licensed under CC BY-NC 4.0
  */
 
-import { createCanvas } from '@napi-rs/canvas';
+import { createCanvas, GlobalFonts } from '@napi-rs/canvas';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Register fonts for serverless environment (Vercel has no system fonts)
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const fontsDir = path.join(__dirname, '../../fonts');
+
+let fontsRegistered = false;
+function ensureFontsRegistered() {
+  if (fontsRegistered) return;
+  try {
+    GlobalFonts.registerFromPath(path.join(fontsDir, 'Inter-Bold.ttf'), 'Inter');
+    GlobalFonts.registerFromPath(path.join(fontsDir, 'Inter-Regular.ttf'), 'Inter');
+    fontsRegistered = true;
+    console.log('[zone-renderer] Fonts registered successfully');
+  } catch (err) {
+    console.error('[zone-renderer] Font registration failed:', err.message);
+  }
+}
 
 // V10 Zone Layout
 const ZONES = {
@@ -337,7 +356,7 @@ function renderHeader(ctx, data) {
   ctx.fillStyle = '#000';
   
   // 2.1 Current Location (top left) - Bold for legibility
-  ctx.font = '700 12px sans-serif';
+  ctx.font = '700 12px Inter';
   ctx.fillText((data.location || 'HOME').toUpperCase(), 16, 18);
   
   // 2.2 Current Time (large) - 12-hour format
@@ -347,19 +366,19 @@ function renderHeader(ctx, data) {
   const hour12 = hours % 12 || 12;
   timeStr = `${hour12}:${mins.toString().padStart(2, '0')}`;
   
-  ctx.font = '900 68px sans-serif';
+  ctx.font = '900 68px Inter';
   ctx.fillText(timeStr, 16, 82);
   
   // 2.3 AM/PM Indicator
-  ctx.font = '800 18px sans-serif';
+  ctx.font = '800 18px Inter';
   ctx.fillText(hours >= 12 ? 'PM' : 'AM', 200, 82);
   
   // 2.4 Day of Week (bold)
-  ctx.font = '700 20px sans-serif';
+  ctx.font = '700 20px Inter';
   ctx.fillText(data.day || 'Monday', 300, 40);
   
   // 2.5 Date - Use black, not gray (1-bit can't do gray)
-  ctx.font = '600 16px sans-serif';
+  ctx.font = '600 16px Inter';
   ctx.fillText(data.date || '1 January', 300, 62);
   
   // 2.6 Weather Box (right side)
@@ -369,12 +388,12 @@ function renderHeader(ctx, data) {
   ctx.strokeRect(wxX, wxY, wxW, wxH);
   
   // 2.6.1 Temperature
-  ctx.font = '900 38px sans-serif';
+  ctx.font = '900 38px Inter';
   ctx.textAlign = 'center';
   ctx.fillText(`${data.temp ?? '--'}°`, wxX + wxW / 2, wxY + 38);
   
   // 2.6.2 Condition
-  ctx.font = '600 13px sans-serif';
+  ctx.font = '600 13px Inter';
   ctx.fillText(data.condition || 'N/A', wxX + wxW / 2, wxY + 56);
   ctx.textAlign = 'left';
   
@@ -384,14 +403,14 @@ function renderHeader(ctx, data) {
     ctx.fillStyle = '#000';
     ctx.fillRect(umbX, umbY, umbW, umbH);
     ctx.fillStyle = '#FFF';
-    ctx.font = '700 11px sans-serif';
+    ctx.font = '700 11px Inter';
     ctx.textAlign = 'center';
     ctx.fillText('BRING UMBRELLA', umbX + umbW / 2, umbY + 12);
   } else {
     ctx.lineWidth = 2;
     ctx.strokeRect(umbX, umbY, umbW, umbH);
     ctx.fillStyle = '#000';
-    ctx.font = '600 11px sans-serif';
+    ctx.font = '600 11px Inter';
     ctx.textAlign = 'center';
     ctx.fillText('NO UMBRELLA', umbX + umbW / 2, umbY + 12);
   }
@@ -411,7 +430,7 @@ function renderSummary(ctx, data) {
   
   // Left content (white) - Bolder font
   ctx.fillStyle = '#FFF';
-  ctx.font = '800 14px sans-serif';
+  ctx.font = '800 14px Inter';
   
   let statusText;
   const arriveTime = data.arrive_by || '--:--';
@@ -435,7 +454,7 @@ function renderSummary(ctx, data) {
   
   // Right content - total time
   ctx.textAlign = 'right';
-  ctx.font = '800 14px sans-serif';
+  ctx.font = '800 14px Inter';
   ctx.fillText(`${data.total_minutes || '--'} min total`, w - 16, 19);
   ctx.textAlign = 'left';
 }
@@ -503,7 +522,7 @@ function renderLeg(ctx, leg, index, y, legHeight, isLast) {
     ctx.stroke();
     ctx.setLineDash([]);
     ctx.fillStyle = '#000';
-    ctx.font = '900 16px sans-serif';
+    ctx.font = '900 16px Inter';
     ctx.textAlign = 'center';
     ctx.fillText('X', circleX + circleR, circleY + circleR + 6);
   } else if (isSkip) {
@@ -514,7 +533,7 @@ function renderLeg(ctx, leg, index, y, legHeight, isLast) {
     ctx.stroke();
     ctx.setLineDash([]);
     ctx.fillStyle = '#000';
-    ctx.font = '800 15px sans-serif';
+    ctx.font = '800 15px Inter';
     ctx.textAlign = 'center';
     ctx.fillText(leg.number?.toString() || (index + 1).toString(), circleX + circleR, circleY + circleR + 6);
   } else {
@@ -522,7 +541,7 @@ function renderLeg(ctx, leg, index, y, legHeight, isLast) {
     ctx.fillStyle = '#000';
     ctx.fill();
     ctx.fillStyle = '#FFF';
-    ctx.font = '800 15px sans-serif';
+    ctx.font = '800 15px Inter';
     ctx.textAlign = 'center';
     ctx.fillText(leg.number?.toString() || (index + 1).toString(), circleX + circleR, circleY + circleR + 6);
   }
@@ -542,11 +561,11 @@ function renderLeg(ctx, leg, index, y, legHeight, isLast) {
   else if (isDiverted) titlePrefix = 'DIVERTED: ';
   
   ctx.fillStyle = textColor;
-  ctx.font = '800 17px sans-serif';
+  ctx.font = '800 17px Inter';
   ctx.fillText(titlePrefix + (leg.title || ''), titleX, y + 23);
   
   // 5.5 Leg Subtitle - Use black (1-bit can't do gray)
-  ctx.font = '600 13px sans-serif';
+  ctx.font = '600 13px Inter';
   ctx.fillStyle = isSkip || isCancelled ? '#888' : '#000';
   ctx.fillText(leg.subtitle || '', titleX, y + 42);
   ctx.fillStyle = '#000';
@@ -572,7 +591,7 @@ function renderLeg(ctx, leg, index, y, legHeight, isLast) {
     ctx.stroke();
     
     ctx.fillStyle = '#000';
-    ctx.font = '900 11px sans-serif';
+    ctx.font = '900 11px Inter';
     ctx.textAlign = 'center';
     // White background for text
     ctx.fillStyle = '#FFF';
@@ -597,7 +616,7 @@ function renderLeg(ctx, leg, index, y, legHeight, isLast) {
     ctx.stroke();
     
     ctx.fillStyle = '#000';
-    ctx.font = '900 13px sans-serif';
+    ctx.font = '900 13px Inter';
     ctx.textAlign = 'center';
     ctx.fillText('SKIP', durBoxX + durBoxW / 2, y + legHeight / 2 - 10);
   } else if (isDelayed) {
@@ -612,12 +631,12 @@ function renderLeg(ctx, leg, index, y, legHeight, isLast) {
     ctx.lineWidth = 2;
     
     ctx.fillStyle = '#000';
-    ctx.font = '900 30px sans-serif';
+    ctx.font = '900 30px Inter';
     ctx.textAlign = 'center';
     const timeStr = leg.minutes?.toString() || '--';
     ctx.fillText(timeStr, durBoxX + durBoxW / 2, y + legHeight / 2 + 4);
     
-    ctx.font = '800 11px sans-serif';
+    ctx.font = '800 11px Inter';
     const unitLabel = leg.type === 'walk' ? 'MIN WALK' : 'MIN';
     ctx.fillText(unitLabel, durBoxX + durBoxW / 2, y + legHeight / 2 + 20);
   } else if (isDiverted) {
@@ -629,11 +648,11 @@ function renderLeg(ctx, leg, index, y, legHeight, isLast) {
     ctx.strokeRect(durBoxX, y, durBoxW, durBoxH);
     
     ctx.fillStyle = '#000';
-    ctx.font = '900 30px sans-serif';
+    ctx.font = '900 30px Inter';
     ctx.textAlign = 'center';
     ctx.fillText(leg.minutes?.toString() || '--', durBoxX + durBoxW / 2, y + legHeight / 2 + 4);
     
-    ctx.font = '800 11px sans-serif';
+    ctx.font = '800 11px Inter';
     ctx.fillText(leg.type === 'walk' ? 'MIN WALK' : 'MIN', durBoxX + durBoxW / 2, y + legHeight / 2 + 20);
   } else {
     // Normal: black background, white text
@@ -643,11 +662,11 @@ function renderLeg(ctx, leg, index, y, legHeight, isLast) {
     ctx.fillStyle = '#FFF';
     const isCoffeeTime = leg.type === 'coffee';
     const timeStr = isCoffeeTime ? `~${leg.minutes || 5}` : (leg.minutes?.toString() || '--');
-    ctx.font = isCoffeeTime ? '900 26px sans-serif' : '900 30px sans-serif';
+    ctx.font = isCoffeeTime ? '900 26px Inter' : '900 30px Inter';
     ctx.textAlign = 'center';
     ctx.fillText(timeStr, durBoxX + durBoxW / 2, y + legHeight / 2 + 4);
     
-    ctx.font = '800 11px sans-serif';
+    ctx.font = '800 11px Inter';
     const unitLabel = leg.type === 'walk' ? 'MIN WALK' : 'MIN';
     ctx.fillText(unitLabel, durBoxX + durBoxW / 2, y + legHeight / 2 + 20);
   }
@@ -675,7 +694,7 @@ function renderLegs(ctx, data) {
   
   if (legs.length === 0) {
     ctx.fillStyle = '#000';
-    ctx.font = '700 18px sans-serif';
+    ctx.font = '700 18px Inter';
     ctx.textAlign = 'center';
     ctx.fillText('No journey configured', w / 2, h / 2);
     ctx.textAlign = 'left';
@@ -715,16 +734,16 @@ function renderFooter(ctx, data) {
   
   // 6.1 Destination Address
   ctx.fillStyle = '#FFF';
-  ctx.font = '800 16px sans-serif';
+  ctx.font = '800 16px Inter';
   const dest = (data.destination || 'WORK').toUpperCase();
   ctx.fillText(dest, 16, 22);
   
   // 6.2 ARRIVE label
-  ctx.font = '700 13px sans-serif';
+  ctx.font = '700 13px Inter';
   ctx.fillText('ARRIVE', w - 130, 22);
   
   // 6.3 Arrival Time
-  ctx.font = '900 24px sans-serif';
+  ctx.font = '900 24px Inter';
   ctx.textAlign = 'right';
   ctx.fillText(data.arrive_by || '--:--', w - 16, 24);
   ctx.textAlign = 'left';
@@ -777,6 +796,7 @@ function canvasToBMP(canvas) {
  * Render full dashboard as single image (800×480 PNG)
  */
 export function renderFullDashboard(data) {
+  ensureFontsRegistered();
   const canvas = createCanvas(800, 480);
   const ctx = canvas.getContext('2d');
   
@@ -818,6 +838,7 @@ export function renderFullDashboard(data) {
  * Render a single zone
  */
 function renderZone(zoneId, data) {
+  ensureFontsRegistered();
   const z = ZONES[zoneId];
   if (!z) return null;
   
