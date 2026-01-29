@@ -350,3 +350,27 @@ All audit items passed. Ready for Week 2 (Testing).
 - ✅ Environment validation working
 
 **Week 2 Status: 40% Complete**
+
+#### Bug Fixes During Testing
+| Issue | File | Fix |
+|-------|------|-----|
+| Broken /v11 route | server.js | Fixed route syntax |
+| Broken /journey-demo route | server.js | Fixed missing closure |
+| Missing /trmnl-og-v11 route | server.js | Added route |
+
+**Commit**: `22718b5` - Fix broken route definitions
+
+#### Tests Passed
+- ✅ Image generation (BMP 1-bit format)
+- ✅ All state fallback stops (VIC, NSW, QLD)
+- ✅ Admin panel loading
+- ✅ Setup wizard loading
+- ✅ Simulator loading
+- ✅ 10 API endpoints verified
+
+**Week 2 Status: 60% Complete**
+
+Remaining:
+- [ ] Re-test /v11 after deployment
+- [ ] Simulator live pairing verification
+- [ ] Full journey calculation test
