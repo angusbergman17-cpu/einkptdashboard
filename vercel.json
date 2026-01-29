@@ -23,7 +23,12 @@
   "redirects": [
     {
       "source": "/",
-      "destination": "/admin",
+      "destination": "/admin.html",
+      "permanent": false
+    },
+    {
+      "source": "/admin",
+      "destination": "/admin.html",
       "permanent": false
     }
   ],
@@ -51,10 +56,6 @@
     {
       "source": "/api/zone/:id",
       "destination": "/api/zone/[id]"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/api/index.js"
     }
   ]
 }
