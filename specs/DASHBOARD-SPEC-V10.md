@@ -270,7 +270,7 @@ For fewer legs, larger heights can be used (64px or 80px)
 | Suspended | "SUSPENDED — [reason]" |
 | Diverted | "Next: X, Y min • [stop name]" |
 
-**Source:** PTV API real-time departures
+**Source:** Transport Victoria OpenData (GTFS-RT Trip Updates)
 
 ### 5.6 Duration Box
 - **Position:** `right: -2px, top: -2px` (fills to edge)
@@ -354,7 +354,7 @@ For fewer legs, larger heights can be used (64px or 80px)
   - Precipitation probability (for umbrella decision)
 
 #### 7.1.2 Journey Planning
-- **Endpoint:** PTV Journey Planner API
+- **Endpoint:** Transport Victoria OpenData API (GTFS static + real-time)
 - **Refresh:** Every 20 seconds (matches display refresh)
 - **Request Parameters:**
   - Origin (current location)
@@ -363,7 +363,7 @@ For fewer legs, larger heights can be used (64px or 80px)
   - Include real-time data: true
 
 #### 7.1.3 Real-Time Departures
-- **Endpoint:** PTV Departures API
+- **Endpoint:** GTFS-RT Trip Updates
 - **Refresh:** Every 20 seconds
 - **Data Required:**
   - Next 2 departures for each transit leg
@@ -371,7 +371,7 @@ For fewer legs, larger heights can be used (64px or 80px)
   - Service status (normal/delayed/suspended/diverted)
 
 #### 7.1.4 Disruptions
-- **Endpoint:** PTV Disruptions API
+- **Endpoint:** GTFS-RT Service Alerts
 - **Refresh:** Every 5 minutes
 - **Data Required:**
   - Active disruptions affecting route
@@ -411,10 +411,10 @@ IF journey has configured coffee stop:
          │
     ┌────┴────┬──────────┐
     ▼         ▼          ▼
-┌───────┐ ┌───────┐ ┌──────────┐
-│Weather│ │ PTV   │ │ PTV      │
-│ API   │ │Journey│ │Departures│
-└───────┘ └───────┘ └──────────┘
+┌───────┐ ┌─────────┐ ┌──────────┐
+│Weather│ │ GTFS-RT │ │ GTFS-RT  │
+│ API   │ │ Static  │ │ Updates  │
+└───────┘ └─────────┘ └──────────┘
 ```
 
 ### 7.4 Response Format

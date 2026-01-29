@@ -1,7 +1,7 @@
 # Device Compatibility Guide
 **Supported E-ink Displays for PTV-TRMNL**
 
-Last Updated: 2026-01-26
+Last Updated: 2026-01-29
 
 ---
 
@@ -21,15 +21,18 @@ PTV-TRMNL supports multiple e-ink display devices. This guide helps you:
 
 | Device | Screen Size | Resolution | Status | Price Range |
 |--------|-------------|------------|--------|-------------|
-| **TRMNL BYOS** | 7.5" | 800×480 | ✅ Official | $150-200 USD |
+| **TRMNL OG** | 7.5" | 800×480 | ✅ Official | $150-200 USD |
+| **TRMNL Mini** | 4.2" | 400×300 | ✅ Official | $99-120 USD |
 | **Kindle Paperwhite 3/4** | 6" | 758×1024 | ✅ Supported | $50-80 USD (used) |
 | **Kindle Paperwhite 5** | 6.8" | 1236×1648 | ✅ Supported | $90-120 USD (used) |
-| **Kindle 4** | 6" | 600×800 | ✅ Supported | $20-40 USD (used) |
+| **Kindle 4/Basic** | 6" | 600×800 | ✅ Supported | $20-40 USD (used) |
 
 ### Experimental (Community Tested)
 
 | Device | Screen Size | Resolution | Status | Notes |
 |--------|-------------|------------|--------|-------|
+| **Inkplate 6** | 6" | 800×600 | ⚠️ Experimental | ESP32-based, open hardware |
+| **Inkplate 10** | 9.7" | 1200×825 | ⚠️ Experimental | Larger display, ESP32-based |
 | **Kobo Clara HD** | 6" | 758×1024 | ⚠️ Experimental | Requires custom firmware |
 | **reMarkable 2** | 10.3" | 1404×1872 | ⚠️ Experimental | High resolution, premium |
 
@@ -110,6 +113,38 @@ const TRMNL_BYOS = {
   "refresh_rate": 900
 }
 ```
+
+### TRMNL Mini
+
+**Hardware**:
+- **Display**: 4.2" Waveshare e-paper
+- **Resolution**: 400×300 pixels (landscape)
+- **Refresh Rate**: Configurable (5-60 min recommended)
+- **Connectivity**: WiFi (2.4 GHz)
+- **Power**: USB-C
+- **Platform**: TRMNL Mini
+
+**Server Configuration**:
+```javascript
+const TRMNL_MINI = {
+  width: 400,
+  height: 300,
+  orientation: 'landscape',
+  format: 'PNG',
+  colors: 'monochrome',
+  refreshMethod: 'webhook',
+  webhookFormat: 'JSON',
+  maxRefreshRate: 300
+};
+```
+
+**LiveDash Endpoint**: `/api/livedash?device=trmnl-mini`
+
+**Scaling Notes**:
+- V10 dashboard is proportionally scaled down
+- Header height: 60px (vs 94px on OG)
+- Maximum journey legs: 4 (vs 5 on OG)
+- Font sizes reduced proportionally
 
 ### Kindle Paperwhite 3 (7th Gen)
 
@@ -195,6 +230,70 @@ const KINDLE_4 = {
 ```
 
 **Note**: Lower resolution requires larger fonts.
+
+### Inkplate 6 (Experimental)
+
+**Hardware**:
+- **Display**: 6" recycled Kindle e-ink panel
+- **Resolution**: 800×600 pixels (landscape native)
+- **Microcontroller**: ESP32
+- **Connectivity**: WiFi, Bluetooth
+- **Power**: USB-C, LiPo battery support
+- **Manufacturer**: Soldered (e-radionica.com)
+
+**Server Configuration**:
+```javascript
+const INKPLATE_6 = {
+  width: 800,
+  height: 600,
+  orientation: 'landscape',
+  format: 'PNG',
+  colors: '3-bit grayscale', // Supports grayscale but we use 1-bit
+  refreshMethod: 'http_fetch',
+  partialRefresh: true,
+  maxRefreshRate: 60 // 1 minute minimum (fast partial refresh)
+};
+```
+
+**LiveDash Endpoint**: `/api/livedash?device=inkplate-6`
+
+**Notes**:
+- ESP32-based, can run custom firmware or fetch images via HTTP
+- Supports partial refresh (~1 second)
+- Open-source hardware with Arduino/PlatformIO support
+- Firmware available in `/firmware` directory (experimental)
+
+### Inkplate 10 (Experimental)
+
+**Hardware**:
+- **Display**: 9.7" recycled Kindle DX e-ink panel
+- **Resolution**: 1200×825 pixels (landscape native)
+- **Microcontroller**: ESP32
+- **Connectivity**: WiFi, Bluetooth
+- **Power**: USB-C, LiPo battery support
+- **Manufacturer**: Soldered (e-radionica.com)
+
+**Server Configuration**:
+```javascript
+const INKPLATE_10 = {
+  width: 1200,
+  height: 825,
+  orientation: 'landscape',
+  format: 'PNG',
+  colors: '3-bit grayscale',
+  refreshMethod: 'http_fetch',
+  partialRefresh: true,
+  maxRefreshRate: 60
+};
+```
+
+**LiveDash Endpoint**: `/api/livedash?device=inkplate-10`
+
+**Notes**:
+- Largest supported display (9.7")
+- Higher resolution allows for more detailed journey information
+- Scaled-up V10 layout with larger fonts
+- Best for wall-mounted installations
 
 ---
 
@@ -398,6 +497,69 @@ https://your-server-name.vercel.app/api/dashboard?device=kindle-4&orientation=la
 - etc.
 
 **Use Case**: Preview how dashboard looks on different devices.
+
+### LiveDash Multi-Device Renderer
+
+**Endpoint**: `GET /api/livedash`
+
+The LiveDash endpoint provides a unified multi-device rendering API that automatically scales the V10 dashboard specification to different screen sizes.
+
+**Query Parameters**:
+| Parameter | Values | Default | Description |
+|-----------|--------|---------|-------------|
+| `device` | See below | `trmnl-og` | Target device ID |
+| `format` | `png`, `json`, `html` | `png` | Output format |
+| `refresh` | `true`, `false` | `false` | Force data refresh |
+
+**Supported Devices**:
+| Device ID | Resolution | Orientation | Notes |
+|-----------|------------|-------------|-------|
+| `trmnl-og` | 800×480 | Landscape | TRMNL Original (default) |
+| `trmnl-mini` | 400×300 | Landscape | TRMNL Mini (scaled down) |
+| `kindle-pw3` | 758×1024 | Portrait | Kindle Paperwhite 3/4 |
+| `kindle-pw5` | 1236×1648 | Portrait | Kindle Paperwhite 5 |
+| `kindle-basic` | 600×800 | Portrait | Kindle 4/Basic |
+| `inkplate-6` | 800×600 | Landscape | Inkplate 6 |
+| `inkplate-10` | 1200×825 | Landscape | Inkplate 10 |
+
+**Special Requests**:
+```bash
+# List all available devices
+GET /api/livedash?device=list
+
+# Get PNG for TRMNL Mini
+GET /api/livedash?device=trmnl-mini&format=png
+
+# Get JSON data for Inkplate 10
+GET /api/livedash?device=inkplate-10&format=json
+
+# Interactive HTML preview for Kindle PW5
+GET /api/livedash?device=kindle-pw5&format=html
+```
+
+**Response Headers** (PNG format):
+```
+Content-Type: image/png
+Cache-Control: public, max-age=30
+X-Device: trmnl-og
+X-Dimensions: 800x480
+```
+
+**JSON Response** (format=json):
+```json
+{
+  "status": "ok",
+  "device": {
+    "id": "trmnl-og",
+    "name": "TRMNL Original",
+    "width": 800,
+    "height": 480,
+    "orientation": "landscape"
+  },
+  "data": { /* journey data */ },
+  "timestamp": "2026-01-29T08:00:00.000Z"
+}
+```
 
 ---
 

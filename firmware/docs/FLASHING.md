@@ -3,12 +3,50 @@
 Complete guide for flashing custom firmware to TRMNL ESP32-C3 devices.
 
 ## Table of Contents
+- [Supported Hardware Platforms](#supported-hardware-platforms)
 - [Hardware Information](#hardware-information)
 - [Prerequisites](#prerequisites)
 - [Flashing Process](#flashing-process)
 - [USB CDC Configuration](#usb-cdc-configuration)
 - [Diagnostic Findings](#diagnostic-findings)
 - [Troubleshooting](#troubleshooting)
+
+---
+
+## Supported Hardware Platforms
+
+### Fully Supported (Custom Firmware)
+
+| Device | MCU | Display | Firmware Status |
+|--------|-----|---------|-----------------|
+| **TRMNL OG** | ESP32-C3 | 7.5" 800×480 | ✅ Full support |
+| **TRMNL Mini** | ESP32-C3 | 4.2" 400×300 | ✅ Full support |
+
+### Server-Rendered Only (No Custom Firmware)
+
+These devices fetch pre-rendered images from the server via HTTP. No custom firmware flashing required.
+
+| Device | Method | Notes |
+|--------|--------|-------|
+| **Kindle devices** | Jailbreak + kiosk browser | Fetches PNG from `/api/kindle/image` |
+| **Inkplate 6** | Stock Inkplate firmware | Can fetch PNG from `/api/livedash?device=inkplate-6` |
+| **Inkplate 10** | Stock Inkplate firmware | Can fetch PNG from `/api/livedash?device=inkplate-10` |
+
+### Inkplate Support Notes
+
+Inkplate devices (6" and 10") use ESP32 microcontrollers and can either:
+
+1. **Use stock Inkplate firmware** with HTTP image fetch
+   - Configure Inkplate to periodically fetch PNG from your server
+   - Use Arduino Inkplate examples for HTTP client
+   - Endpoint: `/api/livedash?device=inkplate-6` or `inkplate-10`
+
+2. **Develop custom PTV-TRMNL firmware** (experimental/community)
+   - Inkplate has different pinouts than TRMNL hardware
+   - Requires adapting `firmware/` code to Inkplate platform
+   - Community contributions welcome
+
+**For Inkplate setup with stock firmware**, see the [Inkplate documentation](https://inkplate.readthedocs.io/).
 
 ---
 
