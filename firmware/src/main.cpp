@@ -220,17 +220,40 @@ void showWelcomeScreen() {
     bbep.fillScreen(BBEP_WHITE);
     bbep.setFont(FONT_8x8); 
     bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
-    bbep.setCursor(220, 50); bbep.print("PTV-TRMNL Smart Transit Display");
-    bbep.setCursor(300, 80); bbep.print("Firmware v" FIRMWARE_VERSION);
-    bbep.drawRect(100, 120, 600, 250, BBEP_BLACK);
-    bbep.setCursor(120, 140); bbep.print("SETUP INSTRUCTIONS");
-    bbep.setCursor(120, 180); bbep.print("1. Connect to WiFi: PTV-TRMNL-Setup");
-    bbep.setCursor(120, 210); bbep.print("2. Open browser: 192.168.4.1");
-    bbep.setCursor(120, 240); bbep.print("3. Enter WiFi credentials");
-    bbep.setCursor(120, 270); bbep.print("4. Enter your server URL");
-    bbep.setCursor(120, 300); bbep.print("5. Visit [server]/setup to configure");
-    bbep.setCursor(200, 400); bbep.print("github.com/angusbergman17-cpu/PTV-TRMNL-NEW");
-    bbep.setCursor(300, 430); bbep.print("(c) 2026 Angus Bergman");
+    
+    // Header bar
+    bbep.fillRect(0, 0, 800, 60, BBEP_BLACK);
+    bbep.setTextColor(BBEP_WHITE, BBEP_BLACK);
+    bbep.setCursor(200, 15); bbep.print("PTV-TRMNL SMART TRANSIT DISPLAY");
+    bbep.setCursor(320, 38); bbep.print("v" FIRMWARE_VERSION);
+    
+    // Reset colors  
+    bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
+    
+    // Setup box
+    bbep.drawRect(80, 80, 640, 280, BBEP_BLACK);
+    bbep.drawRect(81, 81, 638, 278, BBEP_BLACK);
+    bbep.setCursor(320, 100); bbep.print("FIRST TIME SETUP");
+    
+    // Instructions
+    bbep.setCursor(100, 140); bbep.print("1. On your phone/computer, connect to WiFi:");
+    bbep.setCursor(140, 165); bbep.print("Network:  PTV-TRMNL-Setup");
+    bbep.setCursor(140, 185); bbep.print("Password: transport123");
+    
+    bbep.setCursor(100, 220); bbep.print("2. Open browser and go to: 192.168.4.1");
+    
+    bbep.setCursor(100, 255); bbep.print("3. Select your home WiFi and enter password");
+    
+    bbep.setCursor(100, 290); bbep.print("4. Server URL: einkptdashboard.vercel.app");
+    
+    bbep.setCursor(100, 325); bbep.print("5. Save and wait for dashboard to appear");
+    
+    // Footer
+    bbep.fillRect(0, 400, 800, 80, BBEP_BLACK);
+    bbep.setTextColor(BBEP_WHITE, BBEP_BLACK);
+    bbep.setCursor(180, 420); bbep.print("github.com/angusbergman17-cpu/einkptdashboard");
+    bbep.setCursor(300, 450); bbep.print("(c) 2026 Angus Bergman");
+    
     bbep.refresh(REFRESH_FULL, true); 
     lastFullRefresh = millis();
 }
@@ -239,10 +262,36 @@ void showSetupScreen(const char* apName) {
     bbep.fillScreen(BBEP_WHITE); 
     bbep.setFont(FONT_8x8); 
     bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
-    bbep.setCursor(280, 150); bbep.print("SETUP REQUIRED");
-    bbep.setCursor(200, 200); bbep.printf("Connect to: %s", apName);
-    bbep.setCursor(200, 230); bbep.print("Open: 192.168.4.1");
-    bbep.setCursor(200, 280); bbep.print("Enter server URL to continue");
+    
+    // Header
+    bbep.fillRect(0, 0, 800, 50, BBEP_BLACK);
+    bbep.setTextColor(BBEP_WHITE, BBEP_BLACK);
+    bbep.setCursor(250, 20); bbep.print("PTV-TRMNL SETUP");
+    
+    // Reset colors
+    bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
+    
+    // Step 1
+    bbep.setCursor(80, 80); bbep.print("STEP 1: Connect to WiFi");
+    bbep.setCursor(100, 110); bbep.printf("Network: %s", apName);
+    bbep.setCursor(100, 130); bbep.print("Password: transport123");
+    
+    // Step 2
+    bbep.setCursor(80, 170); bbep.print("STEP 2: Open Browser");
+    bbep.setCursor(100, 200); bbep.print("Go to: http://192.168.4.1");
+    
+    // Step 3
+    bbep.setCursor(80, 240); bbep.print("STEP 3: Configure");
+    bbep.setCursor(100, 270); bbep.print("- Select your home WiFi");
+    bbep.setCursor(100, 290); bbep.print("- Enter WiFi password");
+    bbep.setCursor(100, 310); bbep.print("- Set server URL (einkptdashboard.vercel.app)");
+    
+    // Footer
+    bbep.fillRect(0, 370, 800, 110, BBEP_BLACK);
+    bbep.setTextColor(BBEP_WHITE, BBEP_BLACK);
+    bbep.setCursor(200, 400); bbep.print("Waiting for configuration...");
+    bbep.setCursor(150, 430); bbep.print("Display will update when connected");
+    
     bbep.refresh(REFRESH_FULL, true);
 }
 
@@ -250,7 +299,18 @@ void showConnectingScreen() {
     bbep.fillScreen(BBEP_WHITE); 
     bbep.setFont(FONT_8x8); 
     bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
-    bbep.setCursor(300, 220); bbep.print("Connecting...");
+    
+    // Header
+    bbep.fillRect(0, 0, 800, 50, BBEP_BLACK);
+    bbep.setTextColor(BBEP_WHITE, BBEP_BLACK);
+    bbep.setCursor(300, 18); bbep.print("PTV-TRMNL");
+    bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
+    
+    // Status
+    bbep.setCursor(280, 200); bbep.print("Connecting to WiFi...");
+    bbep.setCursor(200, 250); bbep.print("If no network found, connect to:");
+    bbep.setCursor(200, 290); bbep.print("PTV-TRMNL-Setup (password: transport123)");
+    
     bbep.refresh(REFRESH_FULL, true);
 }
 
@@ -258,9 +318,29 @@ void showConfiguredScreen() {
     bbep.fillScreen(BBEP_WHITE); 
     bbep.setFont(FONT_8x8); 
     bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
-    bbep.setCursor(280, 180); bbep.print("CONNECTED!");
-    bbep.setCursor(150, 220); bbep.printf("Server: %s", serverUrl);
-    bbep.setCursor(200, 260); bbep.print("Fetching transit data...");
+    
+    // Header with WiFi indicator
+    bbep.fillRect(0, 0, 800, 50, BBEP_BLACK);
+    bbep.setTextColor(BBEP_WHITE, BBEP_BLACK);
+    bbep.setCursor(300, 18); bbep.print("PTV-TRMNL");
+    bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
+    
+    // WiFi indicator box (top right)
+    bbep.drawRect(680, 10, 100, 35, BBEP_WHITE);
+    bbep.fillRect(690, 20, 20, 15, BBEP_WHITE);
+    bbep.fillRect(715, 15, 20, 20, BBEP_WHITE);
+    bbep.fillRect(740, 10, 20, 25, BBEP_WHITE);
+    
+    // Status
+    bbep.setCursor(320, 170); bbep.print("CONNECTED!");
+    bbep.setCursor(100, 220); bbep.print("Server:");
+    bbep.setCursor(100, 250); bbep.printf("https://%s", serverUrl);
+    bbep.setCursor(260, 320); bbep.print("Fetching transit data...");
+    
+    // Loading indicator
+    bbep.drawRect(300, 360, 200, 20, BBEP_BLACK);
+    bbep.fillRect(302, 362, 60, 16, BBEP_BLACK);
+    
     bbep.refresh(REFRESH_FULL, true);
 }
 

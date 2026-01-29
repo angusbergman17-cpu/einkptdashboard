@@ -13,6 +13,7 @@
 import { getDepartures, getDisruptions, getWeather } from '../src/services/ptv-api.js';
 import SmartJourneyEngine from '../src/core/smart-journey-engine.js';
 import { renderFullDashboard } from '../src/services/zone-renderer.js';
+import { getScenario, getScenarioNames } from '../src/services/journey-scenarios.js';
 
 // Singleton engine instance (initialized once)
 let journeyEngine = null;
@@ -243,10 +244,72 @@ function calculateArrivalTime(now, totalMinutes) {
 }
 
 /**
+ * Handle demo mode - render scenario data
+ */
+async function handleDemoMode(req, res, scenarioName) {
+  try {
+    const scenario = getScenario(scenarioName);
+    if (!scenario) {
+      const available = getScenarioNames().join(', ');
+      res.status(400).json({ 
+        error: `Unknown scenario: ${scenarioName}`, 
+        available 
+      });
+      return;
+    }
+    
+    // Build dashboard data from scenario
+    const dashboardData = {
+      location: scenario.origin || 'HOME',
+      current_time: scenario.currentTime || '8:00',
+      day: scenario.dayOfWeek?.toUpperCase() || 'MONDAY',
+      date: scenario.date?.toUpperCase() || '1 JANUARY',
+      temp: scenario.weather?.temp ?? 20,
+      condition: scenario.weather?.condition || 'Sunny',
+      umbrella: scenario.weather?.umbrella || false,
+      status_type: scenario.status || 'normal',
+      delay_minutes: scenario.delayMinutes || null,
+      arrive_by: scenario.arrivalTime || '09:00',
+      total_minutes: scenario.totalDuration || 30,
+      leave_in_minutes: null,
+      journey_legs: (scenario.steps || []).map((step, i) => ({
+        number: i + 1,
+        type: step.type?.toLowerCase() || 'walk',
+        title: step.title || 'Continue',
+        subtitle: step.subtitle || '',
+        minutes: step.duration || 5,
+        state: step.status?.toLowerCase() || 'normal'
+      })),
+      destination: scenario.destination || 'WORK'
+    };
+    
+    // Render to PNG
+    const png = renderFullDashboard(dashboardData);
+    
+    // Send response
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('X-Demo-Scenario', scenarioName);
+    res.setHeader('Content-Length', png.length);
+    return res.send(png);
+    
+  } catch (err) {
+    console.error('[screen] Demo mode error:', err);
+    res.status(500).json({ error: err.message });
+  }
+}
+
+/**
  * Main handler - Vercel serverless function
  */
 export default async function handler(req, res) {
   try {
+    // Check for demo mode
+    const demoScenario = req.query?.demo;
+    if (demoScenario) {
+      return handleDemoMode(req, res, demoScenario);
+    }
+    
     // Get current time
     const now = getMelbourneTime();
     const currentTime = formatTime(now);
