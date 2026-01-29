@@ -1,8 +1,8 @@
 {
-  "version": "3.0",
+  "version": "3.1",
   "owner": "Angus Bergman",
   "created": "2026-01-29",
-  "updated": "2026-01-29T03:20:00Z",
+  "updated": "2026-01-29T07:20:00Z",
   
   "locations": {
     "home": {
@@ -33,12 +33,29 @@
     "preferCoffee": true,
     "autoDiscover": true,
     "preferMultiModal": true,
+    "pattern": "coffee-before-multi-modal",
     "routePreferences": {
       "optimizeFor": "minimal-walking",
       "maxWalkingMinutes": 10,
       "preferTrain": true,
-      "modePriority": ["train", "tram", "bus"]
+      "preferMultiModal": true,
+      "modePriority": ["tram", "train", "bus"]
     }
+  },
+  
+  "preferredRoute": {
+    "name": "Coffee → Tram → Train",
+    "pattern": "coffee-before-multi-modal",
+    "segments": [
+      { "type": "walk", "from": "HOME", "to": "COFFEE", "minutes": 3 },
+      { "type": "coffee", "location": "COFFEE", "minutes": 4 },
+      { "type": "walk", "from": "COFFEE", "to": "Toorak Rd/Chapel St", "minutes": 2 },
+      { "type": "tram", "route": "8", "from": "Toorak Rd/Chapel St", "to": "South Yarra Station", "minutes": 5 },
+      { "type": "walk", "from": "Tram Stop", "to": "Platform", "minutes": 2 },
+      { "type": "train", "line": "Sandringham", "from": "South Yarra", "to": "Parliament", "minutes": 8 },
+      { "type": "walk", "from": "Parliament", "to": "WORK", "minutes": 5 }
+    ],
+    "totalMinutes": 29
   },
   
   "display": {
@@ -53,6 +70,10 @@
     "walkToStation": 5,
     "homeToCafe": 3,
     "makeCoffee": 4,
-    "cafeToTransit": 2
+    "cafeToTransit": 2,
+    "tramRide": 5,
+    "platformChange": 2,
+    "trainRide": 8,
+    "walkToWork": 5
   }
 }
