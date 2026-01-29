@@ -1,6 +1,6 @@
 /**
- * TRMNL Display Test - Using pins from README documentation
- * CLK=6, DIN=5, CS=7, RST=2, DC=3, BUSY=4
+ * TRMNL Display Test - Minimal Pattern (no fonts)
+ * Half black, half white - should be obvious if working
  * 
  * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
@@ -33,12 +33,11 @@ void setup() {
     delay(2000);
     
     Serial.println("\n========================================");
-    Serial.println("TRMNL Display Test - README Pinout");
+    Serial.println("TRMNL Minimal Test - Half Black/Half White");
     Serial.println("========================================");
     Serial.printf("Pins: CLK=%d, DIN=%d, CS=%d, DC=%d, RST=%d, BUSY=%d\n",
                   EPD_CLK, EPD_DIN, EPD_CS, EPD_DC, EPD_RST, EPD_BUSY);
     
-    // Initialize SPI with correct pins
     Serial.println("Initializing SPI...");
     SPI.begin(EPD_CLK, -1, EPD_DIN, EPD_CS);
     
@@ -46,48 +45,32 @@ void setup() {
     display.init(115200, true, 2, false);
     display.setRotation(0);
     
-    Serial.println("Drawing test pattern...");
+    Serial.println("Drawing: LEFT=WHITE, RIGHT=BLACK");
+    Serial.println("If you see this pattern, display driver is correct!");
+    
     display.setFullWindow();
     display.firstPage();
     do {
-        display.fillScreen(GxEPD_WHITE);
+        // Left half white
+        display.fillRect(0, 0, 400, 480, GxEPD_WHITE);
+        // Right half black  
+        display.fillRect(400, 0, 400, 480, GxEPD_BLACK);
         
-        // Border
-        display.drawRect(5, 5, 790, 470, GxEPD_BLACK);
-        display.drawRect(10, 10, 780, 460, GxEPD_BLACK);
+        // Add a 20px white border on far left to make it clear
+        display.fillRect(0, 0, 20, 480, GxEPD_WHITE);
         
-        // Title
-        display.setCursor(250, 100);
-        display.setTextSize(3);
-        display.setTextColor(GxEPD_BLACK);
-        display.print("PTV-TRMNL");
-        
-        display.setCursor(200, 180);
-        display.setTextSize(2);
-        display.print("Custom Firmware Working!");
-        
-        display.setCursor(180, 250);
-        display.print("Pins: CLK=6 DIN=5 CS=7");
-        
-        display.setCursor(180, 290);
-        display.print("DC=3 RST=2 BUSY=4");
-        
-        display.setCursor(200, 370);
-        display.print("einkptdashboard.vercel.app");
-        
-        // Draw filled boxes
-        display.fillRect(100, 400, 150, 50, GxEPD_BLACK);
-        display.fillRect(550, 400, 150, 50, GxEPD_BLACK);
+        // Add a 20px black border on far right
+        display.fillRect(780, 0, 20, 480, GxEPD_BLACK);
         
     } while (display.nextPage());
     
-    Serial.println("Display update complete!");
-    Serial.println("If display shows test pattern, these pins are CORRECT.");
+    Serial.println("Update complete!");
+    Serial.println("Expected: Left half WHITE, Right half BLACK");
+    Serial.println("If all white or all black: wrong display driver");
     
     display.hibernate();
 }
 
 void loop() {
     delay(10000);
-    Serial.println("Waiting... press reset to try again.");
 }
