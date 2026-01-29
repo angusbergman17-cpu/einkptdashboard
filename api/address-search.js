@@ -25,24 +25,44 @@ export default async function handler(req, res) {
     const googleKey = currentPrefs?.additionalAPIs?.google_places;
     
     if (googleKey) {
-      // Use Google Places Autocomplete API
-      console.log('[address-search] Using Google Places API');
+      // Use Google Places API (New) - not the legacy version
+      console.log('[address-search] Using Google Places API (New)');
       
-      const googleUrl = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(query)}&components=country:au&key=${googleKey}`;
-      
-      const response = await fetch(googleUrl);
-      const data = await response.json();
-      
-      if (data.status === 'OK' && data.predictions) {
-        const results = data.predictions.map(p => ({
-          display_name: p.description,
-          place_id: p.place_id,
-          source: 'google'
-        }));
+      try {
+        const response = await fetch('https://places.googleapis.com/v1/places:autocomplete', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Goog-Api-Key': googleKey
+          },
+          body: JSON.stringify({
+            input: query,
+            includedRegionCodes: ['au'],
+            locationBias: {
+              circle: {
+                center: { latitude: -37.8136, longitude: 144.9631 }, // Melbourne
+                radius: 50000.0
+              }
+            }
+          })
+        });
         
-        return res.status(200).json({ results, source: 'google' });
-      } else if (data.status === 'REQUEST_DENIED') {
-        console.log('[address-search] Google API denied, falling back to Nominatim');
+        const data = await response.json();
+        
+        if (response.ok && data.suggestions) {
+          const results = data.suggestions.map(s => ({
+            display_name: s.placePrediction?.text?.text || s.placePrediction?.structuredFormat?.mainText?.text || 'Unknown',
+            place_id: s.placePrediction?.placeId,
+            source: 'google'
+          }));
+          
+          return res.status(200).json({ results, source: 'google' });
+        } else if (data.error) {
+          console.log('[address-search] Google API error:', data.error.message || data.error.status);
+          // Fall through to Nominatim
+        }
+      } catch (googleError) {
+        console.log('[address-search] Google API failed, falling back to Nominatim:', googleError.message);
       }
     }
     

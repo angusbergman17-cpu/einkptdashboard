@@ -899,11 +899,38 @@ Content must be readable at arm's length on an 800×480 display. Test contrast, 
 **Cache TTL:** 5 minutes  
 **Required Fields:** `temp`, `condition`, `rainChance`
 
-### 11.3 Google Places
+### 11.3 Google Places API (New)
 
+**🚨 MANDATORY**: Use **Places API (New)**, NOT the legacy "Places API"
+
+**API Endpoint:** `https://places.googleapis.com/v1/places:autocomplete`  
+**Auth Method:** `X-Goog-Api-Key` header  
 **Used For:** Address autocomplete in setup wizard  
 **Cache TTL:** Session only (no persistent cache)  
 **Billing:** User's own API key
+
+```javascript
+// ✅ CORRECT - Places API (New)
+const response = await fetch('https://places.googleapis.com/v1/places:autocomplete', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': apiKey
+    },
+    body: JSON.stringify({
+        input: query,
+        includedRegionCodes: ['au']
+    })
+});
+
+// ❌ WRONG - Legacy Places API (deprecated)
+const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${query}&key=${apiKey}`;
+```
+
+**Why Places API (New)?**
+- Legacy Places API is being deprecated by Google
+- New API has better features and pricing
+- Admin panel instructs users to enable "Places API (New)"
 
 ### 11.4 Lightweight Endpoints
 

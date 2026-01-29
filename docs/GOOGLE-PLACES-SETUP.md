@@ -60,18 +60,20 @@
    - Project name: `PTV-TRMNL` (or your choice)
    - Click "Create"
 
-### Step 2: Enable Places API
+### Step 2: Enable Places API (New)
 
 1. **Navigate to APIs & Services**:
    - Go to: https://console.cloud.google.com/apis/library
 
-2. **Search for "Places API"**:
+2. **Search for "Places API (New)"**:
    - Search: `Places API`
-   - Click on **Places API** (not Places API (New))
+   - Click on **Places API (New)** — NOT the legacy "Places API"
 
 3. **Enable the API**:
    - Click "Enable"
    - Wait for activation (~30 seconds)
+
+> ⚠️ **Important**: Use "Places API (New)", not the legacy version. The legacy API is being deprecated by Google.
 
 ### Step 3: Create API Key
 
