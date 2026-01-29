@@ -28,6 +28,7 @@ import CafeBusyDetector from './services/cafe-busy-detector.js';
 import PreferencesManager from './data/preferences-manager.js';
 import JourneyPlanner from './services/journey-planner.js';
 import GeocodingService from './services/geocoding-service.js';
+import configStore from './services/config-store.js';
 import DecisionLogger from './core/decision-logger.js';
 import DataValidator from './data/data-validator.js';
 import { getPrimaryCityForState } from './utils/australian-cities.js';
@@ -2741,9 +2742,23 @@ app.post('/admin/setup/complete', async (req, res) => {
       };
     }
 
-    // Update API keys if provided
-    if (setupData.transitAPIKey) {
-      process.env.ODATA_API_KEY = setupData.transitAPIKey;
+    // Update API keys if provided - save to Vercel KV for serverless persistence
+    if (setupData.transitAPIKey || setupData.credentials?.apiKey) {
+      const odataKey = setupData.transitAPIKey || setupData.credentials?.apiKey;
+      const googleKey = setupData.googlePlacesAPIKey || setupData.additionalAPIs?.google_places || '';
+      
+      // Save to KV store for serverless persistence
+      try {
+        await configStore.saveApiKeys({ odataKey, googlePlacesKey: googleKey });
+        console.log('✅ API keys saved to Vercel KV');
+      } catch (kvErr) {
+        console.log('⚠️ Could not save to KV (local dev?):', kvErr.message);
+      }
+      
+      // Also set in process.env for current request
+      process.env.ODATA_API_KEY = odataKey;
+      if (googleKey) process.env.GOOGLE_PLACES_API_KEY = googleKey;
+      
       prefs.transitAPIConfigured = true;
     } else {
       prefs.transitAPIConfigured = false;
