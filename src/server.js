@@ -6905,72 +6905,10 @@ app.get('/setup', (req, res) => {
 });
 
 /* =========================================================
-   START SERVER
+   V12 ZONE ENDPOINTS - Memory-efficient for ESP32
    ========================================================= */
 
-// Export app for Vercel serverless functions
-export default app;
-
-const HOST = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
-
-// Start server and capture instance for graceful shutdown (only for local/Render)
-const server = app.listen(PORT, async () => {
-  console.log(`🚀 PTV-TRMNL server listening on port ${PORT}`);
-  console.log(`📍 Preview: ${HOST}/preview`);
-  console.log(`🔗 TRMNL endpoint: ${HOST}/api/screen`);
-  console.log(`💚 Keep-alive: ${HOST}/api/keepalive`);
-  console.log(`🔧 Admin Panel: ${HOST}/admin`);
-  console.log(`📊 Health Check: ${HOST}/api/status`);
-
-  // Initialize persistent storage
-  await loadDevices();
-
-  // Pre-warm cache
-  getData().then(() => {
-    console.log('✅ Initial data loaded');
-    safeguards.log(safeguards.LOG_LEVELS.INFO, 'Initial data loaded successfully');
-  }).catch(err => {
-    console.warn('⚠️  Initial data load failed:', err.message);
-    safeguards.trackError('initial-data-load', err.message);
-  });
-
-  // Set up refresh cycle
-  setInterval(() => {
-    getData().catch(err => {
-      console.warn('Background refresh failed:', err.message);
-      safeguards.trackError('background-refresh', err.message);
-    });
-  }, config.refreshSeconds * 1000);
-
-  safeguards.log(safeguards.LOG_LEVELS.INFO, 'Server started successfully', {
-    port: PORT,
-    host: HOST,
-    version: VERSION
-  });
-});
-
-// Setup graceful shutdown with cleanup
-safeguards.setupGracefulShutdown(server, async () => {
-  console.log('🧹 Running cleanup tasks...');
-
-  // Save any pending data
-  try {
-    await saveDevices();
-    console.log('✅ Device data saved');
-  } catch (err) {
-    console.error('Failed to save devices:', err);
-  }
-
-  // Close geocoding service connections
-  if (global.geocodingService) {
-    console.log('✅ Geocoding service closed');
-  }
-
-  console.log('✅ Cleanup completed');
-});
-
-
-// V12 ZONE ENDPOINTS - Memory-efficient for ESP32
+// V12: Get changed zones
 app.get('/api/zones/changed', async (req, res) => {
   try {
     const forceAll = req.query.force === 'true';
@@ -6993,6 +6931,7 @@ app.get('/api/zones/changed', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// V12: Get single zone BMP
 app.get('/api/zone/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -7210,3 +7149,69 @@ app.post('/api/v13/select-route', async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
+
+/* =========================================================
+   START SERVER
+   ========================================================= */
+
+// Export app for Vercel serverless functions
+export default app;
+
+const HOST = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
+
+// Start server and capture instance for graceful shutdown (only for local/Render)
+const server = app.listen(PORT, async () => {
+  console.log(`🚀 PTV-TRMNL server listening on port ${PORT}`);
+  console.log(`📍 Preview: ${HOST}/preview`);
+  console.log(`🔗 TRMNL endpoint: ${HOST}/api/screen`);
+  console.log(`💚 Keep-alive: ${HOST}/api/keepalive`);
+  console.log(`🔧 Admin Panel: ${HOST}/admin`);
+  console.log(`📊 Health Check: ${HOST}/api/status`);
+
+  // Initialize persistent storage
+  await loadDevices();
+
+  // Pre-warm cache
+  getData().then(() => {
+    console.log('✅ Initial data loaded');
+    safeguards.log(safeguards.LOG_LEVELS.INFO, 'Initial data loaded successfully');
+  }).catch(err => {
+    console.warn('⚠️  Initial data load failed:', err.message);
+    safeguards.trackError('initial-data-load', err.message);
+  });
+
+  // Set up refresh cycle
+  setInterval(() => {
+    getData().catch(err => {
+      console.warn('Background refresh failed:', err.message);
+      safeguards.trackError('background-refresh', err.message);
+    });
+  }, config.refreshSeconds * 1000);
+
+  safeguards.log(safeguards.LOG_LEVELS.INFO, 'Server started successfully', {
+    port: PORT,
+    host: HOST,
+    version: VERSION
+  });
+});
+
+// Setup graceful shutdown with cleanup
+safeguards.setupGracefulShutdown(server, async () => {
+  console.log('🧹 Running cleanup tasks...');
+
+  // Save any pending data
+  try {
+    await saveDevices();
+    console.log('✅ Device data saved');
+  } catch (err) {
+    console.error('Failed to save devices:', err);
+  }
+
+  // Close geocoding service connections
+  if (global.geocodingService) {
+    console.log('✅ Geocoding service closed');
+  }
+
+  console.log('✅ Cleanup completed');
+});
+
