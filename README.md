@@ -3,7 +3,7 @@
 ### Smart Transit Display for Australian Public Transport
 
 ![License](https://img.shields.io/badge/license-CC%20BY--NC%204.0-blue)
-![Version](https://img.shields.io/badge/version-3.0.0-green)
+![Version](https://img.shields.io/badge/version-2.8.0-green)
 ![Platform](https://img.shields.io/badge/platform-TRMNL%20%7C%20Kindle-orange)
 
 > Your personal e-ink transit dashboard. Real-time departures, smart journey planning, and disruption alerts — all rendered server-side and delivered to your display.
@@ -71,11 +71,11 @@ PTV-TRMNL uses a **self-hosted distribution model** where each user deploys thei
 
 ### 1. Fork the Repository
 
-Click **[Fork](https://github.com/angusbergman17-cpu/PTV-TRMNL-NEW/fork)** to create your own copy.
+Click **[Fork](https://github.com/angusbergman17-cpu/einkptdashboard/fork)** to create your own copy.
 
 ### 2. Deploy to Vercel
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/angusbergman17-cpu/PTV-TRMNL-NEW)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/angusbergman17-cpu/einkptdashboard)
 
 Or deploy to [Render](https://render.com) (import your fork).
 
