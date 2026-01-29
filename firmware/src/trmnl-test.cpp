@@ -1,5 +1,5 @@
 /**
- * TRMNL Display Test - Minimal Pattern (no fonts)
+ * TRMNL Display Test - Try GDEY075T7 driver
  * Half black, half white - should be obvious if working
  * 
  * Copyright (c) 2026 Angus Bergman
@@ -13,6 +13,7 @@
 
 #define ENABLE_GxEPD2_GFX 0
 #include <GxEPD2_BW.h>
+#include <gdey/GxEPD2_750_GDEY075T7.h>
 
 // TRMNL OG actual pinout (from README)
 #define EPD_CLK   6
@@ -22,8 +23,9 @@
 #define EPD_RST   2
 #define EPD_BUSY  4
 
-GxEPD2_BW<GxEPD2_750_T7, GxEPD2_750_T7::HEIGHT> display(
-    GxEPD2_750_T7(EPD_CS, EPD_DC, EPD_RST, EPD_BUSY)
+// Try GDEY075T7 - newer Good Display 7.5" panel
+GxEPD2_BW<GxEPD2_750_GDEY075T7, GxEPD2_750_GDEY075T7::HEIGHT> display(
+    GxEPD2_750_GDEY075T7(EPD_CS, EPD_DC, EPD_RST, EPD_BUSY)
 );
 
 void setup() {
@@ -33,7 +35,7 @@ void setup() {
     delay(2000);
     
     Serial.println("\n========================================");
-    Serial.println("TRMNL Minimal Test - Half Black/Half White");
+    Serial.println("TRMNL Test - GDEY075T7 Driver");
     Serial.println("========================================");
     Serial.printf("Pins: CLK=%d, DIN=%d, CS=%d, DC=%d, RST=%d, BUSY=%d\n",
                   EPD_CLK, EPD_DIN, EPD_CS, EPD_DC, EPD_RST, EPD_BUSY);
@@ -41,32 +43,22 @@ void setup() {
     Serial.println("Initializing SPI...");
     SPI.begin(EPD_CLK, -1, EPD_DIN, EPD_CS);
     
-    Serial.println("Initializing display...");
+    Serial.println("Initializing display with GDEY075T7...");
     display.init(115200, true, 2, false);
     display.setRotation(0);
     
     Serial.println("Drawing: LEFT=WHITE, RIGHT=BLACK");
-    Serial.println("If you see this pattern, display driver is correct!");
     
     display.setFullWindow();
     display.firstPage();
     do {
-        // Left half white
-        display.fillRect(0, 0, 400, 480, GxEPD_WHITE);
+        display.fillScreen(GxEPD_WHITE);
         // Right half black  
         display.fillRect(400, 0, 400, 480, GxEPD_BLACK);
-        
-        // Add a 20px white border on far left to make it clear
-        display.fillRect(0, 0, 20, 480, GxEPD_WHITE);
-        
-        // Add a 20px black border on far right
-        display.fillRect(780, 0, 20, 480, GxEPD_BLACK);
-        
     } while (display.nextPage());
     
     Serial.println("Update complete!");
-    Serial.println("Expected: Left half WHITE, Right half BLACK");
-    Serial.println("If all white or all black: wrong display driver");
+    Serial.println("Expected: Left=WHITE, Right=BLACK");
     
     display.hibernate();
 }
