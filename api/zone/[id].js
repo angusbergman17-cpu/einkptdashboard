@@ -1,150 +1,168 @@
 /**
- * PTV-TRMNL E-Ink Dashboard - Single Zone API (V10)
+ * /api/zone/[id] - Single Zone BMP API
  * 
- * Returns BMP data for a specific zone ID.
+ * Returns raw 1-bit BMP data for a single zone.
+ * Used by firmware for individual zone updates.
+ * 
+ * Query params:
+ * - demo=<scenario>: Use demo scenario data
  * 
  * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
- * https://github.com/angusbergman17-cpu/einkptdashboard
  */
 
-import { getDepartures, getWeather } from '../../src/services/ptv-api.js';
-import CoffeeDecision from '../../src/core/coffee-decision.js';
-import { renderZones } from '../../src/services/zone-renderer.js';
+import { getDepartures, getDisruptions, getWeather } from '../../src/services/ptv-api.js';
+import SmartJourneyEngine from '../../src/core/smart-journey-engine.js';
+import { renderSingleZone, ZONES } from '../../src/services/zone-renderer.js';
+import { getScenario } from '../../src/services/journey-scenarios.js';
 
-const TRAIN_STOP_ID = parseInt(process.env.TRAIN_STOP_ID) || 1071;
-const TRAM_STOP_ID = parseInt(process.env.TRAM_STOP_ID) || 2500;
-const COFFEE_SHOP = process.env.COFFEE_SHOP || 'Norman';
-const WORK_ARRIVAL_TIME = process.env.WORK_ARRIVAL || '09:00';
-const HOME_ADDRESS = process.env.HOME_ADDRESS || '1 Clara St, South Yarra';
-const WORK_ADDRESS = process.env.WORK_ADDRESS || '80 Collins St, Melbourne';
-
-const JOURNEY_CONFIG = {
-  walkToWork: parseInt(process.env.WALK_TO_WORK) || 5,
-  homeToCafe: parseInt(process.env.HOME_TO_CAFE) || 4,
-  makeCoffee: parseInt(process.env.MAKE_COFFEE) || 5,
-  cafeToTransit: parseInt(process.env.CAFE_TO_TRANSIT) || 8,
-  trainRide: parseInt(process.env.TRAIN_RIDE) || 12
-};
+// Singleton engine instance
+let journeyEngine = null;
 
 function getMelbourneTime() {
   return new Date(new Date().toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
 }
 
 function formatTime(date) {
-  return date.toLocaleTimeString('en-AU', {
-    timeZone: 'Australia/Melbourne', hour: '2-digit', minute: '2-digit', hour12: false
-  });
+  const h = date.getHours();
+  const m = date.getMinutes();
+  return `${h}:${m.toString().padStart(2, '0')}`;
 }
 
 function formatDateParts(date) {
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-  return { day: days[date.getDay()], date: `${date.getDate()} ${months[date.getMonth()]}` };
+  return {
+    day: days[date.getDay()],
+    date: `${date.getDate()} ${months[date.getMonth()]}`
+  };
 }
 
-function buildJourneyLegs(trains, trams, coffeeDecision) {
-  const legs = [];
-  let n = 1;
-  
-  const nextTrain = trains[0] || null;
-  const nextTram = trams[0] || null;
-  const useTram = nextTram && (!nextTrain || nextTram.minutes < nextTrain.minutes);
-  const primaryTransit = useTram ? nextTram : nextTrain;
-  const canCoffee = coffeeDecision.canGet;
-  const skipCoffee = !canCoffee && coffeeDecision.urgent;
-  
-  if (canCoffee || skipCoffee) {
-    legs.push({ number: n++, type: 'walk', title: `Walk past ${COFFEE_SHOP} Cafe`, subtitle: 'From home • Toorak Rd', minutes: JOURNEY_CONFIG.homeToCafe, state: 'normal' });
-    legs.push({ number: n++, type: 'coffee', title: `Coffee at ${COFFEE_SHOP}`, subtitle: canCoffee ? '✓ TIME FOR COFFEE' : '✗ SKIP — Running late', minutes: canCoffee ? JOURNEY_CONFIG.makeCoffee : 0, state: canCoffee ? 'normal' : 'skip' });
-    legs.push({ number: n++, type: 'walk', title: 'Walk to South Yarra Stn', subtitle: 'Platform 1', minutes: JOURNEY_CONFIG.cafeToTransit, state: 'normal' });
-  } else {
-    legs.push({ number: n++, type: 'walk', title: 'Walk to Station', subtitle: 'From home', minutes: JOURNEY_CONFIG.homeToCafe + JOURNEY_CONFIG.cafeToTransit, state: 'normal' });
+async function getEngine() {
+  if (!journeyEngine) {
+    journeyEngine = new SmartJourneyEngine();
+    await journeyEngine.initialize();
   }
-  
-  if (primaryTransit) {
-    const type = useTram ? 'tram' : 'train';
-    const nextTimes = [primaryTransit, ...(useTram ? trams : trains).slice(1, 2)].filter(Boolean).map(t => t.minutes).join(', ');
-    legs.push({ number: n++, type, title: `${type === 'train' ? 'Train' : 'Tram'} to ${primaryTransit.destination}`, subtitle: `Next: ${nextTimes} min`, minutes: primaryTransit.minutes, state: 'normal' });
-  }
-  
-  legs.push({ number: n++, type: 'walk', title: 'Walk to Office', subtitle: `Parliament → ${WORK_ADDRESS.split(',')[0]}`, minutes: JOURNEY_CONFIG.walkToWork, state: 'normal' });
-  
-  return legs;
+  return journeyEngine;
 }
 
-function calcTotal(legs) { return legs.filter(l => l.state !== 'skip').reduce((s, l) => s + (l.minutes || 0), 0); }
-function calcLeaveIn(now, total) {
-  const [h, m] = WORK_ARRIVAL_TIME.split(':').map(Number);
-  return Math.max(0, h * 60 + m - total - now.getHours() * 60 - now.getMinutes());
+function buildDemoData(scenario) {
+  const journeyLegs = (scenario.steps || []).map((step, idx) => ({
+    number: idx + 1,
+    type: step.type.toLowerCase(),
+    title: step.title,
+    subtitle: step.subtitle,
+    minutes: step.duration || 0,
+    state: step.status === 'SKIPPED' ? 'skip' : 
+           step.status === 'DELAYED' ? 'delayed' :
+           step.status === 'CANCELLED' ? 'suspended' :
+           step.status === 'DIVERTED' ? 'diverted' : 'normal'
+  }));
+
+  return {
+    location: scenario.origin || 'Home',
+    current_time: scenario.currentTime || '7:45',
+    day: scenario.dayOfWeek || 'Tuesday',
+    date: scenario.date || '28 January',
+    temp: scenario.weather?.temp ?? 22,
+    condition: scenario.weather?.condition || 'Sunny',
+    umbrella: scenario.weather?.umbrella || false,
+    status_type: scenario.status === 'DELAY' ? 'delay' :
+                 scenario.status === 'DISRUPTION' ? 'disruption' :
+                 scenario.status === 'DIVERSION' ? 'diversion' : 'normal',
+    arrive_by: scenario.arrivalTime || '9:00',
+    total_minutes: scenario.totalDuration || journeyLegs.reduce((t, l) => t + (l.minutes || 0), 0),
+    leave_in_minutes: scenario.leaveInMinutes || null,
+    journey_legs: journeyLegs,
+    destination: scenario.destination || 'Work'
+  };
 }
 
 export default async function handler(req, res) {
-  if (req.query.ping) {
-    return res.json({ pong: 'v10-zone', ts: Date.now() });
-  }
-  
   try {
     const { id } = req.query;
+    const demoScenario = req.query?.demo;
     
-    const now = getMelbourneTime();
-    const currentTime = formatTime(now);
-    const { day, date } = formatDateParts(now);
-    
-    const [trains, trams, weather] = await Promise.all([
-      getDepartures(TRAIN_STOP_ID, 0),
-      getDepartures(TRAM_STOP_ID, 1),
-      getWeather()
-    ]);
-    
-    const coffeeEngine = new CoffeeDecision(JOURNEY_CONFIG);
-    const [arrH, arrM] = WORK_ARRIVAL_TIME.split(':').map(Number);
-    coffeeEngine.setTargetArrival(arrH, arrM);
-    const coffeeDecision = coffeeEngine.calculate(trains[0]?.minutes || 30, trams, '');
-    
-    const journeyLegs = buildJourneyLegs(trains, trams, coffeeDecision);
-    const totalMinutes = calcTotal(journeyLegs);
-    const leaveInMinutes = calcLeaveIn(now, totalMinutes);
-    
-    const dashboardData = {
-      location: HOME_ADDRESS,
-      current_time: currentTime,
-      day, date,
-      temp: weather?.temp ?? '--',
-      condition: weather?.condition || 'N/A',
-      umbrella: (weather?.condition || '').toLowerCase().includes('rain'),
-      status_type: coffeeDecision.urgent ? 'delay' : 'normal',
-      arrive_by: WORK_ARRIVAL_TIME,
-      total_minutes: totalMinutes,
-      leave_in_minutes: leaveInMinutes > 0 ? leaveInMinutes : null,
-      journey_legs: journeyLegs,
-      destination: WORK_ADDRESS
-    };
-    
-    const result = renderZones(dashboardData, {}, true);
-    const zone = result.zones.find(z => z.id === id);
-    
-    if (!zone || !zone.data) {
-      return res.status(404).json({ 
-        error: 'Zone not found', 
-        requested: id,
-        available: result.zones.map(z => z.id)
+    // Validate zone ID
+    if (!id || !ZONES[id]) {
+      return res.status(400).json({ 
+        error: 'Invalid zone ID',
+        available: Object.keys(ZONES)
       });
     }
     
-    const bmpBuffer = Buffer.from(zone.data, 'base64');
+    const zone = ZONES[id];
+    let dashboardData;
     
+    // Get dashboard data (demo or live)
+    if (demoScenario) {
+      const scenario = getScenario(demoScenario);
+      if (!scenario) {
+        return res.status(400).json({ error: 'Unknown demo scenario' });
+      }
+      dashboardData = buildDemoData(scenario);
+    } else {
+      // Live data
+      const now = getMelbourneTime();
+      const engine = await getEngine();
+      const route = engine.getSelectedRoute();
+      const locations = engine.getLocations();
+      const config = engine.journeyConfig;
+      
+      const trainStopId = parseInt(process.env.TRAIN_STOP_ID) || 1071;
+      const tramStopId = parseInt(process.env.TRAM_STOP_ID) || 2500;
+      
+      const [trains, trams, weather, disruptions] = await Promise.all([
+        getDepartures(trainStopId, 0),
+        getDepartures(tramStopId, 1),
+        getWeather(locations.home?.lat, locations.home?.lon),
+        getDisruptions(0).catch(() => [])
+      ]);
+      
+      const transitData = { trains, trams, disruptions };
+      const coffeeDecision = engine.calculateCoffeeDecision(transitData, route?.legs || []);
+      
+      // Build minimal dashboard data for zone
+      dashboardData = {
+        location: locations.home?.address || 'Home',
+        current_time: formatTime(now),
+        day: formatDateParts(now).day,
+        date: formatDateParts(now).date,
+        temp: weather?.temp ?? '--',
+        condition: weather?.condition || 'N/A',
+        umbrella: weather?.umbrella || false,
+        status_type: 'normal',
+        arrive_by: config?.journey?.arrivalTime || '09:00',
+        total_minutes: 30,
+        leave_in_minutes: null,
+        journey_legs: [],
+        destination: locations.work?.address || 'Work'
+      };
+    }
+    
+    // Render the single zone to BMP
+    const bmpBuffer = renderSingleZone(id, dashboardData);
+    
+    if (!bmpBuffer) {
+      return res.status(500).json({ error: 'Zone render failed' });
+    }
+    
+    // Return raw BMP with headers
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Length', bmpBuffer.length);
     res.setHeader('X-Zone-X', zone.x);
     res.setHeader('X-Zone-Y', zone.y);
     res.setHeader('X-Zone-Width', zone.w);
     res.setHeader('X-Zone-Height', zone.h);
-    res.setHeader('Content-Type', 'application/octet-stream');
-    res.setHeader('Content-Length', bmpBuffer.length);
-    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     
     return res.status(200).send(bmpBuffer);
+    
   } catch (error) {
-    console.error('Zone error:', error);
-    return res.status(500).json({ error: error.message });
+    console.error('Zone API error:', error);
+    return res.status(500).json({
+      error: 'Zone render failed',
+      message: error.message
+    });
   }
 }

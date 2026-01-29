@@ -609,8 +609,9 @@ bool fetchAndDrawZone(const ZoneDef& zone, bool flash) {
         // Build URL
         String url = String(serverUrl);
         if (!url.endsWith("/")) url += "/";
-        url += "api/zonedata?id=";
+        url += "api/zone/";
         url += zone.id;
+        url += "?demo=normal";  // Demo mode for testing
         url.replace("//api", "/api");
         
         http.setTimeout(HTTP_TIMEOUT_MS);
