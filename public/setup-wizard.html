@@ -820,7 +820,7 @@
                 html = `
                     <div class="form-group">
                         <label class="form-label" style="color: #e2e8f0;">Transport Victoria OpenData API Key</label>
-                        <input type="password" id="api-key" class="form-input" placeholder="UUID format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+                        <input type="text" id="api-key" class="form-input" placeholder="UUID format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" style="-webkit-text-security: disc;">
                         <small style="color: #a0aec0; margin-top: 5px; display: block;">
                             Register at <a href="https://opendata.transport.vic.gov.au/" target="_blank" style="color: #6366f1;">opendata.transport.vic.gov.au</a> — Subscribe to GTFS Realtime feeds
                         </small>
@@ -830,7 +830,7 @@
                 html = `
                     <div class="form-group">
                         <label class="form-label" style="color: #e2e8f0;">${auth.name} API Key</label>
-                        <input type="password" id="api-key" class="form-input" placeholder="Your API Key">
+                        <input type="text" id="api-key" class="form-input" placeholder="Your API Key" autocomplete="off" style="-webkit-text-security: disc;">
                         <small style="color: #a0aec0; margin-top: 5px; display: block;">
                             Register at <a href="${auth.url}" target="_blank" style="color: #6366f1;">${auth.url}</a>
                         </small>
