@@ -28,4 +28,3 @@ export default function handler(req, res) {
   
   return app(req, res);
 }
-// V13 endpoints deployed Thu Jan 29 03:00:47 UTC 2026
