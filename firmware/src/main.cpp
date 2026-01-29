@@ -79,6 +79,14 @@ void setup() {
     Serial.begin(115200); delay(500);
     Serial.println("\n=== PTV-TRMNL v" FIRMWARE_VERSION " ===");
     
+    // FACTORY RESET - Clear all stored settings (REMOVE AFTER TESTING)
+    Serial.println("*** FACTORY RESET - Clearing all settings ***");
+    preferences.begin("ptv-trmnl", false);
+    preferences.clear();
+    preferences.end();
+    WiFi.disconnect(true, true);  // Clear WiFi credentials
+    delay(500);
+    
     loadSettings();
     
     // Apply default server if none configured
@@ -300,16 +308,37 @@ void showConnectingScreen() {
     bbep.setFont(FONT_8x8); 
     bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
     
-    // Header
+    // Header bar
     bbep.fillRect(0, 0, 800, 50, BBEP_BLACK);
     bbep.setTextColor(BBEP_WHITE, BBEP_BLACK);
-    bbep.setCursor(300, 18); bbep.print("PTV-TRMNL");
+    bbep.setCursor(250, 18); bbep.print("PTV-TRMNL SMART DISPLAY");
     bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
     
-    // Status
-    bbep.setCursor(280, 200); bbep.print("Connecting to WiFi...");
-    bbep.setCursor(200, 250); bbep.print("If no network found, connect to:");
-    bbep.setCursor(200, 290); bbep.print("PTV-TRMNL-Setup (password: transport123)");
+    // Main content box
+    bbep.drawRect(100, 80, 600, 200, BBEP_BLACK);
+    bbep.drawRect(101, 81, 598, 198, BBEP_BLACK);
+    
+    // Status - larger centered text
+    bbep.setCursor(280, 120); bbep.print("CONNECTING TO WIFI...");
+    
+    // Divider line
+    bbep.drawLine(150, 160, 650, 160, BBEP_BLACK);
+    
+    // Fallback instructions
+    bbep.setCursor(150, 190); bbep.print("If no network found, connect to:");
+    bbep.setCursor(200, 220); bbep.print("Network:  PTV-TRMNL-Setup");
+    bbep.setCursor(200, 245); bbep.print("Password: transport123");
+    
+    // Reset instructions
+    bbep.drawRect(100, 310, 600, 60, BBEP_BLACK);
+    bbep.setCursor(120, 330); bbep.print("TO RESET: Hold button for 10 seconds, or reflash firmware");
+    bbep.setCursor(120, 350); bbep.print("via USB to clear WiFi settings and start setup again.");
+    
+    // Footer with copyright
+    bbep.fillRect(0, 420, 800, 60, BBEP_BLACK);
+    bbep.setTextColor(BBEP_WHITE, BBEP_BLACK);
+    bbep.setCursor(220, 440); bbep.print("github.com/angusbergman17-cpu/einkptdashboard");
+    bbep.setCursor(280, 460); bbep.print("(c) 2026 Angus Bergman");
     
     bbep.refresh(REFRESH_FULL, true);
 }
