@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PTV-TRMNL Physical Device Simulator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #1a1a2e; color: #eee; min-height: 100vh; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        header { text-align: center; margin-bottom: 20px; }
+        header h1 { font-size: 24px; margin-bottom: 8px; }
+        header p { color: #888; font-size: 14px; }
+        .main-layout { display: grid; grid-template-columns: 1fr 320px; gap: 20px; }
+        .display-panel { background: #2a2a3e; padding: 20px; border-radius: 12px; }
+        .device-frame { background: #333; padding: 20px; border-radius: 8px; display: inline-block; }
+        #eink-display { width: 800px; height: 480px; background: #f5f5f0; border: 3px solid #1a1a1a; position: relative; overflow: hidden; image-rendering: pixelated; }
+        #eink-display img { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
+        .controls { background: #2a2a3e; padding: 20px; border-radius: 12px; }
+        .controls h2 { font-size: 16px; margin-bottom: 15px; color: #6366f1; }
+        .section { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #444; }
+        .section h3 { font-size: 12px; color: #888; margin-bottom: 10px; text-transform: uppercase; }
+        button { width: 100%; padding: 12px; margin-bottom: 8px; background: #6366f1; border: none; border-radius: 8px; color: white; font-size: 14px; font-weight: 600; cursor: pointer; }
+        button:hover { background: #4f46e5; }
+        button.secondary { background: #444; }
+        button.warning { background: #f59e0b; }
+        button.success { background: #22c55e; }
+        .status { padding: 10px; background: #1a1a2e; border-radius: 6px; font-family: monospace; font-size: 12px; margin-bottom: 10px; }
+        .status .ok { color: #22c55e; }
+        .status .error { color: #ef4444; }
+        .status .info { color: #3b82f6; }
+        .log { max-height: 200px; overflow-y: auto; background: #1a1a2e; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 11px; }
+        .log-entry { margin-bottom: 4px; }
+        .zones { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+        .zone-btn { padding: 8px; font-size: 11px; text-align: center; }
+        .zone-btn.loaded { background: #22c55e; }
+        select, input { width: 100%; padding: 8px; background: #1a1a2e; border: 1px solid #444; border-radius: 6px; color: #fff; margin-bottom: 8px; }
+        .info-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+        .refresh-indicator { position: absolute; top: 10px; right: 10px; padding: 4px 8px; background: rgba(0,0,0,0.7); color: #fff; font-size: 10px; border-radius: 4px; display: none; }
+        .refresh-indicator.active { display: block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚃 PTV-TRMNL Physical Device Simulator</h1>
+            <p>Simulates real firmware behavior - fetches zones from API like the ESP32</p>
+        </header>
+        
+        <div class="main-layout">
+            <div class="display-panel">
+                <div class="device-frame">
+                    <div id="eink-display">
+                        <div class="refresh-indicator" id="refresh-indicator">REFRESHING...</div>
+                        <div style="display:flex;align-items:center;justify-content:center;height:100%;color:#333;font-size:18px;">
+                            Click "Boot Device" to start
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: 15px; display: flex; gap: 20px; font-size: 12px; color: #888;">
+                    <span>📐 800×480 @ 1-bit</span>
+                    <span id="refresh-count">Refreshes: 0</span>
+                    <span id="last-refresh">Last: --</span>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <h2>⚙️ Device Controls</h2>
+                
+                <div class="section">
+                    <h3>🔌 Power</h3>
+                    <button class="warning" onclick="bootDevice()">⚡ Boot Device</button>
+                    <button class="secondary" onclick="resetDevice()">🔄 Factory Reset</button>
+                </div>
+                
+                <div class="section">
+                    <h3>🔄 Refresh</h3>
+                    <button onclick="fetchAndDisplay(true)">Full Refresh</button>
+                    <button class="secondary" onclick="fetchAndDisplay(false)">Partial Refresh</button>
+                    <label style="display:flex;align-items:center;gap:8px;font-size:12px;margin-top:8px;">
+                        <input type="checkbox" id="auto-refresh" onchange="toggleAutoRefresh()">
+                        Auto-refresh every 20s
+                    </label>
+                </div>
+                
+                <div class="section">
+                    <h3>🌐 Server</h3>
+                    <input type="text" id="server-url" value="https://einkptdashboard.vercel.app" placeholder="Server URL">
+                    <select id="demo-mode">
+                        <option value="">Live Data</option>
+                        <option value="normal">Demo: Normal</option>
+                        <option value="delay-skip-coffee">Demo: Skip Coffee</option>
+                        <option value="disruption">Demo: Disruption</option>
+                        <option value="rain">Demo: Rain</option>
+                    </select>
+                </div>
+                
+                <div class="section">
+                    <h3>📦 Zones</h3>
+                    <div class="zones" id="zone-buttons"></div>
+                </div>
+                
+                <div class="section">
+                    <h3>📊 Status</h3>
+                    <div class="status">
+                        <div class="info-row"><span>State:</span><span id="state">IDLE</span></div>
+                        <div class="info-row"><span>WiFi:</span><span id="wifi-status" class="ok">Connected</span></div>
+                        <div class="info-row"><span>Server:</span><span id="server-status">--</span></div>
+                        <div class="info-row"><span>Heap:</span><span id="heap">320KB</span></div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h3>📜 Serial Log</h3>
+                    <div class="log" id="serial-log"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const ZONES = ['header', 'summary', 'legs', 'footer'];
+        let refreshCount = 0;
+        let autoRefreshInterval = null;
+        let zoneData = {};
+        
+        function log(msg, type = 'info') {
+            const logEl = document.getElementById('serial-log');
+            const time = new Date().toLocaleTimeString();
+            const color = type === 'ok' ? '#22c55e' : type === 'error' ? '#ef4444' : '#3b82f6';
+            logEl.innerHTML = `<div class="log-entry" style="color:${color}">[${time}] ${msg}</div>` + logEl.innerHTML;
+        }
+        
+        function setState(state) {
+            document.getElementById('state').textContent = state;
+        }
+        
+        function initZoneButtons() {
+            const container = document.getElementById('zone-buttons');
+            container.innerHTML = ZONES.map(z => 
+                `<button class="zone-btn secondary" id="zone-${z}" onclick="fetchZone('${z}')">${z}</button>`
+            ).join('');
+        }
+        
+        async function bootDevice() {
+            log('=== PTV-TRMNL v6.0 ===', 'ok');
+            setState('BOOTING');
+            
+            log('Initializing display...');
+            await sleep(500);
+            
+            log('Connecting to WiFi...');
+            await sleep(800);
+            log('WiFi connected!', 'ok');
+            document.getElementById('wifi-status').textContent = 'Connected';
+            document.getElementById('wifi-status').className = 'ok';
+            
+            log('Server: ' + document.getElementById('server-url').value);
+            setState('FETCHING');
+            
+            await fetchAndDisplay(true);
+            
+            setState('RUNNING');
+            log('Boot complete - entering main loop', 'ok');
+        }
+        
+        async function fetchAndDisplay(fullRefresh = false) {
+            const server = document.getElementById('server-url').value;
+            const demo = document.getElementById('demo-mode').value;
+            const indicator = document.getElementById('refresh-indicator');
+            
+            indicator.textContent = fullRefresh ? 'FULL REFRESH' : 'PARTIAL';
+            indicator.classList.add('active');
+            
+            setState('FETCHING');
+            log(`Fetching /api/screen${demo ? '?demo=' + demo : ''}...`);
+            
+            try {
+                const url = `${server}/api/screen${demo ? '?demo=' + demo : ''}`;
+                const response = await fetch(url);
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const blob = await response.blob();
+                const imgUrl = URL.createObjectURL(blob);
+                
+                document.getElementById('server-status').textContent = 'OK';
+                document.getElementById('server-status').className = 'ok';
+                
+                // Simulate e-ink refresh
+                const display = document.getElementById('eink-display');
+                
+                if (fullRefresh) {
+                    display.style.background = '#000';
+                    await sleep(200);
+                    display.style.background = '#fff';
+                    await sleep(200);
+                    display.style.background = '#000';
+                    await sleep(200);
+                }
+                
+                display.innerHTML = `<img src="${imgUrl}" alt="Dashboard">`;
+                display.style.background = '#f5f5f0';
+                
+                refreshCount++;
+                document.getElementById('refresh-count').textContent = `Refreshes: ${refreshCount}`;
+                document.getElementById('last-refresh').textContent = `Last: ${new Date().toLocaleTimeString()}`;
+                
+                log(`Display updated (${fullRefresh ? 'FULL' : 'PARTIAL'})`, 'ok');
+                
+                // Update zone buttons
+                ZONES.forEach(z => {
+                    document.getElementById(`zone-${z}`).classList.add('loaded');
+                });
+                
+            } catch (err) {
+                log(`Error: ${err.message}`, 'error');
+                document.getElementById('server-status').textContent = 'ERROR';
+                document.getElementById('server-status').className = 'error';
+            }
+            
+            indicator.classList.remove('active');
+            setState('RUNNING');
+        }
+        
+        async function fetchZone(zoneId) {
+            const server = document.getElementById('server-url').value;
+            const demo = document.getElementById('demo-mode').value;
+            
+            log(`Fetching zone: ${zoneId}`);
+            
+            try {
+                const url = `${server}/api/zone/${zoneId}${demo ? '?demo=' + demo : ''}`;
+                const response = await fetch(url);
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                log(`Zone ${zoneId} loaded (${response.headers.get('content-length')} bytes)`, 'ok');
+                document.getElementById(`zone-${zoneId}`).classList.add('loaded');
+                
+            } catch (err) {
+                log(`Zone ${zoneId} error: ${err.message}`, 'error');
+            }
+        }
+        
+        function resetDevice() {
+            log('=== FACTORY RESET ===', 'error');
+            refreshCount = 0;
+            zoneData = {};
+            document.getElementById('eink-display').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#333;font-size:18px;">Device reset - Click Boot</div>';
+            document.getElementById('refresh-count').textContent = 'Refreshes: 0';
+            document.getElementById('last-refresh').textContent = 'Last: --';
+            document.getElementById('server-status').textContent = '--';
+            setState('IDLE');
+            ZONES.forEach(z => document.getElementById(`zone-${z}`).classList.remove('loaded'));
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+                document.getElementById('auto-refresh').checked = false;
+            }
+        }
+        
+        function toggleAutoRefresh() {
+            if (document.getElementById('auto-refresh').checked) {
+                log('Auto-refresh enabled (20s interval)', 'ok');
+                autoRefreshInterval = setInterval(() => fetchAndDisplay(false), 20000);
+            } else {
+                log('Auto-refresh disabled');
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+        }
+        
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+        
+        // Initialize
+        initZoneButtons();
+        log('Simulator ready - click Boot Device to start');
+    </script>
+</body>
+</html>
