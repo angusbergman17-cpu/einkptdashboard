@@ -1,7 +1,7 @@
 /**
- * /api/save-google-key - Save Google Places API key
+ * /api/save-google-key - Save and validate Google Places API key
  * 
- * POST: Save the Google Places API key to preferences
+ * POST: Test the key first, only save if validated
  * 
  * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
@@ -25,34 +25,13 @@ export default async function handler(req, res) {
       });
     }
 
-    console.log('[save-google-key] Saving Google Places API key...');
-
-    // Load preferences
-    const prefs = new PreferencesManager();
-    await prefs.load();
-
-    // Get current preferences and update
-    const currentPrefs = prefs.get();
-    
-    // Initialize additionalAPIs if needed
-    if (!currentPrefs.additionalAPIs) {
-      currentPrefs.additionalAPIs = {};
-    }
-    
-    currentPrefs.additionalAPIs.google_places = apiKey.trim();
-    
-    // Save the updated preferences
-    prefs.preferences = currentPrefs;
-    await prefs.save();
-
-    console.log('[save-google-key] ✅ Google Places API key saved');
+    const testKey = apiKey.trim();
+    console.log('[save-google-key] Testing Google Places API key before saving...');
 
     // Test the key with the NEW Google Places API (not legacy)
-    const testKey = apiKey.trim();
     let testResult = { success: false, message: 'Not tested' };
     
     try {
-      // Use the new Places API (New) endpoint - requires POST with JSON body
       const testUrl = 'https://places.googleapis.com/v1/places:autocomplete';
       const testResponse = await fetch(testUrl, {
         method: 'POST',
@@ -81,7 +60,6 @@ export default async function handler(req, res) {
         };
         console.log('[save-google-key] ✅ Google Places API (New) key test PASSED');
       } else if (testData.error) {
-        // Handle Google API error response
         const errorMsg = testData.error.message || testData.error.status || 'Unknown error';
         testResult = {
           success: false,
@@ -99,11 +77,43 @@ export default async function handler(req, res) {
       console.log('[save-google-key] ❌ Test error:', testError.message);
     }
 
+    // Only save if validation passed
+    if (!testResult.success) {
+      return res.status(200).json({
+        success: false,
+        message: 'API key validation failed - key NOT saved',
+        testResult,
+        saved: false
+      });
+    }
+
+    // Validation passed - save with validated status
+    console.log('[save-google-key] Saving validated Google Places API key...');
+    
+    const prefs = new PreferencesManager();
+    await prefs.load();
+    const currentPrefs = prefs.get();
+    
+    if (!currentPrefs.additionalAPIs) {
+      currentPrefs.additionalAPIs = {};
+    }
+    
+    // Save key with validation status
+    currentPrefs.additionalAPIs.google_places = testKey;
+    currentPrefs.additionalAPIs.google_places_validated = true;
+    currentPrefs.additionalAPIs.google_places_validated_at = new Date().toISOString();
+    
+    prefs.preferences = currentPrefs;
+    await prefs.save();
+
+    console.log('[save-google-key] ✅ Google Places API key saved with validated status');
+
     return res.status(200).json({
       success: true,
-      message: 'API key saved',
+      message: 'API key saved and validated',
       testResult,
-      availableServices: testResult.success ? ['google_places'] : []
+      saved: true,
+      availableServices: ['google_places']
     });
 
   } catch (error) {

@@ -23,8 +23,11 @@ export default async function handler(req, res) {
     const currentPrefs = prefs.get();
     
     const googleKey = currentPrefs?.additionalAPIs?.google_places;
+    const googleValidated = currentPrefs?.additionalAPIs?.google_places_validated === true;
     
-    if (googleKey) {
+    console.log('[address-search] Google key exists:', !!googleKey, 'validated:', googleValidated);
+    
+    if (googleKey && googleValidated) {
       // Use Google Places API (New) - STRICT: no fallback if key is configured
       console.log('[address-search] Using Google Places API (New) - key configured, no fallback');
       
