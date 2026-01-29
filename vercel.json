@@ -1,18 +1,22 @@
 {
   "version": 2,
+  "public": true,
   "functions": {
-    "api/index.js": {
-      "includeFiles": "public/**,src/**"
+    "api/*.js": {
+      "includeFiles": "public/**,src/**,data/**,config/**"
     }
   },
-  "rewrites": [
-    {
-      "source": "/health",
-      "destination": "/api/health"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/api/index.js"
-    }
+  "routes": [
+    { "src": "^/$", "dest": "/public/index.html" },
+    { "src": "^/admin$", "dest": "/public/admin-v3.html" },
+    { "src": "^/simulator.html$", "dest": "/public/simulator.html" },
+    { "src": "^/health$", "dest": "/api/health" },
+    { "src": "^/api/(.*)", "dest": "/api/index.js" },
+    { "src": "^/(.*\\.html)$", "dest": "/public/$1" },
+    { "src": "^/(.*\\.css)$", "dest": "/public/$1" },
+    { "src": "^/(.*\\.js)$", "dest": "/public/$1" },
+    { "src": "^/(.*\\.png)$", "dest": "/public/$1" },
+    { "src": "^/(.*\\.svg)$", "dest": "/public/$1" },
+    { "src": "^/(.*)", "dest": "/api/index.js" }
   ]
 }
