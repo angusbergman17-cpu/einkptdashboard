@@ -15,7 +15,6 @@
 
 import fetch from "node-fetch";
 import GtfsRealtimeBindings from "gtfs-realtime-bindings";
-import configStore from './config-store.js';
 
 // NEW API Base URLs (as of 2026-01-27)
 const API_BASE = "https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1";
@@ -139,33 +138,6 @@ export const getMetroServiceAlertsLegacy = (apiKey, _base) => getMetroServiceAle
 export const getTramTripUpdatesLegacy = (apiKey, _base) => getTramTripUpdates(apiKey);
 export const getTramVehiclePositionsLegacy = (apiKey, _base) => getTramVehiclePositions(apiKey);
 export const getTramServiceAlertsLegacy = (apiKey, _base) => getTramServiceAlerts(apiKey);
-
-// =============================================
-// API Key Helper - Get from KV or env
-// =============================================
-let cachedApiKey = null;
-let cacheExpiry = 0;
-
-export async function getApiKey() {
-  // Use cached key if valid (cache for 5 minutes)
-  if (cachedApiKey && Date.now() < cacheExpiry) {
-    return cachedApiKey;
-  }
-
-  try {
-    const keys = await configStore.getApiKeys();
-    if (keys.odataKey) {
-      cachedApiKey = keys.odataKey;
-      cacheExpiry = Date.now() + 5 * 60 * 1000; // 5 min cache
-      return cachedApiKey;
-    }
-  } catch (err) {
-    console.log('[OpenData] KV fetch failed, using env:', err.message);
-  }
-
-  // Fallback to env
-  return process.env.ODATA_API_KEY || '';
-}
 
 // Export endpoints for reference
 export { ENDPOINTS, API_BASE };
