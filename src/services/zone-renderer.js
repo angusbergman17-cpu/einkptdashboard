@@ -461,14 +461,16 @@ function renderSummary(ctx, data) {
 
 /**
  * Render a single journey leg (V10 spec section 5)
+ * Supports 1-7 legs with compact mode for 6+ legs
  */
-function renderLeg(ctx, leg, index, y, legHeight, isLast) {
+function renderLeg(ctx, leg, index, y, legHeight, isLast, numLegs = 5) {
   const state = leg.state || 'normal';
   const isSkip = state === 'skip';
   const isCancelled = state === 'cancelled' || state === 'suspended';
   const isDelayed = state === 'delayed';
   const isDiverted = state === 'diverted';
   const isCoffee = leg.type === 'coffee';
+  const isCompact = numLegs >= 6; // Compact mode for 6+ legs
   
   const textColor = (isSkip || isCancelled) ? '#888' : '#000';
   
@@ -507,9 +509,9 @@ function renderLeg(ctx, leg, index, y, legHeight, isLast) {
   ctx.strokeStyle = '#000';
   ctx.lineWidth = 2;
   
-  // 5.2 Leg Number circle - Larger for 1-bit e-ink
-  const circleX = boxX + 8, circleY = y + (legHeight - 28) / 2;
-  const circleR = 14;
+  // 5.2 Leg Number circle - Sized for legHeight
+  const circleR = isCompact ? 10 : 14;
+  const circleX = boxX + 8, circleY = y + (legHeight - circleR * 2) / 2;
   
   ctx.beginPath();
   ctx.arc(circleX + circleR, circleY + circleR, circleR, 0, Math.PI * 2);
@@ -550,29 +552,39 @@ function renderLeg(ctx, leg, index, y, legHeight, isLast) {
   ctx.lineWidth = 2;
   
   // 5.3 Mode Icon
-  const iconX = boxX + 44, iconY = y + 10;
-  drawModeIcon(ctx, iconX, iconY, leg.type, 32, textColor);
+  const iconSize = isCompact ? 24 : 32;
+  const iconX = isCompact ? boxX + 32 : boxX + 44;
+  const iconY = y + (legHeight - iconSize) / 2;
+  drawModeIcon(ctx, iconX, iconY, leg.type, iconSize, textColor);
   
   // 5.4 Leg Title - Bold for 1-bit e-ink
-  const titleX = boxX + 86;
+  const titleX = isCompact ? boxX + 64 : boxX + 86;
   let titlePrefix = '';
-  if (isDelayed) titlePrefix = 'DELAY: ';
-  else if (isCancelled) titlePrefix = 'SUSPENDED: ';
+  if (isDelayed) titlePrefix = isCompact ? '! ' : 'DELAY: ';
+  else if (isCancelled) titlePrefix = isCompact ? 'X ' : 'SUSPENDED: ';
   else if (isDiverted) titlePrefix = 'DIVERTED: ';
   
   ctx.fillStyle = textColor;
-  ctx.font = '600 17px Inter';
-  ctx.fillText(titlePrefix + (leg.title || ''), titleX, y + 23);
+  const titleSize = isCompact ? 14 : 17;
+  const subtitleSize = isCompact ? 11 : 13;
+  const titleY = isCompact ? y + 18 : y + 23;
+  const subtitleY = isCompact ? y + 32 : y + 42;
+  
+  ctx.font = `600 ${titleSize}px Inter`;
+  ctx.fillText(titlePrefix + (leg.title || ''), titleX, titleY);
   
   // 5.5 Leg Subtitle - Use black (1-bit can't do gray)
-  ctx.font = '600 13px Inter';
+  ctx.font = `600 ${subtitleSize}px Inter`;
   ctx.fillStyle = isSkip || isCancelled ? '#888' : '#000';
-  ctx.fillText(leg.subtitle || '', titleX, y + 42);
+  ctx.fillText(leg.subtitle || '', titleX, subtitleY);
   ctx.fillStyle = '#000';
   
   // 5.6 Duration Box (right side, edge-fill) - Bold for 1-bit e-ink
-  const durBoxW = 72, durBoxH = legHeight;
+  const durBoxW = isCompact ? 56 : 72;
+  const durBoxH = legHeight;
   const durBoxX = boxX + boxW - durBoxW;
+  const durTimeSize = isCompact ? 22 : 30;
+  const durLabelSize = isCompact ? 9 : 11;
   
   if (isCancelled) {
     // CANCELLED - white box with bold black border and text
@@ -624,36 +636,40 @@ function renderLeg(ctx, leg, index, y, legHeight, isLast) {
     ctx.fillStyle = '#FFF';
     ctx.fillRect(durBoxX, y, durBoxW, durBoxH);
     ctx.strokeStyle = '#000';
-    ctx.lineWidth = 4;
+    ctx.lineWidth = isCompact ? 3 : 4;
     ctx.setLineDash([8, 5]);
     ctx.strokeRect(durBoxX, y, durBoxW, durBoxH);
     ctx.setLineDash([]);
     ctx.lineWidth = 2;
     
     ctx.fillStyle = '#000';
-    ctx.font = '700 30px Inter';  // Reduced from 900 for readability
+    ctx.font = `700 ${durTimeSize}px Inter`;
     ctx.textAlign = 'center';
     const timeStr = leg.minutes?.toString() || '--';
-    ctx.fillText(timeStr, durBoxX + durBoxW / 2, y + legHeight / 2 + 4);
+    ctx.fillText(timeStr, durBoxX + durBoxW / 2, y + legHeight / 2 + (isCompact ? 2 : 4));
     
-    ctx.font = '600 11px Inter';
-    const unitLabel = leg.type === 'walk' ? 'MIN WALK' : 'MIN';
-    ctx.fillText(unitLabel, durBoxX + durBoxW / 2, y + legHeight / 2 + 20);
+    if (!isCompact) {
+      ctx.font = `600 ${durLabelSize}px Inter`;
+      const unitLabel = leg.type === 'walk' ? 'MIN WALK' : 'MIN';
+      ctx.fillText(unitLabel, durBoxX + durBoxW / 2, y + legHeight / 2 + 20);
+    }
   } else if (isDiverted) {
     // DIVERTED - white box with solid border
     ctx.fillStyle = '#FFF';
     ctx.fillRect(durBoxX, y, durBoxW, durBoxH);
     ctx.strokeStyle = '#000';
-    ctx.lineWidth = 3;
+    ctx.lineWidth = isCompact ? 2 : 3;
     ctx.strokeRect(durBoxX, y, durBoxW, durBoxH);
     
     ctx.fillStyle = '#000';
-    ctx.font = '700 30px Inter';  // Reduced from 900 for readability
+    ctx.font = `700 ${durTimeSize}px Inter`;
     ctx.textAlign = 'center';
-    ctx.fillText(leg.minutes?.toString() || '--', durBoxX + durBoxW / 2, y + legHeight / 2 + 4);
+    ctx.fillText(leg.minutes?.toString() || '--', durBoxX + durBoxW / 2, y + legHeight / 2 + (isCompact ? 2 : 4));
     
-    ctx.font = '600 11px Inter';
-    ctx.fillText(leg.type === 'walk' ? 'MIN WALK' : 'MIN', durBoxX + durBoxW / 2, y + legHeight / 2 + 20);
+    if (!isCompact) {
+      ctx.font = `600 ${durLabelSize}px Inter`;
+      ctx.fillText(leg.type === 'walk' ? 'MIN WALK' : 'MIN', durBoxX + durBoxW / 2, y + legHeight / 2 + 20);
+    }
   } else {
     // Normal: black background, white text
     ctx.fillStyle = '#000';
@@ -662,13 +678,16 @@ function renderLeg(ctx, leg, index, y, legHeight, isLast) {
     ctx.fillStyle = '#FFF';
     const isCoffeeTime = leg.type === 'coffee';
     const timeStr = isCoffeeTime ? `~${leg.minutes || 5}` : (leg.minutes?.toString() || '--');
-    ctx.font = isCoffeeTime ? '700 26px Inter' : '700 30px Inter';
+    const coffeeTimeSize = isCompact ? 18 : 26;
+    ctx.font = isCoffeeTime ? `700 ${coffeeTimeSize}px Inter` : `700 ${durTimeSize}px Inter`;
     ctx.textAlign = 'center';
-    ctx.fillText(timeStr, durBoxX + durBoxW / 2, y + legHeight / 2 + 4);
+    ctx.fillText(timeStr, durBoxX + durBoxW / 2, y + legHeight / 2 + (isCompact ? 2 : 4));
     
-    ctx.font = '600 11px Inter';
-    const unitLabel = leg.type === 'walk' ? 'MIN WALK' : 'MIN';
-    ctx.fillText(unitLabel, durBoxX + durBoxW / 2, y + legHeight / 2 + 20);
+    if (!isCompact) {
+      ctx.font = `600 ${durLabelSize}px Inter`;
+      const unitLabel = leg.type === 'walk' ? 'MIN WALK' : 'MIN';
+      ctx.fillText(unitLabel, durBoxX + durBoxW / 2, y + legHeight / 2 + 20);
+    }
   }
   
   ctx.textAlign = 'left';
@@ -701,23 +720,26 @@ function renderLegs(ctx, data) {
     return;
   }
   
-  // Calculate leg height based on count (max 5 visible)
-  const numLegs = Math.min(legs.length, 5);
-  const arrowHeight = 14; // Arrow + spacing
+  // Calculate leg height based on count (max 7 visible)
+  const numLegs = Math.min(legs.length, 7);
+  const arrowHeight = numLegs >= 6 ? 10 : 14; // Smaller arrows for many legs
   const totalArrowSpace = (numLegs - 1) * arrowHeight;
-  const availableHeight = h - totalArrowSpace - 8; // 8px padding
+  const availableHeight = h - totalArrowSpace - 4; // 4px padding
   
-  // Height per leg: 52 (5 legs), 64 (4 legs), 80 (3 or fewer)
+  // Height per leg: dynamic based on count
+  // 7 legs: 38px, 6 legs: 44px, 5 legs: 52px, 4 legs: 64px, 3 or fewer: 80px
   let legHeight;
-  if (numLegs >= 5) legHeight = 52;
+  if (numLegs >= 7) legHeight = 38;
+  else if (numLegs === 6) legHeight = 44;
+  else if (numLegs === 5) legHeight = 52;
   else if (numLegs === 4) legHeight = 64;
   else legHeight = 80;
   
   let y = 0;
   
-  legs.slice(0, 5).forEach((leg, i) => {
+  legs.slice(0, 7).forEach((leg, i) => {
     const isLast = i === numLegs - 1;
-    renderLeg(ctx, leg, i, y, legHeight, isLast);
+    renderLeg(ctx, leg, i, y, legHeight, isLast, numLegs);
     y += legHeight + (isLast ? 0 : arrowHeight);
   });
 }
