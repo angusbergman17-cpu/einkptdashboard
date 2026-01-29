@@ -28,7 +28,7 @@ const ZONES = {
 let previousData = {};
 
 /**
- * Draw walking figure icon (V10 spec 5.3.1)
+ * Draw walking figure icon (V10 spec 5.3.1) - Bold for 1-bit e-ink
  */
 function drawWalkIcon(ctx, x, y, size = 32, color = '#000') {
   const scale = size / 32;
@@ -38,29 +38,30 @@ function drawWalkIcon(ctx, x, y, size = 32, color = '#000') {
   
   ctx.fillStyle = color;
   ctx.strokeStyle = color;
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 4; // Thicker for e-ink
   ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
   
-  // Head
+  // Head (larger for visibility)
   ctx.beginPath();
-  ctx.arc(16, 5, 4, 0, Math.PI * 2);
+  ctx.arc(16, 5, 5, 0, Math.PI * 2);
   ctx.fill();
   
-  // Body and limbs
+  // Body and limbs - all thicker
   ctx.beginPath();
   ctx.moveTo(16, 10); ctx.lineTo(16, 18); // body
   ctx.stroke();
   ctx.beginPath();
-  ctx.moveTo(16, 18); ctx.lineTo(11, 28); // left leg
+  ctx.moveTo(16, 18); ctx.lineTo(10, 29); // left leg
   ctx.stroke();
   ctx.beginPath();
-  ctx.moveTo(16, 18); ctx.lineTo(21, 28); // right leg
+  ctx.moveTo(16, 18); ctx.lineTo(22, 29); // right leg
   ctx.stroke();
   ctx.beginPath();
-  ctx.moveTo(16, 12); ctx.lineTo(11, 17); // left arm
+  ctx.moveTo(16, 12); ctx.lineTo(10, 18); // left arm
   ctx.stroke();
   ctx.beginPath();
-  ctx.moveTo(16, 12); ctx.lineTo(21, 17); // right arm
+  ctx.moveTo(16, 12); ctx.lineTo(22, 18); // right arm
   ctx.stroke();
   
   ctx.restore();
@@ -109,7 +110,7 @@ function drawTrainIcon(ctx, x, y, size = 32, color = '#000') {
 }
 
 /**
- * Draw tram icon - Melbourne W-class style (V10 spec 5.3.3)
+ * Draw tram icon - Melbourne W-class style (V10 spec 5.3.3) - Bold for 1-bit e-ink
  */
 function drawTramIcon(ctx, x, y, size = 32, color = '#000') {
   const scale = size / 32;
@@ -119,42 +120,42 @@ function drawTramIcon(ctx, x, y, size = 32, color = '#000') {
   
   ctx.strokeStyle = color;
   ctx.fillStyle = color;
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 3; // Thicker for e-ink
   
   // Pantograph pole
   ctx.beginPath();
-  ctx.moveTo(16, 2); ctx.lineTo(16, 8);
+  ctx.moveTo(16, 1); ctx.lineTo(16, 7);
   ctx.stroke();
   
   // Pantograph bar
   ctx.beginPath();
-  ctx.moveTo(12, 2); ctx.lineTo(20, 2);
+  ctx.moveTo(11, 1); ctx.lineTo(21, 1);
   ctx.stroke();
   
   // Main body
   ctx.beginPath();
-  ctx.roundRect(4, 8, 24, 16, 4);
+  ctx.roundRect(3, 7, 26, 17, 4);
   ctx.fill();
   
-  // Windows (white)
+  // Windows (white) - larger for clarity
   ctx.fillStyle = '#fff';
   ctx.beginPath();
-  ctx.roundRect(6, 11, 6, 6, 1);
+  ctx.roundRect(5, 10, 7, 7, 1);
   ctx.fill();
   ctx.beginPath();
-  ctx.roundRect(13, 11, 6, 6, 1);
+  ctx.roundRect(13, 10, 6, 7, 1);
   ctx.fill();
   ctx.beginPath();
-  ctx.roundRect(20, 11, 6, 6, 1);
+  ctx.roundRect(20, 10, 7, 7, 1);
   ctx.fill();
   
-  // Wheels
+  // Wheels (larger)
   ctx.fillStyle = color;
   ctx.beginPath();
-  ctx.arc(9, 26, 2.5, 0, Math.PI * 2);
+  ctx.arc(9, 27, 3, 0, Math.PI * 2);
   ctx.fill();
   ctx.beginPath();
-  ctx.arc(23, 26, 2.5, 0, Math.PI * 2);
+  ctx.arc(23, 27, 3, 0, Math.PI * 2);
   ctx.fill();
   
   ctx.restore();
@@ -271,14 +272,14 @@ function drawModeIcon(ctx, x, y, type, size = 32, color = '#000') {
 }
 
 /**
- * Draw down arrow connector (V10 spec 5.7)
+ * Draw down arrow connector (V10 spec 5.7) - Larger for 1-bit e-ink
  */
 function drawArrowConnector(ctx, centerX, y) {
   ctx.fillStyle = '#000';
   ctx.beginPath();
-  ctx.moveTo(centerX - 10, y);
-  ctx.lineTo(centerX + 10, y);
-  ctx.lineTo(centerX, y + 12);
+  ctx.moveTo(centerX - 12, y);
+  ctx.lineTo(centerX + 12, y);
+  ctx.lineTo(centerX, y + 14);
   ctx.closePath();
   ctx.fill();
 }
@@ -323,7 +324,7 @@ function drawVerticalStripes(ctx, x, y, w, h) {
 }
 
 /**
- * Render header zone (V10 spec section 2)
+ * Render header zone (V10 spec section 2) - Optimized for 1-bit e-ink
  */
 function renderHeader(ctx, data) {
   const w = 800, h = 94;
@@ -333,9 +334,8 @@ function renderHeader(ctx, data) {
   ctx.fillRect(0, 0, w, h);
   ctx.fillStyle = '#000';
   
-  // 2.1 Current Location (top left)
-  ctx.font = '500 11px sans-serif';
-  ctx.letterSpacing = '0.5px';
+  // 2.1 Current Location (top left) - Bold for legibility
+  ctx.font = '700 12px sans-serif';
   ctx.fillText((data.location || 'HOME').toUpperCase(), 16, 18);
   
   // 2.2 Current Time (large) - 12-hour format
@@ -346,63 +346,59 @@ function renderHeader(ctx, data) {
   timeStr = `${hour12}:${mins.toString().padStart(2, '0')}`;
   
   ctx.font = '900 68px sans-serif';
-  ctx.letterSpacing = '-3px';
   ctx.fillText(timeStr, 16, 82);
-  ctx.letterSpacing = '0px';
   
   // 2.3 AM/PM Indicator
-  ctx.font = '700 16px sans-serif';
+  ctx.font = '800 18px sans-serif';
   ctx.fillText(hours >= 12 ? 'PM' : 'AM', 200, 82);
   
   // 2.4 Day of Week (bold)
-  ctx.font = '600 18px sans-serif';
-  ctx.fillText(data.day || 'Monday', 300, 38);
+  ctx.font = '700 20px sans-serif';
+  ctx.fillText(data.day || 'Monday', 300, 40);
   
-  // 2.5 Date
-  ctx.fillStyle = '#444';
-  ctx.font = '400 16px sans-serif';
-  ctx.fillText(data.date || '1 January', 300, 60);
-  ctx.fillStyle = '#000';
+  // 2.5 Date - Use black, not gray (1-bit can't do gray)
+  ctx.font = '600 16px sans-serif';
+  ctx.fillText(data.date || '1 January', 300, 62);
   
   // 2.6 Weather Box (right side)
   const wxX = 644, wxY = 12, wxW = 140, wxH = 78;
   ctx.strokeStyle = '#000';
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 3; // Thicker border
   ctx.strokeRect(wxX, wxY, wxW, wxH);
   
   // 2.6.1 Temperature
-  ctx.font = '800 34px sans-serif';
+  ctx.font = '900 38px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText(`${data.temp ?? '--'}°`, wxX + wxW / 2, wxY + 36);
+  ctx.fillText(`${data.temp ?? '--'}°`, wxX + wxW / 2, wxY + 38);
   
   // 2.6.2 Condition
-  ctx.font = '400 12px sans-serif';
-  ctx.fillText(data.condition || 'N/A', wxX + wxW / 2, wxY + 54);
+  ctx.font = '600 13px sans-serif';
+  ctx.fillText(data.condition || 'N/A', wxX + wxW / 2, wxY + 56);
   ctx.textAlign = 'left';
   
   // 2.7 Umbrella Indicator
-  const umbX = wxX + 4, umbY = wxY + 58, umbW = wxW - 8, umbH = 18;
+  const umbX = wxX + 4, umbY = wxY + 60, umbW = wxW - 8, umbH = 16;
   if (data.umbrella) {
     ctx.fillStyle = '#000';
     ctx.fillRect(umbX, umbY, umbW, umbH);
     ctx.fillStyle = '#FFF';
-    ctx.font = '600 10px sans-serif';
+    ctx.font = '700 11px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('🌧 BRING UMBRELLA', umbX + umbW / 2, umbY + 13);
+    ctx.fillText('BRING UMBRELLA', umbX + umbW / 2, umbY + 12);
   } else {
+    ctx.lineWidth = 2;
     ctx.strokeRect(umbX, umbY, umbW, umbH);
     ctx.fillStyle = '#000';
-    ctx.font = '400 10px sans-serif';
+    ctx.font = '600 11px sans-serif';
     ctx.textAlign = 'center';
-    const icon = (data.condition || '').toLowerCase().includes('cloud') ? '☁' : '☀';
-    ctx.fillText(`${icon} NO UMBRELLA`, umbX + umbW / 2, umbY + 13);
+    ctx.fillText('NO UMBRELLA', umbX + umbW / 2, umbY + 12);
   }
   ctx.textAlign = 'left';
   ctx.fillStyle = '#000';
 }
 
 /**
- * Render summary bar (V10 spec section 4)
+ * Render summary bar (V10 spec section 4) - Optimized for 1-bit e-ink
  */
 function renderSummary(ctx, data) {
   const w = 800, h = 28;
@@ -411,21 +407,21 @@ function renderSummary(ctx, data) {
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, w, h);
   
-  // Left content (white)
+  // Left content (white) - Bolder font
   ctx.fillStyle = '#FFF';
-  ctx.font = '700 13px sans-serif';
+  ctx.font = '800 14px sans-serif';
   
   let statusText;
   const arriveTime = data.arrive_by || '--:--';
   
   if (data.status_type === 'disruption') {
-    statusText = `⚠ DISRUPTION → Arrive ${arriveTime}`;
+    statusText = `DISRUPTION → Arrive ${arriveTime}`;
     if (data.delay_minutes) statusText += ` (+${data.delay_minutes} min)`;
   } else if (data.status_type === 'diversion') {
-    statusText = `⚠ TRAM DIVERSION → Arrive ${arriveTime}`;
+    statusText = `TRAM DIVERSION → Arrive ${arriveTime}`;
     if (data.delay_minutes) statusText += ` (+${data.delay_minutes} min)`;
   } else if (data.status_type === 'delay') {
-    statusText = `⏱ DELAY → Arrive ${arriveTime}`;
+    statusText = `DELAY → Arrive ${arriveTime}`;
     if (data.delay_minutes) statusText += ` (+${data.delay_minutes} min)`;
   } else if (data.leave_in_minutes && data.leave_in_minutes > 0) {
     statusText = `LEAVE IN ${data.leave_in_minutes} MIN → Arrive ${arriveTime}`;
@@ -437,7 +433,8 @@ function renderSummary(ctx, data) {
   
   // Right content - total time
   ctx.textAlign = 'right';
-  ctx.fillText(`${data.total_minutes || '--'} min`, w - 16, 19);
+  ctx.font = '800 14px sans-serif';
+  ctx.fillText(`${data.total_minutes || '--'} min total`, w - 16, 19);
   ctx.textAlign = 'left';
 }
 
@@ -484,94 +481,98 @@ function renderLeg(ctx, leg, index, y, legHeight, isLast) {
   ctx.strokeStyle = '#000';
   ctx.lineWidth = 2;
   
-  // 5.2 Leg Number circle
-  const circleX = boxX + 10, circleY = y + 14;
-  const circleR = 12;
+  // 5.2 Leg Number circle - Larger for 1-bit e-ink
+  const circleX = boxX + 8, circleY = y + (legHeight - 28) / 2;
+  const circleR = 14;
   
   ctx.beginPath();
   ctx.arc(circleX + circleR, circleY + circleR, circleR, 0, Math.PI * 2);
   
   if (isCancelled) {
     // Dashed circle with X
-    ctx.strokeStyle = '#888';
-    ctx.setLineDash([3, 2]);
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 3]);
     ctx.stroke();
     ctx.setLineDash([]);
-    ctx.fillStyle = '#888';
-    ctx.font = '700 13px sans-serif';
+    ctx.fillStyle = '#000';
+    ctx.font = '900 16px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('✗', circleX + circleR, circleY + circleR + 5);
+    ctx.fillText('X', circleX + circleR, circleY + circleR + 6);
   } else if (isSkip) {
-    // Dashed circle with number (grayed)
-    ctx.strokeStyle = '#888';
-    ctx.setLineDash([3, 2]);
+    // Dashed circle with number
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 3]);
     ctx.stroke();
     ctx.setLineDash([]);
-    ctx.fillStyle = '#888';
-    ctx.font = '700 13px sans-serif';
+    ctx.fillStyle = '#000';
+    ctx.font = '800 15px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(leg.number?.toString() || (index + 1).toString(), circleX + circleR, circleY + circleR + 5);
+    ctx.fillText(leg.number?.toString() || (index + 1).toString(), circleX + circleR, circleY + circleR + 6);
   } else {
     // Filled circle with number
     ctx.fillStyle = '#000';
     ctx.fill();
     ctx.fillStyle = '#FFF';
-    ctx.font = '700 13px sans-serif';
+    ctx.font = '800 15px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(leg.number?.toString() || (index + 1).toString(), circleX + circleR, circleY + circleR + 5);
+    ctx.fillText(leg.number?.toString() || (index + 1).toString(), circleX + circleR, circleY + circleR + 6);
   }
   ctx.textAlign = 'left';
   ctx.strokeStyle = '#000';
+  ctx.lineWidth = 2;
   
   // 5.3 Mode Icon
   const iconX = boxX + 44, iconY = y + 10;
   drawModeIcon(ctx, iconX, iconY, leg.type, 32, textColor);
   
-  // 5.4 Leg Title
+  // 5.4 Leg Title - Bold for 1-bit e-ink
   const titleX = boxX + 86;
   let titlePrefix = '';
-  if (isDelayed) titlePrefix = '⏱ ';
-  else if (isCancelled) titlePrefix = '⚠ ';
-  else if (isDiverted) titlePrefix = '↩ ';
+  if (isDelayed) titlePrefix = 'DELAY: ';
+  else if (isCancelled) titlePrefix = 'SUSPENDED: ';
+  else if (isDiverted) titlePrefix = 'DIVERTED: ';
   
   ctx.fillStyle = textColor;
-  ctx.font = '700 16px sans-serif';
-  ctx.fillText(titlePrefix + (leg.title || ''), titleX, y + 22);
+  ctx.font = '800 17px sans-serif';
+  ctx.fillText(titlePrefix + (leg.title || ''), titleX, y + 23);
   
-  // 5.5 Leg Subtitle
-  ctx.font = '400 12px sans-serif';
-  ctx.fillStyle = isSkip || isCancelled ? '#aaa' : '#666';
-  ctx.fillText(leg.subtitle || '', titleX, y + 40);
+  // 5.5 Leg Subtitle - Use black (1-bit can't do gray)
+  ctx.font = '600 13px sans-serif';
+  ctx.fillStyle = isSkip || isCancelled ? '#888' : '#000';
+  ctx.fillText(leg.subtitle || '', titleX, y + 42);
   ctx.fillStyle = '#000';
   
-  // 5.6 Duration Box (right side, edge-fill)
+  // 5.6 Duration Box (right side, edge-fill) - Bold for 1-bit e-ink
   const durBoxW = 72, durBoxH = legHeight;
   const durBoxX = boxX + boxW - durBoxW;
   
   if (isCancelled) {
-    // Text "CANCELLED"
-    ctx.fillStyle = '#888';
-    ctx.font = '700 11px sans-serif';
+    // Text "CANCELLED" - Bold
+    ctx.fillStyle = '#000';
+    ctx.font = '800 12px sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('CANCELLED', durBoxX + durBoxW / 2, y + legHeight / 2 + 4);
   } else if (isSkip) {
-    // Dashed left border, gray text "—"
-    ctx.strokeStyle = '#888';
-    ctx.setLineDash([3, 3]);
+    // Dashed left border, text "SKIP"
+    ctx.strokeStyle = '#000';
+    ctx.setLineDash([4, 4]);
+    ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(durBoxX, y);
     ctx.lineTo(durBoxX, y + durBoxH);
     ctx.stroke();
     ctx.setLineDash([]);
     
-    ctx.fillStyle = '#888';
-    ctx.font = '900 26px sans-serif';
+    ctx.fillStyle = '#000';
+    ctx.font = '800 14px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('—', durBoxX + durBoxW / 2, y + legHeight / 2 + 10);
+    ctx.fillText('SKIP', durBoxX + durBoxW / 2, y + legHeight / 2 + 5);
   } else if (isDelayed) {
     // Dashed left border, black text
     ctx.strokeStyle = '#000';
-    ctx.setLineDash([4, 4]);
+    ctx.setLineDash([5, 4]);
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.moveTo(durBoxX, y);
@@ -581,12 +582,12 @@ function renderLeg(ctx, leg, index, y, legHeight, isLast) {
     ctx.lineWidth = 2;
     
     ctx.fillStyle = '#000';
-    ctx.font = '900 26px sans-serif';
+    ctx.font = '900 28px sans-serif';
     ctx.textAlign = 'center';
     const timeStr = leg.minutes?.toString() || '--';
-    ctx.fillText(timeStr, durBoxX + durBoxW / 2, y + legHeight / 2 + 4);
+    ctx.fillText(timeStr, durBoxX + durBoxW / 2, y + legHeight / 2 + 2);
     
-    ctx.font = '400 8px sans-serif';
+    ctx.font = '700 10px sans-serif';
     const unitLabel = leg.type === 'walk' ? 'MIN WALK' : 'MIN';
     ctx.fillText(unitLabel, durBoxX + durBoxW / 2, y + legHeight / 2 + 18);
   } else if (isDiverted) {
@@ -594,14 +595,15 @@ function renderLeg(ctx, leg, index, y, legHeight, isLast) {
     ctx.fillStyle = '#fff';
     ctx.fillRect(durBoxX, y, durBoxW, durBoxH);
     ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
     ctx.strokeRect(durBoxX, y, durBoxW, durBoxH);
     
     ctx.fillStyle = '#000';
-    ctx.font = '900 26px sans-serif';
+    ctx.font = '900 28px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(leg.minutes?.toString() || '--', durBoxX + durBoxW / 2, y + legHeight / 2 + 4);
+    ctx.fillText(leg.minutes?.toString() || '--', durBoxX + durBoxW / 2, y + legHeight / 2 + 2);
     
-    ctx.font = '400 8px sans-serif';
+    ctx.font = '700 10px sans-serif';
     ctx.fillText(leg.type === 'walk' ? 'MIN WALK' : 'MIN', durBoxX + durBoxW / 2, y + legHeight / 2 + 18);
   } else {
     // Normal: black background, white text
@@ -611,11 +613,11 @@ function renderLeg(ctx, leg, index, y, legHeight, isLast) {
     ctx.fillStyle = '#FFF';
     const isCoffeeTime = leg.type === 'coffee';
     const timeStr = isCoffeeTime ? `~${leg.minutes || 5}` : (leg.minutes?.toString() || '--');
-    ctx.font = isCoffeeTime ? '900 22px sans-serif' : '900 26px sans-serif';
+    ctx.font = isCoffeeTime ? '900 24px sans-serif' : '900 28px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(timeStr, durBoxX + durBoxW / 2, y + legHeight / 2 + 4);
+    ctx.fillText(timeStr, durBoxX + durBoxW / 2, y + legHeight / 2 + 2);
     
-    ctx.font = '400 8px sans-serif';
+    ctx.font = '700 10px sans-serif';
     const unitLabel = leg.type === 'walk' ? 'MIN WALK' : 'MIN';
     ctx.fillText(unitLabel, durBoxX + durBoxW / 2, y + legHeight / 2 + 18);
   }
@@ -642,8 +644,8 @@ function renderLegs(ctx, data) {
   ctx.fillRect(0, 0, w, h);
   
   if (legs.length === 0) {
-    ctx.fillStyle = '#888';
-    ctx.font = '400 16px sans-serif';
+    ctx.fillStyle = '#000';
+    ctx.font = '700 18px sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('No journey configured', w / 2, h / 2);
     ctx.textAlign = 'left';
@@ -672,7 +674,7 @@ function renderLegs(ctx, data) {
 }
 
 /**
- * Render footer (V10 spec section 6)
+ * Render footer (V10 spec section 6) - Optimized for 1-bit e-ink
  */
 function renderFooter(ctx, data) {
   const w = 800, h = 32;
@@ -688,7 +690,7 @@ function renderFooter(ctx, data) {
   ctx.fillText(dest, 16, 22);
   
   // 6.2 ARRIVE label
-  ctx.font = '400 12px sans-serif';
+  ctx.font = '700 13px sans-serif';
   ctx.fillText('ARRIVE', w - 130, 22);
   
   // 6.3 Arrival Time
