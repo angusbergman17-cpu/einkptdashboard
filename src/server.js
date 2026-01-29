@@ -11,7 +11,13 @@
 import 'dotenv/config';
 import express from 'express';
 import fs from 'fs/promises';
+import { existsSync } from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+// ESM __dirname equivalent
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 import { execSync } from 'child_process';
 import config from './utils/config.js';
 import { getSnapshot } from './data/data-scraper.js';
@@ -758,7 +764,25 @@ async function getRegionUpdates() {
 
 // Smart Landing Page - Detects setup state and shows appropriate view
 app.get('/', (req, res) => {
-  res.sendFile(path.join(process.cwd(), 'public', 'index.html'));
+  // Try multiple paths for Vercel compatibility
+  const paths = [
+    path.join(process.cwd(), 'public', 'index.html'),
+    path.join(__dirname, '..', 'public', 'index.html'),
+    '/var/task/public/index.html'
+  ];
+  
+  for (const p of paths) {
+    try {
+      if (existsSync(p)) {
+        return res.sendFile(p);
+      }
+    } catch (e) {
+      // Continue to next path
+    }
+  }
+  
+  // Fallback: redirect to admin
+  res.redirect('/admin');
 });
 
 // Health check endpoint (for monitoring/uptime checks)
