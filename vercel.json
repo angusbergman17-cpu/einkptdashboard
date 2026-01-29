@@ -5,30 +5,14 @@
       "includeFiles": "public/**,src/**"
     }
   },
-  "routes": [
+  "rewrites": [
     {
-      "src": "/health",
-      "dest": "/api/health"
+      "source": "/health",
+      "destination": "/api/health"
     },
     {
-      "src": "^/(?:index\\.html)?$",
-      "dest": "/public/index.html"
-    },
-    {
-      "src": "^/admin/?$",
-      "dest": "/public/admin-v3.html"
-    },
-    {
-      "src": "^/simulator\\.html$",
-      "dest": "/public/simulator.html"
-    },
-    {
-      "src": "^/(.*\\.(?:html|css|js|png|jpg|svg|ico))$",
-      "dest": "/public/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/api/index.js"
+      "source": "/(.*)",
+      "destination": "/api/index.js"
     }
   ]
 }

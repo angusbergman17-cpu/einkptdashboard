@@ -12,6 +12,12 @@ import 'dotenv/config';
 import express from 'express';
 import fs from 'fs/promises';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+// ESM __dirname equivalent
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const PROJECT_ROOT = path.resolve(__dirname, '..');
 import { execSync } from 'child_process';
 import config from './utils/config.js';
 import { getSnapshot } from './data/data-scraper.js';
@@ -756,9 +762,9 @@ async function getRegionUpdates() {
    ROUTES
    ========================================================= */
 
-// Health check
+// Landing page - serve the unified dashboard/setup page
 app.get('/', (req, res) => {
-  res.sendFile(path.join(process.cwd(), 'public', 'index.html'));
+  res.sendFile(path.join(PROJECT_ROOT, 'public', 'index.html'));
 });
 
 // Health check endpoint (for monitoring/uptime checks)
@@ -2316,20 +2322,20 @@ async function saveApiConfig(config) {
 }
 
 // Serve static assets (SVGs, CSS, JS)
-app.use('/assets', express.static(path.join(process.cwd(), 'public/assets')));
+app.use('/assets', express.static(path.join(PROJECT_ROOT, 'public/assets')));
 
 // Serve all public files
-app.use(express.static(path.join(process.cwd(), 'public')));
+app.use(express.static(path.join(PROJECT_ROOT, 'public')));
 
 // Admin panel - Staged Setup Wizard (Development Rules compliant)
 // Per DEVELOPMENT-RULES.md: "One Step at a Time" - Present only ONE task per screen
 app.get('/admin', (req, res) => {
-  res.sendFile(path.join(process.cwd(), 'public', 'admin-v3.html'));
+  res.sendFile(path.join(PROJECT_ROOT, 'public', 'admin-v3.html'));
 });
 
 // Single-page admin (alternative view)
 app.get('/admin/simple', (req, res) => {
-  res.sendFile(path.join(process.cwd(), 'public', 'admin.html'));
+  res.sendFile(path.join(PROJECT_ROOT, 'public', 'admin.html'));
 });
 
 // Setup redirect to admin
@@ -2339,25 +2345,25 @@ app.get('/setup', (req, res) => {
 
 // Journey demo visualization
 app.get('/journey-demo', (req, res) => {
-  res.sendFile(path.join(process.cwd(), 'public', 'journey-demo.html'));
+  res.sendFile(path.join(PROJECT_ROOT, 'public', 'journey-demo.html'));
 });
 
 // V11 Dashboard routes
 app.get('/v11', (req, res) => {
-  res.sendFile(path.join(process.cwd(), 'public', 'trmnl-og-v11.html'));
+  res.sendFile(path.join(PROJECT_ROOT, 'public', 'trmnl-og-v11.html'));
 });
 app.get('/trmnl-og-v11', (req, res) => {
-  res.sendFile(path.join(process.cwd(), 'public', 'trmnl-og-v11.html'));
+  res.sendFile(path.join(PROJECT_ROOT, 'public', 'trmnl-og-v11.html'));
 });
 
 // Journey display visualization (legacy - kept for compatibility)
 app.get('/journey', (req, res) => {
-  res.sendFile(path.join(process.cwd(), 'public', 'journey-display.html'));
+  res.sendFile(path.join(PROJECT_ROOT, 'public', 'journey-display.html'));
 });
 
 // Dashboard template
 app.get('/dashboard', (req, res) => {
-  res.sendFile(path.join(process.cwd(), 'public', 'dashboard-template.html'));
+  res.sendFile(path.join(PROJECT_ROOT, 'public', 'dashboard-template.html'));
 });
 
 // ============================================================================
