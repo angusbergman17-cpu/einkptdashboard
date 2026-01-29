@@ -108,17 +108,30 @@ function buildJourneyLegs(route, transitData, coffeeDecision) {
  * Build leg title
  */
 function buildLegTitle(leg) {
+  // Capitalize first letter helper
+  const cap = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+  
   switch (leg.type) {
-    case 'walk':
-      return `Walk to ${leg.to || leg.destination?.name || 'Station'}`;
+    case 'walk': {
+      const dest = leg.to || leg.destination?.name;
+      if (dest === 'cafe') return 'Walk to Cafe';
+      if (dest === 'work') return 'Walk to Office';
+      if (dest === 'tram stop') return 'Walk to Tram Stop';
+      if (dest === 'train platform') return 'Walk to Platform';
+      return `Walk to ${cap(dest) || 'Station'}`;
+    }
     case 'coffee':
       return `Coffee at ${leg.location || 'Cafe'}`;
     case 'train':
       return `Train to ${leg.destination?.name || 'City'}`;
-    case 'tram':
-      return `Tram ${leg.routeNumber || ''} to ${leg.destination?.name || 'City'}`.trim();
-    case 'bus':
-      return `Bus ${leg.routeNumber || ''} to ${leg.destination?.name || 'City'}`.trim();
+    case 'tram': {
+      const num = leg.routeNumber ? `Tram ${leg.routeNumber}` : 'Tram';
+      return `${num} to ${leg.destination?.name || 'City'}`;
+    }
+    case 'bus': {
+      const num = leg.routeNumber ? `Bus ${leg.routeNumber}` : 'Bus';
+      return `${num} to ${leg.destination?.name || 'City'}`;
+    }
     default:
       return leg.title || 'Continue';
   }
@@ -129,21 +142,25 @@ function buildLegTitle(leg) {
  */
 function buildLegSubtitle(leg, transitData) {
   switch (leg.type) {
-    case 'walk':
-      if (leg.from) return `From ${leg.from}`;
-      if (leg.to) return leg.to;
-      return `${leg.minutes || leg.durationMinutes || 0} min walk`;
+    case 'walk': {
+      const mins = leg.minutes || leg.durationMinutes || 0;
+      if (leg.to === 'work') return `${mins} min walk`;
+      if (leg.to === 'cafe') return 'From home';
+      if (leg.origin?.name) return leg.origin.name;
+      return `${mins} min walk`;
+    }
     case 'coffee':
       return 'TIME FOR COFFEE';
     case 'train':
     case 'tram':
     case 'bus': {
       const departures = findDeparturesForLeg(leg, transitData);
+      const lineName = leg.routeNumber || '';
       if (departures.length > 0) {
         const times = departures.slice(0, 3).map(d => d.minutes).join(', ');
-        const lineName = leg.routeNumber || leg.origin?.name || '';
         return lineName ? `${lineName} • Next: ${times} min` : `Next: ${times} min`;
       }
+      if (lineName) return lineName;
       return leg.origin?.name || '';
     }
     default:
