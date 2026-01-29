@@ -641,7 +641,7 @@ export default async function handler(req, res) {
     res.setHeader('Content-Type', 'image/png');
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('X-Dashboard-Timestamp', now.toISOString());
-    res.setHeader('X-Route-Name', route?.name || 'default');
+    res.setHeader('X-Route-Name', (route?.name || 'default').replace(/[^\x20-\x7E]/g, '-'));
     res.setHeader('Content-Length', png.length);
     
     return res.status(200).send(png);
