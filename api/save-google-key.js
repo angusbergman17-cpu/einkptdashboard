@@ -32,7 +32,7 @@ export default async function handler(req, res) {
     await prefs.load();
 
     // Get current preferences and update
-    const currentPrefs = prefs.getAll();
+    const currentPrefs = prefs.get();
     
     // Initialize additionalAPIs if needed
     if (!currentPrefs.additionalAPIs) {
@@ -41,8 +41,9 @@ export default async function handler(req, res) {
     
     currentPrefs.additionalAPIs.google_places = apiKey.trim();
     
-    // Save back
-    await prefs.update(currentPrefs);
+    // Save the updated preferences
+    prefs.preferences = currentPrefs;
+    await prefs.save();
 
     console.log('[save-google-key] ✅ Google Places API key saved');
 
