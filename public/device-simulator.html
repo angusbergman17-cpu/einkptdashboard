@@ -90,6 +90,13 @@
                 </div>
                 
                 <div class="section">
+                    <h3>📝 Setup Screens</h3>
+                    <button class="success" onclick="showConfiguredScreen()">✅ Valid Setup (Configured)</button>
+                    <button class="secondary" onclick="showWelcomeScreen()">👋 Welcome Screen</button>
+                    <button class="secondary" onclick="showWiFiSetupScreen()">📶 WiFi Setup Portal</button>
+                </div>
+                
+                <div class="section">
                     <h3>🔄 Display Refresh</h3>
                     <button onclick="doRefresh(true)" id="btn-full">Full Refresh (5 min cycle)</button>
                     <button class="secondary" onclick="doRefresh(false)" id="btn-partial">Partial Refresh (20s)</button>
@@ -318,6 +325,108 @@
             ctx.textAlign = 'center';
             ctx.font = '10px monospace';
             ctx.fillText('© 2026 Angus Bergman • CC BY-NC 4.0', 400, 450);
+            log('showWelcomeScreen() rendered');
+        }
+        
+        function showWiFiSetupScreen() {
+            document.getElementById('overlay').classList.add('hidden');
+            ctx.fillStyle = '#f5f5f0';
+            ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
+            
+            // Header bar
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, 800, 60);
+            
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 16px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('PTV-TRMNL SMART TRANSIT DISPLAY', 400, 25);
+            ctx.font = '12px monospace';
+            ctx.fillText('WiFi Setup Mode', 400, 45);
+            
+            ctx.fillStyle = '#000';
+            ctx.font = 'bold 18px monospace';
+            ctx.fillText('📶 WiFi CONFIGURATION', 400, 100);
+            
+            // AP Info box
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(200, 130, 400, 120);
+            
+            ctx.font = 'bold 14px monospace';
+            ctx.fillText('Connect to this network:', 400, 160);
+            
+            ctx.font = 'bold 20px monospace';
+            ctx.fillText('PTV-TRMNL-Setup', 400, 195);
+            
+            ctx.font = '14px monospace';
+            ctx.fillText('Password: transport123', 400, 230);
+            
+            // Instructions
+            ctx.font = '12px monospace';
+            ctx.textAlign = 'left';
+            ctx.fillText('Then open your browser to:', 200, 290);
+            ctx.font = 'bold 16px monospace';
+            ctx.fillText('http://192.168.4.1', 200, 315);
+            
+            ctx.font = '12px monospace';
+            ctx.fillText('• Select your home WiFi network', 200, 360);
+            ctx.fillText('• Enter your WiFi password', 200, 380);
+            ctx.fillText('• Server URL: einkptdashboard.vercel.app', 200, 400);
+            ctx.fillText('• Click Save and wait for dashboard', 200, 420);
+            
+            ctx.textAlign = 'center';
+            ctx.font = '10px monospace';
+            ctx.fillText('© 2026 Angus Bergman • CC BY-NC 4.0', 400, 465);
+            log('showWiFiSetupScreen() rendered');
+        }
+        
+        function showConfiguredScreen() {
+            document.getElementById('overlay').classList.add('hidden');
+            ctx.fillStyle = '#f5f5f0';
+            ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
+            
+            // Header bar
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, 800, 60);
+            
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 16px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('PTV-TRMNL SMART TRANSIT DISPLAY', 400, 25);
+            ctx.font = '12px monospace';
+            ctx.fillText('v' + FIRMWARE_VERSION + ' • Setup Complete', 400, 45);
+            
+            // Big checkmark
+            ctx.fillStyle = '#000';
+            ctx.font = 'bold 80px monospace';
+            ctx.fillText('✓', 400, 180);
+            
+            ctx.font = 'bold 24px monospace';
+            ctx.fillText('SETUP COMPLETE', 400, 230);
+            
+            // Config details box
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(150, 260, 500, 150);
+            
+            ctx.font = '14px monospace';
+            ctx.textAlign = 'left';
+            ctx.fillText('✓ WiFi: Connected (192.168.1.42)', 170, 290);
+            ctx.fillText('✓ Server: einkptdashboard.vercel.app', 170, 315);
+            ctx.fillText('✓ Home: 42 Brunswick St, Fitzroy', 170, 340);
+            ctx.fillText('✓ Work: 200 Bourke St, Melbourne', 170, 365);
+            ctx.fillText('✓ Cafe: Industry Beans, Rose St', 170, 390);
+            
+            ctx.textAlign = 'center';
+            ctx.font = 'bold 14px monospace';
+            ctx.fillText('Dashboard will appear shortly...', 400, 440);
+            
+            ctx.font = '10px monospace';
+            ctx.fillText('© 2026 Angus Bergman • CC BY-NC 4.0', 400, 465);
+            
+            log('showConfiguredScreen() - Valid setup details rendered', 'ok');
+            setState('CONFIGURED');
         }
         
         // ========== REFRESH LOGIC (matches firmware) ==========
