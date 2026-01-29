@@ -529,91 +529,81 @@
         const RANDOM_TRAIN_LINES = ['Sandringham', 'Frankston', 'Craigieburn', 'South Morang', 'Werribee', 'Belgrave'];
         const RANDOM_BUS_ROUTES = ['200', '220', '246', '302', '401', '506', '703', '905'];
         
-        function randomizeJourney() {
-            const home = RANDOM_HOMES[Math.floor(Math.random() * RANDOM_HOMES.length)];
-            const work = RANDOM_WORKS[Math.floor(Math.random() * RANDOM_WORKS.length)];
-            const cafe = RANDOM_CAFES[Math.floor(Math.random() * RANDOM_CAFES.length)];
-            
-            // Random number of legs (3-6)
-            const numLegs = 3 + Math.floor(Math.random() * 4);
-            const includeCoffee = Math.random() > 0.3; // 70% chance of coffee
-            const transitType = ['train', 'tram', 'bus'][Math.floor(Math.random() * 3)];
-            
+        async function randomizeJourney() {
             log('');
-            log('=== RANDOMIZED JOURNEY ===', 'ok');
-            log(`Home: ${home}`);
-            log(`Work: ${work}`);
-            log(`Cafe: ${cafe}`);
-            log(`Transit: ${transitType}`);
-            log(`Legs: ${numLegs} (coffee: ${includeCoffee})`);
+            log('=== RANDOMIZE JOURNEY (SmartJourney Engine) ===', 'ok');
+            log('Calling /api/screen?random=1 ...');
             
-            // Update the configured screen with random data
             document.getElementById('overlay').classList.add('hidden');
             ctx.fillStyle = '#f5f5f0';
             ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
-            
-            // Header bar
             ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, 800, 60);
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 16px monospace';
+            ctx.font = 'bold 24px monospace';
             ctx.textAlign = 'center';
-            ctx.fillText('PTV-TRMNL • RANDOM JOURNEY', 400, 25);
-            ctx.font = '12px monospace';
-            ctx.fillText('Calculating optimal route...', 400, 45);
-            
-            // Journey details
-            ctx.fillStyle = '#000';
-            ctx.font = 'bold 18px monospace';
-            ctx.fillText('🎲 RANDOMIZED JOURNEY', 400, 100);
-            
-            ctx.strokeStyle = '#000';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(100, 120, 600, 280);
-            
+            ctx.fillText('🎲 Generating Random Journey...', 400, 200);
             ctx.font = '14px monospace';
-            ctx.textAlign = 'left';
-            let y = 150;
-            ctx.fillText(`📍 FROM: ${home}`, 120, y); y += 35;
-            ctx.fillText(`🏢 TO: ${work}`, 120, y); y += 35;
-            if (includeCoffee) {
-                ctx.fillText(`☕ CAFE: ${cafe}`, 120, y); y += 35;
+            ctx.fillText('Using SmartJourney Engine', 400, 240);
+            
+            const server = document.getElementById('server-url').value;
+            
+            try {
+                const response = await fetch(`${server}/api/screen?random=1`);
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                // Log journey metadata from headers
+                const origin = response.headers.get('X-Journey-Origin') || 'Unknown';
+                const dest = response.headers.get('X-Journey-Dest') || 'Unknown';
+                const legs = response.headers.get('X-Journey-Legs') || '?';
+                const transit = response.headers.get('X-Journey-Transit') || 'mixed';
+                
+                log(`Origin: ${origin}`, 'ok');
+                log(`Destination: ${dest}`, 'ok');
+                log(`Legs: ${legs}, Transit: ${transit}`, 'ok');
+                
+                const blob = await response.blob();
+                const imgUrl = URL.createObjectURL(blob);
+                
+                // Full refresh animation
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
+                await sleep(150);
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
+                await sleep(150);
+                
+                // Draw the dashboard
+                const img = new Image();
+                img.onload = () => {
+                    ctx.drawImage(img, 0, 0, SCREEN_W, SCREEN_H);
+                    URL.revokeObjectURL(imgUrl);
+                    log('Random journey rendered via V10 Live Render!', 'ok');
+                };
+                img.src = imgUrl;
+                
+                fullRefreshCount++;
+                document.getElementById('refresh-info').textContent = `Full: ${fullRefreshCount} | Partial: ${partialRefreshCount}`;
+                document.getElementById('last-refresh').textContent = `Last: ${new Date().toLocaleTimeString()}`;
+                
+                wifiConnected = true;
+                serverConfigured = true;
+                document.getElementById('wifi').textContent = 'Connected';
+                document.getElementById('wifi').className = 'ok';
+                document.getElementById('server').textContent = 'OK';
+                document.getElementById('server').className = 'ok';
+                setState('RUNNING');
+                
+            } catch (err) {
+                log(`Error: ${err.message}`, 'error');
+                ctx.fillStyle = '#f5f5f0';
+                ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
+                ctx.fillStyle = '#000';
+                ctx.font = 'bold 18px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('❌ Failed to generate journey', 400, 220);
+                ctx.font = '14px monospace';
+                ctx.fillText(err.message, 400, 250);
             }
-            
-            // Transit info
-            let transitInfo = '';
-            if (transitType === 'train') {
-                const line = RANDOM_TRAIN_LINES[Math.floor(Math.random() * RANDOM_TRAIN_LINES.length)];
-                transitInfo = `🚆 Train: ${line} Line`;
-            } else if (transitType === 'tram') {
-                const route = RANDOM_TRAM_ROUTES[Math.floor(Math.random() * RANDOM_TRAM_ROUTES.length)];
-                transitInfo = `🚊 Tram: Route ${route}`;
-            } else {
-                const route = RANDOM_BUS_ROUTES[Math.floor(Math.random() * RANDOM_BUS_ROUTES.length)];
-                transitInfo = `🚌 Bus: Route ${route}`;
-            }
-            ctx.fillText(transitInfo, 120, y); y += 35;
-            
-            // Random times
-            const totalMins = 25 + Math.floor(Math.random() * 35);
-            const hour = 7 + Math.floor(Math.random() * 2);
-            const mins = Math.floor(Math.random() * 60);
-            const arriveHour = hour + Math.floor((mins + totalMins) / 60);
-            const arriveMins = (mins + totalMins) % 60;
-            
-            ctx.font = 'bold 14px monospace';
-            ctx.fillText(`⏱️ TOTAL: ${totalMins} minutes`, 120, y); y += 30;
-            ctx.fillText(`🕐 DEPART: ${hour}:${mins.toString().padStart(2,'0')} AM`, 120, y); y += 25;
-            ctx.fillText(`🎯 ARRIVE: ${arriveHour}:${arriveMins.toString().padStart(2,'0')} AM`, 120, y);
-            
-            ctx.textAlign = 'center';
-            ctx.font = 'bold 14px monospace';
-            ctx.fillText('Click "Full Refresh" to load dashboard →', 400, 430);
-            
-            ctx.font = '10px monospace';
-            ctx.fillText('© 2026 Angus Bergman • CC BY-NC 4.0', 400, 465);
-            
-            log('Journey randomized! Click Full Refresh to see dashboard.', 'ok');
         }
         
         // ========== REFRESH LOGIC (matches firmware) ==========
