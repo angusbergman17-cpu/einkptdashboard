@@ -9,6 +9,7 @@
  * Query params:
  * - force=1: Return all zones (full refresh)
  * - format=json: Return zone metadata only (no BMP data)
+ * - demo=<scenario>: Use demo scenario (normal, delay-skip-coffee, multi-delay, disruption, etc.)
  * 
  * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
@@ -17,6 +18,7 @@
 import { getDepartures, getDisruptions, getWeather } from '../src/services/ptv-api.js';
 import SmartJourneyEngine from '../src/core/smart-journey-engine.js';
 import { renderZones, clearCache, ZONES } from '../src/services/zone-renderer.js';
+import { getScenario, getScenarioNames } from '../src/services/journey-scenarios.js';
 
 // Singleton engine instance
 let journeyEngine = null;
@@ -188,15 +190,84 @@ function getStatusType(legs, disruptions) {
 }
 
 /**
+ * Build dashboard data from demo scenario
+ */
+function buildDemoData(scenario) {
+  // Map scenario steps to journey_legs format
+  const journeyLegs = (scenario.steps || []).map((step, idx) => ({
+    number: idx + 1,
+    type: step.type.toLowerCase(),
+    title: step.title,
+    subtitle: step.subtitle,
+    minutes: step.duration || 0,
+    state: step.status === 'SKIPPED' ? 'skip' : 
+           step.status === 'DELAYED' ? 'delayed' :
+           step.status === 'CANCELLED' ? 'suspended' :
+           step.status === 'DIVERTED' ? 'diverted' : 'normal'
+  }));
+
+  return {
+    location: scenario.origin || 'Home',
+    current_time: scenario.currentTime || '7:45',
+    day: scenario.dayOfWeek || 'Tuesday',
+    date: scenario.date || '28 January',
+    temp: scenario.weather?.temp ?? 22,
+    condition: scenario.weather?.condition || 'Sunny',
+    umbrella: scenario.weather?.umbrella || false,
+    status_type: scenario.status === 'DELAY' ? 'delay' :
+                 scenario.status === 'DISRUPTION' ? 'disruption' :
+                 scenario.status === 'DIVERSION' ? 'diversion' : 'normal',
+    arrive_by: scenario.arrivalTime || '9:00',
+    total_minutes: scenario.totalDuration || journeyLegs.reduce((t, l) => t + (l.minutes || 0), 0),
+    leave_in_minutes: scenario.leaveInMinutes || null,
+    journey_legs: journeyLegs,
+    destination: scenario.destination || 'Work'
+  };
+}
+
+/**
  * Main handler
  */
 export default async function handler(req, res) {
   try {
     const forceAll = req.query?.force === '1' || req.query?.force === 'true';
     const formatJson = req.query?.format === 'json';
+    const demoScenario = req.query?.demo;
     
     // Clear cache if forced
     if (forceAll) clearCache();
+    
+    // Handle demo mode
+    if (demoScenario) {
+      const scenario = getScenario(demoScenario);
+      if (!scenario) {
+        return res.status(400).json({
+          error: 'Unknown demo scenario',
+          available: getScenarioNames(),
+          timestamp: new Date().toISOString()
+        });
+      }
+      
+      const dashboardData = buildDemoData(scenario);
+      
+      if (formatJson) {
+        res.setHeader('Content-Type', 'application/json');
+        return res.status(200).json({
+          timestamp: new Date().toISOString(),
+          demo: demoScenario,
+          zones: Object.keys(ZONES),
+          data: dashboardData
+        });
+      }
+      
+      const zonesResult = renderZones(dashboardData, true); // Always force for demo
+      
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('X-Demo-Scenario', demoScenario);
+      
+      return res.status(200).json(zonesResult);
+    }
     
     // Get current time
     const now = getMelbourneTime();
