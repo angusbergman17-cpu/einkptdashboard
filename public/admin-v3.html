@@ -778,13 +778,117 @@
             color: var(--color-text-primary);
         }
     </style>
+        /* Global Navigation */
+        .global-nav {
+            background: var(--color-bg-secondary);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+        
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--color-text-primary);
+            text-decoration: none;
+        }
+        
+        .nav-brand span:first-child { font-size: 24px; }
+        
+        .nav-links {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .nav-link {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--color-text-secondary);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+        
+        .nav-link:hover {
+            background: rgba(30, 41, 59, 0.8);
+            color: var(--color-text-primary);
+            border-color: var(--color-accent-primary);
+        }
+        
+        .nav-link.active {
+            background: var(--color-accent-primary);
+            color: white;
+            border-color: var(--color-accent-primary);
+        }
+        
+        body { padding-top: 60px; }
+        
+        @media (max-width: 600px) {
+            .nav-links { display: none; }
+        }
+        
+        /* Accessibility: Skip Link */
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: var(--color-accent-primary);
+            color: white;
+            padding: 8px 16px;
+            z-index: 1001;
+            text-decoration: none;
+            border-radius: 0 0 8px 0;
+        }
+        
+        .skip-link:focus {
+            top: 0;
+        }
+        
+        /* Focus visible for keyboard navigation */
+        *:focus-visible {
+            outline: 2px solid var(--color-accent-primary);
+            outline-offset: 2px;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
+    <!-- Accessibility: Skip to main content -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <!-- Global Navigation -->
+    <nav class="global-nav" role="navigation" aria-label="Main navigation">
+        <a href="/" class="nav-brand" aria-label="PTV-TRMNL Home">
+            <span aria-hidden="true">🚃</span>
+            <span>PTV-TRMNL</span>
+        </a>
+        <div class="nav-links" role="menubar">
+            <a href="/" class="nav-link" role="menuitem">Dashboard</a>
+            <a href="/admin" class="nav-link active" role="menuitem" aria-current="page">Settings</a>
+            <a href="/simulator.html" class="nav-link" role="menuitem">Simulator</a>
+        </div>
+    </nav>
+
+    <main id="main-content" class="container" role="main">
         <div class="header">
-            <h1>🚊 PTV-TRMNL</h1>
-            <p id="header-subtitle">Smart Transit Display System</p>
-            <div style="margin-top: 15px;"><a href="/preview" class="btn btn-primary" style="display: inline-block; padding: 10px 20px; text-decoration: none; border-radius: 8px; font-weight: 600;">📺 E-ink Preview</a></div>
+            <h1>⚙️ Setup & Settings</h1>
+            <p id="header-subtitle">Configure your transit display</p>
+            <div style="margin-top: 15px;">
+                <a href="/preview.html" class="btn btn-secondary" style="display: inline-block; padding: 10px 20px; text-decoration: none; border-radius: 8px; font-weight: 600;">📺 E-ink Preview</a>
+                <a href="/admin/simple" class="btn btn-secondary" style="display: inline-block; padding: 10px 20px; text-decoration: none; border-radius: 8px; font-weight: 600; margin-left: 8px;">📊 Advanced View</a>
+            </div>
         </div>
 
         <div class="progress-bar">
@@ -1256,7 +1360,7 @@
                         <div id="donations">
                             <p>If you find this project useful, consider supporting its development.</p>
                             <p style="margin-top: 15px;">
-                                <a href="https://github.com/angusbergman17-cpu/einkptdashboard"
+                                <a href="https://github.com/angusbergman17-cpu/PTV-TRMNL-NEW"
                                    target="_blank"
                                    class="btn btn-secondary"
                                    style="display: inline-block;">
@@ -1295,7 +1399,7 @@
                 Journey Planner v2.0.0 (Multi-Modal Routing) • Geocoding Service v1.2.0 (Auto-Population)
             </p>
         </div>
-    </div>
+    </main>
 
     <script>
         /**

@@ -1421,8 +1421,84 @@
             padding: 1rem;
         }
     </style>
+        /* Global Navigation */
+        .global-nav {
+            background: rgba(15, 23, 42, 0.95);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 10001;
+            backdrop-filter: blur(10px);
+        }
+        
+        .global-nav .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 700;
+            color: #f1f5f9;
+            text-decoration: none;
+        }
+        
+        .global-nav .nav-brand span:first-child { font-size: 24px; }
+        
+        .global-nav .nav-links-global {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .global-nav .nav-link-global {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #94a3b8;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+        
+        .global-nav .nav-link-global:hover {
+            background: rgba(30, 41, 59, 0.8);
+            color: #f1f5f9;
+            border-color: #6366f1;
+        }
+        
+        .global-nav .nav-link-global.active {
+            background: #6366f1;
+            color: white;
+            border-color: #6366f1;
+        }
+        
+        body { padding-top: 56px; }
+        
+        @media (max-width: 600px) {
+            .global-nav .nav-links-global { display: none; }
+        }
+    </style>
 </head>
 <body>
+    <!-- Global Navigation -->
+    <nav class="global-nav">
+        <a href="/" class="nav-brand">
+            <span>🚃</span>
+            <span>PTV-TRMNL</span>
+        </a>
+        <div class="nav-links-global">
+            <a href="/" class="nav-link-global">Dashboard</a>
+            <a href="/admin" class="nav-link-global active">Settings</a>
+            <a href="/simulator.html" class="nav-link-global">Simulator</a>
+        </div>
+    </nav>
+
     <!-- Skip to content link for accessibility -->
     <a href="#main-content" class="skip-to-content">Skip to main content</a>
 
@@ -6010,7 +6086,7 @@
                         <div style="font-size: 11px; opacity: 0.9; line-height: 1.5;">
                             Requires Kindle firmware 5.18.0 or earlier.<br>
                             Install KUAL + TRMNL extension after jailbreak.<br>
-                            <a href="https://github.com/angusbergman17-cpu/einkptdashboard/tree/main/firmware/kindle"
+                            <a href="https://github.com/angusbergman17-cpu/PTV-TRMNL-NEW/tree/main/firmware/kindle"
                                target="_blank" style="color: #818cf8; text-decoration: underline;">
                                View Installation Guide →
                             </a>

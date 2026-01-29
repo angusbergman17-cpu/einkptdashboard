@@ -502,7 +502,7 @@
 
         // Transit Authorities Configuration
         const AUTHORITIES = {
-            VIC: { name: 'Public Transport Victoria (PTV)', state: 'Victoria', url: 'https://www.ptv.vic.gov.au/footer/data-and-reporting/datasets/ptv-timetable-api/' },
+            VIC: { name: 'Public Transport Victoria (PTV)', state: 'Victoria', url: 'https://www.ptv.vic.gov.au/footer/data-and-reporting/datasets/opendata-api/' },
             NSW: { name: 'Transport for NSW', state: 'New South Wales', url: 'https://opendata.transport.nsw.gov.au/user/register' },
             QLD: { name: 'TransLink Queensland', state: 'Queensland', url: 'https://www.data.qld.gov.au/' },
             WA: { name: 'Transperth', state: 'Western Australia', url: 'https://www.transperth.wa.gov.au/About/Spatial-Data-Access' },
@@ -683,7 +683,7 @@
                 }
                 showAPIForm();
             } else if (step === 4) {
-                // Step 4: Transport API Credentials
+                // Step 4: PTV API Credentials
                 // Validate API credentials
                 const apiKey = document.getElementById('api-key')?.value;
                 if (!apiKey && selectedAuthority === 'VIC') {

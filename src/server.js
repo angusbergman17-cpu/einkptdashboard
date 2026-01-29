@@ -758,6 +758,11 @@ async function getRegionUpdates() {
 
 // Health check
 app.get('/', (req, res) => {
+  res.sendFile(path.join(process.cwd(), 'public', 'index.html'));
+});
+
+// Health check endpoint (for monitoring/uptime checks)
+app.get('/health', (req, res) => {
   res.send('✅ PTV-TRMNL service running');
 });
 
