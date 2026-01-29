@@ -619,13 +619,81 @@ function hasZoneChanged(zoneId, data) {
 /**
  * Render all zones with change detection
  */
+/**
+ * Transform old data format to V10 format if needed
+ * Provides backwards compatibility with server.js
+ */
+function transformToV10(data) {
+  // If already V10 format (has journey_legs), return as-is
+  if (data.journey_legs) {
+    return data;
+  }
+  
+  // Transform old format to V10
+  const now = new Date();
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  
+  // Build journey legs from old trains/trams/coffee data
+  const legs = [];
+  let n = 1;
+  
+  const trains = data.trains || [];
+  const trams = data.trams || [];
+  const coffee = data.coffee || {};
+  const nextTrain = trains[0];
+  const nextTram = trams[0];
+  
+  // Coffee leg (if enabled)
+  if (coffee.canGet !== undefined) {
+    if (coffee.canGet) {
+      legs.push({ number: n++, type: 'coffee', title: `Coffee at ${coffee.shopName || 'Cafe'}`, subtitle: '✓ TIME FOR COFFEE', minutes: 5, state: 'normal' });
+    } else {
+      legs.push({ number: n++, type: 'coffee', title: `Coffee at ${coffee.shopName || 'Cafe'}`, subtitle: '✗ SKIP — Running late', minutes: 0, state: 'skip' });
+    }
+  }
+  
+  // Walk to station
+  legs.push({ number: n++, type: 'walk', title: 'Walk to Station', subtitle: 'From home', minutes: 8, state: 'normal' });
+  
+  // Train leg
+  if (nextTrain) {
+    const nextTimes = trains.slice(0, 2).map(t => t.minutes).join(', ');
+    legs.push({ number: n++, type: 'train', title: `Train to ${nextTrain.destination || 'City'}`, subtitle: `Next: ${nextTimes} min`, minutes: nextTrain.minutes, state: nextTrain.delayed ? 'delayed' : 'normal' });
+  }
+  
+  // Walk to office
+  legs.push({ number: n++, type: 'walk', title: 'Walk to Office', subtitle: 'From station', minutes: 5, state: 'normal' });
+  
+  const totalMinutes = legs.filter(l => l.state !== 'skip').reduce((s, l) => s + (l.minutes || 0), 0);
+  
+  return {
+    location: data.location || 'HOME',
+    current_time: data.current_time || now.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: false }),
+    day: days[now.getDay()],
+    date: `${now.getDate()} ${months[now.getMonth()]}`,
+    temp: data.weather?.temp ?? '--',
+    condition: data.weather?.condition || 'N/A',
+    umbrella: (data.weather?.condition || '').toLowerCase().includes('rain') || (data.weather?.condition || '').toLowerCase().includes('shower'),
+    status_type: coffee.canGet === false ? 'delay' : 'normal',
+    arrive_by: data.arrive_by || '09:00',
+    total_minutes: totalMinutes,
+    leave_in_minutes: null,
+    journey_legs: legs,
+    destination: data.destination || '80 Collins St, Melbourne'
+  };
+}
+
 export function renderZones(data, prefs = {}, forceAll = false) {
+  // Transform to V10 format if needed
+  const v10Data = transformToV10(data);
+  
   const zoneIds = ['header', 'summary', 'legs', 'footer'];
-  const changedZones = forceAll ? zoneIds : zoneIds.filter(id => hasZoneChanged(id, data));
+  const changedZones = forceAll ? zoneIds : zoneIds.filter(id => hasZoneChanged(id, v10Data));
   
   const zones = changedZones.map(id => {
     const z = ZONES[id];
-    const bmp = renderZone(id, data);
+    const bmp = renderZone(id, v10Data);
     return {
       id,
       x: z.x,
