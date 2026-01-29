@@ -7009,6 +7009,16 @@ async function buildV13DisplayData() {
   };
 }
 
+// V13: Simple diagnostic endpoint (no imports required)
+app.get('/api/v13/ping', (req, res) => {
+  res.json({ 
+    pong: true, 
+    timestamp: new Date().toISOString(),
+    v13: 'active',
+    smartJourneyEngine: typeof global.smartJourneyEngine !== 'undefined'
+  });
+});
+
 // V13: Get changed zones using Smart Journey Engine
 app.get('/api/v13/zones/changed', async (req, res) => {
   try {
