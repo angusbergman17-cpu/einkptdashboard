@@ -90,10 +90,12 @@
                 </div>
                 
                 <div class="section">
-                    <h3>📝 Setup Screens</h3>
-                    <button class="success" onclick="showConfiguredScreen()">✅ Valid Setup (Configured)</button>
+                    <h3>📝 Setup Flow</h3>
+                    <button class="success" onclick="runFullSetupFlow()">🚀 Full Setup → Dashboard</button>
+                    <button class="warning" onclick="randomizeJourney()">🎲 Randomize Journey</button>
                     <button class="secondary" onclick="showWelcomeScreen()">👋 Welcome Screen</button>
                     <button class="secondary" onclick="showWiFiSetupScreen()">📶 WiFi Setup Portal</button>
+                    <button class="secondary" onclick="showConfiguredScreen()">✅ Configured Screen</button>
                 </div>
                 
                 <div class="section">
@@ -427,6 +429,191 @@
             
             log('showConfiguredScreen() - Valid setup details rendered', 'ok');
             setState('CONFIGURED');
+        }
+        
+        // ========== FULL SETUP FLOW ==========
+        async function runFullSetupFlow() {
+            document.getElementById('overlay').classList.add('hidden');
+            log('');
+            log('=== STARTING FULL SETUP FLOW ===', 'ok');
+            
+            // Step 1: Welcome screen
+            log('Step 1: Showing welcome screen...');
+            showWelcomeScreen();
+            await sleep(2000);
+            
+            // Step 2: WiFi setup
+            log('Step 2: WiFi configuration...');
+            showWiFiSetupScreen();
+            await sleep(2000);
+            
+            // Step 3: Connecting animation
+            log('Step 3: Connecting to WiFi...');
+            ctx.fillStyle = '#f5f5f0';
+            ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
+            ctx.fillStyle = '#000';
+            ctx.font = 'bold 24px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('📶 Connecting to WiFi...', 400, 200);
+            ctx.font = '14px monospace';
+            ctx.fillText('Network: HomeWiFi-5G', 400, 240);
+            await sleep(1500);
+            
+            // Step 4: Validating
+            log('Step 4: Validating setup data...', 'ok');
+            ctx.fillStyle = '#f5f5f0';
+            ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
+            ctx.fillStyle = '#000';
+            ctx.font = 'bold 24px monospace';
+            ctx.fillText('⚙️ Validating Configuration...', 400, 200);
+            ctx.font = '14px monospace';
+            ctx.fillText('Checking server connection...', 400, 240);
+            await sleep(1000);
+            ctx.fillText('Verifying addresses...', 400, 270);
+            await sleep(1000);
+            ctx.fillText('Loading journey data...', 400, 300);
+            await sleep(1000);
+            
+            // Step 5: Configured
+            log('Step 5: Setup validated!', 'ok');
+            showConfiguredScreen();
+            await sleep(2000);
+            
+            // Step 6: Load dashboard
+            log('Step 6: Loading dashboard...', 'ok');
+            wifiConnected = true;
+            serverConfigured = true;
+            document.getElementById('wifi').textContent = 'Connected';
+            document.getElementById('wifi').className = 'ok';
+            setState('RUNNING');
+            
+            await doRefresh(true);
+            log('=== SETUP FLOW COMPLETE ===', 'ok');
+        }
+        
+        // ========== RANDOMIZE JOURNEY ==========
+        const RANDOM_HOMES = [
+            '42 Brunswick St, Fitzroy',
+            '15 Chapel St, Windsor',
+            '88 Smith St, Collingwood',
+            '120 Acland St, St Kilda',
+            '7 Lygon St, Carlton',
+            '33 Swan St, Richmond',
+            '56 High St, Northcote',
+            '21 Glenferrie Rd, Hawthorn'
+        ];
+        
+        const RANDOM_WORKS = [
+            '200 Bourke St, Melbourne',
+            '80 Collins St, Melbourne',
+            '525 Collins St, Melbourne',
+            '101 Collins St, Melbourne',
+            '385 Bourke St, Melbourne',
+            '55 King St, Melbourne',
+            '717 Bourke St, Docklands',
+            '1 Nicholson St, East Melbourne'
+        ];
+        
+        const RANDOM_CAFES = [
+            'Industry Beans, Rose St',
+            'Proud Mary, Oxford St',
+            'Seven Seeds, Berkeley St',
+            'Patricia Coffee, Little William St',
+            'Market Lane, Collins St',
+            'St Ali, Yarra Place',
+            'Axil Coffee, Burwood Rd',
+            'Code Black, Weston St'
+        ];
+        
+        const RANDOM_TRAM_ROUTES = ['86', '96', '11', '12', '109', '70', '75', '19'];
+        const RANDOM_TRAIN_LINES = ['Sandringham', 'Frankston', 'Craigieburn', 'South Morang', 'Werribee', 'Belgrave'];
+        const RANDOM_BUS_ROUTES = ['200', '220', '246', '302', '401', '506', '703', '905'];
+        
+        function randomizeJourney() {
+            const home = RANDOM_HOMES[Math.floor(Math.random() * RANDOM_HOMES.length)];
+            const work = RANDOM_WORKS[Math.floor(Math.random() * RANDOM_WORKS.length)];
+            const cafe = RANDOM_CAFES[Math.floor(Math.random() * RANDOM_CAFES.length)];
+            
+            // Random number of legs (3-6)
+            const numLegs = 3 + Math.floor(Math.random() * 4);
+            const includeCoffee = Math.random() > 0.3; // 70% chance of coffee
+            const transitType = ['train', 'tram', 'bus'][Math.floor(Math.random() * 3)];
+            
+            log('');
+            log('=== RANDOMIZED JOURNEY ===', 'ok');
+            log(`Home: ${home}`);
+            log(`Work: ${work}`);
+            log(`Cafe: ${cafe}`);
+            log(`Transit: ${transitType}`);
+            log(`Legs: ${numLegs} (coffee: ${includeCoffee})`);
+            
+            // Update the configured screen with random data
+            document.getElementById('overlay').classList.add('hidden');
+            ctx.fillStyle = '#f5f5f0';
+            ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
+            
+            // Header bar
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, 800, 60);
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 16px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('PTV-TRMNL • RANDOM JOURNEY', 400, 25);
+            ctx.font = '12px monospace';
+            ctx.fillText('Calculating optimal route...', 400, 45);
+            
+            // Journey details
+            ctx.fillStyle = '#000';
+            ctx.font = 'bold 18px monospace';
+            ctx.fillText('🎲 RANDOMIZED JOURNEY', 400, 100);
+            
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(100, 120, 600, 280);
+            
+            ctx.font = '14px monospace';
+            ctx.textAlign = 'left';
+            let y = 150;
+            ctx.fillText(`📍 FROM: ${home}`, 120, y); y += 35;
+            ctx.fillText(`🏢 TO: ${work}`, 120, y); y += 35;
+            if (includeCoffee) {
+                ctx.fillText(`☕ CAFE: ${cafe}`, 120, y); y += 35;
+            }
+            
+            // Transit info
+            let transitInfo = '';
+            if (transitType === 'train') {
+                const line = RANDOM_TRAIN_LINES[Math.floor(Math.random() * RANDOM_TRAIN_LINES.length)];
+                transitInfo = `🚆 Train: ${line} Line`;
+            } else if (transitType === 'tram') {
+                const route = RANDOM_TRAM_ROUTES[Math.floor(Math.random() * RANDOM_TRAM_ROUTES.length)];
+                transitInfo = `🚊 Tram: Route ${route}`;
+            } else {
+                const route = RANDOM_BUS_ROUTES[Math.floor(Math.random() * RANDOM_BUS_ROUTES.length)];
+                transitInfo = `🚌 Bus: Route ${route}`;
+            }
+            ctx.fillText(transitInfo, 120, y); y += 35;
+            
+            // Random times
+            const totalMins = 25 + Math.floor(Math.random() * 35);
+            const hour = 7 + Math.floor(Math.random() * 2);
+            const mins = Math.floor(Math.random() * 60);
+            const arriveHour = hour + Math.floor((mins + totalMins) / 60);
+            const arriveMins = (mins + totalMins) % 60;
+            
+            ctx.font = 'bold 14px monospace';
+            ctx.fillText(`⏱️ TOTAL: ${totalMins} minutes`, 120, y); y += 30;
+            ctx.fillText(`🕐 DEPART: ${hour}:${mins.toString().padStart(2,'0')} AM`, 120, y); y += 25;
+            ctx.fillText(`🎯 ARRIVE: ${arriveHour}:${arriveMins.toString().padStart(2,'0')} AM`, 120, y);
+            
+            ctx.textAlign = 'center';
+            ctx.font = 'bold 14px monospace';
+            ctx.fillText('Click "Full Refresh" to load dashboard →', 400, 430);
+            
+            ctx.font = '10px monospace';
+            ctx.fillText('© 2026 Angus Bergman • CC BY-NC 4.0', 400, 465);
+            
+            log('Journey randomized! Click Full Refresh to see dashboard.', 'ok');
         }
         
         // ========== REFRESH LOGIC (matches firmware) ==========
