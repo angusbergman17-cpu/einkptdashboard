@@ -271,34 +271,45 @@ void showSetupScreen(const char* apName) {
     bbep.setFont(FONT_8x8); 
     bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
     
-    // Header
+    // Header bar
     bbep.fillRect(0, 0, 800, 50, BBEP_BLACK);
     bbep.setTextColor(BBEP_WHITE, BBEP_BLACK);
-    bbep.setCursor(250, 20); bbep.print("PTV-TRMNL SETUP");
-    
-    // Reset colors
+    bbep.setCursor(220, 18); bbep.print("PTV-TRMNL SETUP REQUIRED");
     bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
     
+    // Instructions box
+    bbep.drawRect(60, 70, 680, 260, BBEP_BLACK);
+    bbep.drawRect(61, 71, 678, 258, BBEP_BLACK);
+    
     // Step 1
-    bbep.setCursor(80, 80); bbep.print("STEP 1: Connect to WiFi");
-    bbep.setCursor(100, 110); bbep.printf("Network: %s", apName);
-    bbep.setCursor(100, 130); bbep.print("Password: transport123");
+    bbep.setCursor(80, 95); bbep.print("STEP 1: On your phone, connect to WiFi network:");
+    bbep.setCursor(120, 120); bbep.printf("Network:  %s", apName);
+    bbep.setCursor(120, 140); bbep.print("Password: transport123");
     
     // Step 2
-    bbep.setCursor(80, 170); bbep.print("STEP 2: Open Browser");
-    bbep.setCursor(100, 200); bbep.print("Go to: http://192.168.4.1");
+    bbep.setCursor(80, 175); bbep.print("STEP 2: Open browser and go to:");
+    bbep.setCursor(120, 200); bbep.print("http://192.168.4.1");
     
     // Step 3
-    bbep.setCursor(80, 240); bbep.print("STEP 3: Configure");
-    bbep.setCursor(100, 270); bbep.print("- Select your home WiFi");
-    bbep.setCursor(100, 290); bbep.print("- Enter WiFi password");
-    bbep.setCursor(100, 310); bbep.print("- Set server URL (einkptdashboard.vercel.app)");
+    bbep.setCursor(80, 235); bbep.print("STEP 3: In the setup page:");
+    bbep.setCursor(120, 260); bbep.print("- Select your home WiFi network");
+    bbep.setCursor(120, 280); bbep.print("- Enter your WiFi password");
+    bbep.setCursor(120, 300); bbep.print("- Server: einkptdashboard.vercel.app");
     
-    // Footer
-    bbep.fillRect(0, 370, 800, 110, BBEP_BLACK);
+    // Status bar
+    bbep.fillRect(60, 350, 680, 30, BBEP_BLACK);
     bbep.setTextColor(BBEP_WHITE, BBEP_BLACK);
-    bbep.setCursor(200, 400); bbep.print("Waiting for configuration...");
-    bbep.setCursor(150, 430); bbep.print("Display will update when connected");
+    bbep.setCursor(230, 360); bbep.print("Waiting for configuration...");
+    bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
+    
+    // Reset info
+    bbep.setCursor(100, 405); bbep.print("TO RESET: Reflash firmware via USB to restart setup");
+    
+    // Footer with copyright
+    bbep.fillRect(0, 430, 800, 50, BBEP_BLACK);
+    bbep.setTextColor(BBEP_WHITE, BBEP_BLACK);
+    bbep.setCursor(200, 445); bbep.print("github.com/angusbergman17-cpu/einkptdashboard");
+    bbep.setCursor(290, 465); bbep.print("(c) 2026 Angus Bergman");
     
     bbep.refresh(REFRESH_FULL, true);
 }
