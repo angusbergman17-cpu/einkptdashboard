@@ -1,10 +1,27 @@
-# PTV-TRMNL Development Rules v4.0
+# PTV-TRMNL Development Rules v4.1
 
 **MANDATORY COMPLIANCE DOCUMENT**  
-**Version**: 4.0.0  
+**Version**: 4.1.0  
 **Last Updated**: 2026-01-29  
 **Status**: 🔒 ACTIVE - Must be referenced before ANY code changes  
 **Copyright (c) 2026 Angus Bergman - Licensed under CC BY-NC 4.0**
+
+---
+
+## ⚠️ ARCHITECTURE NOTICE
+
+**This public repository uses a DISTINCT architecture from earlier development models:**
+
+| Component | Role | Processing |
+|-----------|------|------------|
+| **Server (Vercel)** | SMART | All logic, rendering, data fetching |
+| **Device (TRMNL)** | DUMB | Display pre-rendered images only |
+
+**Key Principles:**
+- **Location-agnostic code** - No personal info, works for any Australian user
+- **Server-side rendering** - Device receives ready-to-display images
+- **Environment-based config** - All personalization via env vars, not code
+- **Self-hosted isolation** - Each user owns their complete instance
 
 ---
 
@@ -86,9 +103,103 @@ void loop() {
 
 ---
 
-## 🏗️ Section 2: System Architecture
+## 🏛️ Section 2: Core Architecture Philosophy
 
-### 2.1 Data Flow (MANDATORY)
+### 2.1 Smart Server / Dumb Device Model (CRITICAL)
+
+**This architecture is DISTINCT from earlier models.**
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    PTV-TRMNL PUBLIC REPO ARCHITECTURE                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   ┌─────────────────────────────────────────────────────────────────────┐   │
+│   │                     SMART SERVER (Vercel)                           │   │
+│   │                                                                     │   │
+│   │  • Location-agnostic code (works for ANY Australian location)       │   │
+│   │  • NO personal information in source code                           │   │
+│   │  • ALL configuration via environment variables                      │   │
+│   │  • ALL processing happens server-side:                              │   │
+│   │    - Journey planning                                               │   │
+│   │    - Coffee decisions                                               │   │
+│   │    - Real-time data fetching                                        │   │
+│   │    - Dashboard rendering (PNG/BMP generation)                       │   │
+│   │  • Outputs: Pre-rendered images ready for display                   │   │
+│   │                                                                     │   │
+│   └─────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                        │
+│                                    │ HTTP (images only)                     │
+│                                    ▼                                        │
+│   ┌─────────────────────────────────────────────────────────────────────┐   │
+│   │                     DUMB E-INK DEVICE (TRMNL)                       │   │
+│   │                                                                     │   │
+│   │  • NO business logic                                                │   │
+│   │  • NO journey calculations                                          │   │
+│   │  • NO data processing                                               │   │
+│   │  • ONLY responsibilities:                                           │   │
+│   │    - Fetch pre-rendered image from server                           │   │
+│   │    - Display image on e-ink screen                                  │   │
+│   │    - Partial zone refresh (20-second cycle)                         │   │
+│   │                                                                     │   │
+│   └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 2.2 Location-Agnostic Design (MANDATORY)
+
+**The codebase MUST contain NO personal or location-specific information:**
+
+| ❌ PROHIBITED in Code | ✅ ALLOWED |
+|----------------------|-----------|
+| Hardcoded addresses | Config file (`config/journey.json`) |
+| Hardcoded coordinates | Environment variables |
+| Personal names | Generic labels ("home", "work", "cafe") |
+| Specific stop IDs | Stop IDs via env vars or config |
+| API keys | Environment variables only |
+
+**Code must work for ANY Australian user by changing only:**
+- Environment variables
+- Configuration files
+
+### 2.3 No Personal Information in Code (CRITICAL)
+
+**Before ANY commit, verify:**
+- [ ] No street addresses in source files
+- [ ] No personal names (except author attribution)
+- [ ] No specific coordinates hardcoded
+- [ ] No API keys or secrets
+- [ ] No device-specific identifiers
+- [ ] Example configs use generic/placeholder values
+
+### 2.4 Distribution Model
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         SELF-HOSTED MODEL                                   │
+│                                                                             │
+│   Public Repo ──Fork──▶ User's Repo ──Deploy──▶ User's Vercel              │
+│   (template)            (their copy)            (their server)              │
+│                                                        │                    │
+│                              User's Config ◀──────────┘                    │
+│                              (env vars)                                     │
+│                                    │                                        │
+│                                    ▼                                        │
+│                              User's Device                                  │
+│                                                                             │
+│   ✅ Complete data isolation between users                                  │
+│   ✅ User owns their instance entirely                                      │
+│   ✅ No central server dependency                                           │
+│   ✅ Privacy: all data stays with user                                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🏗️ Section 3: Data Flow Architecture
+
+### 3.1 Data Flow (MANDATORY)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -195,7 +306,7 @@ void loop() {
 
 ---
 
-## 🧭 Section 3: Smart Journey Planner Requirements
+## 🧭 Section 4: Smart Journey Planner Requirements
 
 ### 3.1 Independent Route Discovery (CRITICAL)
 
@@ -231,7 +342,7 @@ The engine should discover this route automatically based on:
 
 ---
 
-## 📁 Section 4: Project Structure
+## 📁 Section 5: Project Structure
 
 ```
 einkptdashboard/
@@ -266,7 +377,7 @@ einkptdashboard/
 
 ---
 
-## 🎨 Section 5: V10 Design Specification (LOCKED)
+## 🎨 Section 6: V10 Design Specification (LOCKED)
 
 **Status: 🔒 FROZEN - Do not modify without explicit approval**
 
@@ -359,7 +470,7 @@ einkptdashboard/
 
 ---
 
-## 📡 Section 6: API & Data Rules
+## 📡 Section 7: API & Data Rules
 
 ### 6.1 PTV v3 REST API
 
@@ -403,7 +514,7 @@ const signature = crypto.createHmac('sha1', API_KEY)
 
 ---
 
-## ⚡ Section 7: Hardcoded Values (DO NOT CHANGE)
+## ⚡ Section 8: Hardcoded Values (DO NOT CHANGE)
 
 ### 7.1 20-Second Partial Refresh
 
@@ -428,7 +539,7 @@ const signature = crypto.createHmac('sha1', API_KEY)
 
 ---
 
-## 🖼️ Section 8: BMP Rendering Rules
+## 🖼️ Section 9: BMP Rendering Rules
 
 ### 8.1 Output Format
 
@@ -463,7 +574,7 @@ const signature = crypto.createHmac('sha1', API_KEY)
 
 ---
 
-## 🔒 Section 9: Security Requirements
+## 🔒 Section 10: Security Requirements
 
 ### 9.1 XSS Input Sanitization (MANDATORY)
 
@@ -487,7 +598,7 @@ function sanitize(str) {
 
 ---
 
-## 📜 Section 10: Licensing (MANDATORY)
+## 📜 Section 11: Licensing (MANDATORY)
 
 **All original work MUST use CC BY-NC 4.0 license.**
 
@@ -506,7 +617,7 @@ function sanitize(str) {
 
 ---
 
-## 🔄 Section 11: Change Management
+## 🔄 Section 12: Change Management
 
 ### 11.1 Locked Elements (Require Approval)
 
@@ -530,7 +641,7 @@ function sanitize(str) {
 
 ---
 
-## ✅ Section 12: Pre-Commit Checklist
+## ✅ Section 13: Pre-Commit Checklist
 
 Before ANY commit or push:
 
@@ -548,7 +659,7 @@ Before ANY commit or push:
 
 ---
 
-## 🧪 Section 13: Testing
+## 🧪 Section 14: Testing
 
 ### 13.1 Local Render Test
 
@@ -577,6 +688,105 @@ pio run -e trmnl              # Compile
 pio run -e trmnl -t upload    # Flash
 pio device monitor            # Monitor
 ```
+
+---
+
+## 📚 Section 15: Documentation Standards
+
+### 15.1 File Naming Conventions
+
+| Type | Pattern | Example |
+|------|---------|---------|
+| Feature doc | `FEATURE-NAME.md` | `DISRUPTION-HANDLING.md` |
+| API doc | `API-NAME.md` | `ZONES-API.md` |
+| Specification | `*-SPEC-VN.md` | `DASHBOARD-SPEC-V10.md` |
+| Audit | `AUDIT-YYYYMMDD.md` | `AUDIT-20260129.md` |
+| Session log | `SESSION-YYYY-MM-DD.md` | `SESSION-2026-01-29.md` |
+
+### 15.2 Required Sections in Technical Documents
+
+Every technical document MUST include:
+- **Header:** Title, version, date, author
+- **Overview:** What and why
+- **Details:** How it works
+- **Examples:** Code samples or diagrams
+- **References:** Links to related docs
+
+### 15.3 Code Comments
+
+```javascript
+// ✅ Good: Explains WHY
+// Cache for 30s to reduce API load while maintaining real-time accuracy
+const CACHE_TTL = 30000;
+
+// ❌ Bad: Explains WHAT (obvious from code)
+// Set cache TTL to 30000
+const CACHE_TTL = 30000;
+```
+
+### 15.4 License Header (Required in ALL files)
+
+```javascript
+/**
+ * [File description]
+ * 
+ * Copyright (c) 2026 Angus Bergman
+ * Licensed under CC BY-NC 4.0
+ */
+```
+
+---
+
+## 🚀 Section 16: Deployment Rules
+
+### 16.1 Vercel Deployment
+
+**Auto-deploy:** Push to `main` triggers automatic Vercel deployment.
+
+**Manual deploy:**
+```bash
+vercel --prod
+```
+
+**Required Vercel Settings:**
+- Node.js 20.x
+- Build command: (none - serverless functions)
+- Output directory: (default)
+- Environment variables: Set in Vercel dashboard
+
+### 16.2 Environment Variables (Vercel Dashboard)
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `PTV_DEV_ID` | Yes | PTV API Developer ID |
+| `PTV_API_KEY` | Yes | PTV API Key for signing |
+| `TRAIN_STOP_ID` | Yes | Stop ID for train departures |
+| `TRAM_STOP_ID` | No | Stop ID for tram departures |
+| `HOME_ADDRESS` | Yes | Display location label |
+| `WORK_ADDRESS` | Yes | Destination label |
+| `WORK_ARRIVAL` | No | Target arrival time (default: 09:00) |
+
+### 16.3 Version Tagging
+
+```bash
+# Semantic versioning
+git tag -a v4.0.0 -m "Description of release"
+git push origin v4.0.0
+```
+
+**Version Format:** `vMAJOR.MINOR.PATCH`
+- MAJOR: Breaking changes, architecture shifts
+- MINOR: New features, non-breaking
+- PATCH: Bug fixes, minor improvements
+
+### 16.4 Pre-Deployment Checklist
+
+- [ ] All tests pass locally
+- [ ] Renders match V10 spec
+- [ ] No personal info in code
+- [ ] No hardcoded API keys
+- [ ] Environment variables documented
+- [ ] DEVELOPMENT-RULES.md compliance verified
 
 ---
 
@@ -633,6 +843,7 @@ git push origin v4.0.0        # Push tag
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v4.1 | 2026-01-29 | Added Smart Server/Dumb Device architecture, location-agnostic requirements, documentation standards, deployment rules |
 | v4.0 | 2026-01-29 | Comprehensive merge of old/new repo rules |
 | v3.0 | 2026-01-29 | Added system architecture, data flow |
 | v2.0 | 2026-01-28 | Added zone rendering, partial refresh |
