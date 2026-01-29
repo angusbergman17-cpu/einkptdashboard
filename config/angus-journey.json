@@ -1,7 +1,8 @@
 {
-  "version": "2.0",
+  "version": "2.1",
   "owner": "Angus Bergman",
   "created": "2026-01-29",
+  "updated": "2026-01-29T03:12:00Z",
   
   "locations": {
     "home": {
@@ -33,8 +34,8 @@
     "cafePosition": "before-transit",
     
     "route": {
-      "auto": true,
-      "description": "Tram 58 from Toorak Rd to Collins St",
+      "auto": false,
+      "description": "Home → Coffee → Tram 58 → Train → Work",
       "legs": [
         {
           "type": "walk",
@@ -56,7 +57,7 @@
           "distanceMeters": 150
         },
         {
-          "type": "transit",
+          "type": "tram",
           "mode": "tram",
           "routeNumber": "58",
           "routeName": "West Coburg",
@@ -67,40 +68,73 @@
             "lon": 144.9925
           },
           "destination": {
-            "name": "Collins St/Elizabeth St",
-            "stopId": "2168",
-            "lat": -37.8140,
-            "lon": 144.9638
+            "name": "South Yarra Station/Toorak Rd",
+            "stopId": "2501",
+            "lat": -37.8383,
+            "lon": 144.9927
           },
-          "durationMinutes": 12
+          "durationMinutes": 3
         },
         {
           "type": "walk",
           "from": "tram_stop",
+          "to": "train_station",
+          "durationMinutes": 2,
+          "distanceMeters": 100
+        },
+        {
+          "type": "train",
+          "mode": "train",
+          "routeNumber": "Sandringham",
+          "routeName": "Sandringham Line",
+          "origin": {
+            "name": "South Yarra",
+            "stopId": "19843",
+            "lat": -37.8387,
+            "lon": 144.9927
+          },
+          "destination": {
+            "name": "Flinders Street",
+            "stopId": "19854",
+            "lat": -37.8183,
+            "lon": 144.9671
+          },
+          "durationMinutes": 6
+        },
+        {
+          "type": "walk",
+          "from": "train_station",
           "to": "work",
-          "durationMinutes": 4,
-          "distanceMeters": 320
+          "durationMinutes": 8,
+          "distanceMeters": 640
         }
       ]
     },
     
     "alternativeRoutes": [
       {
-        "id": "train-direct",
-        "name": "Train from South Yarra",
-        "description": "Metro Train: South Yarra → Flinders St",
-        "totalMinutes": 28,
+        "id": "tram-direct",
+        "name": "Tram 58 Direct",
+        "description": "Home → Coffee → Tram 58 → Walk",
+        "totalMinutes": 25,
         "legs": [
-          { "type": "walk", "durationMinutes": 8, "to": "South Yarra Station" },
-          { "type": "transit", "mode": "train", "line": "Sandringham/Frankston", "durationMinutes": 6 },
-          { "type": "walk", "durationMinutes": 10, "from": "Flinders St" }
+          { "type": "walk", "durationMinutes": 3, "to": "cafe" },
+          { "type": "coffee", "durationMinutes": 4 },
+          { "type": "walk", "durationMinutes": 2, "to": "tram" },
+          { "type": "tram", "routeNumber": "58", "durationMinutes": 12 },
+          { "type": "walk", "durationMinutes": 4, "to": "work" }
         ]
       },
       {
-        "id": "tram-6",
-        "name": "Tram 6 via High St",
-        "description": "Tram 6: High St → Collins St",
-        "totalMinutes": 30
+        "id": "train-only",
+        "name": "Train from South Yarra",
+        "description": "Home → Walk → Train → Walk",
+        "totalMinutes": 24,
+        "legs": [
+          { "type": "walk", "durationMinutes": 8, "to": "South Yarra Station" },
+          { "type": "train", "routeNumber": "Sandringham", "durationMinutes": 6 },
+          { "type": "walk", "durationMinutes": 10, "to": "work" }
+        ]
       }
     ]
   },
@@ -118,7 +152,9 @@
     "homeToCafe": 3,
     "makeCoffee": 4,
     "cafeToTransit": 2,
-    "transitRide": 12,
-    "walkToWork": 4
+    "tramRide": 3,
+    "platformChange": 2,
+    "trainRide": 6,
+    "walkToWork": 8
   }
 }
