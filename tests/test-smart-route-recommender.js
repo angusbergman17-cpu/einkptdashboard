@@ -16,27 +16,29 @@ const testLocations = {
   work: { lat: -37.8136, lon: 144.9645, name: '80 Collins St' }
 };
 
-// Mock stops - South Yarra station is at the end of the home→cafe→station line
-// Other stops are further away to make train clearly the best option for home
+// Mock stops - Multi-modal route: Home → Cafe → Tram → Train → Work
+// Tram stop is near home/cafe, train station is at interchange point
 const testStops = [
-  // Train stations - South Yarra is directly in line with home→cafe
-  { id: 1, name: 'South Yarra', route_type: 0, route_number: 'Sandringham', lat: -37.8395, lon: 144.9920 },
+  // Train stations - Parliament is near work, South Yarra is an interchange
+  { id: 1, name: 'South Yarra', route_type: 0, route_number: 'Sandringham', lat: -37.8384, lon: 144.9931 },
   { id: 2, name: 'Parliament', route_type: 0, route_number: 'Sandringham', lat: -37.8111, lon: 144.9727 },
   { id: 3, name: 'Flinders Street', route_type: 0, route_number: 'Sandringham', lat: -37.8183, lon: 144.9671 },
-  // Tram stops - further east (out of the way for this scenario)
-  { id: 10, name: 'Toorak Rd/Chapel St', route_type: 1, route_number: '8', lat: -37.8420, lon: 145.0010 },
-  { id: 11, name: 'Collins St/Exhibition St', route_type: 1, route_number: '11', lat: -37.8145, lon: 144.9688 },
-  // Bus stops - also further away
+  // Tram stops - Route 8 runs near home, connects to South Yarra Station
+  { id: 10, name: 'Toorak Rd/Chapel St', route_type: 1, route_number: '8', lat: -37.8400, lon: 144.9920 },  // Near cafe
+  { id: 11, name: 'South Yarra Station/Tram', route_type: 1, route_number: '8', lat: -37.8384, lon: 144.9931 },  // At train station
+  { id: 12, name: 'Collins St/Exhibition St', route_type: 1, route_number: '11', lat: -37.8145, lon: 144.9688 },  // Near work
+  // Bus stops - further away
   { id: 20, name: 'South Yarra Station/Toorak Rd', route_type: 2, route_number: '246', lat: -37.8410, lon: 145.0000 }
 ];
 
-// Test preferences
+// Test preferences - Angus's preferred: Home → Coffee → Tram → Train → Work
 const preferences = {
   coffeeEnabled: true,
   cafeDuration: 5,
   preferTrain: true,
+  preferMultiModal: true,  // Enable multi-modal pattern detection
   minimizeWalking: true,
-  modePriority: ModePreference.TRAIN_PREFERRED
+  modePriority: { tram: 1, train: 1, bus: 3, vline: 2 }  // Tram and train equally preferred
 };
 
 // Create recommender

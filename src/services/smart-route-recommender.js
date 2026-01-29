@@ -12,11 +12,12 @@
  * Route patterns that can be auto-detected
  */
 export const RoutePatterns = {
-  COFFEE_BEFORE_TRANSIT: 'coffee-before-transit',  // Cafe is between home and station
-  COFFEE_AT_DESTINATION: 'coffee-at-destination',   // Cafe is near work
-  COFFEE_NEAR_TRANSFER: 'coffee-near-transfer',     // Cafe is near an interchange
-  DIRECT_TRANSIT: 'direct-transit',                 // No cafe, direct to station
-  MULTI_MODAL_OPTIMIZED: 'multi-modal-optimized'    // Optimized multi-leg journey
+  COFFEE_BEFORE_TRANSIT: 'coffee-before-transit',           // Cafe is between home and first transit
+  COFFEE_BEFORE_MULTI_MODAL: 'coffee-before-multi-modal',   // Home → Coffee → Mode1 → Mode2 → Work
+  COFFEE_AT_DESTINATION: 'coffee-at-destination',           // Cafe is near work
+  COFFEE_NEAR_TRANSFER: 'coffee-near-transfer',             // Cafe is near an interchange
+  DIRECT_TRANSIT: 'direct-transit',                         // No cafe, direct to station
+  MULTI_MODAL_OPTIMIZED: 'multi-modal-optimized'            // Optimized multi-leg journey
 };
 
 /**
@@ -130,6 +131,18 @@ export class SmartRouteRecommender {
   detectPattern(analysis, preferences) {
     const { cafeOnWayToTransit, distances, directRoutes, multiModalOptions } = analysis;
     const coffeeEnabled = preferences.coffeeEnabled !== false;
+    const preferMultiModal = preferences.preferMultiModal === true;
+    
+    // Check if multi-modal with coffee is preferred or optimal
+    // Pattern: Home → Coffee → Tram → Train → Work
+    if (coffeeEnabled && multiModalOptions.length > 0 && (preferMultiModal || cafeOnWayToTransit)) {
+      // Multi-modal coffee route (e.g., tram to train with coffee first)
+      return {
+        type: RoutePatterns.COFFEE_BEFORE_MULTI_MODAL,
+        reason: 'Coffee before multi-modal journey (e.g., tram → train)',
+        confidence: 0.92
+      };
+    }
     
     if (coffeeEnabled && cafeOnWayToTransit) {
       return {
@@ -144,6 +157,14 @@ export class SmartRouteRecommender {
         type: RoutePatterns.COFFEE_AT_DESTINATION,
         reason: 'Cafe is closer to work or past the transit stop',
         confidence: 0.7
+      };
+    }
+    
+    if (multiModalOptions.length > 0 && preferMultiModal) {
+      return {
+        type: RoutePatterns.MULTI_MODAL_OPTIMIZED,
+        reason: 'Multi-modal journey matches your preference',
+        confidence: 0.85
       };
     }
     
@@ -181,6 +202,53 @@ export class SmartRouteRecommender {
     const sortedModes = Object.entries(modePrefs)
       .sort(([,a], [,b]) => a - b)
       .map(([mode]) => mode);
+    
+    // Strategy 0: Multi-modal coffee routes (Home → Coffee → Mode1 → Mode2 → Work)
+    // This is prioritized when pattern is COFFEE_BEFORE_MULTI_MODAL
+    if (pattern.type === RoutePatterns.COFFEE_BEFORE_MULTI_MODAL && analysis.multiModalOptions.length > 0) {
+      for (const option of analysis.multiModalOptions) {
+        // Prefer tram → train combo (common Melbourne pattern)
+        const hasTram = option.modes.some(m => m.type === 1);
+        const hasTrain = option.modes.some(m => m.type === 0);
+        
+        if (hasTram && hasTrain) {
+          alternatives.push(this.buildRouteAlternative({
+            id: `multi-coffee-${option.id}`,
+            name: `☕ Coffee → ${option.name}`,
+            type: 'multi-modal-coffee',
+            pattern: pattern.type,
+            modes: option.modes,
+            totalWalking: option.totalWalking,
+            preferenceMatch: {
+              modeMatch: true,
+              includesTram: hasTram,
+              includesTrain: hasTrain,
+              isMultiModal: true,
+              isRecommended: true
+            }
+          }, analysis, preferences));
+        }
+      }
+      
+      // Also add any other multi-modal options
+      for (const option of analysis.multiModalOptions) {
+        if (!alternatives.find(a => a.id === `multi-coffee-${option.id}`)) {
+          alternatives.push(this.buildRouteAlternative({
+            id: `multi-coffee-${option.id}`,
+            name: `☕ Coffee → ${option.name}`,
+            type: 'multi-modal-coffee',
+            pattern: pattern.type,
+            modes: option.modes,
+            totalWalking: option.totalWalking,
+            preferenceMatch: {
+              modeMatch: true,
+              isMultiModal: true,
+              isRecommended: false
+            }
+          }, analysis, preferences));
+        }
+      }
+    }
     
     // Strategy 1: Preferred mode direct routes
     for (const mode of sortedModes) {
@@ -260,7 +328,11 @@ export class SmartRouteRecommender {
     // Calculate coffee segments if applicable
     let coffeeSegments = null;
     if (coffeeEnabled && locations.cafe) {
-      if (cafeOnWayToTransit) {
+      // For multi-modal-coffee routes, always include coffee segments
+      // For other routes, only if cafe is on the way to transit
+      const isMultiModalCoffee = base.type === 'multi-modal-coffee';
+      
+      if (cafeOnWayToTransit || isMultiModalCoffee) {
         const homeToCafe = Math.ceil(this.distance(locations.home, locations.cafe) / this.walkingSpeed);
         const cafeToStation = base.modes[0]?.originStation ? 
           Math.ceil(this.distance(locations.cafe, base.modes[0].originStation) / this.walkingSpeed) : 5;
@@ -345,8 +417,15 @@ export class SmartRouteRecommender {
       score -= 2; // Bonus for convenient coffee
     }
     
-    // Fewer transfers is better
-    score += (modes.length - 1) * 5;
+    // Transfers penalty (reduced for multi-modal-coffee routes which are expected to have 2+ modes)
+    const isMultiModalCoffee = route.type === 'multi-modal-coffee';
+    if (isMultiModalCoffee) {
+      // Multi-modal coffee is expected pattern - minimal penalty
+      score += (modes.length - 1) * 1;
+    } else {
+      // Other routes - transfers are penalized
+      score += (modes.length - 1) * 5;
+    }
     
     // Total time penalty
     score += totalMinutes / 10;
@@ -355,6 +434,14 @@ export class SmartRouteRecommender {
     if (route.preferenceMatch?.isRecommended) score -= 3;
     if (route.preferenceMatch?.modeMatch) score -= 2;
     if (route.preferenceMatch?.walkingWithinLimit) score -= 1;
+    
+    // Multi-modal coffee pattern bonus (Angus's preferred: Home → Coffee → Tram → Train → Work)
+    if (route.preferenceMatch?.isMultiModal && coffeeSegments?.position === 'before-transit') {
+      score -= 5; // Strong bonus for matching preferred pattern
+    }
+    if (route.preferenceMatch?.includesTram && route.preferenceMatch?.includesTrain) {
+      score -= 3; // Bonus for tram → train combo
+    }
     
     return Math.max(0, score);
   }
