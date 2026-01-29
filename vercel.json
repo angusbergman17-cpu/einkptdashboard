@@ -6,8 +6,17 @@
     }
   },
   "rewrites": [
-    { "source": "/", "destination": "/api/landing" },
-    { "source": "/health", "destination": "/api/health" },
-    { "source": "/(.*)", "destination": "/api/index.js" }
+    {
+      "source": "/health",
+      "destination": "/api/health"
+    },
+    {
+      "source": "/",
+      "destination": "/api/landing"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/api/index.js"
+    }
   ]
 }

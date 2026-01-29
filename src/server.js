@@ -1166,6 +1166,57 @@ app.post('/api/decisions/clear', (req, res) => {
   }
 });
 
+// Helper: Create GitHub issue from feedback
+async function createGitHubIssue(feedbackLog) {
+  const githubToken = process.env.GITHUB_FEEDBACK_TOKEN;
+  if (!githubToken) return;
+  
+  try {
+    const issueLabels = {
+      'bug': ['bug', 'user-feedback'],
+      'feature': ['enhancement', 'user-feedback'],
+      'general': ['user-feedback']
+    };
+    
+    const issueBody = `## User Feedback
+
+**Type:** ${feedbackLog.type}
+**From:** ${feedbackLog.from}
+**Email:** ${feedbackLog.email}
+**Timestamp:** ${feedbackLog.timestamp}
+
+### Message
+
+${feedbackLog.message}
+
+---
+*Submitted via PTV-TRMNL Feedback System*`;
+
+    const issueResponse = await fetch('https://api.github.com/repos/angusbergman17-cpu/einkptdashboard/issues', {
+      method: 'POST',
+      headers: {
+        'Authorization': `token ${githubToken}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        title: `[${feedbackLog.type}] ${feedbackLog.message.substring(0, 50)}${feedbackLog.message.length > 50 ? '...' : ''}`,
+        body: issueBody,
+        labels: issueLabels[feedbackLog.type] || ['user-feedback']
+      })
+    });
+    
+    if (issueResponse.ok) {
+      const issue = await issueResponse.json();
+      console.log(`✅ GitHub issue created: #${issue.number}`);
+    } else {
+      console.log('⚠️ GitHub issue creation failed:', await issueResponse.text());
+    }
+  } catch (ghError) {
+    console.log('⚠️ GitHub issue creation error:', ghError.message);
+  }
+}
+
 // Feedback submission endpoint
 app.post('/api/feedback', async (req, res) => {
   try {
@@ -1240,12 +1291,18 @@ Sent via PTV-TRMNL Admin Panel`,
 
         console.log('✅ Feedback email sent successfully');
 
+        // Also try to create GitHub issue if token is configured
+        await createGitHubIssue(feedbackLog);
+
         res.json({
           success: true,
           message: 'Feedback received and emailed. Thank you for your input!'
         });
       } catch (emailError) {
         console.error('❌ Email sending failed:', emailError.message);
+
+        // Still try GitHub issue
+        await createGitHubIssue(feedbackLog);
 
         // Still return success since feedback was logged
         res.json({
@@ -1254,7 +1311,9 @@ Sent via PTV-TRMNL Admin Panel`,
         });
       }
     } else {
-      // No email configured - just log
+      // No email configured - try GitHub issue
+      await createGitHubIssue(feedbackLog);
+      
       res.json({
         success: true,
         message: 'Feedback received and logged. Thank you for your input!'
