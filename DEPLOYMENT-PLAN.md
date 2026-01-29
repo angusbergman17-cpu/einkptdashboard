@@ -252,3 +252,34 @@ cd ~/einkptdashboard && grep -rn "PTV API" src/ | wc -l
 
 **Document Owner**: Angus Bergman
 **License**: CC BY-NC 4.0
+
+---
+
+## Week 1 Audit Log
+
+### Day 1 (2026-01-29) - Automated Audit Complete
+
+#### Forbidden Terms Check
+| Check | Result | Action |
+|-------|--------|--------|
+| PTV API references | Found 8 | Fixed 4, kept 4 (compliance warnings) |
+| AI/Assistant refs | None | ✅ Clean |
+| Hardcoded secrets | None | ✅ Clean |
+| License headers | 17/18 | Fixed zone-renderer-v12.js |
+
+#### API Endpoint Testing
+| Endpoint | Status | Notes |
+|----------|--------|-------|
+| /api/status | ✅ 200 | Returns system info |
+| /api/version | ✅ 200 | v2.8.0 |
+| /api/system-status | ✅ 200 | Config & API health |
+| /api/attributions | ✅ 200 | Proper credits |
+| /api/dashboard | ✅ 200 | Renders HTML |
+| /api/keepalive | ✅ 200 | Uptime tracking |
+| /api/screen | ✅ 503 | Correct unconfigured response |
+| 404 handling | ✅ 404 | Proper error response |
+
+#### Commits
+- `8cb9e99` - Fixed forbidden terms & license headers
+
+**Status: Week 1 Day 1 Complete - 60% of audit done**
