@@ -58,7 +58,7 @@ async function fetchGtfsR({ url, apiKey, timeoutMs = 15000 }) {
   const headers = makeHeaders(apiKey);
 
   console.log(`PTV Fetching: ${url}`);
-  console.log(`PTV API Key: ${apiKey ? apiKey.substring(0, 8) + '...' : 'NOT PROVIDED'}`);
+  console.log(`OpenData API Key: ${apiKey ? apiKey.substring(0, 8) + '...' : 'NOT PROVIDED'}`);
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -69,7 +69,7 @@ async function fetchGtfsR({ url, apiKey, timeoutMs = 15000 }) {
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");
-      console.error(`PTV API Error: ${res.status} - ${text.substring(0, 200)}`);
+      console.error(`OpenData API Error: ${res.status} - ${text.substring(0, 200)}`);
       throw new Error(`OpenData API ${res.status} ${res.statusText}`);
     }
     
