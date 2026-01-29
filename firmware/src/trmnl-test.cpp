@@ -1,5 +1,5 @@
 /**
- * TRMNL Display Test - bb_epaper with older panel type
+ * TRMNL Display Test - Using CORRECT pins from config.h
  * Fill entire screen BLACK to verify display works
  * 
  * Copyright (c) 2026 Angus Bergman
@@ -13,13 +13,13 @@
 
 BBEPAPER bbep;
 
-// TRMNL OG actual pinout (from README)
-#define EPD_CLK   6
-#define EPD_DIN   5   // MOSI
-#define EPD_CS    7
-#define EPD_DC    3
-#define EPD_RST   2
-#define EPD_BUSY  4
+// CORRECT pins from config.h (NOT README!)
+#define EPD_SCK_PIN   7
+#define EPD_MOSI_PIN  8
+#define EPD_CS_PIN    6
+#define EPD_RST_PIN   10
+#define EPD_DC_PIN    5
+#define EPD_BUSY_PIN  4
 
 void setup() {
     WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
@@ -28,30 +28,21 @@ void setup() {
     delay(2000);
     
     Serial.println("\n========================================");
-    Serial.println("TRMNL Test - bb_epaper FILL BLACK");
+    Serial.println("TRMNL Test - CORRECT PINS from config.h");
     Serial.println("========================================");
-    Serial.printf("Pins: CLK=%d, DIN=%d, CS=%d, DC=%d, RST=%d, BUSY=%d\n",
-                  EPD_CLK, EPD_DIN, EPD_CS, EPD_DC, EPD_RST, EPD_BUSY);
+    Serial.printf("Pins: SCK=%d, MOSI=%d, CS=%d, DC=%d, RST=%d, BUSY=%d\n",
+                  EPD_SCK_PIN, EPD_MOSI_PIN, EPD_CS_PIN, EPD_DC_PIN, EPD_RST_PIN, EPD_BUSY_PIN);
     
     Serial.println("Initializing bb_epaper...");
     
-    // Initialize IO pins
-    bbep.initIO(EPD_DC, EPD_RST, EPD_BUSY, EPD_CS, EPD_DIN, EPD_CLK, 8000000);
+    // Initialize with CORRECT pin order: DC, RST, BUSY, CS, MOSI, SCK
+    bbep.initIO(EPD_DC_PIN, EPD_RST_PIN, EPD_BUSY_PIN, EPD_CS_PIN, EPD_MOSI_PIN, EPD_SCK_PIN, 8000000);
     
-    // Try OLDER panel type first (not Gen2)
-    Serial.println("Trying EP75_800x480 (older panel)...");
     int rc = bbep.setPanelType(EP75_800x480);
     Serial.printf("setPanelType returned: %d\n", rc);
     
-    // Allocate buffer
-    uint8_t *pBuffer = (uint8_t *)malloc(48000);  // 800x480/8 = 48000 bytes
-    if (pBuffer) {
-        bbep.setBuffer(pBuffer);
-        Serial.println("Buffer allocated and set");
-    } else {
-        Serial.println("Buffer allocation FAILED!");
-        return;
-    }
+    bbep.setRotation(0);
+    bbep.allocBuffer(false);
     
     // Fill entire screen BLACK
     Serial.println("Filling screen BLACK...");
@@ -62,7 +53,6 @@ void setup() {
     Serial.printf("refresh returned: %d\n", rc);
     
     Serial.println("Done! Screen should be ALL BLACK");
-    Serial.println("If still white = wrong panel/pins/SPI issue");
     
     bbep.sleep(true);
 }
