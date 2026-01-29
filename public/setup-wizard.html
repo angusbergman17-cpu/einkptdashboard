@@ -574,17 +574,18 @@
 
                 autocompleteDebounce = setTimeout(async () => {
                     try {
-                        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}, Australia&limit=5`;
+                        const url = `/api/address-search?q=${encodeURIComponent(query)}`;
                         const response = await fetch(url);
-                        const results = await response.json();
+                        const data = await response.json();
 
-                        if (results.length > 0) {
-                            suggestions.innerHTML = results.map(r => `
+                        if (data.results && data.results.length > 0) {
+                            suggestions.innerHTML = data.results.map(r => `
                                 <div class="autocomplete-item" onclick="selectAddress('${inputId}', '${suggestionsId}', '${r.display_name.replace(/'/g, "\\'")}')">
                                     ${r.display_name}
                                 </div>
                             `).join('');
                             suggestions.style.display = 'block';
+                            console.log('Address suggestions from:', data.source);
                         }
                     } catch (e) {
                         console.error('Autocomplete error:', e);
