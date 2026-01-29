@@ -2,13 +2,22 @@
   "version": 2,
   "functions": {
     "api/index.js": {
-      "includeFiles": "public/**,src/**,data/**,config/**"
+      "includeFiles": "public/**,src/**,data/**,config/**,fonts/**"
     },
-    "api/zone/[id].js": {
-      "includeFiles": "src/**,config/**"
+    "api/screen.js": {
+      "includeFiles": "src/**,config/**,fonts/**"
+    },
+    "api/livedash.js": {
+      "includeFiles": "src/**,config/**,fonts/**"
     },
     "api/zones.js": {
+      "includeFiles": "src/**,config/**,fonts/**"
+    },
+    "api/zonedata.js": {
       "includeFiles": "src/**,config/**"
+    },
+    "api/zone/[id].js": {
+      "includeFiles": "src/**,config/**,fonts/**"
     }
   },
   "redirects": [
@@ -24,12 +33,24 @@
       "destination": "/api/health"
     },
     {
-      "source": "/api/zone/:id",
-      "destination": "/api/zone/[id]"
+      "source": "/api/screen",
+      "destination": "/api/screen"
+    },
+    {
+      "source": "/api/livedash",
+      "destination": "/api/livedash"
     },
     {
       "source": "/api/zones",
       "destination": "/api/zones"
+    },
+    {
+      "source": "/api/zonedata",
+      "destination": "/api/zonedata"
+    },
+    {
+      "source": "/api/zone/:id",
+      "destination": "/api/zone/[id]"
     },
     {
       "source": "/(.*)",
