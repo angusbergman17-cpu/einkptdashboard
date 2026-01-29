@@ -3,6 +3,12 @@
   "functions": {
     "api/index.js": {
       "includeFiles": "public/**,src/**,data/**,config/**"
+    },
+    "api/zone/[id].js": {
+      "includeFiles": "src/**,config/**"
+    },
+    "api/zones.js": {
+      "includeFiles": "src/**,config/**"
     }
   },
   "redirects": [
@@ -16,6 +22,14 @@
     {
       "source": "/health",
       "destination": "/api/health"
+    },
+    {
+      "source": "/api/zone/:id",
+      "destination": "/api/zone/[id]"
+    },
+    {
+      "source": "/api/zones",
+      "destination": "/api/zones"
     },
     {
       "source": "/(.*)",
