@@ -315,10 +315,10 @@
                 </div>
 
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
-                    <button class="btn" onclick="saveAndTestGoogleKey()" style="background: #48bb78; flex: 1;" id="save-api-key-btn">
+                    <button type="button" class="btn" onclick="saveAndTestGoogleKey()" style="background: #48bb78; flex: 1;" id="save-api-key-btn">
                         💾 Save & Test API Key
                     </button>
-                    <button class="btn btn-secondary" onclick="skipGoogleKey()" style="flex: 1;">
+                    <button type="button" class="btn btn-secondary" onclick="skipGoogleKey()" style="flex: 1;">
                         Skip for Now
                     </button>
                 </div>
@@ -341,7 +341,7 @@
                     </p>
                 </div>
 
-                <button class="btn" onclick="nextStep(1)" id="step-1-next-btn" style="margin-top: 20px; display: none;">
+                <button type="button" class="btn" onclick="nextStep(1)" id="step-1-next-btn" style="margin-top: 20px; display: none;">
                     Next: Your Addresses →
                 </button>
             </div>
@@ -376,8 +376,8 @@
                 </div>
 
                 <div class="btn-row">
-                    <button class="btn btn-secondary" onclick="previousStep(2)">← Back</button>
-                    <button class="btn" onclick="nextStep(2)">Next: Transit Authority →</button>
+                    <button type="button" class="btn btn-secondary" onclick="previousStep(2)">← Back</button>
+                    <button type="button" class="btn" onclick="nextStep(2)">Next: Transit Authority →</button>
                 </div>
             </div>
 
@@ -391,8 +391,8 @@
                 <div id="authority-list"></div>
 
                 <div class="btn-row">
-                    <button class="btn btn-secondary" onclick="previousStep(3)">← Back</button>
-                    <button class="btn" onclick="nextStep(3)">Next: Transit API Credentials →</button>
+                    <button type="button" class="btn btn-secondary" onclick="previousStep(3)">← Back</button>
+                    <button type="button" class="btn" onclick="nextStep(3)">Next: Transit API Credentials →</button>
                 </div>
             </div>
 
@@ -415,12 +415,12 @@
                 <div id="transit-api-status" style="margin: 15px 0; display: none;"></div>
 
                 <div class="btn-row" style="gap: 10px;">
-                    <button class="btn btn-secondary" onclick="previousStep(4)">← Back</button>
-                    <button class="btn" id="save-transit-key-btn" onclick="saveAndTestTransitKey()" style="background: #48bb78;">💾 Save & Test</button>
-                    <button class="btn" id="skip-transit-btn" onclick="skipTransitKey()" style="background: #718096;">Skip for Now</button>
+                    <button type="button" class="btn btn-secondary" onclick="previousStep(4)">← Back</button>
+                    <button type="button" class="btn" id="save-transit-key-btn" onclick="saveAndTestTransitKey()" style="background: #48bb78;">💾 Save & Test</button>
+                    <button type="button" class="btn" id="skip-transit-btn" onclick="skipTransitKey()" style="background: #718096;">Skip for Now</button>
                 </div>
                 <div id="step-4-next-btn" style="display: none; margin-top: 15px;">
-                    <button class="btn" onclick="nextStep(4)" style="width: 100%;">Next: Journey Settings →</button>
+                    <button type="button" class="btn" onclick="nextStep(4)" style="width: 100%;">Next: Journey Settings →</button>
                 </div>
             </div>
 
@@ -982,7 +982,7 @@
                             <h3 style="color: #22c55e; margin-bottom: 10px;">✅ Setup Complete!</h3>
                             <p style="color: #86efac;">Your intelligent transit display is ready.</p>
                             ${webhookHtml}
-                            <button class="btn" onclick="window.location.href='/admin'" style="margin-top: 15px;">Go to Dashboard →</button>
+                            <button type="button" class="btn" onclick="window.location.href='/admin'" style="margin-top: 15px;">Go to Dashboard →</button>
                         </div>
                     `;
                 } else {
