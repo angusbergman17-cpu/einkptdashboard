@@ -306,3 +306,47 @@ cd ~/einkptdashboard && grep -rn "PTV API" src/ | wc -l
 
 **Week 1 Status: COMPLETE ✅**
 All audit items passed. Ready for Week 2 (Testing).
+
+---
+
+## Week 2 Testing Log
+
+### Day 1 (2026-01-29) - Vercel Deployment Testing
+
+#### Page Load Tests
+| Page | Status | Response Time |
+|------|--------|---------------|
+| /admin | ✅ 200 | ~2s |
+| /setup | ✅ 200 | ~0.6s |
+| /simulator.html | ✅ 200 | ~0.4s |
+| /preview | ✅ 200 | ~1.2s |
+
+#### API Endpoint Tests  
+| Endpoint | Status | Notes |
+|----------|--------|-------|
+| /api/status | ✅ 200 | System info, v2.8.0 |
+| /api/version | ✅ 200 | Component versions |
+| /api/system-status | ✅ 200 | Config & API health |
+| /api/attributions | ✅ 200 | Proper CC BY-NC 4.0 credits |
+| /api/dashboard | ✅ 200 | HTML renders |
+| /api/keepalive | ✅ 200 | Uptime tracking |
+| /api/screen | ✅ 503 | Correct "not configured" |
+| /api/fallback-stops/VIC | ✅ 200 | Victoria stops |
+| /api/fallback-stops/NSW | ✅ 200 | NSW stops |
+| /api/fallback-stops/QLD | ✅ 200 | Queensland stops |
+
+#### Multi-State Support
+| State | Status | Authority |
+|-------|--------|----------|
+| VIC | ✅ | Public Transport Victoria |
+| NSW | ✅ | Transport for NSW |
+| QLD | ✅ | TransLink |
+
+#### Local Server Test
+- ✅ Server initializes correctly
+- ✅ Multi-tier geocoding initialized  
+- ✅ Decision logger working
+- ✅ Fallback mode active
+- ✅ Environment validation working
+
+**Week 2 Status: 40% Complete**
