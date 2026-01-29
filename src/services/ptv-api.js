@@ -1,10 +1,3 @@
-/**
- * PTV-TRMNL E-Ink Dashboard
- * Copyright (c) 2026 Angus Bergman
- * Licensed under CC BY-NC 4.0
- * https://github.com/angusbergman17-cpu/einkptdashboard
- */
-
 // PTV Transport Victoria OpenData API Client
 import crypto from 'crypto';
 
@@ -23,7 +16,7 @@ export async function getDepartures(stopId, routeType) {
   const url = signUrl(`/v3/departures/route_type/${routeType}/stop/${stopId}?max_results=3`);
   if (!url) {
     // Mock data when no API keys
-    console.log('OpenData: Using mock data (no API keys)');
+    console.log('PTV API: Using mock data (no API keys)');
     return [
       { minutes: 5, destination: 'City (mock)', scheduled: new Date().toISOString() },
       { minutes: 12, destination: 'City (mock)', scheduled: new Date().toISOString() }
@@ -48,7 +41,7 @@ export async function getDepartures(stopId, routeType) {
       };
     });
   } catch (e) {
-    console.error('OpenData error:', e.message);
+    console.error('PTV API error:', e.message);
     return [{ minutes: '?', destination: 'Error', scheduled: null }];
   }
 }

@@ -12,12 +12,6 @@ import 'dotenv/config';
 import express from 'express';
 import fs from 'fs/promises';
 import path from 'path';
-import { fileURLToPath } from 'url';
-
-// ESM __dirname equivalent
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const PROJECT_ROOT = path.resolve(__dirname, '..');
 import { execSync } from 'child_process';
 import config from './utils/config.js';
 import { getSnapshot } from './data/data-scraper.js';
@@ -762,16 +756,9 @@ async function getRegionUpdates() {
    ROUTES
    ========================================================= */
 
-// Landing page - serve the unified dashboard/setup page
+// Smart Landing Page - Detects setup state and shows appropriate view
 app.get('/', (req, res) => {
-  const indexPath = path.join(PROJECT_ROOT, 'public', 'index.html');
-  res.sendFile(indexPath, (err) => {
-    if (err) {
-      console.error('Error serving index.html:', err);
-      // Fallback: redirect to admin panel
-      res.redirect('/admin');
-    }
-  });
+  res.sendFile(path.join(process.cwd(), 'public', 'index.html'));
 });
 
 // Health check endpoint (for monitoring/uptime checks)
@@ -1165,57 +1152,6 @@ app.post('/api/decisions/clear', (req, res) => {
   }
 });
 
-// Helper: Create GitHub issue from feedback
-async function createGitHubIssue(feedbackLog) {
-  const githubToken = process.env.GITHUB_FEEDBACK_TOKEN;
-  if (!githubToken) return;
-  
-  try {
-    const issueLabels = {
-      'bug': ['bug', 'user-feedback'],
-      'feature': ['enhancement', 'user-feedback'],
-      'general': ['user-feedback']
-    };
-    
-    const issueBody = `## User Feedback
-
-**Type:** ${feedbackLog.type}
-**From:** ${feedbackLog.from}
-**Email:** ${feedbackLog.email}
-**Timestamp:** ${feedbackLog.timestamp}
-
-### Message
-
-${feedbackLog.message}
-
----
-*Submitted via PTV-TRMNL Feedback System*`;
-
-    const issueResponse = await fetch('https://api.github.com/repos/angusbergman17-cpu/einkptdashboard/issues', {
-      method: 'POST',
-      headers: {
-        'Authorization': `token ${githubToken}`,
-        'Accept': 'application/vnd.github.v3+json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        title: `[${feedbackLog.type}] ${feedbackLog.message.substring(0, 50)}${feedbackLog.message.length > 50 ? '...' : ''}`,
-        body: issueBody,
-        labels: issueLabels[feedbackLog.type] || ['user-feedback']
-      })
-    });
-    
-    if (issueResponse.ok) {
-      const issue = await issueResponse.json();
-      console.log(`✅ GitHub issue created: #${issue.number}`);
-    } else {
-      console.log('⚠️ GitHub issue creation failed:', await issueResponse.text());
-    }
-  } catch (ghError) {
-    console.log('⚠️ GitHub issue creation error:', ghError.message);
-  }
-}
-
 // Feedback submission endpoint
 app.post('/api/feedback', async (req, res) => {
   try {
@@ -1290,18 +1226,12 @@ Sent via PTV-TRMNL Admin Panel`,
 
         console.log('✅ Feedback email sent successfully');
 
-        // Also try to create GitHub issue if token is configured
-        await createGitHubIssue(feedbackLog);
-
         res.json({
           success: true,
           message: 'Feedback received and emailed. Thank you for your input!'
         });
       } catch (emailError) {
         console.error('❌ Email sending failed:', emailError.message);
-
-        // Still try GitHub issue
-        await createGitHubIssue(feedbackLog);
 
         // Still return success since feedback was logged
         res.json({
@@ -1310,13 +1240,60 @@ Sent via PTV-TRMNL Admin Panel`,
         });
       }
     } else {
-      // No email configured - try GitHub issue
-      await createGitHubIssue(feedbackLog);
-      
+      // No email configured - just log
       res.json({
         success: true,
         message: 'Feedback received and logged. Thank you for your input!'
       });
+    }
+
+    // Also try to create GitHub issue if token is configured
+    const githubToken = process.env.GITHUB_FEEDBACK_TOKEN;
+    if (githubToken) {
+      try {
+        const issueLabels = {
+          'bug': ['bug', 'user-feedback'],
+          'feature': ['enhancement', 'user-feedback'],
+          'general': ['user-feedback']
+        };
+        
+        const issueBody = `## User Feedback
+
+**Type:** ${feedbackLog.type}
+**From:** ${feedbackLog.from}
+**Email:** ${feedbackLog.email}
+**Timestamp:** ${feedbackLog.timestamp}
+
+### Message
+
+${feedbackLog.message}
+
+---
+*Submitted via PTV-TRMNL Feedback System*`;
+
+        const issueResponse = await fetch('https://api.github.com/repos/angusbergman17-cpu/einkptdashboard/issues', {
+          method: 'POST',
+          headers: {
+            'Authorization': `token ${githubToken}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            title: `[${feedbackLog.type}] ${feedbackLog.message.substring(0, 50)}${feedbackLog.message.length > 50 ? '...' : ''}`,
+            body: issueBody,
+            labels: issueLabels[feedbackLog.type] || ['user-feedback']
+          })
+        });
+        
+        if (issueResponse.ok) {
+          const issue = await issueResponse.json();
+          console.log(`✅ GitHub issue created: #${issue.number}`);
+        } else {
+          console.log('⚠️ GitHub issue creation failed:', await issueResponse.text());
+        }
+      } catch (ghError) {
+        console.log('⚠️ GitHub issue creation error:', ghError.message);
+      }
     }
 
   } catch (error) {
@@ -2388,20 +2365,20 @@ async function saveApiConfig(config) {
 }
 
 // Serve static assets (SVGs, CSS, JS)
-app.use('/assets', express.static(path.join(PROJECT_ROOT, 'public/assets')));
+app.use('/assets', express.static(path.join(process.cwd(), 'public/assets')));
 
 // Serve all public files
-app.use(express.static(path.join(PROJECT_ROOT, 'public')));
+app.use(express.static(path.join(process.cwd(), 'public')));
 
 // Admin panel - Staged Setup Wizard (Development Rules compliant)
 // Per DEVELOPMENT-RULES.md: "One Step at a Time" - Present only ONE task per screen
 app.get('/admin', (req, res) => {
-  res.sendFile(path.join(PROJECT_ROOT, 'public', 'admin-v3.html'));
+  res.sendFile(path.join(process.cwd(), 'public', 'admin-v3.html'));
 });
 
 // Single-page admin (alternative view)
 app.get('/admin/simple', (req, res) => {
-  res.sendFile(path.join(PROJECT_ROOT, 'public', 'admin.html'));
+  res.sendFile(path.join(process.cwd(), 'public', 'admin.html'));
 });
 
 // Setup redirect to admin
@@ -2411,25 +2388,18 @@ app.get('/setup', (req, res) => {
 
 // Journey demo visualization
 app.get('/journey-demo', (req, res) => {
-  res.sendFile(path.join(PROJECT_ROOT, 'public', 'journey-demo.html'));
-});
-
-// V11 Dashboard routes
-app.get('/v11', (req, res) => {
-  res.sendFile(path.join(PROJECT_ROOT, 'public', 'trmnl-og-v11.html'));
-});
-app.get('/trmnl-og-v11', (req, res) => {
-  res.sendFile(path.join(PROJECT_ROOT, 'public', 'trmnl-og-v11.html'));
+app.get('/v11', (req, res) => { res.sendFile(path.join(process.cwd(), 'public', 'trmnl-og-v11.html')); });
+app.get('/trmnl-og-v11', (req, res) => { res.sendFile(path.join(process.cwd(), 'public', 'trmnl-og-v11.html')); });  res.sendFile(path.join(process.cwd(), 'public', 'journey-demo.html'));
 });
 
 // Journey display visualization (legacy - kept for compatibility)
 app.get('/journey', (req, res) => {
-  res.sendFile(path.join(PROJECT_ROOT, 'public', 'journey-display.html'));
+  res.sendFile(path.join(process.cwd(), 'public', 'journey-display.html'));
 });
 
 // Dashboard template
 app.get('/dashboard', (req, res) => {
-  res.sendFile(path.join(PROJECT_ROOT, 'public', 'dashboard-template.html'));
+  res.sendFile(path.join(process.cwd(), 'public', 'dashboard-template.html'));
 });
 
 // ============================================================================
