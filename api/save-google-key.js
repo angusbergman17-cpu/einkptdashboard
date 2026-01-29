@@ -47,32 +47,51 @@ export default async function handler(req, res) {
 
     console.log('[save-google-key] ✅ Google Places API key saved');
 
-    // Test the key with a real Google Places API call
+    // Test the key with the NEW Google Places API (not legacy)
     const testKey = apiKey.trim();
     let testResult = { success: false, message: 'Not tested' };
     
     try {
-      const testUrl = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=Sydney+Opera+House&components=country:au&key=${testKey}`;
-      const testResponse = await fetch(testUrl);
+      // Use the new Places API (New) endpoint - requires POST with JSON body
+      const testUrl = 'https://places.googleapis.com/v1/places:autocomplete';
+      const testResponse = await fetch(testUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': testKey
+        },
+        body: JSON.stringify({
+          input: 'Sydney Opera House',
+          locationBias: {
+            circle: {
+              center: { latitude: -33.8688, longitude: 151.2093 },
+              radius: 50000.0
+            }
+          }
+        })
+      });
+      
       const testData = await testResponse.json();
       
-      if (testData.status === 'OK') {
+      if (testResponse.ok && testData.suggestions) {
         testResult = {
           success: true,
           message: 'API key validated successfully',
-          predictions: testData.predictions?.length || 0
+          predictions: testData.suggestions?.length || 0
         };
-        console.log('[save-google-key] ✅ Google API key test PASSED');
-      } else if (testData.status === 'REQUEST_DENIED') {
+        console.log('[save-google-key] ✅ Google Places API (New) key test PASSED');
+      } else if (testData.error) {
+        // Handle Google API error response
+        const errorMsg = testData.error.message || testData.error.status || 'Unknown error';
         testResult = {
           success: false,
-          message: `Google API error: ${testData.error_message || 'REQUEST_DENIED'}`
+          message: `Google API error: ${errorMsg}`
         };
-        console.log('[save-google-key] ❌ Google API key test FAILED:', testData.error_message);
+        console.log('[save-google-key] ❌ Google API key test FAILED:', errorMsg);
       } else {
         testResult = {
           success: false,
-          message: `Google API status: ${testData.status}`
+          message: `Google API returned status ${testResponse.status}`
         };
       }
     } catch (testError) {
