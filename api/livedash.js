@@ -13,17 +13,51 @@
  */
 
 import LiveDash, { DEVICE_CONFIGS } from '../src/services/livedash.js';
+import fs from 'fs/promises';
+import path from 'path';
 
 // Singleton instance
 let liveDash = null;
+
+/**
+ * Load journey configuration
+ */
+async function loadJourneyConfig() {
+  try {
+    const configPath = path.join(process.cwd(), 'config', 'angus-journey.json');
+    const data = await fs.readFile(configPath, 'utf8');
+    const config = JSON.parse(data);
+    
+    // Transform to SmartCommute preferences format
+    return {
+      homeAddress: config.locations?.home?.address,
+      homeLocation: config.locations?.home,
+      workAddress: config.locations?.work?.address,
+      workLocation: config.locations?.work,
+      cafeLocation: config.locations?.cafe,
+      targetArrival: config.journey?.arrivalTime,
+      preferCoffee: config.journey?.preferCoffee,
+      walkToWork: config.coffeeEngine?.walkToWork || 5,
+      homeToCafe: config.coffeeEngine?.homeToCafe || 3,
+      makeCoffee: config.coffeeEngine?.makeCoffee || 4,
+      cafeToTransit: config.coffeeEngine?.cafeToTransit || 2,
+      // Route info for SmartCommute
+      preferredRoute: config.preferredRoute
+    };
+  } catch (e) {
+    console.log('LiveDash: No journey config found, using defaults');
+    return null;
+  }
+}
 
 /**
  * Initialize LiveDash
  */
 async function getLiveDash() {
   if (!liveDash) {
+    const preferences = await loadJourneyConfig();
     liveDash = new LiveDash();
-    await liveDash.initialize();
+    await liveDash.initialize(preferences);
   }
   return liveDash;
 }
