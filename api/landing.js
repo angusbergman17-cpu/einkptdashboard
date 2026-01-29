@@ -3,22 +3,40 @@
  * Serves public/index.html directly
  */
 
-import { readFileSync } from 'fs';
-import { join } from 'path';
-
-let indexHtml;
-
-try {
-  // Read the index.html file at build time
-  indexHtml = readFileSync(join(process.cwd(), 'public', 'index.html'), 'utf-8');
-} catch (err) {
-  console.error('Failed to read index.html:', err);
-  indexHtml = null;
-}
+import { readFileSync, existsSync } from 'fs';
+import { join, resolve } from 'path';
 
 export default function handler(req, res) {
+  // Try multiple paths to find index.html
+  const possiblePaths = [
+    join(process.cwd(), 'public', 'index.html'),
+    join(__dirname, '..', 'public', 'index.html'),
+    resolve('public', 'index.html'),
+    '/var/task/public/index.html'
+  ];
+  
+  let indexHtml = null;
+  let foundPath = null;
+  
+  for (const p of possiblePaths) {
+    try {
+      if (existsSync(p)) {
+        indexHtml = readFileSync(p, 'utf-8');
+        foundPath = p;
+        break;
+      }
+    } catch (err) {
+      // Continue to next path
+    }
+  }
+  
   if (!indexHtml) {
-    return res.status(500).send('Error: Landing page not found');
+    return res.status(500).json({
+      error: 'Landing page not found',
+      triedPaths: possiblePaths,
+      cwd: process.cwd(),
+      dirname: __dirname
+    });
   }
   
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
