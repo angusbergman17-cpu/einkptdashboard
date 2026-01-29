@@ -5,7 +5,7 @@
 **Date: 2026-01-29**
 
 ### Tasks Completed
-- [x] Fixed README repo URLs (was pointing to PTV-TRMNL-NEW)
+- [x] Fixed README repo URLs (was pointing to einkptdashboard)
 - [x] Fixed LICENSE repo reference  
 - [x] Created CONTRIBUTING.md
 - [x] Verified ATTRIBUTION.md exists with all data sources

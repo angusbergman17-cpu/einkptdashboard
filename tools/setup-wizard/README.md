@@ -49,8 +49,8 @@ The PTV-TRMNL Setup Wizard guides you through the complete setup process:
 
 1. **Clone or download the repository**:
    ```bash
-   git clone https://github.com/angusbergman17-cpu/PTV-TRMNL-NEW.git
-   cd PTV-TRMNL-NEW
+   git clone https://github.com/angusbergman17-cpu/einkptdashboard.git
+   cd einkptdashboard
    ```
 
 2. **Navigate to the setup wizard**:
@@ -253,7 +253,7 @@ MAPBOX_ACCESS_TOKEN=your-mapbox-token  # Fallback geocoding
 
 ## Support
 
-- **GitHub Issues**: https://github.com/angusbergman17-cpu/PTV-TRMNL-NEW/issues
+- **GitHub Issues**: https://github.com/angusbergman17-cpu/einkptdashboard/issues
 - **Documentation**: Check `docs/` folder in repository
 - **Development Rules**: See `docs/development/DEVELOPMENT-RULES.md`
 

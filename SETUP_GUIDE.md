@@ -49,7 +49,7 @@ Or manually:
 1. Go to [render.com/dashboard](https://dashboard.render.com/)
 2. Click "New +" → "Web Service"
 3. Connect your GitHub account
-4. Select your forked `PTV-TRMNL-NEW` repository
+4. Select your forked `einkptdashboard` repository
 5. Configure:
    - **Name**: `ptv-trmnl` (or your choice)
    - **Environment**: `Node`
@@ -71,7 +71,7 @@ Your server URL will be: `https://your-app-name.onrender.com`
 
 ```bash
 # Download the latest firmware
-curl -L https://github.com/YOUR-USERNAME/PTV-TRMNL-NEW/releases/latest/download/firmware.bin -o firmware.bin
+curl -L https://github.com/YOUR-USERNAME/einkptdashboard/releases/latest/download/firmware.bin -o firmware.bin
 
 # Install esptool if you don't have it
 pip install esptool
@@ -87,8 +87,8 @@ esptool.py --port /dev/cu.usbmodem14101 write_flash 0x10000 firmware.bin
 pip install platformio
 
 # Clone your fork
-git clone https://github.com/YOUR-USERNAME/PTV-TRMNL-NEW.git
-cd PTV-TRMNL-NEW/firmware
+git clone https://github.com/YOUR-USERNAME/einkptdashboard.git
+cd einkptdashboard/firmware
 
 # Update server URL in include/config.h
 # Change SERVER_URL to your Render URL
@@ -580,8 +580,8 @@ See `firmware/docs/FLASHING.md` for detailed USB CDC explanation.
 
 ### Join the Community
 
-- 🐛 **Report Issues**: [GitHub Issues](https://github.com/YOUR-USERNAME/PTV-TRMNL-NEW/issues)
-- 💡 **Request Features**: [GitHub Discussions](https://github.com/YOUR-USERNAME/PTV-TRMNL-NEW/discussions)
+- 🐛 **Report Issues**: [GitHub Issues](https://github.com/YOUR-USERNAME/einkptdashboard/issues)
+- 💡 **Request Features**: [GitHub Discussions](https://github.com/YOUR-USERNAME/einkptdashboard/discussions)
 - 📚 **Read Docs**: `firmware/docs/` directory
 - ⭐ **Star on GitHub**: Show your support!
 

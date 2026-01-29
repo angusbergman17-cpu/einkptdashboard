@@ -135,7 +135,7 @@ See `docs/FLASHING.md` for details.
 ```bash
 # Clone repository
 git clone <your-repo>
-cd PTV-TRMNL-NEW/firmware
+cd einkptdashboard/firmware
 
 # Install dependencies
 pio pkg install

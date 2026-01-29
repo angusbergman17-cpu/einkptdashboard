@@ -46,8 +46,8 @@ Complete guide to installing and deploying PTV-TRMNL for your own use.
 
 ```bash
 # Clone repository
-git clone https://github.com/angusbergman17-cpu/PTV-TRMNL-NEW.git
-cd PTV-TRMNL-NEW
+git clone https://github.com/angusbergman17-cpu/einkptdashboard.git
+cd einkptdashboard
 
 # Install dependencies
 npm install
@@ -75,14 +75,14 @@ Then follow the [First-Time Setup](#first-time-setup) section.
 
 ```bash
 # Clone from GitHub
-git clone https://github.com/angusbergman17-cpu/PTV-TRMNL-NEW.git
+git clone https://github.com/angusbergman17-cpu/einkptdashboard.git
 
 # Navigate into directory
-cd PTV-TRMNL-NEW
+cd einkptdashboard
 ```
 
 **Or download ZIP:**
-1. Go to https://github.com/angusbergman17-cpu/PTV-TRMNL-NEW
+1. Go to https://github.com/angusbergman17-cpu/einkptdashboard
 2. Click "Code" → "Download ZIP"
 3. Extract to your desired location
 4. Open terminal in that directory
@@ -377,8 +377,8 @@ You should see HTML markup with your journey information.
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/angusbergman17-cpu/PTV-TRMNL-NEW.git
-cd PTV-TRMNL-NEW
+git clone https://github.com/angusbergman17-cpu/einkptdashboard.git
+cd einkptdashboard
 
 # 2. Create .env file from template
 cp .env.example .env
@@ -595,7 +595,7 @@ docker-compose up -d
    - [TROUBLESHOOTING-SETUP.md](TROUBLESHOOTING-SETUP.md)
    - [VICTORIA-GTFS-REALTIME-PROTOCOL.md](VICTORIA-GTFS-REALTIME-PROTOCOL.md)
 
-2. **Search GitHub Issues**: https://github.com/angusbergman17-cpu/PTV-TRMNL-NEW/issues
+2. **Search GitHub Issues**: https://github.com/angusbergman17-cpu/einkptdashboard/issues
 
 3. **Open new issue** with:
    - Your operating system

@@ -111,7 +111,7 @@
 **For Render Deployment**:
 
 1. Go to: https://dashboard.render.com/
-2. Select your `PTV-TRMNL-NEW` service
+2. Select your `einkptdashboard` service
 3. Go to "Environment" tab
 4. Click "Add Environment Variable"
 5. Add:

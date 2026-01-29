@@ -50,7 +50,7 @@ This guide enables anyone to deploy their own PTV-TRMNL transit display system. 
 
 1. **Go to the official repository:**
    ```
-   https://github.com/angusbergman17-cpu/PTV-TRMNL-NEW
+   https://github.com/angusbergman17-cpu/einkptdashboard
    ```
 
 2. **Click "Fork" button** (top right)

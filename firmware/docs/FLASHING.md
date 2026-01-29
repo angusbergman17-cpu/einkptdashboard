@@ -99,7 +99,7 @@ esptool.py version
 ### Step 3: Build and Upload
 
 ```bash
-cd /path/to/PTV-TRMNL-NEW/firmware
+cd /path/to/einkptdashboard/firmware
 
 # Clean build (recommended for first flash)
 pio run --target clean

@@ -61,7 +61,7 @@ Your TRMNL device has been flashed with custom firmware and is ready to connect 
 To see what the device is doing:
 
 ```bash
-cd /path/to/PTV-TRMNL-NEW/firmware
+cd /path/to/einkptdashboard/firmware
 pio device monitor --baud 115200
 ```
 

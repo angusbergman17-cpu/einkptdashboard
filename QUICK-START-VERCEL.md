@@ -11,12 +11,12 @@
 ```bash
 # 1. Deploy to Vercel (web browser)
 # → https://vercel.com/signup
-# → Import PTV-TRMNL-NEW from GitHub
+# → Import einkptdashboard from GitHub
 # → Click "Deploy"
 # → Copy your Vercel URL
 
 # 2. Update firmware (terminal)
-cd /Users/angusbergman/PTV-TRMNL-NEW/firmware/tools
+cd /Users/angusbergman/einkptdashboard/firmware/tools
 ./update-server-url.sh https://YOUR-VERCEL-URL.vercel.app
 
 # 3. Monitor device
@@ -36,7 +36,7 @@ python3 live-monitor.py
 
 ### 1.2 Import Project
 - Click: **"Add New"** → **"Project"**
-- Find: **"PTV-TRMNL-NEW"**
+- Find: **"einkptdashboard"**
 - Click: **"Import"**
 
 ### 1.3 Configure (use defaults)
@@ -68,7 +68,7 @@ curl https://YOUR-URL.vercel.app/api/version
 ### Option A: Automatic (Recommended)
 
 ```bash
-cd /Users/angusbergman/PTV-TRMNL-NEW/firmware/tools
+cd /Users/angusbergman/einkptdashboard/firmware/tools
 
 # Replace with your actual Vercel URL
 ./update-server-url.sh https://YOUR-VERCEL-URL.vercel.app
@@ -88,7 +88,7 @@ If you prefer manual control:
 **1. Edit config.h:**
 ```bash
 # Open file
-nano /Users/angusbergman/PTV-TRMNL-NEW/firmware/include/config.h
+nano /Users/angusbergman/einkptdashboard/firmware/include/config.h
 
 # Change line 11 from:
 #define SERVER_URL "https://ptv-trmnl-new.onrender.com"
@@ -102,7 +102,7 @@ nano /Users/angusbergman/PTV-TRMNL-NEW/firmware/include/config.h
 **2. Edit main.cpp:**
 ```bash
 # Open file
-nano /Users/angusbergman/PTV-TRMNL-NEW/firmware/src/main.cpp
+nano /Users/angusbergman/einkptdashboard/firmware/src/main.cpp
 
 # Find line ~391-393 and change:
 bool forceEnableDashboard = true;
@@ -115,7 +115,7 @@ bool forceEnableDashboard = false;
 
 **3. Flash firmware:**
 ```bash
-cd /Users/angusbergman/PTV-TRMNL-NEW/firmware
+cd /Users/angusbergman/einkptdashboard/firmware
 pio run -t upload
 ```
 
@@ -125,7 +125,7 @@ pio run -t upload
 
 ### Monitor Device Boot
 ```bash
-cd /Users/angusbergman/PTV-TRMNL-NEW/firmware/tools
+cd /Users/angusbergman/einkptdashboard/firmware/tools
 python3 live-monitor.py
 ```
 
@@ -203,10 +203,10 @@ No manual deploy needed, ever!
 **Fix:**
 ```bash
 # Check config
-grep SERVER_URL /Users/angusbergman/PTV-TRMNL-NEW/firmware/include/config.h
+grep SERVER_URL /Users/angusbergman/einkptdashboard/firmware/include/config.h
 
 # Reflash
-cd /Users/angusbergman/PTV-TRMNL-NEW/firmware
+cd /Users/angusbergman/einkptdashboard/firmware
 pio run -t upload
 
 # Monitor
@@ -224,12 +224,12 @@ python3 tools/live-monitor.py
 **Fix:**
 ```bash
 # Check setting
-grep forceEnableDashboard /Users/angusbergman/PTV-TRMNL-NEW/firmware/src/main.cpp
+grep forceEnableDashboard /Users/angusbergman/einkptdashboard/firmware/src/main.cpp
 
 # Should show: bool forceEnableDashboard = false;
 
 # If true, change to false and reflash:
-cd /Users/angusbergman/PTV-TRMNL-NEW/firmware
+cd /Users/angusbergman/einkptdashboard/firmware
 nano src/main.cpp  # Edit line ~392
 pio run -t upload
 ```
@@ -255,14 +255,14 @@ If something goes wrong:
 
 ```bash
 # Restore backups
-cp /Users/angusbergman/PTV-TRMNL-NEW/firmware/include/config.h.backup \
-   /Users/angusbergman/PTV-TRMNL-NEW/firmware/include/config.h
+cp /Users/angusbergman/einkptdashboard/firmware/include/config.h.backup \
+   /Users/angusbergman/einkptdashboard/firmware/include/config.h
 
-cp /Users/angusbergman/PTV-TRMNL-NEW/firmware/src/main.cpp.backup \
-   /Users/angusbergman/PTV-TRMNL-NEW/firmware/src/main.cpp
+cp /Users/angusbergman/einkptdashboard/firmware/src/main.cpp.backup \
+   /Users/angusbergman/einkptdashboard/firmware/src/main.cpp
 
 # Reflash
-cd /Users/angusbergman/PTV-TRMNL-NEW/firmware
+cd /Users/angusbergman/einkptdashboard/firmware
 pio run -t upload
 ```
 

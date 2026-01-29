@@ -227,8 +227,8 @@ class SetupWizard {
       this.log(`✅ Git repository detected: ${gitRemote.trim()}`, 'green');
 
       // Check if it's a fork
-      if (gitRemote.includes('PTV-TRMNL-NEW')) {
-        this.log('✅ Repository appears to be PTV-TRMNL-NEW', 'green');
+      if (gitRemote.includes('einkptdashboard')) {
+        this.log('✅ Repository appears to be einkptdashboard', 'green');
 
         const isFork = await this.question('\nIs this your own fork? (yes/no): ');
         if (isFork.toLowerCase() === 'yes' || isFork.toLowerCase() === 'y') {
@@ -239,8 +239,8 @@ class SetupWizard {
       this.log('⚠️  Not in a git repository or no remote configured', 'yellow');
     }
 
-    this.log('\n📝 You need to fork the PTV-TRMNL-NEW repository:', 'yellow');
-    this.log('   1. Go to: https://github.com/angusbergman17-cpu/PTV-TRMNL-NEW', 'cyan');
+    this.log('\n📝 You need to fork the einkptdashboard repository:', 'yellow');
+    this.log('   1. Go to: https://github.com/angusbergman17-cpu/einkptdashboard', 'cyan');
     this.log('   2. Click "Fork" in the top-right', 'cyan');
     this.log('   3. Clone your fork to your computer\n', 'cyan');
 
@@ -262,7 +262,7 @@ class SetupWizard {
     this.log('2. Sign up or log in', 'cyan');
     this.log('3. Click "New +" → "Web Service"', 'cyan');
     this.log('4. Connect your GitHub account if not already connected', 'cyan');
-    this.log('5. Select your forked PTV-TRMNL-NEW repository', 'cyan');
+    this.log('5. Select your forked einkptdashboard repository', 'cyan');
     this.log('6. Configure:', 'cyan');
     this.log('   - Name: ptv-trmnl-[your-name]', 'cyan');
     this.log('   - Region: Choose closest to you', 'cyan');
@@ -448,7 +448,7 @@ class SetupWizard {
     this.log('   4. Enjoy your smart transit display!\n', 'cyan');
 
     this.log('Resources:', 'yellow');
-    this.log('   - GitHub: https://github.com/angusbergman17-cpu/PTV-TRMNL-NEW', 'cyan');
+    this.log('   - GitHub: https://github.com/angusbergman17-cpu/einkptdashboard', 'cyan');
     this.log('   - Documentation: Check docs/ folder in repository', 'cyan');
     this.log('   - Support: Open an issue on GitHub\n', 'cyan');
 

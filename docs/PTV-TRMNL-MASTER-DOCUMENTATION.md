@@ -194,7 +194,7 @@ PTV-TRMNL is a custom e-ink display dashboard that shows real-time public transp
 ## 3.2 Directory Structure
 
 ```
-PTV-TRMNL-NEW/
+einkptdashboard/
 ├── server.js                    # Main Express server
 ├── data-scraper.js              # PTV GTFS Realtime client
 ├── weather-bom.js               # BOM weather API client
@@ -292,7 +292,7 @@ Check Reset Reason
 
 ## 4.1 .env File
 
-Location: `/Users/angusbergman/PTV-TRMNL-NEW/.env`
+Location: `/Users/angusbergman/einkptdashboard/.env`
 
 ```bash
 # PTV Open Data API Credentials
@@ -356,7 +356,7 @@ PORT=3000
 
 ## 5.1 server.js (Main Server)
 
-**Location**: `/Users/angusbergman/PTV-TRMNL-NEW/server.js`
+**Location**: `/Users/angusbergman/einkptdashboard/server.js`
 **Lines**: 1202
 **Purpose**: Express server handling all API endpoints, data fetching, caching, and admin panel
 
@@ -629,7 +629,7 @@ Returns full HTML page with:
 
 ## 6.1 weather-bom.js (BOM Weather Client)
 
-**Location**: `/Users/angusbergman/PTV-TRMNL-NEW/weather-bom.js`
+**Location**: `/Users/angusbergman/einkptdashboard/weather-bom.js`
 **Lines**: 263
 **Purpose**: Fetch and cache local weather from Bureau of Meteorology
 
@@ -877,7 +877,7 @@ console.log(`Cache age: ${status.age}s, TTL: ${status.ttl}s`);
 
 ## 6.2 data-scraper.js (PTV GTFS Client)
 
-**Location**: `/Users/angusbergman/PTV-TRMNL-NEW/data-scraper.js`
+**Location**: `/Users/angusbergman/einkptdashboard/data-scraper.js`
 **Purpose**: Fetch and decode GTFS Realtime feeds from PTV Open Data API
 
 ### Key Functions
@@ -947,7 +947,7 @@ Similar structure to getTrains(), filtered for Route 58 stops.
 
 ## 6.3 opendata.js (Low-level GTFS Fetcher)
 
-**Location**: `/Users/angusbergman/PTV-TRMNL-NEW/opendata.js`
+**Location**: `/Users/angusbergman/einkptdashboard/opendata.js`
 **Purpose**: Low-level protobuf fetcher with proper headers
 
 ```javascript
@@ -1008,7 +1008,7 @@ export { fetchGtfsR };
 
 ## 7.1 main.cpp (ESP32 Firmware)
 
-**Location**: `/Users/angusbergman/PTV-TRMNL-NEW/firmware/src/main.cpp`
+**Location**: `/Users/angusbergman/einkptdashboard/firmware/src/main.cpp`
 **Platform**: PlatformIO + Arduino ESP32
 **Purpose**: Fetch region updates, display on e-ink, handle caching
 
@@ -1365,7 +1365,7 @@ JsonDocument fetchRegionUpdates() {
 
 ## 7.2 platformio.ini
 
-**Location**: `/Users/angusbergman/PTV-TRMNL-NEW/firmware/platformio.ini`
+**Location**: `/Users/angusbergman/einkptdashboard/firmware/platformio.ini`
 
 ```ini
 [env:esp32-c3-devkitm-1]
@@ -1390,7 +1390,7 @@ build_flags =
 
 ## 8.1 admin.html (Admin Panel UI)
 
-**Location**: `/Users/angusbergman/PTV-TRMNL-NEW/public/admin.html`
+**Location**: `/Users/angusbergman/einkptdashboard/public/admin.html`
 **Purpose**: Web-based configuration and monitoring interface
 
 ### Key Features
@@ -2153,7 +2153,7 @@ const condition = simplifyCondition("Partly cloudy"); // { full: "Partly Cloudy"
 
 **Usage**:
 ```bash
-cd /Users/angusbergman/PTV-TRMNL-NEW
+cd /Users/angusbergman/einkptdashboard
 node test-data-pipeline.js
 ```
 
@@ -2315,8 +2315,8 @@ open https://ptv-trmnl-new.onrender.com/admin
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/YOUR_USERNAME/PTV-TRMNL-NEW.git
-cd PTV-TRMNL-NEW
+git clone https://github.com/YOUR_USERNAME/einkptdashboard.git
+cd einkptdashboard
 
 # 2. Install dependencies
 npm install
@@ -2361,7 +2361,7 @@ node test-data-pipeline.js
 2. **Connect GitHub Repository**:
    - Dashboard → New → Web Service
    - Connect GitHub account
-   - Select `PTV-TRMNL-NEW` repository
+   - Select `einkptdashboard` repository
 
 3. **Configure Service**:
    - Name: `ptv-trmnl-new`
@@ -2434,7 +2434,7 @@ const char* serverUrl = "https://ptv-trmnl-new.onrender.com/api/region-updates";
 ### Flash Firmware
 
 ```bash
-cd /Users/angusbergman/PTV-TRMNL-NEW/firmware
+cd /Users/angusbergman/einkptdashboard/firmware
 
 # Upload to ESP32
 pio run --target upload

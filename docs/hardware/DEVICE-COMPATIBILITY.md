@@ -655,7 +655,7 @@ Have a device working? Help others!
    - Setup guide
    - Photos/screenshots
 
-**Contribute**: https://github.com/angusbergman17-cpu/PTV-TRMNL-NEW
+**Contribute**: https://github.com/angusbergman17-cpu/einkptdashboard
 
 ---
 

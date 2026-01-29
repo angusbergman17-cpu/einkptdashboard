@@ -155,13 +155,13 @@ Don't worry - we'll do these one at a time, and you can take breaks!
 
 **What's a "fork"?** Think of it like making your own copy of the software that you can customize.
 
-1. **Go to:** https://github.com/angusbergman17-cpu/PTV-TRMNL-NEW
+1. **Go to:** https://github.com/angusbergman17-cpu/einkptdashboard
 
 2. **Click the "Fork" button** (top right)
 
 3. **Click "Create Fork"**
 
-**✅ Success Check:** You now have your own copy at: `github.com/[YOUR-USERNAME]/PTV-TRMNL-NEW`
+**✅ Success Check:** You now have your own copy at: `github.com/[YOUR-USERNAME]/einkptdashboard`
 
 ---
 
@@ -175,7 +175,7 @@ Don't worry - we'll do these one at a time, and you can take breaks!
 
 3. **Connect your GitHub repository:**
    - Click "Connect account" if needed
-   - Find "PTV-TRMNL-NEW" in the list
+   - Find "einkptdashboard" in the list
    - Click "Connect"
 
 4. **Configure your service:**

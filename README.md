@@ -172,7 +172,7 @@ Both are **optional** — the system works with fallback data.
 ## 📁 Project Structure
 
 ```
-PTV-TRMNL-NEW/
+einkptdashboard/
 ├── api/                    # Vercel serverless functions
 │   ├── zones.js           # Zone data for devices
 │   └── screen.js          # PNG rendering endpoint

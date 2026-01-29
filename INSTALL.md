@@ -81,18 +81,18 @@ Before you begin, you'll need:
 
 ### 1.1 Fork the Repository
 
-1. Go to the original repository: https://github.com/angusbergman17-cpu/PTV-TRMNL-NEW
+1. Go to the original repository: https://github.com/angusbergman17-cpu/einkptdashboard
 2. Click the **Fork** button in the top-right corner
 3. Select your personal account as the destination
 4. Wait for the fork to complete (~30 seconds)
 
-✅ **Result**: You now have your own copy of the code at `https://github.com/YOUR-USERNAME/PTV-TRMNL-NEW`
+✅ **Result**: You now have your own copy of the code at `https://github.com/YOUR-USERNAME/einkptdashboard`
 
 ### 1.2 Clone Your Fork (Optional - for local development)
 
 ```bash
-git clone https://github.com/YOUR-USERNAME/PTV-TRMNL-NEW.git
-cd PTV-TRMNL-NEW
+git clone https://github.com/YOUR-USERNAME/einkptdashboard.git
+cd einkptdashboard
 npm install
 ```
 
@@ -137,7 +137,7 @@ npm install
 2. Select **Web Service**
 3. Click **Connect a repository**
 4. If prompted, authorize Render to access your repositories
-5. Find and select your forked repository: `YOUR-USERNAME/PTV-TRMNL-NEW`
+5. Find and select your forked repository: `YOUR-USERNAME/einkptdashboard`
 6. Click **Connect**
 
 ### 3.2 Configure Build Settings
@@ -682,7 +682,7 @@ The system uses free Bureau of Meteorology (BOM) data - no API key needed!
 
 ### Support Channels
 
-1. **GitHub Issues**: https://github.com/angusbergman17-cpu/PTV-TRMNL-NEW/issues
+1. **GitHub Issues**: https://github.com/angusbergman17-cpu/einkptdashboard/issues
 2. **TRMNL Discord**: https://discord.gg/trmnl
 3. **Render Docs**: https://render.com/docs
 
@@ -764,8 +764,8 @@ Want to develop locally?
 
 ```bash
 # Clone your fork
-git clone https://github.com/YOUR-USERNAME/PTV-TRMNL-NEW.git
-cd PTV-TRMNL-NEW
+git clone https://github.com/YOUR-USERNAME/einkptdashboard.git
+cd einkptdashboard
 
 # Install dependencies
 npm install
@@ -792,7 +792,7 @@ open http://localhost:3000/admin
 
 ```bash
 # Add upstream remote (one time)
-git remote add upstream https://github.com/angusbergman17-cpu/PTV-TRMNL-NEW.git
+git remote add upstream https://github.com/angusbergman17-cpu/einkptdashboard.git
 
 # Fetch and merge updates
 git fetch upstream

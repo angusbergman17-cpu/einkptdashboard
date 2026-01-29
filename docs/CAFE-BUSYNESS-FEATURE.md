@@ -82,7 +82,7 @@ coffeeTime = clamp(BASE_COFFEE_TIME * multiplier, 2, 8)
 ## Files Created/Modified
 
 ### 1. cafe-busy-detector.js (NEW)
-**Location**: `/Users/angusbergman/PTV-TRMNL-NEW/cafe-busy-detector.js`
+**Location**: `/Users/angusbergman/einkptdashboard/cafe-busy-detector.js`
 **Size**: ~350 lines
 **Purpose**: Core busy-ness detection logic
 
@@ -320,7 +320,7 @@ this.cacheDuration = 5 * 60 * 1000; // 5 minutes (milliseconds)
 ### Step 1: Start Server
 
 ```bash
-cd /Users/angusbergman/PTV-TRMNL-NEW
+cd /Users/angusbergman/einkptdashboard
 npm start
 ```
 
@@ -701,7 +701,7 @@ const apiKey = process.env.GOOGLE_PLACES_API_KEY;
 **Next Action**: Test with route planner
 
 ```bash
-cd /Users/angusbergman/PTV-TRMNL-NEW
+cd /Users/angusbergman/einkptdashboard
 npm start
 open https://ptv-trmnl-new.onrender.com/admin
 ```

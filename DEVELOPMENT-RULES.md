@@ -706,7 +706,7 @@ For detailed guidance on specific topics, see:
 
 | Forbidden | Reason | Use Instead |
 |-----------|--------|-------------|
-| `PTV-TRMNL-NEW` | Dev repo, not for public | `einkptdashboard` |
+| `einkptdashboard` | Dev repo, not for public | `einkptdashboard` |
 | `PTV-TRMNL` (old) | Deprecated repo | `einkptdashboard` |
 | Any other repo URL | Confuses users | Official public repo only |
 
@@ -714,7 +714,7 @@ For detailed guidance on specific topics, see:
 
 ```
 ✅ https://github.com/angusbergman17-cpu/einkptdashboard
-❌ https://github.com/angusbergman17-cpu/PTV-TRMNL-NEW
+❌ https://github.com/angusbergman17-cpu/einkptdashboard
 ❌ https://github.com/angusbergman17-cpu/PTV-TRMNL
 ```
 
@@ -722,8 +722,8 @@ For detailed guidance on specific topics, see:
 
 ```bash
 # Check for old repo references
-grep -r "PTV-TRMNL-NEW" . --include="*.md" --include="*.js" --include="*.json" | grep -v node_modules
-grep -r "PTV-TRMNL" . --include="*.md" --include="*.js" --include="*.json" | grep -v node_modules | grep -v "PTV-TRMNL-NEW"
+grep -r "einkptdashboard" . --include="*.md" --include="*.js" --include="*.json" | grep -v node_modules
+grep -r "PTV-TRMNL" . --include="*.md" --include="*.js" --include="*.json" | grep -v node_modules | grep -v "einkptdashboard"
 
 # All results should be empty or only reference "einkptdashboard"
 ```

@@ -41,8 +41,8 @@ This document contains:
 ### 1. Fork the Repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/PTV-TRMNL-NEW.git
-cd PTV-TRMNL-NEW
+git clone https://github.com/YOUR_USERNAME/einkptdashboard.git
+cd einkptdashboard
 ```
 
 ### 2. Create a Branch
@@ -343,4 +343,4 @@ Whether you're:
 **Project**: PTV-TRMNL
 **License**: CC BY-NC 4.0
 **Maintained By**: Angus Bergman
-**Repository**: https://github.com/angusbergman17-cpu/PTV-TRMNL-NEW
+**Repository**: https://github.com/angusbergman17-cpu/einkptdashboard

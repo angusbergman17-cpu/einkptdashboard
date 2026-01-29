@@ -9,7 +9,7 @@
 
 ```bash
 # Start server
-cd /Users/angusbergman/PTV-TRMNL-NEW
+cd /Users/angusbergman/einkptdashboard
 npm start
 
 # Open admin panel
@@ -214,7 +214,7 @@ PEAK_TIMES = [
 ## 📚 Documentation
 
 ```
-PTV-TRMNL-NEW/
+einkptdashboard/
 ├── QUICK-REFERENCE.md              ← This file
 ├── SMART-ROUTE-PLANNER-COMPLETE.md ← Full route planner docs
 ├── CAFE-BUSYNESS-FEATURE.md        ← Busy-ness detection docs
@@ -315,7 +315,7 @@ curl https://ptv-trmnl-new.onrender.com/admin/cafe/peak-times
 | Dashboard Preview | https://ptv-trmnl-new.onrender.com/admin/dashboard-preview |
 | API Status | https://ptv-trmnl-new.onrender.com/api/status |
 | Server Logs | Terminal window |
-| Documentation | `/Users/angusbergman/PTV-TRMNL-NEW/*.md` |
+| Documentation | `/Users/angusbergman/einkptdashboard/*.md` |
 
 ---
 

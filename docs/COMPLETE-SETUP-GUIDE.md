@@ -22,7 +22,7 @@
 ### Step 1: Start Server
 
 ```bash
-cd /Users/angusbergman/PTV-TRMNL-NEW
+cd /Users/angusbergman/einkptdashboard
 npm start
 ```
 
@@ -465,7 +465,7 @@ Get key from: https://console.cloud.google.com/
 ## File Structure
 
 ```
-PTV-TRMNL-NEW/
+einkptdashboard/
 ├── server.js                              # Main server
 ├── route-planner.js                       # Route planning logic
 ├── cafe-busy-detector.js                  # Busy-ness detection
