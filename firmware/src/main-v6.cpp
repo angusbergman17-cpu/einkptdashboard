@@ -431,6 +431,10 @@ void showConnectingScreen() {
     bbep.setCursor(200, 280);
     bbep.print("PTV-TRMNL-Setup (password: transport123)");
     
+    bbep.setFont(FONT_6x8);
+    bbep.setCursor(240, 450);
+    bbep.print("System designed & built by Angus Bergman");
+    
     bbep.refresh(REFRESH_FULL, true);
 }
 
