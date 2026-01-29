@@ -1,11 +1,241 @@
 # PTV-TRMNL Development Rules
 
 **MANDATORY COMPLIANCE DOCUMENT**  
-**Version:** 1.2  
+**Version:** 1.3  
 **Last Updated:** 2025-01-29  
 **Copyright (c) 2025 Angus Bergman — Licensed under CC BY-NC 4.0**
 
 These rules govern all development on PTV-TRMNL. Compliance is mandatory.
+
+---
+
+## 📑 Document Index
+
+### Main Sections
+
+| # | Section | Priority | Description |
+|---|---------|----------|-------------|
+| 1 | [Absolute Prohibitions — PTV API](#-section-1-absolute-prohibitions--ptv-api-naming--exclusions) | 🔴 CRITICAL | Forbidden terms, legacy API prohibition, anti-brick rules |
+| 2 | [TRMNL/usetrmnl Prohibition](#-section-2-trmluseusetrmnl-prohibition) | 🔴 CRITICAL | Express prohibition on third-party TRMNL dependencies |
+| 3 | [Zero-Config Serverless Architecture](#-section-3-zero-config-serverless-architecture) | 🔴 CRITICAL | Config token system, no .env files |
+| 4 | [System Architecture Rules](#-section-4-system-architecture-rules) | 🔴 CRITICAL | Distribution model, boundaries, data flow, endpoints |
+| 5 | [Custom Firmware Requirement](#-section-5-custom-firmware-requirement) | 🔴 CRITICAL | TRMNL hardware specs, firmware requirements, flashing |
+| 6 | [Compatible Kindle Devices](#-section-6-compatible-kindle-devices) | 🟠 HIGH | Supported models, jailbreak, kindle-dash setup |
+| 7 | [Spec Integrity](#-section-7-spec-integrity) | 🔴 CRITICAL | V10 immutability, zone boundaries |
+| 8 | [Design Specification (LOCKED)](#-section-8-design-specification-locked) | 🔴 CRITICAL | Display dimensions, layout, colors, icons, states |
+| 9 | [E-ink Constraints](#-section-9-e-ink-constraints) | 🟠 HIGH | 1-bit depth, partial refresh, no anti-aliasing |
+| 10 | [BMP Rendering Rules](#-section-10-bmp-rendering-rules) | 🟠 HIGH | Output format, memory constraints, zone refresh |
+| 11 | [API & Data Rules](#-section-11-api--data-rules) | 🟠 HIGH | GTFS-RT, caching, weather, Google Places |
+| 12 | [Business Logic](#-section-12-business-logic) | 🟠 HIGH | CoffeeDecision, 12h time, journey math |
+| 13 | [Code Quality](#-section-13-code-quality) | 🟡 MEDIUM | Dependencies, error states, magic numbers |
+| 14 | [Testing Requirements](#-section-14-testing-requirements) | 🟠 HIGH | Pre-commit checklist, firmware/server testing |
+| 15 | [Deployment Rules](#-section-15-deployment-rules) | 🟠 HIGH | Vercel, version tagging, firmware releases |
+| 16 | [Documentation Standards](#-section-16-documentation-standards) | 🟡 MEDIUM | File naming, required sections |
+| 17 | [Security](#-section-17-security) | 🟠 HIGH | XSS sanitization |
+| 18 | [Change Management](#-section-18-change-management) | 🟠 HIGH | Locked elements, modification process |
+| 19 | [Refresh Timing](#-section-19-refresh-timing) | 🔴 CRITICAL | 20s partial, 10min full refresh |
+| 20 | [Licensing](#-section-20-licensing) | 🔴 CRITICAL | CC BY-NC 4.0 requirement |
+
+### Appendices
+
+| # | Appendix | Description |
+|---|----------|-------------|
+| A | [Quick Commands](#-appendix-a-quick-commands) | Development, firmware, deployment, git commands |
+| B | [Troubleshooting](#-appendix-b-troubleshooting) | Common issues and solutions |
+| C | [Reference Documents](#-appendix-c-reference-documents) | Links to related documentation |
+
+### Subsection Index
+
+<details>
+<summary><strong>Section 1: Absolute Prohibitions</strong></summary>
+
+- 1.1 Forbidden Terms & Patterns
+- 1.2 Legacy PTV API Prohibition
+- 1.3 Correct API References
+- 1.4 Firmware Anti-Brick Rules
+</details>
+
+<details>
+<summary><strong>Section 2: TRMNL/usetrmnl Prohibition</strong></summary>
+
+- 2.1 Express Prohibition on TRMNL Services
+- 2.2 Required Independence
+- 2.3 Firmware Independence
+</details>
+
+<details>
+<summary><strong>Section 3: Zero-Config Serverless Architecture</strong></summary>
+
+- 3.1 Absolute Requirement
+- 3.2 How It Works
+- 3.3 Config Token Structure
+- 3.4 Implementation
+- 3.5 Benefits
+</details>
+
+<details>
+<summary><strong>Section 4: System Architecture Rules</strong></summary>
+
+- 4.1 Distribution Model
+- 4.2 Architecture Boundaries
+- 4.3 Data Flow
+- 4.4 Required Environment Variables
+- 4.5 Required Endpoints
+</details>
+
+<details>
+<summary><strong>Section 5: Custom Firmware Requirement</strong></summary>
+
+- 5.1 TRMNL Hardware Specifications
+- 5.2 Custom Firmware Requirements
+- 5.3 Flashing Procedure
+</details>
+
+<details>
+<summary><strong>Section 6: Compatible Kindle Devices</strong></summary>
+
+- 6.1 Supported Kindle Models
+- 6.2 Kindle Jailbreak Requirement
+- 6.3 Kindle Dashboard Setup
+- 6.4 Kindle Display Considerations
+</details>
+
+<details>
+<summary><strong>Section 7: Spec Integrity</strong></summary>
+
+- 7.1 V10 Spec is Immutable
+- 7.2 Zone Boundaries are Sacred
+- 7.3 Zone Dimensions are Fixed
+</details>
+
+<details>
+<summary><strong>Section 8: Design Specification (LOCKED)</strong></summary>
+
+- 8.1 Display Dimensions
+- 8.2 Layout Structure (V10)
+- 8.3 Color Palette (LOCKED)
+- 8.4 Mode Icons (LOCKED)
+- 8.5 Leg States (LOCKED)
+- 8.6 Status Bar Variants (LOCKED)
+</details>
+
+<details>
+<summary><strong>Section 9: E-ink Constraints</strong></summary>
+
+- 9.1 1-bit Depth Only
+- 9.2 Design for Partial Refresh
+- 9.3 No Anti-aliasing
+- 9.4 Test Visual Hierarchy
+</details>
+
+<details>
+<summary><strong>Section 10: BMP Rendering Rules</strong></summary>
+
+- 10.1 Output Format
+- 10.2 Memory Constraints (ESP32-C3)
+- 10.3 Zone-Based Partial Refresh
+</details>
+
+<details>
+<summary><strong>Section 11: API & Data Rules</strong></summary>
+
+- 11.1 Transport Victoria OpenData (GTFS-RT)
+- 11.2 Weather (BOM)
+- 11.3 Google Places
+- 11.4 Lightweight Endpoints
+- 11.5 Rate Limit Awareness
+</details>
+
+<details>
+<summary><strong>Section 12: Business Logic</strong></summary>
+
+- 12.1 CoffeeDecision is Sacred
+- 12.2 12-hour Time Format
+- 12.3 Walking Time Buffer
+- 12.4 Journey Math is Critical
+</details>
+
+<details>
+<summary><strong>Section 13: Code Quality</strong></summary>
+
+- 13.1 Minimal Dependencies
+- 13.2 Error States Must Render
+- 13.3 No Magic Numbers
+- 13.4 Code Comments
+</details>
+
+<details>
+<summary><strong>Section 14: Testing Requirements</strong></summary>
+
+- 14.1 Pre-Commit Checklist
+- 14.2 Firmware Testing
+- 14.3 Server Testing
+</details>
+
+<details>
+<summary><strong>Section 15: Deployment Rules</strong></summary>
+
+- 15.1 Vercel Deployment
+- 15.2 Vercel-first Design
+- 15.3 Test Before Push
+- 15.4 Git Hygiene
+- 15.5 Version Tagging
+- 15.6 Firmware Releases
+</details>
+
+<details>
+<summary><strong>Section 16: Documentation Standards</strong></summary>
+
+- 16.1 File Naming
+- 16.2 Required Sections
+</details>
+
+<details>
+<summary><strong>Section 17: Security</strong></summary>
+
+- 17.1 XSS Input Sanitization (MANDATORY)
+</details>
+
+<details>
+<summary><strong>Section 18: Change Management</strong></summary>
+
+- 18.1 Locked Elements
+- 18.2 Modification Process
+- 18.3 Cross-System Change Propagation
+</details>
+
+<details>
+<summary><strong>Section 19: Refresh Timing</strong></summary>
+
+- (Single section — timing values and rationale)
+</details>
+
+<details>
+<summary><strong>Section 20: Licensing</strong></summary>
+
+- License Header (Required in all files)
+</details>
+
+---
+
+## 📜 Version History
+
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| 1.3 | 2025-01-29 | Angus Bergman | Added full document index with version control |
+| 1.2 | 2025-01-29 | Angus Bergman | Complete incorporation of all v3.0 items (17 gaps filled): Anti-brick rules, zero-config architecture, system architecture, BMP rendering, testing requirements, TRMNL Mini dimensions, Tram Diversion status, expanded API/deployment/timing details, documentation standards, appendices A/B/C |
+| 1.1 | 2025-01-29 | Angus Bergman | Added TRMNL/usetrmnl prohibition (Section 2), custom firmware requirements (Section 3), Kindle device compatibility (Section 4), hardware specifications |
+| 1.0 | 2025-01-29 | Angus Bergman | Initial version for einkptdashboard repo. 12 sections covering PTV API exclusions, design spec, e-ink constraints, API design, business logic, code quality, deployment, security, change management, refresh timing, licensing |
+
+### Migration Notes
+
+This document consolidates and supersedes:
+- `PTV-TRMNL-NEW/DEVELOPMENT-RULES.md` (v3.0)
+- `ptv-trmnl-work/DEVELOPMENT-RULES.md` (v3.0)
+
+All rules from previous versions have been incorporated. The canonical source is now:
+- **Repository:** `einkptdashboard`
+- **Path:** `DEVELOPMENT-RULES.md`
 
 ---
 
@@ -925,7 +1155,7 @@ git push origin v3.0.0        # Push tag
 
 ---
 
-**Document Version:** 1.2  
+**Document Version:** 1.3  
 **Maintained By:** Angus Bergman  
 **Last Updated:** 2025-01-29
 
