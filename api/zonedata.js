@@ -1,89 +1,145 @@
 /**
- * PTV-TRMNL E-Ink Dashboard
+ * PTV-TRMNL E-Ink Dashboard - Zone Data API (V10)
+ * 
+ * Returns all zone data with BMP images in a single request.
+ * Uses Smart Journey Calculator + Coffee Decision Engine.
+ * 
  * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
  * https://github.com/angusbergman17-cpu/einkptdashboard
  */
 
-import { renderZones } from '../src/services/zone-renderer.js';
 import { getDepartures, getWeather } from '../src/services/ptv-api.js';
+import CoffeeDecision from '../src/core/coffee-decision.js';
+import { renderZones } from '../src/services/zone-renderer.js';
 
-// Configuration - TODO: move to env/config
-const TRAIN_STOP_ID = 1071;  // Flinders Street Station
-const TRAM_STOP_ID = 2500;   // Example tram stop
-const COFFEE_SHOP = 'Norman South Yarra';  // Coffee shop name
+// Configuration
+const TRAIN_STOP_ID = parseInt(process.env.TRAIN_STOP_ID) || 1071;
+const TRAM_STOP_ID = parseInt(process.env.TRAM_STOP_ID) || 2500;
+const COFFEE_SHOP = process.env.COFFEE_SHOP || 'Norman';
+const WORK_ARRIVAL_TIME = process.env.WORK_ARRIVAL || '09:00';
+const HOME_ADDRESS = process.env.HOME_ADDRESS || '1 Clara St, South Yarra';
+const WORK_ADDRESS = process.env.WORK_ADDRESS || '80 Collins St, Melbourne';
+
+const JOURNEY_CONFIG = {
+  walkToWork: parseInt(process.env.WALK_TO_WORK) || 5,
+  homeToCafe: parseInt(process.env.HOME_TO_CAFE) || 4,
+  makeCoffee: parseInt(process.env.MAKE_COFFEE) || 5,
+  cafeToTransit: parseInt(process.env.CAFE_TO_TRANSIT) || 8,
+  trainRide: parseInt(process.env.TRAIN_RIDE) || 12
+};
+
+function getMelbourneTime() {
+  return new Date(new Date().toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
+}
+
+function formatTime(date) {
+  return date.toLocaleTimeString('en-AU', {
+    timeZone: 'Australia/Melbourne', hour: '2-digit', minute: '2-digit', hour12: false
+  });
+}
+
+function formatDateParts(date) {
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  return { day: days[date.getDay()], date: `${date.getDate()} ${months[date.getMonth()]}` };
+}
+
+function buildJourneyLegs(trains, trams, coffeeDecision) {
+  const legs = [];
+  let n = 1;
+  
+  const nextTrain = trains[0] || null;
+  const nextTram = trams[0] || null;
+  const useTram = nextTram && (!nextTrain || nextTram.minutes < nextTrain.minutes);
+  const primaryTransit = useTram ? nextTram : nextTrain;
+  const canCoffee = coffeeDecision.canGet;
+  const skipCoffee = !canCoffee && coffeeDecision.urgent;
+  
+  if (canCoffee || skipCoffee) {
+    legs.push({ number: n++, type: 'walk', title: `Walk past ${COFFEE_SHOP} Cafe`, subtitle: 'From home • Toorak Rd', minutes: JOURNEY_CONFIG.homeToCafe, state: 'normal' });
+    legs.push({ number: n++, type: 'coffee', title: `Coffee at ${COFFEE_SHOP}`, subtitle: canCoffee ? (coffeeDecision.subtext || '✓ TIME FOR COFFEE') : '✗ SKIP — Running late', minutes: canCoffee ? JOURNEY_CONFIG.makeCoffee : 0, state: canCoffee ? 'normal' : 'skip' });
+    legs.push({ number: n++, type: 'walk', title: 'Walk to South Yarra Stn', subtitle: 'Platform 1', minutes: JOURNEY_CONFIG.cafeToTransit, state: 'normal' });
+  } else {
+    legs.push({ number: n++, type: 'walk', title: 'Walk to Station', subtitle: 'From home', minutes: JOURNEY_CONFIG.homeToCafe + JOURNEY_CONFIG.cafeToTransit, state: 'normal' });
+  }
+  
+  if (primaryTransit) {
+    const type = useTram ? 'tram' : 'train';
+    const nextTimes = [primaryTransit, ...(useTram ? trams : trains).slice(1, 2)].filter(Boolean).map(t => t.minutes).join(', ');
+    legs.push({ number: n++, type, title: `${type === 'train' ? 'Train' : 'Tram'} to ${primaryTransit.destination}`, subtitle: `Next: ${nextTimes} min`, minutes: primaryTransit.minutes, state: primaryTransit.delayed ? 'delayed' : 'normal' });
+  }
+  
+  legs.push({ number: n++, type: 'walk', title: 'Walk to Office', subtitle: `Parliament → ${WORK_ADDRESS.split(',')[0]}`, minutes: JOURNEY_CONFIG.walkToWork, state: 'normal' });
+  
+  return legs;
+}
+
+function calcTotal(legs) { return legs.filter(l => l.state !== 'skip').reduce((s, l) => s + (l.minutes || 0), 0); }
+
+function calcLeaveIn(now, total) {
+  const [h, m] = WORK_ARRIVAL_TIME.split(':').map(Number);
+  return Math.max(0, h * 60 + m - total - now.getHours() * 60 - now.getMinutes());
+}
 
 export default async function handler(req, res) {
   if (req.query.ping) {
-    return res.json({ pong: 'v5-live', ts: Date.now() });
+    return res.json({ pong: 'v10-zonedata', ts: Date.now() });
   }
   
   try {
-    const { id } = req.query;
+    const now = getMelbourneTime();
+    const currentTime = formatTime(now);
+    const { day, date } = formatDateParts(now);
     
-    const now = new Date();
-    const currentTime = now.toLocaleTimeString('en-AU', {
-      timeZone: 'Australia/Melbourne',
-      hour: '2-digit', minute: '2-digit', hour12: false
-    });
-    
-    // Fetch real data in parallel
     const [trains, trams, weather] = await Promise.all([
-      getDepartures(TRAIN_STOP_ID, 0),  // 0 = train
-      getDepartures(TRAM_STOP_ID, 1),   // 1 = tram
+      getDepartures(TRAIN_STOP_ID, 0),
+      getDepartures(TRAM_STOP_ID, 1),
       getWeather()
     ]);
     
-    // Calculate coffee decision based on next departure
-    const nextDeparture = Math.min(
-      trains[0]?.minutes || 99,
-      trams[0]?.minutes || 99
-    );
-    const coffeeTime = nextDeparture - 5;  // Need 5 min to walk to platform
-    const canGetCoffee = coffeeTime >= 3;  // Need at least 3 min for coffee
+    const coffeeEngine = new CoffeeDecision(JOURNEY_CONFIG);
+    const [arrH, arrM] = WORK_ARRIVAL_TIME.split(':').map(Number);
+    coffeeEngine.setTargetArrival(arrH, arrM);
+    const coffeeDecision = coffeeEngine.calculate(trains[0]?.minutes || 30, trams, '');
     
-    const data = {
+    const journeyLegs = buildJourneyLegs(trains, trams, coffeeDecision);
+    const totalMinutes = calcTotal(journeyLegs);
+    const leaveInMinutes = calcLeaveIn(now, totalMinutes);
+    
+    let statusType = 'normal';
+    if (coffeeDecision.urgent) statusType = 'delay';
+    if (trains.some(t => t.delayed) || trams.some(t => t.delayed)) statusType = 'delay';
+    
+    const dashboardData = {
+      location: HOME_ADDRESS,
       current_time: currentTime,
-      weather,
-      leave_by: trains[0] ? new Date(trains[0].scheduled).toLocaleTimeString('en-AU', {
-        timeZone: 'Australia/Melbourne', hour: '2-digit', minute: '2-digit', hour12: false
-      }) : '--:--',
-      arrive_by: '--:--',
-      trains: trains.length > 0 ? trains : [{ minutes: '--', destination: 'No data' }],
-      trams: trams.length > 0 ? trams : [{ minutes: '--', destination: 'No data' }],
-      coffee: {
-        canGet: canGetCoffee,
-        shopName: COFFEE_SHOP,
-        subtext: canGetCoffee 
-          ? `You have ${coffeeTime} min @ ${COFFEE_SHOP}` 
-          : `No time - ${nextDeparture} min to departure`
-      }
+      day, date,
+      temp: weather?.temp ?? '--',
+      condition: weather?.condition || 'N/A',
+      umbrella: (weather?.condition || '').toLowerCase().includes('rain') || (weather?.condition || '').toLowerCase().includes('shower'),
+      status_type: statusType,
+      arrive_by: WORK_ARRIVAL_TIME,
+      total_minutes: totalMinutes,
+      leave_in_minutes: leaveInMinutes > 0 ? leaveInMinutes : null,
+      journey_legs: journeyLegs,
+      destination: WORK_ADDRESS
     };
     
-    const result = renderZones(data, true);
-    const zone = result.zones.find(z => z.id === id);
+    const result = renderZones(dashboardData, {}, true);
     
-    if (!zone || !zone.data) {
-      return res.status(404).json({ 
-        error: 'Zone not found', 
-        requested: id,
-        available: result.zones.map(z => z.id)
-      });
-    }
-    
-    const bmpBuffer = Buffer.from(zone.data, 'base64');
-    
-    res.setHeader('X-Zone-X', zone.x);
-    res.setHeader('X-Zone-Y', zone.y);
-    res.setHeader('X-Zone-Width', zone.w);
-    res.setHeader('X-Zone-Height', zone.h);
-    res.setHeader('Content-Type', 'application/octet-stream');
-    res.setHeader('Content-Length', bmpBuffer.length);
+    res.setHeader('Content-Type', 'application/json');
     res.setHeader('Cache-Control', 'no-cache');
     
-    return res.status(200).send(bmpBuffer);
+    return res.json({
+      timestamp: result.timestamp,
+      version: 'v10',
+      data: dashboardData,
+      zones: result.zones
+    });
+    
   } catch (error) {
-    console.error('Zone error:', error);
+    console.error('Zonedata error:', error);
     return res.status(500).json({ error: error.message });
   }
 }
