@@ -188,5 +188,6 @@ void saveParamCallback() { strncpy(serverUrl, customServerUrl.getValue(), sizeof
 void connectWiFi() {
     WiFiManager wm; wm.setConfigPortalTimeout(180);
     customServerUrl.setValue(serverUrl, 120); wm.addParameter(&customServerUrl); wm.setSaveParamsCallback(saveParamCallback);
+    wm.setCustomMenuHTML("<br><div style='text-align:center;font-size:11px;color:#aaa;margin-top:20px;'>System designed &amp; built by Angus Bergman</div>");
     if (wm.autoConnect("PTV-TRMNL-Setup")) { wifiConnected = true; } else { wifiConnected = false; }
 }
