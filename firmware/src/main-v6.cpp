@@ -378,7 +378,8 @@ void initDisplay() {
     bbep.initIO(EPD_DC_PIN, EPD_RST_PIN, EPD_BUSY_PIN, EPD_CS_PIN, EPD_MOSI_PIN, EPD_SCK_PIN, 8000000);
     bbep.setPanelType(EP75_800x480);
     bbep.setRotation(0);
-    bbep.allocBuffer(false);
+    // ⚠️ DO NOT call allocBuffer() - causes static on ESP32-C3!
+    // See DEVELOPMENT-RULES.md Section 5.4
     pinMode(PIN_INTERRUPT, INPUT_PULLUP);
     Serial.println("✓ Display initialized");
 }
