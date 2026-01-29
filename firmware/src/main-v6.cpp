@@ -32,7 +32,7 @@
 #define FIRMWARE_VERSION "6.0"
 #define SCREEN_W 800
 #define SCREEN_H 480
-#define ZONE_BUFFER_SIZE 20000
+#define ZONE_BUFFER_SIZE 40000  // Needs to fit legs zone (~32KB)
 #define WDT_TIMEOUT_SEC 45
 
 // Timing (milliseconds)
