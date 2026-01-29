@@ -56,11 +56,9 @@ struct ZoneDef {
 
 static const ZoneDef ZONES[] = {
     {"header",  0,   0,   800, 94},
+    {"divider", 0,   94,  800, 2},
     {"summary", 0,   96,  800, 28},
-    {"leg0",    12,  132, 776, 77},
-    {"leg1",    12,  221, 776, 77},
-    {"leg2",    12,  310, 776, 77},
-    {"leg3",    12,  399, 776, 41},
+    {"legs",    0,   132, 800, 316},
     {"footer",  0,   448, 800, 32},
 };
 static const int ZONE_COUNT = sizeof(ZONES) / sizeof(ZONES[0]);
