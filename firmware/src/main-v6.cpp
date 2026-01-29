@@ -565,35 +565,40 @@ void showSetupRequiredScreen() {
     bbep.setCursor(200, 15);
     bbep.print("PTV-TRMNL SMART TRANSIT DISPLAY");
     bbep.setCursor(300, 35);
-    bbep.printf("v%s - Setup Required", FIRMWARE_VERSION);
+    bbep.print("Journey Setup Required");
     
-    // Setup required title
+    // Title
     bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
-    bbep.setCursor(280, 100);
+    bbep.setCursor(280, 90);
     bbep.print("COMPLETE WEB SETUP");
     
-    // Instructions box
-    bbep.drawRect(100, 130, 600, 200, BBEP_BLACK);
-    bbep.drawRect(101, 131, 598, 198, BBEP_BLACK);
+    // URL box (centered)
+    bbep.drawRect(200, 120, 400, 80, BBEP_BLACK);
+    bbep.drawRect(201, 121, 398, 78, BBEP_BLACK);
     
-    bbep.setCursor(120, 160);
-    bbep.print("Your device is connected but needs configuration.");
+    bbep.setCursor(250, 145);
+    bbep.print("Open in your browser:");
     
-    bbep.setCursor(120, 200);
-    bbep.print("Please visit:");
+    bbep.setCursor(220, 175);
+    bbep.print("einkptdashboard.vercel.app");
     
-    bbep.setCursor(120, 235);
-    bbep.print("  einkptdashboard.vercel.app");
+    // Instructions
+    bbep.setCursor(150, 230);
+    bbep.print("Your device is connected to WiFi but needs");
+    bbep.setCursor(150, 255);
+    bbep.print("journey configuration.");
     
-    bbep.setCursor(120, 275);
-    bbep.print("Then enter your Home, Work, and Cafe addresses");
-    
-    bbep.setCursor(120, 300);
-    bbep.print("in the Setup Wizard.");
-    
-    // Status
-    bbep.setCursor(220, 370);
-    bbep.print("Checking for setup completion...");
+    // Bullet points
+    bbep.setCursor(150, 300);
+    bbep.print("* Click 'Setup Wizard' on the website");
+    bbep.setCursor(150, 325);
+    bbep.print("* Enter your Home address");
+    bbep.setCursor(150, 350);
+    bbep.print("* Enter your Work address");
+    bbep.setCursor(150, 375);
+    bbep.print("* Configure your transit route");
+    bbep.setCursor(150, 400);
+    bbep.print("* Save - dashboard will appear automatically");
     
     // Footer
     bbep.setCursor(220, 450);

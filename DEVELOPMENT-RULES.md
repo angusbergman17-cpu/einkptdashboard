@@ -1,7 +1,7 @@
 # PTV-TRMNL Development Rules
 
 **MANDATORY COMPLIANCE DOCUMENT**  
-**Version:** 1.4  
+**Version:** 1.5  
 **Last Updated:** 2026-01-29  
 **Copyright (c) 2025 Angus Bergman — Licensed under CC BY-NC 4.0**
 
@@ -197,6 +197,7 @@ These rules govern all development on PTV-TRMNL. Compliance is mandatory.
 <summary><strong>Section 17: Security</strong></summary>
 
 - 17.1 XSS Input Sanitization (MANDATORY)
+- 17.2 API Key Validation (MANDATORY)
 </details>
 
 <details>
@@ -225,6 +226,7 @@ These rules govern all development on PTV-TRMNL. Compliance is mandatory.
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.5 | 2026-01-29 | Angus Bergman | Added: API Key Validation requirements (17.2) — mandatory validation for all API keys entered via admin panel including format checks, live testing, and user feedback requirements |
 | 1.4 | 2026-01-29 | Angus Bergman | Added: console.log forbidden term (1.1), 12-hour time code pattern (12.2), file naming consistency (13.5), forbidden terms grep verification (14.1.1) |
 | 1.3 | 2025-01-29 | Angus Bergman | Added full document index with version control |
 | 1.2 | 2025-01-29 | Angus Bergman | Complete incorporation of all v3.0 items (17 gaps filled): Anti-brick rules, zero-config architecture, system architecture, BMP rendering, testing requirements, TRMNL Mini dimensions, Tram Diversion status, expanded API/deployment/timing details, documentation standards, appendices A/B/C |
@@ -1181,6 +1183,86 @@ function sanitize(str) {
 
 // ❌ WRONG: ${stop.name}
 // ✅ CORRECT: ${sanitize(stop.name)}
+```
+
+### 17.2 API Key Validation (MANDATORY)
+
+**ALL API keys entered via admin panel or setup wizard MUST be validated before saving:**
+
+#### 17.2.1 Validation Requirements
+
+| API Type | Format Check | Live Test | On Failure |
+|----------|--------------|-----------|------------|
+| Transit Authority (VIC) | UUID format | Test against GTFS-RT endpoint | Save with "unverified" status |
+| Transit Authority (NSW) | Min 20 chars | Test against TfNSW endpoint | Save with "unverified" status |
+| Transit Authority (QLD) | Non-empty | Test against TransLink endpoint | Save with "unverified" status |
+| Google Places | Non-empty | Test autocomplete request | Report error, allow retry |
+| Mapbox | Non-empty | Test geocoding endpoint | Report error, allow retry |
+
+#### 17.2.2 Implementation Pattern
+
+```javascript
+// ✅ CORRECT - Validate and test API keys before saving
+async function saveApiKey(apiKey, type) {
+    // Step 1: Format validation (fail fast)
+    const formatResult = validateFormat(apiKey, type);
+    if (!formatResult.valid) {
+        return { success: false, message: formatResult.message };
+    }
+    
+    // Step 2: Live API test (soft fail - save anyway but report)
+    const testResult = await testApiKey(apiKey, type);
+    
+    // Step 3: Save with validation status
+    await saveToPreferences(apiKey, {
+        validated: testResult.success,
+        lastValidated: testResult.success ? new Date().toISOString() : null,
+        status: testResult.success ? 'valid' : 'unverified'
+    });
+    
+    return {
+        success: true,
+        testResult,
+        message: testResult.success 
+            ? 'API key saved and validated'
+            : 'API key saved (validation failed: ' + testResult.message + ')'
+    };
+}
+
+// ❌ WRONG - Save without validation
+async function saveApiKey(apiKey) {
+    prefs.api.key = apiKey;  // No validation!
+    await prefs.save();
+}
+```
+
+#### 17.2.3 API Endpoints
+
+| Endpoint | Purpose | Method |
+|----------|---------|--------|
+| `/api/save-transit-key` | Save and validate Transit Authority API key | POST |
+| `/api/save-google-key` | Save and validate Google Places API key | POST |
+
+#### 17.2.4 User Feedback Requirements
+
+- ✅ Show validation status (✓ Valid, ⚠ Unverified, ✗ Invalid)
+- ✅ Display meaningful error messages (not technical codes)
+- ✅ Allow saving unverified keys (network may be down)
+- ✅ Show masked key preview (first 8 chars + "...")
+- ✅ Indicate when last validated
+
+```javascript
+// UI feedback example
+{
+    success: true,
+    testResult: {
+        success: true,
+        message: 'API key validated successfully',
+        validated: true
+    },
+    keyMasked: 'a1b2c3d4...',
+    state: 'VIC'
+}
 ```
 
 ---

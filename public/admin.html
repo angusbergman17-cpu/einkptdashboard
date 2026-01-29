@@ -335,6 +335,11 @@
             border: 1px solid rgba(59, 130, 246, 0.4);
         }
 
+        .message-warning {
+            background: rgba(251, 191, 36, 0.2);
+            border: 1px solid rgba(251, 191, 36, 0.4);
+        }
+
         /* Coffee decision */
         .coffee-decision {
             text-align: center;
@@ -4559,16 +4564,61 @@
         }
 
         async function savePtvConfig() {
+            const apiKey = document.getElementById('ptv-dev-id').value;
+            const apiToken = document.getElementById('ptv-api-key').value;
+            
+            if (!apiKey || apiKey.trim() === '') {
+                showMessage('api-message', '⚠️ Please enter an API key', 'error');
+                return;
+            }
+            
+            showMessage('api-message', '🔄 Validating API key...', 'info');
+            
             try {
-                await fetch(BASE_URL + '/admin/apis', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ptv_opendata: { api_key: document.getElementById('ptv-dev-id').value, token: document.getElementById('ptv-api-key').value } })
+                // Get current state from preferences
+                let state = 'VIC';
+                try {
+                    const prefsResp = await fetch(BASE_URL + '/admin/preferences');
+                    const prefs = await prefsResp.json();
+                    state = prefs.location?.state || prefs.api?.state || 'VIC';
+                } catch (e) { /* Use default VIC */ }
+                
+                // Use the new validation endpoint
+                const response = await fetch(BASE_URL + '/api/save-transit-key', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        apiKey: apiKey.trim(),
+                        state: state
+                    })
                 });
-                showMessage('api-message', 'Saved!', 'success');
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    if (result.testResult && result.testResult.success) {
+                        showMessage('api-message', '✅ ' + result.message + ' (Key: ' + result.keyMasked + ')', 'success');
+                    } else {
+                        showMessage('api-message', '⚠️ Key saved but validation failed: ' + (result.testResult?.message || 'Unknown error'), 'warning');
+                    }
+                } else {
+                    showMessage('api-message', '❌ ' + result.message, 'error');
+                    return;
+                }
+                
+                // Also save the token via legacy endpoint if provided
+                if (apiToken && apiToken.trim()) {
+                    await fetch(BASE_URL + '/admin/apis', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ptv_opendata: { api_key: apiKey, token: apiToken } })
+                    });
+                }
+                
                 // Refresh API keys status display
                 setTimeout(() => updateAPIKeysStatus(), 500);
             } catch (e) {
-                showMessage('api-message', 'Error', 'error');
+                console.error('Transit API save error:', e);
+                showMessage('api-message', '❌ Error saving: ' + e.message, 'error');
             }
         }
 
