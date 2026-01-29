@@ -7225,3 +7225,4 @@ safeguards.setupGracefulShutdown(server, async () => {
   console.log('✅ Cleanup completed');
 });
 
+// Force rebuild 20260129-042622
