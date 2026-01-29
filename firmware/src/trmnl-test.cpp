@@ -1,6 +1,6 @@
 /**
- * TRMNL Display Test - Using bb_epaper library (official TRMNL library)
- * Half black, half white test
+ * TRMNL Display Test - bb_epaper with older panel type
+ * Fill entire screen BLACK to verify display works
  * 
  * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
@@ -28,7 +28,7 @@ void setup() {
     delay(2000);
     
     Serial.println("\n========================================");
-    Serial.println("TRMNL Test - bb_epaper EP75_800x480_GEN2");
+    Serial.println("TRMNL Test - bb_epaper FILL BLACK");
     Serial.println("========================================");
     Serial.printf("Pins: CLK=%d, DIN=%d, CS=%d, DC=%d, RST=%d, BUSY=%d\n",
                   EPD_CLK, EPD_DIN, EPD_CS, EPD_DC, EPD_RST, EPD_BUSY);
@@ -38,33 +38,31 @@ void setup() {
     // Initialize IO pins
     bbep.initIO(EPD_DC, EPD_RST, EPD_BUSY, EPD_CS, EPD_DIN, EPD_CLK, 8000000);
     
-    // Set panel type - Gen2 for newer Waveshare V2 panels
-    int rc = bbep.setPanelType(EP75_800x480_GEN2);
-    Serial.printf("setPanelType(GEN2) returned: %d\n", rc);
-    
-    if (rc != BBEP_SUCCESS) {
-        Serial.println("Trying older EP75_800x480...");
-        rc = bbep.setPanelType(EP75_800x480);
-        Serial.printf("setPanelType(older) returned: %d\n", rc);
-    }
-    
-    Serial.println("Drawing: LEFT=WHITE, RIGHT=BLACK");
+    // Try OLDER panel type first (not Gen2)
+    Serial.println("Trying EP75_800x480 (older panel)...");
+    int rc = bbep.setPanelType(EP75_800x480);
+    Serial.printf("setPanelType returned: %d\n", rc);
     
     // Allocate buffer
-    bbep.allocBuffer();
+    uint8_t *pBuffer = (uint8_t *)malloc(48000);  // 800x480/8 = 48000 bytes
+    if (pBuffer) {
+        bbep.setBuffer(pBuffer);
+        Serial.println("Buffer allocated and set");
+    } else {
+        Serial.println("Buffer allocation FAILED!");
+        return;
+    }
     
-    // Clear to white first
-    bbep.fillScreen(BBEP_WHITE);
-    
-    // Draw right half black
-    bbep.fillRect(400, 0, 400, 480, BBEP_BLACK);
+    // Fill entire screen BLACK
+    Serial.println("Filling screen BLACK...");
+    bbep.fillScreen(BBEP_BLACK);
     
     Serial.println("Sending to display (full refresh)...");
     rc = bbep.refresh(REFRESH_FULL, true);
     Serial.printf("refresh returned: %d\n", rc);
     
-    Serial.println("Done! Check display.");
-    Serial.println("Expected: Left=WHITE, Right=BLACK");
+    Serial.println("Done! Screen should be ALL BLACK");
+    Serial.println("If still white = wrong panel/pins/SPI issue");
     
     bbep.sleep(true);
 }
