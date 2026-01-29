@@ -12,12 +12,14 @@
 import RoutePlanner from '../core/route-planner.js';
 import CoffeeDecision from '../core/coffee-decision.js';
 import V11DashboardRenderer from './v11-dashboard-renderer.js';
+import SmartJourneyIntegration from './smart-journey-integration.js';
 
 class DashboardService {
   constructor(preferences = null) {
     this.preferences = preferences;
     this.routePlanner = null;
     this.coffeeDecision = null;
+    this.smartJourney = null;  // Smart journey integration
     this.renderer = new V11DashboardRenderer();
     
     // Cache for computed data
@@ -25,11 +27,14 @@ class DashboardService {
       journey: null,
       journeyExpiry: null,
       transit: null,
-      transitExpiry: null
+      transitExpiry: null,
+      smartDecision: null,
+      smartDecisionExpiry: null
     };
     
     this.JOURNEY_CACHE_MS = 5 * 60 * 1000; // 5 minutes
     this.TRANSIT_CACHE_MS = 20 * 1000; // 20 seconds
+    this.SMART_DECISION_CACHE_MS = 30 * 1000; // 30 seconds for live updates
   }
 
   /**
@@ -47,6 +52,10 @@ class DashboardService {
       makeCoffee: prefs?.makeCoffee || 5,
       cafeToTransit: prefs?.cafeToTransit || 2
     }, preferences);
+
+    // Initialize smart journey integration (connects to CoffeeDecision + live updates)
+    this.smartJourney = new SmartJourneyIntegration(preferences);
+    this.smartJourney.initialize(preferences);
 
     // Set target arrival time from preferences
     if (prefs?.arrivalTime) {
@@ -107,6 +116,91 @@ class DashboardService {
     const tramData = transitData?.trams || [];
 
     return this.coffeeDecision.calculate(nextTrain, tramData, alertText);
+  }
+
+  /**
+   * Get smart journey decision with live transit integration
+   * Uses SmartRouteRecommender + CoffeeDecision + live updates
+   * 
+   * Pattern: Home → Coffee → Tram → Train → Work (multi-modal)
+   * 
+   * @param {Object} openDataService - OpenData service for live transit
+   * @param {Array} allStops - All available transit stops
+   * @param {boolean} forceRefresh - Force refresh cached data
+   * @returns {Object} Complete journey decision with coffee recommendation
+   */
+  async getSmartJourneyDecision(openDataService, allStops = [], forceRefresh = false) {
+    if (!this.smartJourney) {
+      console.log('⚠️ SmartJourneyIntegration not initialized');
+      return null;
+    }
+
+    const now = Date.now();
+    
+    // Check cache (30 seconds for live updates)
+    if (!forceRefresh && this.cache.smartDecision && this.cache.smartDecisionExpiry > now) {
+      return this.cache.smartDecision;
+    }
+
+    const prefs = this.preferences?.get ? this.preferences.get() : this.preferences;
+
+    // Build locations from preferences
+    const locations = {
+      home: prefs?.homeLocation || prefs?.homeAddress,
+      cafe: prefs?.cafeLocation || prefs?.coffeeAddress,
+      work: prefs?.workLocation || prefs?.workAddress
+    };
+
+    // Fetch live transit data
+    const liveTransit = await this.fetchTransitData(openDataService);
+    
+    // Fetch alerts
+    const alerts = await this.fetchAlerts(openDataService);
+    const alertText = alerts?.[0]?.text || '';
+
+    // Get smart decision
+    const decision = await this.smartJourney.getSmartJourneyDecision({
+      locations,
+      allStops,
+      liveTransit,
+      alertText
+    });
+
+    // Cache result
+    this.cache.smartDecision = decision;
+    this.cache.smartDecisionExpiry = now + this.SMART_DECISION_CACHE_MS;
+
+    return decision;
+  }
+
+  /**
+   * Update journey from smart recommendation
+   * Syncs the CoffeeDecision engine with the smart route
+   */
+  syncFromSmartRecommendation(recommendation) {
+    if (!recommendation?.route || !this.coffeeDecision) return;
+
+    // Update coffee decision timings from recommended route
+    const route = recommendation.route;
+    
+    if (route.coffeeSegments) {
+      this.coffeeDecision.commute.homeToCafe = route.coffeeSegments.walkToCafe || 5;
+      this.coffeeDecision.commute.makeCoffee = route.coffeeSegments.coffeeTime || 5;
+      this.coffeeDecision.commute.cafeToTransit = route.coffeeSegments.walkToStation || 2;
+    }
+
+    if (route.modes?.length > 0) {
+      this.coffeeDecision.commute.transitRide = route.modes[0]?.estimatedDuration || 5;
+      if (route.modes.length > 1) {
+        this.coffeeDecision.commute.trainRide = route.modes[1]?.estimatedDuration || 15;
+      }
+    }
+
+    if (route.walkingSegments?.stationToWork) {
+      this.coffeeDecision.commute.walkToWork = route.walkingSegments.stationToWork;
+    }
+
+    console.log('☕ Synced CoffeeDecision from smart recommendation:', route.name);
   }
 
   /**
