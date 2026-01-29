@@ -192,7 +192,7 @@ function getStatusType(legs, disruptions) {
  */
 export default async function handler(req, res) {
   try {
-    const forceAll = req.query?.force === '1';
+    const forceAll = req.query?.force === '1' || req.query?.force === 'true';
     const formatJson = req.query?.format === 'json';
     
     // Clear cache if forced

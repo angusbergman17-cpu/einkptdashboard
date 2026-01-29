@@ -527,7 +527,7 @@ bool fetchZoneList(bool forceAll) {
         String url = String(serverUrl);
         if (!url.endsWith("/")) url += "/";
         url += "api/zones?batch=0";
-        if (forceAll) url += "&force=true";
+        if (forceAll) url += "&force=1";
         
         // Clean up double slashes
         url.replace("//api", "/api");
