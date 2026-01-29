@@ -14,8 +14,9 @@
 export const RoutePatterns = {
   COFFEE_BEFORE_TRANSIT: 'coffee-before-transit',           // Cafe is between home and first transit
   COFFEE_BEFORE_MULTI_MODAL: 'coffee-before-multi-modal',   // Home → Coffee → Mode1 → Mode2 → Work
+  COFFEE_AT_INTERCHANGE: 'coffee-at-interchange',           // Home → Mode1 → Coffee → Mode2 → Work
   COFFEE_AT_DESTINATION: 'coffee-at-destination',           // Cafe is near work
-  COFFEE_NEAR_TRANSFER: 'coffee-near-transfer',             // Cafe is near an interchange
+  COFFEE_NEAR_TRANSFER: 'coffee-near-transfer',             // Alias for COFFEE_AT_INTERCHANGE
   DIRECT_TRANSIT: 'direct-transit',                         // No cafe, direct to station
   MULTI_MODAL_OPTIMIZED: 'multi-modal-optimized'            // Optimized multi-leg journey
 };
@@ -93,6 +94,10 @@ export class SmartRouteRecommender {
     // Find multi-modal options via interchanges
     const multiModalOptions = this.findMultiModalOptions(homeStops, workStops, allStops);
     
+    // Find interchange stations and check if cafe is near one
+    const interchangeStations = this.findInterchangeStations(allStops);
+    const cafeNearInterchange = cafe ? this.isCafeNearInterchange(cafe, interchangeStations) : null;
+    
     // Group stops by mode
     const homeStopsByMode = this.groupByMode(homeStops);
     const workStopsByMode = this.groupByMode(workStops);
@@ -107,6 +112,8 @@ export class SmartRouteRecommender {
         homeToWork: this.distance(home, work)
       },
       cafeOnWayToTransit,
+      cafeNearInterchange,  // { station, distance } or null
+      interchangeStations,
       stops: {
         home: homeStops,
         work: workStops,
@@ -129,11 +136,33 @@ export class SmartRouteRecommender {
    * Detect the best route pattern based on analysis
    */
   detectPattern(analysis, preferences) {
-    const { cafeOnWayToTransit, distances, directRoutes, multiModalOptions } = analysis;
+    const { cafeOnWayToTransit, cafeNearInterchange, distances, directRoutes, multiModalOptions } = analysis;
     const coffeeEnabled = preferences.coffeeEnabled !== false;
     const preferMultiModal = preferences.preferMultiModal === true;
+    const coffeePosition = preferences.coffeePosition || 'auto';  // 'before', 'interchange', 'auto'
     
-    // Check if multi-modal with coffee is preferred or optimal
+    // Explicit coffee-at-interchange preference
+    if (coffeeEnabled && coffeePosition === 'interchange' && cafeNearInterchange && multiModalOptions.length > 0) {
+      return {
+        type: RoutePatterns.COFFEE_AT_INTERCHANGE,
+        reason: `Cafe is ${cafeNearInterchange.walkingMinutes} min walk from ${cafeNearInterchange.station.name} interchange`,
+        confidence: 0.95
+      };
+    }
+    
+    // Auto-detect: cafe near interchange + multi-modal route
+    if (coffeeEnabled && coffeePosition === 'auto' && cafeNearInterchange && multiModalOptions.length > 0) {
+      // Check if cafe is closer to interchange than to home
+      if (cafeNearInterchange.distance < distances.homeToCafe) {
+        return {
+          type: RoutePatterns.COFFEE_AT_INTERCHANGE,
+          reason: `Coffee at interchange - ${cafeNearInterchange.station.name} (${cafeNearInterchange.walkingMinutes} min walk)`,
+          confidence: 0.88
+        };
+      }
+    }
+    
+    // Check if multi-modal with coffee BEFORE first mode is preferred
     // Pattern: Home → Coffee → Tram → Train → Work
     if (coffeeEnabled && multiModalOptions.length > 0 && (preferMultiModal || cafeOnWayToTransit)) {
       // Multi-modal coffee route (e.g., tram to train with coffee first)
@@ -250,6 +279,43 @@ export class SmartRouteRecommender {
       }
     }
     
+    // Strategy 0.5: Coffee AT interchange (Home → Mode1 → ☕ Coffee → Mode2 → Work)
+    // Cafe is near the interchange station between modes
+    if (pattern.type === RoutePatterns.COFFEE_AT_INTERCHANGE && analysis.cafeNearInterchange) {
+      const interchange = analysis.cafeNearInterchange.station;
+      
+      for (const option of analysis.multiModalOptions) {
+        // Check if this route goes through the interchange where cafe is
+        const goesThruInterchange = option.modes.some(m => 
+          m.destinationStation?.name === interchange.name || 
+          m.originStation?.name === interchange.name
+        );
+        
+        if (goesThruInterchange) {
+          alternatives.push(this.buildRouteAlternative({
+            id: `interchange-coffee-${option.id}`,
+            name: `${option.modes[0] ? this.capitalize(this.getModeName(option.modes[0].type)) : 'Transit'} → ☕ at ${interchange.name} → ${option.modes[1] ? this.capitalize(this.getModeName(option.modes[1].type)) : 'Transit'}`,
+            type: 'coffee-at-interchange',
+            pattern: pattern.type,
+            modes: option.modes,
+            interchangeStation: interchange,
+            coffeeAtInterchange: {
+              station: interchange,
+              walkingMinutes: analysis.cafeNearInterchange.walkingMinutes,
+              distance: analysis.cafeNearInterchange.distance
+            },
+            totalWalking: option.totalWalking + analysis.cafeNearInterchange.distance,
+            preferenceMatch: {
+              modeMatch: true,
+              isMultiModal: true,
+              coffeeAtInterchange: true,
+              isRecommended: true
+            }
+          }, analysis, preferences));
+        }
+      }
+    }
+    
     // Strategy 1: Preferred mode direct routes
     for (const mode of sortedModes) {
       const homeStops = analysis.stopsByMode.home[mode] || [];
@@ -331,8 +397,19 @@ export class SmartRouteRecommender {
       // For multi-modal-coffee routes, always include coffee segments
       // For other routes, only if cafe is on the way to transit
       const isMultiModalCoffee = base.type === 'multi-modal-coffee';
+      const isCoffeeAtInterchange = base.type === 'coffee-at-interchange';
       
-      if (cafeOnWayToTransit || isMultiModalCoffee) {
+      if (isCoffeeAtInterchange && base.coffeeAtInterchange) {
+        // Coffee is between modes at the interchange
+        coffeeSegments = {
+          position: 'at-interchange',
+          interchangeStation: base.coffeeAtInterchange.station.name,
+          walkToCafe: base.coffeeAtInterchange.walkingMinutes,
+          coffeeTime: cafeDuration,
+          walkToStation: base.coffeeAtInterchange.walkingMinutes, // Walk back to platform
+          totalCoffeeTime: base.coffeeAtInterchange.walkingMinutes * 2 + cafeDuration
+        };
+      } else if (cafeOnWayToTransit || isMultiModalCoffee) {
         const homeToCafe = Math.ceil(this.distance(locations.home, locations.cafe) / this.walkingSpeed);
         const cafeToStation = base.modes[0]?.originStation ? 
           Math.ceil(this.distance(locations.cafe, base.modes[0].originStation) / this.walkingSpeed) : 5;
@@ -443,6 +520,16 @@ export class SmartRouteRecommender {
       score -= 3; // Bonus for tram → train combo
     }
     
+    // Coffee at interchange pattern bonus (Home → Mode1 → ☕ at interchange → Mode2 → Work)
+    if (route.preferenceMatch?.coffeeAtInterchange && coffeeSegments?.position === 'at-interchange') {
+      score -= 15; // Very strong bonus for coffee at interchange (overrides direct route preference)
+    }
+    
+    // Penalize routes that don't match the preferred pattern
+    if (preferences.coffeePosition === 'interchange' && route.type === 'direct') {
+      score += 10; // Penalty for direct routes when interchange coffee is preferred
+    }
+    
     return Math.max(0, score);
   }
 
@@ -458,6 +545,10 @@ export class SmartRouteRecommender {
     
     if (route.coffeeSegments?.position === 'before-transit') {
       reasons.push('Coffee stop is conveniently on the way');
+    }
+    
+    if (route.coffeeSegments?.position === 'at-interchange') {
+      reasons.push(`Grab coffee at ${route.coffeeSegments.interchangeStation} while changing`);
     }
     
     if (route.totalWalking < 400) {
@@ -530,6 +621,35 @@ export class SmartRouteRecommender {
     const cafeCloserThanStation = homeToCafe < cafeToStation * 2;
     
     return detourRatio < 0.3 && cafeCloserToHome && cafeCloserThanStation;
+  }
+
+  /**
+   * Check if cafe is near an interchange station
+   * Returns the nearest interchange and distance if within 300m
+   */
+  isCafeNearInterchange(cafe, interchangeStations) {
+    if (!cafe || !interchangeStations?.length) return null;
+    
+    let nearest = null;
+    let nearestDist = Infinity;
+    
+    for (const station of interchangeStations) {
+      const dist = this.distance(cafe, station);
+      if (dist < nearestDist && dist < 300) {  // Within 300m (~4 min walk)
+        nearestDist = dist;
+        nearest = station;
+      }
+    }
+    
+    if (nearest) {
+      return {
+        station: nearest,
+        distance: nearestDist,
+        walkingMinutes: Math.ceil(nearestDist / this.walkingSpeed)
+      };
+    }
+    
+    return null;
   }
 
   /**
