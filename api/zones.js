@@ -10,6 +10,7 @@
  * - force=1: Return all zones (full refresh)
  * - format=json: Return zone metadata only (no BMP data)
  * - demo=<scenario>: Use demo scenario (normal, delay-skip-coffee, multi-delay, disruption, etc.)
+ * - random=1: Generate random journey for testing
  * 
  * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
@@ -19,6 +20,7 @@ import { getDepartures, getDisruptions, getWeather } from '../src/services/ptv-a
 import SmartJourneyEngine from '../src/core/smart-journey-engine.js';
 import { renderZones, clearCache, ZONES } from '../src/services/zone-renderer.js';
 import { getScenario, getScenarioNames } from '../src/services/journey-scenarios.js';
+import { generateRandomJourney } from '../src/services/random-journey.js';
 
 // Singleton engine instance
 let journeyEngine = null;
@@ -279,6 +281,49 @@ export default async function handler(req, res) {
       res.setHeader('Content-Type', 'application/json');
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('X-Demo-Scenario', demoScenario);
+      
+      return res.status(200).json(zonesResult);
+    }
+    
+    // Handle random mode
+    if (req.query?.random === '1' || req.query?.random === 'true') {
+      const journey = generateRandomJourney();
+      
+      console.log(`[zones/random] ${journey.origin} → ${journey.destination}`);
+      console.log(`[zones/random] ${journey.legs.length} legs, ${journey.totalDuration} min`);
+      
+      const dashboardData = {
+        location: journey.origin,
+        current_time: journey.currentTime,
+        day: journey.dayOfWeek.toUpperCase(),
+        date: journey.date.toUpperCase(),
+        temp: journey.weather.temp,
+        condition: journey.weather.condition,
+        umbrella: journey.weather.umbrella,
+        status_type: journey.status === 'DELAY' ? 'delay' : 'normal',
+        arrive_by: journey.arrivalTime,
+        total_minutes: journey.totalDuration,
+        leave_in_minutes: null,
+        journey_legs: journey.legs,
+        destination: journey.destination
+      };
+      
+      if (formatJson) {
+        res.setHeader('Content-Type', 'application/json');
+        return res.status(200).json({
+          timestamp: new Date().toISOString(),
+          mode: 'random',
+          zones: Object.keys(ZONES),
+          data: dashboardData
+        });
+      }
+      
+      const zonesResult = renderZones(dashboardData, true);
+      
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('X-Journey-Mode', 'random');
+      res.setHeader('X-Journey-Legs', journey.legs.length.toString());
       
       return res.status(200).json(zonesResult);
     }
