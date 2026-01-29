@@ -1,7 +1,7 @@
 # PTV-TRMNL System Architecture
 
-**Version:** 2.0  
-**Last Updated:** 2025-01-29  
+**Version:** 2.1  
+**Last Updated:** 2026-01-29  
 **Status:** Active  
 **Specification:** V10 Dashboard (LOCKED)
 
@@ -19,6 +19,9 @@
 8. [Zone-Based Partial Refresh](#8-zone-based-partial-refresh)
 9. [Security Model](#9-security-model)
 10. [Deployment Architecture](#10-deployment-architecture)
+11. [SmartCommute Engine](#11-smartcommute-engine) *(New in v2.1)*
+12. [LiveDash Multi-Device Renderer](#12-livedash-multi-device-renderer) *(New in v2.1)*
+13. [CoffeeDecision Patterns](#13-coffeedecision-patterns) *(New in v2.1)*
 
 ---
 
@@ -452,17 +455,134 @@ function sanitize(str) {
 | `/api/zones` | Zone data for TRMNL |
 | `/api/screen` | PNG for TRMNL webhook |
 | `/api/kindle/image` | PNG for Kindle devices |
+| `/api/livedash` | LiveDash multi-device renderer |
 | `/api/setup-status` | Setup completion check |
+| `/api/status` | Server health check |
+
+---
+
+## 11. SmartCommute Engine
+
+*Added in v2.1 (January 2026)*
+
+### 11.1 Overview
+
+SmartCommute is an intelligent route recommendation engine that auto-detects optimal multi-modal journeys across Australia.
+
+### 11.2 Capabilities
+
+| Feature | Description |
+|---------|-------------|
+| **Auto-Route Detection** | Analyzes home/work locations to find optimal routes |
+| **Multi-Modal Support** | Walk → Tram → Train → Walk combinations |
+| **State Support** | VIC (production), NSW/QLD (testing) |
+| **Coffee Integration** | Works with CoffeeDecision engine |
+
+### 11.3 Route Selection Logic
+
+```
+1. Geocode home and work addresses
+2. Find nearby transit stops (within 800m walking)
+3. Query GTFS for available routes
+4. Score routes by:
+   - Total journey time
+   - Number of transfers
+   - Walking distance
+   - Service frequency
+5. Return top 3 recommended routes
+```
+
+### 11.4 Integration
+
+SmartCommute integrates with:
+- `journey-planner.js` — Route calculation
+- `opendata.js` — GTFS-RT data
+- `coffee-decision.js` — Coffee timing optimization
+
+---
+
+## 12. LiveDash Multi-Device Renderer
+
+*Added in v2.1 (January 2026)*
+
+### 12.1 Overview
+
+LiveDash is a unified rendering endpoint that serves dashboard images to multiple device types from a single API.
+
+### 12.2 Supported Devices
+
+| Device | Resolution | Format | Endpoint |
+|--------|-----------|--------|----------|
+| TRMNL OG | 800×480 | 1-bit BMP | `/api/livedash?device=trmnl` |
+| TRMNL Mini | 600×448 | 1-bit BMP | `/api/livedash?device=trmnl-mini` |
+| Kindle PW5 | 1236×1648 | 8-bit PNG | `/api/livedash?device=kindle-pw5` |
+| Web Preview | 800×480 | PNG | `/api/livedash?device=web` |
+
+### 12.3 Request Format
+
+```
+GET /api/livedash?device=trmnl&token=<config_token>
+```
+
+### 12.4 Response
+
+Returns device-appropriate image with correct:
+- Resolution
+- Color depth (1-bit or 8-bit)
+- Orientation (landscape/portrait)
+- Format (BMP for TRMNL, PNG for Kindle/web)
+
+---
+
+## 13. CoffeeDecision Patterns
+
+*Expanded in v2.1 (January 2026)*
+
+### 13.1 Overview
+
+CoffeeDecision determines if there's time for coffee in the journey, with multiple insertion patterns.
+
+### 13.2 Coffee Patterns
+
+| Pattern | Description | Example |
+|---------|-------------|---------|
+| **Origin Coffee** | Coffee before leaving home | Home → ☕ Cafe → Walk → Train |
+| **Coffee-at-Interchange** | Coffee at transfer point | Home → Train → ☕ Cafe → Tram → Work |
+| **Destination Coffee** | Coffee near work | Home → Train → Walk → ☕ Cafe → Work |
+
+### 13.3 Decision Logic
+
+```javascript
+// Coffee-at-Interchange pattern
+if (interchange.hasCafe && 
+    transferTime >= coffeeMinutes + walkBuffer &&
+    arrivalTime <= targetArrival) {
+    insertCoffee(interchange);
+}
+```
+
+### 13.4 Configuration
+
+```json
+{
+  "j": {
+    "coffeeEnabled": true,
+    "coffeeDuration": 8,
+    "coffeePattern": "auto"  // auto, origin, interchange, destination
+  }
+}
+```
 
 ---
 
 ## References
 
-- [DEVELOPMENT-RULES.md](../DEVELOPMENT-RULES.md) — All development rules (v1.3)
+- [DEVELOPMENT-RULES.md](../DEVELOPMENT-RULES.md) — All development rules (v1.4)
 - [specs/DASHBOARD-SPEC-V10.md](../specs/DASHBOARD-SPEC-V10.md) — Dashboard specification (LOCKED)
 - [PROJECT-VISION.md](PROJECT-VISION.md) — Project goals and roadmap
+- [CHANGELOG.md](CHANGELOG.md) — Version history
 
 ---
 
-**Document Version:** 2.0  
-**Copyright (c) 2025 Angus Bergman — CC BY-NC 4.0**
+**Document Version:** 2.1  
+**Copyright (c) 2025-2026 Angus Bergman — CC BY-NC 4.0**

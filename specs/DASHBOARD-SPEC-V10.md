@@ -140,6 +140,20 @@
 Maximum visible legs: **5** (at 52px height each with 12px arrows)  
 For fewer legs, larger heights can be used (64px or 80px)
 
+### SmartCommute Variable Legs
+
+SmartCommute may generate journeys with varying leg counts (2-6+). Rendering rules:
+
+| Leg Count | Leg Height | Arrow Height | Strategy |
+|-----------|------------|--------------|----------|
+| 2 legs | 130px | 12px | Extra large legs, full detail |
+| 3 legs | 96px | 12px | Large legs |
+| 4 legs | 70px | 12px | Medium legs |
+| 5 legs | 52px | 12px | Standard |
+| 6+ legs | 52px | 8px | Compact mode, scrollable if needed |
+
+**Overflow Handling:** For >5 legs, display first 5 with indicator "...+N more" in footer area.
+
 ### 5.1 Leg Container
 
 #### 5.1.1 Normal State

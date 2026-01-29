@@ -294,20 +294,30 @@ See ANTI-BRICK-REQUIREMENTS.md for brick incidents #1-#4
 
 ## Current Production Firmware
 
-**Version**: v5.5
-**File**: firmware/src/main.cpp
-**Compilation**: ✅ SUCCESS
-**Runtime**: ✅ STABLE
-**Recommended**: ✅ YES
+**Version**: v5.10  
+**File**: firmware/src/main.cpp  
+**Compilation**: ✅ SUCCESS  
+**Runtime**: ✅ STABLE  
+**Anti-Brick Compliance**: ✅ 12/12 (100%)  
+**Recommended**: ✅ YES — Production Ready  
 
-## Known Issue: Full Screen Refresh
+### Why v5.10?
 
-**Problem**: Entire screen refreshes every 20 seconds (visible flash)
-**Impact**: Reduced battery life, display wear, poor UX
-**Target**: Partial refresh (only update changing zones)
-**Fix**: v5.6 in development
+v5.10 is the first firmware version to achieve **100% anti-brick compliance**:
+- ✅ Watchdog timer properly implemented (30s timeout)
+- ✅ All network operations have timeouts
+- ✅ No blocking operations in setup()
+- ✅ State machine architecture
+- ✅ Graceful error handling
+
+### Upgrade Recommendations
+
+| From | To | Priority |
+|------|-----|----------|
+| v5.8 or earlier | v5.10 | 🟠 Recommended (adds watchdog) |
+| v5.9 | v5.10 | 🔴 Critical (fixes missing watchdog) |
 
 ---
 
-**Last Updated**: 2026-01-27 00:30 AEST
+**Last Updated**: 2026-01-29  
 **Maintainer**: Angus Bergman

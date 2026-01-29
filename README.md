@@ -6,6 +6,8 @@
 ![Version](https://img.shields.io/badge/version-1.0.0-green)
 ![Platform](https://img.shields.io/badge/platform-TRMNL%20%7C%20Kindle-orange)
 ![Spec](https://img.shields.io/badge/spec-V10%20Dashboard-purple)
+![Firmware](https://img.shields.io/badge/firmware-v5.10-blue)
+![Anti-Brick](https://img.shields.io/badge/Anti--Brick-12%2F12%20✓-brightgreen)
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/angusbergman17-cpu/einkptdashboard)
 
 > Your personal e-ink transit dashboard. Real-time departures, smart journey planning, and the all-important coffee decision — rendered server-side and delivered to your display.
@@ -15,8 +17,10 @@
 ## ✨ Features
 
 - 🚊 **Real-Time Transit Data** — Live departures from Transport Victoria OpenData API (GTFS-RT)
-- ☕ **Smart Coffee Decision** — Calculates if you have time to stop for coffee
+- ☕ **Smart Coffee Decision** — Calculates if you have time to stop for coffee (including coffee-at-interchange)
 - 🗺️ **Multi-Leg Journeys** — Walk → Coffee → Tram → Train → Walk with accurate timing
+- 🧠 **SmartCommute Engine** — Auto-detects optimal routes across Australia
+- 📱 **LiveDash Multi-Device** — Renders for TRMNL, Kindle, and web preview
 - 🌤️ **Weather Integration** — BOM weather data at a glance
 - 🖥️ **E-Ink Optimized** — 1-bit BMP rendering with 20-second partial refresh
 - 🔒 **100% Self-Hosted** — Your data, your server, your API keys
@@ -149,6 +153,7 @@ The dashboard displays your complete journey at a glance:
 | `/api/zones` | Zone-based partial refresh (TRMNL) |
 | `/api/screen` | Full screen PNG (webhook) |
 | `/api/kindle/image` | Kindle-optimized PNG |
+| `/api/livedash` | LiveDash multi-device renderer |
 | `/api/status` | Server health |
 
 ---
@@ -157,12 +162,13 @@ The dashboard displays your complete journey at a glance:
 
 | Document | Description |
 |----------|-------------|
-| **[DEVELOPMENT-RULES.md](DEVELOPMENT-RULES.md)** | 🚨 **MANDATORY** — All development rules (v1.3) |
+| **[DEVELOPMENT-RULES.md](DEVELOPMENT-RULES.md)** | 🚨 **MANDATORY** — All development rules (v1.4) |
 | [INSTALL.md](INSTALL.md) | Detailed installation guide |
 | [SETUP_GUIDE.md](SETUP_GUIDE.md) | Step-by-step setup |
 | [specs/DASHBOARD-SPEC-V10.md](specs/DASHBOARD-SPEC-V10.md) | Dashboard design spec (LOCKED) |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture (v2.1) |
 | [docs/PROJECT-VISION.md](docs/PROJECT-VISION.md) | Project goals and roadmap |
+| [docs/CHANGELOG.md](docs/CHANGELOG.md) | Version history and releases |
 
 ---
 

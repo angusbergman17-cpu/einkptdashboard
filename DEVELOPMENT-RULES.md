@@ -518,9 +518,11 @@ TZ=Australia/Melbourne
 
 | Endpoint | Purpose |
 |----------|---------|
-| `/api/zones` | Zone data for TRMNL |
-| `/api/screen` | PNG for TRMNL webhook |
-| `/api/kindle/image` | PNG for Kindle devices |
+| `/api/zones` | Zone data for TRMNL (1-bit BMP, partial refresh) |
+| `/api/screen` | Full 800×480 PNG for TRMNL webhook |
+| `/api/kindle/image` | Kindle-optimized PNG (portrait, 8-bit) |
+| `/api/livedash` | LiveDash multi-device renderer (TRMNL, Kindle, web) |
+| `/api/status` | Server health check |
 | `/api/setup-status` | Setup completion check |
 
 ---
@@ -845,6 +847,33 @@ TRMNL devices have limited processing power and bandwidth. Keep API responses mi
 
 Never hammer the Transport Victoria OpenData API. Batch requests where possible. Implement appropriate delays between calls. Respect all API terms of service and rate limits.
 
+### 11.6 LiveDash Multi-Device Endpoint
+
+**Endpoint:** `/api/livedash`
+
+LiveDash provides unified dashboard rendering for multiple device types from a single endpoint.
+
+**Parameters:**
+| Parameter | Required | Values | Default |
+|-----------|----------|--------|---------|
+| `device` | Yes | `trmnl`, `trmnl-mini`, `kindle-pw5`, `kindle-pw3`, `web` | - |
+| `token` | Yes | Config token (base64) | - |
+| `state` | No | `VIC`, `NSW`, `QLD` | `VIC` |
+
+**Response Format by Device:**
+| Device | Resolution | Format | Orientation |
+|--------|-----------|--------|-------------|
+| `trmnl` | 800×480 | 1-bit BMP | Landscape |
+| `trmnl-mini` | 600×448 | 1-bit BMP | Landscape |
+| `kindle-pw5` | 1236×1648 | 8-bit PNG | Portrait |
+| `kindle-pw3` | 1072×1448 | 8-bit PNG | Portrait |
+| `web` | 800×480 | PNG | Landscape |
+
+**Example:**
+```bash
+curl "https://your-server.vercel.app/api/livedash?device=trmnl&token=eyJ..."
+```
+
 ---
 
 ## ⚙️ Section 12: Business Logic
@@ -941,6 +970,29 @@ This catches the most common violations. For complete verification, also check:
 ```bash
 grep -rn "PTV API" --include="*.js" src/ api/  # Should return 0 results
 grep -rn "console.*PTV" --include="*.js" src/ api/  # Check log messages
+```
+
+#### 14.1.2 SmartCommute & LiveDash Testing
+
+Test the SmartCommute engine and LiveDash renderer before deploying:
+
+```bash
+# Test SmartCommute route detection
+npm run test:smartcommute
+
+# Test LiveDash multi-device rendering
+curl "http://localhost:3000/api/livedash?device=trmnl" -o test-trmnl.bmp
+curl "http://localhost:3000/api/livedash?device=kindle-pw5" -o test-kindle.png
+curl "http://localhost:3000/api/livedash?device=web" -o test-web.png
+
+# Verify device-specific output:
+# - TRMNL: 800×480, 1-bit BMP
+# - Kindle PW5: 1236×1648, 8-bit PNG (portrait)
+# - Web: 800×480, PNG
+
+# Test SmartCommute with different states
+curl "http://localhost:3000/api/livedash?device=web&state=VIC"
+curl "http://localhost:3000/api/livedash?device=web&state=NSW"
 ```
 
 ### 14.2 Firmware Testing

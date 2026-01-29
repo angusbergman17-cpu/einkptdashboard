@@ -2,20 +2,26 @@
 
 Custom firmware for TRMNL e-ink devices with **partial refresh support** for faster updates.
 
+![Version](https://img.shields.io/badge/version-5.10-blue)
+![Anti-Brick](https://img.shields.io/badge/Anti--Brick-12%2F12%20✓-brightgreen)
+![Platform](https://img.shields.io/badge/platform-ESP32--C3-orange)
+
 ## Features
 
-- **1-minute partial refresh** - Updates departure times quickly (~0.3s)
-- **5-minute full refresh** - Complete screen redraw to prevent ghosting
+- **20-second partial refresh** - Updates departure times quickly (~0.3s)
+- **10-minute full refresh** - Complete screen redraw to prevent ghosting
 - **WiFiManager** - Easy WiFi setup via captive portal
+- **Watchdog Timer** - 30s timeout prevents device bricking
 - **Low power mode** - Light sleep between updates for battery savings
 - **Auto-reconnect** - Handles WiFi disconnections gracefully
+- **100% Anti-Brick Compliant** - All 12 safety rules enforced
 
 ## Battery Life Estimate
 
 | Refresh Mode | Updates/Day | Battery Life |
 |--------------|-------------|--------------|
-| 1 min partial / 5 min full | ~1440 | 2-3 days |
-| 2 min partial / 5 min full | ~720 | 4-5 days |
+| 20s partial / 10 min full | ~4320 | 1-2 days |
+| 1 min partial / 10 min full | ~1440 | 2-3 days |
 
 ## Hardware Requirements
 
@@ -156,17 +162,19 @@ The firmware communicates with these server endpoints:
 
 | Endpoint | Purpose |
 |----------|---------|
-| `/api/setup` | Device registration and configuration |
-| `/api/display` | Dashboard data for display refresh |
-| `/api/region-updates` | JSON with departure times and leave-by info |
+| `/api/zones` | Zone-based partial refresh data (JSON + base64 BMP) |
+| `/api/screen` | Full 800×480 PNG for webhook/fallback |
+| `/api/status` | Server health check |
+| `/api/livedash` | Multi-device LiveDash renderer |
 
 ## How It Works
 
-1. Device wakes up every minute
-2. Fetches JSON data from `/api/region-updates`
-3. Server calculates everything: leave time, coffee decision, next trains/trams
-4. Device renders the simple dashboard
-5. Goes back to sleep
+1. Device wakes up every 20 seconds
+2. Fetches zone data from `/api/zones`
+3. Server calculates everything: leave time, coffee decision, SmartCommute routing
+4. Server renders 1-bit BMP zones, returns only changed zones
+5. Device applies partial refresh to changed zones only
+6. Goes back to light sleep
 
 The server is the brain - the device just displays what it's told.
 
