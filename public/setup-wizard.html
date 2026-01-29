@@ -447,8 +447,15 @@
 
                 <div class="btn-row">
                     <button type="button" class="btn btn-secondary" onclick="previousStep(5)">← Back</button>
-                    <button type="button" class="btn" onclick="completeSetup()">🚀 Complete Setup</button>
+                    <button type="button" class="btn" id="complete-setup-btn">🚀 Complete Setup</button>
                 </div>
+                <script>
+                    document.getElementById('complete-setup-btn').addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        completeSetup();
+                    });
+                </script>
             </div>
         </div>
 
@@ -901,14 +908,18 @@
         };
 
         window.completeSetup = async function() {
+            console.log('completeSetup called');
+            
+            const arrivalTime = document.getElementById('arrival-time').value;
+            console.log('Arrival time value:', arrivalTime);
+            
             const config = {
                 addresses: addresses,
                 authority: selectedAuthority,
-                arrivalTime: document.getElementById('arrival-time').value,
+                arrivalTime: arrivalTime,
                 includeCoffee: document.getElementById('include-coffee').checked,
                 credentials: {
-                    devId: document.getElementById('dev-id')?.value,
-                    apiKey: document.getElementById('api-key')?.value
+                    apiKey: document.getElementById('api-key')?.value || localStorage.getItem('ptv_transit_api_key') || ''
                 }
             };
 
