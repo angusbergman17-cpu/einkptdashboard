@@ -39,6 +39,8 @@ import { decodeConfigToken, encodeConfigToken, generateWebhookUrl } from './util
 import { renderDashboard, renderTestPattern } from "./services/image-renderer.js";
 import { renderZones, clearCache as clearZoneCache, ZONES } from "./services/zone-renderer.js";
 import { getChangedZones as getChangedZonesV12, renderSingleZone as renderSingleZoneV12, getZoneDefinition as getZoneDefV12, ZONES as ZONES_V12, clearCache as clearZoneCacheV12 } from "./services/zone-renderer-v12.js";
+import { getChangedZones as getChangedZonesV13, renderSingleZone as renderSingleZoneV13, getZoneDefinition as getZoneDefV13, getActiveZones as getActiveZonesV13, ZONES as ZONES_V13, clearCache as clearZoneCacheV13, renderFullScreen as renderFullScreenV13 } from "./services/zone-renderer-v13.js";
+import SmartJourneyEngine from "./core/smart-journey-engine.js";
 
 // Setup error handlers early (before any async operations)
 safeguards.setupErrorHandlers();
@@ -125,6 +127,15 @@ const prefs = preferences.get();
 global.journeyPlanner = journeyPlanner; // Compliant implementation
 global.weatherBOM = weather;
 global.fallbackTimetables = fallbackTimetables; // For journey planner stop lookup
+
+// Initialize Smart Journey Engine V2 (auto-detects preferred journey from config)
+const smartJourneyEngine = new SmartJourneyEngine(preferences);
+smartJourneyEngine.initialize().then(() => {
+  global.smartJourneyEngine = smartJourneyEngine;
+  console.log('✅ Smart Journey Engine V2 initialized');
+}).catch(err => {
+  console.error('❌ Smart Journey Engine initialization failed:', err.message);
+});
 
 // Smart Journey Planner - combines geocoding + stop detection for admin setup
 const smartJourneyPlanner = {
@@ -7006,4 +7017,196 @@ app.get('/api/zone/:id', async (req, res) => {
     res.set({ 'Content-Type': 'application/octet-stream', 'X-Zone-X': zoneDef.x, 'X-Zone-Y': zoneDef.y, 'X-Zone-Width': zoneDef.w, 'X-Zone-Height': zoneDef.h });
     res.send(bmp);
   } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+/* =========================================================
+   V13 ZONE ENDPOINTS - New UI/UX with Smart Journey Engine
+   ========================================================= */
+
+/**
+ * Build V13 display data using Smart Journey Engine
+ */
+async function buildV13DisplayData() {
+  const prefs = preferences.get();
+  const state = prefs?.state || prefs?.location?.state || 'VIC';
+  const timezone = getTimezoneForState(state);
+  const now = new Date();
+  const localNow = new Date(now.toLocaleString('en-US', { timeZone: timezone }));
+  
+  // Try Smart Journey Engine first
+  if (global.smartJourneyEngine) {
+    try {
+      const journeyData = await global.smartJourneyEngine.buildJourneyForDisplay(
+        cachedData, // Transit data
+        cachedJourney?.weather // Weather data
+      );
+      return journeyData;
+    } catch (e) {
+      console.warn('⚠️  Smart Journey Engine failed, using fallback:', e.message);
+    }
+  }
+  
+  // Fallback to basic data structure
+  return {
+    location: prefs?.addresses?.home?.split(',')[0] || 'HOME',
+    current_time: localNow.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: false }),
+    day: localNow.toLocaleDateString('en-AU', { weekday: 'long' }).toUpperCase(),
+    date: localNow.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' }),
+    temp: cachedJourney?.weather?.temp || '--',
+    condition: cachedJourney?.weather?.condition || 'N/A',
+    weather_icon: '☀️',
+    status_type: cachedJourney?.hasDisruption ? 'disruption' : 'normal',
+    arrive_by: prefs?.journey?.arrivalTime || '09:00',
+    total_minutes: cachedJourney?.totalMinutes || '--',
+    journey_legs: cachedJourney?.legs || [
+      { type: 'walk', to: 'cafe', minutes: 3 },
+      { type: 'coffee', location: 'Norman South Yarra', minutes: 4 },
+      { type: 'walk', to: 'tram stop', minutes: 2 },
+      { type: 'tram', routeNumber: '58', destination: { name: 'Collins St' }, minutes: 12 },
+      { type: 'walk', to: 'work', minutes: 4 }
+    ],
+    destination: prefs?.addresses?.work?.split(',')[0] || 'WORK',
+    coffee_decision: global.smartJourneyEngine?.calculateCoffeeDecision?.(cachedData, cachedJourney?.legs) || { decision: 'GET COFFEE', subtext: 'You have time', canGet: true }
+  };
+}
+
+// V13: Get changed zones using Smart Journey Engine
+app.get('/api/v13/zones/changed', async (req, res) => {
+  try {
+    const forceAll = req.query.force === 'true';
+    const data = await buildV13DisplayData();
+    const changed = getChangedZonesV13(data, forceAll);
+    res.json({ 
+      timestamp: new Date().toISOString(), 
+      changed,
+      version: 'v13',
+      smartJourney: !!global.smartJourneyEngine
+    });
+  } catch (e) { 
+    console.error('V13 zones/changed error:', e);
+    res.status(500).json({ error: e.message }); 
+  }
+});
+
+// V13: Get single zone BMP
+app.get('/api/v13/zone/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const prefs = preferences.get();
+    const data = await buildV13DisplayData();
+    
+    const bmp = renderSingleZoneV13(id, data, prefs);
+    if (!bmp) return res.status(404).json({ error: 'Zone not found', available: getActiveZonesV13(data) });
+    
+    const zoneDef = getZoneDefV13(id, data);
+    res.set({ 
+      'Content-Type': 'application/octet-stream', 
+      'X-Zone-X': zoneDef.x, 
+      'X-Zone-Y': zoneDef.y, 
+      'X-Zone-Width': zoneDef.w, 
+      'X-Zone-Height': zoneDef.h,
+      'X-Renderer-Version': 'v13'
+    });
+    res.send(bmp);
+  } catch (e) { 
+    console.error('V13 zone render error:', e);
+    res.status(500).json({ error: e.message }); 
+  }
+});
+
+// V13: List all active zones
+app.get('/api/v13/zones/list', async (req, res) => {
+  try {
+    const data = await buildV13DisplayData();
+    const zones = getActiveZonesV13(data);
+    const definitions = {};
+    for (const zoneId of zones) {
+      definitions[zoneId] = getZoneDefV13(zoneId, data);
+    }
+    res.json({ zones, definitions, version: 'v13' });
+  } catch (e) { 
+    res.status(500).json({ error: e.message }); 
+  }
+});
+
+// V13: Full screen PNG preview (for debugging/simulator)
+app.get('/api/v13/screen', async (req, res) => {
+  try {
+    const prefs = preferences.get();
+    const data = await buildV13DisplayData();
+    const png = renderFullScreenV13(data, prefs);
+    res.set({ 'Content-Type': 'image/png', 'X-Renderer-Version': 'v13' });
+    res.send(png);
+  } catch (e) {
+    console.error('V13 screen render error:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// V13: Get journey data as JSON
+app.get('/api/v13/journey', async (req, res) => {
+  try {
+    const data = await buildV13DisplayData();
+    res.json({
+      success: true,
+      version: 'v13',
+      journey: {
+        location: data.location,
+        destination: data.destination,
+        arriveBy: data.arrive_by,
+        departureTime: data.departure_time,
+        totalMinutes: data.total_minutes,
+        routeName: data.route_name,
+        legs: data.journey_legs,
+        coffeeDecision: data.coffee_decision
+      },
+      weather: {
+        temp: data.temp,
+        condition: data.condition,
+        icon: data.weather_icon
+      },
+      meta: {
+        timestamp: data.timestamp,
+        smartJourneyActive: !!global.smartJourneyEngine
+      }
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// V13: Reset zone cache
+app.post('/api/v13/zones/reset', (req, res) => {
+  clearZoneCacheV13();
+  res.json({ success: true, message: 'V13 zone cache cleared' });
+});
+
+// V13: Get alternative routes
+app.get('/api/v13/alternatives', (req, res) => {
+  try {
+    const alternatives = global.smartJourneyEngine?.getAlternativeRoutes() || [];
+    res.json({ 
+      success: true, 
+      alternatives,
+      activeRoute: global.smartJourneyEngine?.getPreferredRoute()?.description || 'Default route'
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// V13: Select alternative route
+app.post('/api/v13/select-route', async (req, res) => {
+  try {
+    const { routeId } = req.body;
+    if (!routeId) return res.status(400).json({ error: 'routeId required' });
+    
+    const selected = await global.smartJourneyEngine?.selectAlternativeRoute(routeId);
+    if (!selected) return res.status(404).json({ error: 'Route not found' });
+    
+    clearZoneCacheV13(); // Clear cache to force re-render
+    res.json({ success: true, selected });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
