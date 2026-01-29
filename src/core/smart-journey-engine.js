@@ -27,7 +27,7 @@ class SmartJourneyEngine {
     this.journeyConfig = null;
     this.coffeeEngine = null;
     this.discoveredRoutes = [];
-    this.selectedRouteIndex = 1; // Default to multi-modal (tram → train)
+    this.selectedRouteIndex = 0; // Default to preferred route
     this.cache = {
       routes: null,
       routesCacheTime: null,
@@ -349,7 +349,34 @@ class SmartJourneyEngine {
   getHardcodedRoutes(locations, includeCoffee) {
     const routes = [];
     
-    // Tram 58 direct
+    // ANGUS PREFERRED: Home → Coffee → Walk → South Yarra → Train → Parliament → Walk → Office
+    // This is the primary route matching Angus's actual commute
+    const preferredLegs = [];
+    let preferredTotal = 0;
+    
+    if (includeCoffee) {
+      preferredLegs.push({ type: 'walk', to: 'cafe', from: 'home', minutes: 3 });
+      preferredLegs.push({ type: 'coffee', location: locations.cafe?.name || 'Norman', minutes: 4 });
+      preferredLegs.push({ type: 'walk', to: 'South Yarra Stn', from: 'cafe', minutes: 5 });
+      preferredTotal += 12;
+    } else {
+      preferredLegs.push({ type: 'walk', to: 'South Yarra Stn', from: 'home', minutes: 8 });
+      preferredTotal += 8;
+    }
+    preferredLegs.push({ type: 'train', routeNumber: 'Sandringham', origin: { name: 'South Yarra' }, destination: { name: 'Parliament' }, minutes: 8 });
+    preferredLegs.push({ type: 'walk', to: 'work', from: 'Parliament', minutes: 5 });
+    preferredTotal += 13;
+    
+    routes.push({
+      id: 'angus-preferred',
+      name: 'Train via South Yarra (Preferred)',
+      description: includeCoffee ? 'Home → Coffee → Train → Parliament → Office' : 'Home → Train → Parliament → Office',
+      type: 'preferred',
+      totalMinutes: preferredTotal,
+      legs: preferredLegs
+    });
+    
+    // Tram 58 direct (alternative)
     const tramLegs = [];
     let tramTotal = 0;
     
@@ -390,9 +417,9 @@ class SmartJourneyEngine {
     }
     multiLegs.push({ type: 'tram', routeNumber: '58', origin: { name: 'Toorak Rd' }, destination: { name: 'South Yarra Station' }, minutes: 3 });
     multiLegs.push({ type: 'walk', to: 'train platform', minutes: 2 });
-    multiLegs.push({ type: 'train', routeNumber: 'Sandringham', origin: { name: 'South Yarra' }, destination: { name: 'Flinders St' }, minutes: 6 });
-    multiLegs.push({ type: 'walk', to: 'work', minutes: 8 });
-    multiTotal += 19;
+    multiLegs.push({ type: 'train', routeNumber: 'Sandringham', origin: { name: 'South Yarra' }, destination: { name: 'Parliament' }, minutes: 8 });
+    multiLegs.push({ type: 'walk', to: 'work', minutes: 5 });
+    multiTotal += 18;
     
     routes.push({
       id: 'tram-train-south-yarra',
@@ -417,9 +444,9 @@ class SmartJourneyEngine {
       trainLegs.push({ type: 'walk', to: 'South Yarra Station', minutes: 8 });
       trainTotal += 8;
     }
-    trainLegs.push({ type: 'train', routeNumber: 'Sandringham', origin: { name: 'South Yarra' }, destination: { name: 'Flinders St' }, minutes: 6 });
-    trainLegs.push({ type: 'walk', to: 'work', minutes: 10 });
-    trainTotal += 16;
+    trainLegs.push({ type: 'train', routeNumber: 'Sandringham', origin: { name: 'South Yarra' }, destination: { name: 'Parliament' }, minutes: 8 });
+    trainLegs.push({ type: 'walk', to: 'work', minutes: 5 });
+    trainTotal += 13;
     
     routes.push({
       id: 'train-only',
