@@ -1,5 +1,5 @@
 /**
- * TRMNL Display Test - Try GDEY075T7 driver
+ * TRMNL Display Test - Try GxEPD2_750 driver (older panel)
  * Half black, half white - should be obvious if working
  * 
  * Copyright (c) 2026 Angus Bergman
@@ -13,7 +13,6 @@
 
 #define ENABLE_GxEPD2_GFX 0
 #include <GxEPD2_BW.h>
-#include <gdey/GxEPD2_750_GDEY075T7.h>
 
 // TRMNL OG actual pinout (from README)
 #define EPD_CLK   6
@@ -23,9 +22,9 @@
 #define EPD_RST   2
 #define EPD_BUSY  4
 
-// Try GDEY075T7 - newer Good Display 7.5" panel
-GxEPD2_BW<GxEPD2_750_GDEY075T7, GxEPD2_750_GDEY075T7::HEIGHT> display(
-    GxEPD2_750_GDEY075T7(EPD_CS, EPD_DC, EPD_RST, EPD_BUSY)
+// Try GxEPD2_750 - basic 7.5" panel driver
+GxEPD2_BW<GxEPD2_750, GxEPD2_750::HEIGHT> display(
+    GxEPD2_750(EPD_CS, EPD_DC, EPD_RST, EPD_BUSY)
 );
 
 void setup() {
@@ -35,7 +34,7 @@ void setup() {
     delay(2000);
     
     Serial.println("\n========================================");
-    Serial.println("TRMNL Test - GDEY075T7 Driver");
+    Serial.println("TRMNL Test - GxEPD2_750 Driver");
     Serial.println("========================================");
     Serial.printf("Pins: CLK=%d, DIN=%d, CS=%d, DC=%d, RST=%d, BUSY=%d\n",
                   EPD_CLK, EPD_DIN, EPD_CS, EPD_DC, EPD_RST, EPD_BUSY);
@@ -43,7 +42,7 @@ void setup() {
     Serial.println("Initializing SPI...");
     SPI.begin(EPD_CLK, -1, EPD_DIN, EPD_CS);
     
-    Serial.println("Initializing display with GDEY075T7...");
+    Serial.println("Initializing display with GxEPD2_750...");
     display.init(115200, true, 2, false);
     display.setRotation(0);
     
