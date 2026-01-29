@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--
+    PTV-TRMNL - Help & Documentation
+    Copyright (c) 2025-2026 Angus Bergman
+    Licensed under CC BY-NC 4.0
+    https://creativecommons.org/licenses/by-nc/4.0/
+-->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Help and documentation for PTV-TRMNL Smart Transit Display">
+    <title>Help - PTV-TRMNL</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚃</text></svg>">
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-card: rgba(30, 41, 59, 0.8);
+            --accent: #6366f1;
+            --accent-hover: #818cf8;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+        
+        /* Header */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .nav-link {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--text-primary);
+        }
+        
+        /* Layout */
+        .container {
+            display: flex;
+            flex: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            padding: 24px 16px;
+            position: sticky;
+            top: 60px;
+            height: calc(100vh - 60px);
+            overflow-y: auto;
+        }
+        
+        .sidebar-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            padding-left: 12px;
+        }
+        
+        .sidebar-nav {
+            list-style: none;
+        }
+        
+        .sidebar-nav li {
+            margin-bottom: 4px;
+        }
+        
+        .sidebar-nav a {
+            display: block;
+            padding: 10px 12px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .sidebar-nav a:hover {
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+        
+        .sidebar-nav a.active {
+            background: var(--accent);
+            color: var(--text-primary);
+        }
+        
+        /* Main Content */
+        .main {
+            flex: 1;
+            padding: 40px;
+            max-width: 800px;
+        }
+        
+        .page-title {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+        
+        .page-subtitle {
+            color: var(--text-secondary);
+            font-size: 16px;
+            margin-bottom: 32px;
+        }
+        
+        /* Sections */
+        .section {
+            margin-bottom: 48px;
+        }
+        
+        .section-title {
+            font-size: 24px;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-content {
+            color: var(--text-secondary);
+        }
+        
+        .section-content p {
+            margin-bottom: 16px;
+        }
+        
+        .section-content h3 {
+            color: var(--text-primary);
+            font-size: 18px;
+            margin: 24px 0 12px;
+        }
+        
+        .section-content ul, .section-content ol {
+            margin-left: 24px;
+            margin-bottom: 16px;
+        }
+        
+        .section-content li {
+            margin-bottom: 8px;
+        }
+        
+        .section-content a {
+            color: var(--accent);
+        }
+        
+        .section-content a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Cards */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin: 24px 0;
+        }
+        
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+        }
+        
+        .card-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+        
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+        
+        .card-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        /* FAQ */
+        .faq-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 12px;
+            overflow: hidden;
+        }
+        
+        .faq-question {
+            padding: 16px 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .faq-question:hover {
+            background: var(--bg-card);
+        }
+        
+        .faq-toggle {
+            font-size: 20px;
+            transition: transform 0.2s;
+        }
+        
+        .faq-item.open .faq-toggle {
+            transform: rotate(45deg);
+        }
+        
+        .faq-answer {
+            display: none;
+            padding: 0 20px 16px;
+            color: var(--text-secondary);
+        }
+        
+        .faq-item.open .faq-answer {
+            display: block;
+        }
+        
+        /* Code blocks */
+        code {
+            background: var(--bg-primary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 13px;
+        }
+        
+        pre {
+            background: var(--bg-primary);
+            padding: 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 16px 0;
+        }
+        
+        pre code {
+            padding: 0;
+            background: none;
+        }
+        
+        /* Callouts */
+        .callout {
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin: 16px 0;
+            display: flex;
+            gap: 12px;
+        }
+        
+        .callout-icon {
+            font-size: 20px;
+        }
+        
+        .callout.info {
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid var(--accent);
+        }
+        
+        .callout.warning {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid var(--warning);
+        }
+        
+        .callout.success {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid var(--success);
+        }
+        
+        /* Footer */
+        .footer {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            padding: 20px;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        .footer-support {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+        
+        .support-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        
+        .support-btn.coffee { background: #FFDD00; color: #000; }
+        .support-btn.sponsor { background: #db61a2; color: #fff; }
+        .support-btn.feedback { background: var(--accent); color: #fff; }
+        
+        .support-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .footer-legal {
+            font-size: 12px;
+        }
+        
+        .footer-legal a {
+            color: var(--text-secondary);
+        }
+        
+        @media (max-width: 900px) {
+            .sidebar { display: none; }
+            .nav-links { display: none; }
+            .main { padding: 24px 20px; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <a href="/" class="brand">
+            <span>🚃</span>
+            <span>PTV-TRMNL</span>
+        </a>
+        <nav class="nav-links">
+            <a href="/" class="nav-link">Home</a>
+            <a href="/setup-wizard.html" class="nav-link">Setup</a>
+            <a href="/admin.html" class="nav-link">Dashboard</a>
+            <a href="/preview.html" class="nav-link">Preview</a>
+            <a href="/help.html" class="nav-link active">Help</a>
+        </nav>
+    </header>
+    
+    <div class="container">
+        <aside class="sidebar">
+            <div class="sidebar-title">Getting Started</div>
+            <ul class="sidebar-nav">
+                <li><a href="#overview" class="active">Overview</a></li>
+                <li><a href="#quick-start">Quick Start</a></li>
+                <li><a href="#devices">Supported Devices</a></li>
+            </ul>
+            
+            <div class="sidebar-title" style="margin-top: 24px;">Setup</div>
+            <ul class="sidebar-nav">
+                <li><a href="#setup-wizard">Setup Wizard</a></li>
+                <li><a href="#api-keys">API Keys</a></li>
+                <li><a href="#configuration">Configuration</a></li>
+            </ul>
+            
+            <div class="sidebar-title" style="margin-top: 24px;">Troubleshooting</div>
+            <ul class="sidebar-nav">
+                <li><a href="#faq">FAQ</a></li>
+                <li><a href="#common-issues">Common Issues</a></li>
+                <li><a href="#getting-help">Getting Help</a></li>
+            </ul>
+        </aside>
+        
+        <main class="main">
+            <h1 class="page-title">📚 Help & Documentation</h1>
+            <p class="page-subtitle">Everything you need to set up and use PTV-TRMNL</p>
+            
+            <!-- Overview -->
+            <section class="section" id="overview">
+                <h2 class="section-title">🚃 Overview</h2>
+                <div class="section-content">
+                    <p>
+                        PTV-TRMNL is a smart transit display that shows your personalized commute information 
+                        on an e-ink screen. It tells you when to leave, shows real-time departures, and even 
+                        calculates if you have time for coffee!
+                    </p>
+                    
+                    <div class="card-grid">
+                        <div class="card">
+                            <div class="card-icon">⏰</div>
+                            <div class="card-title">Real-Time Data</div>
+                            <div class="card-desc">Live departure times updated every 20 seconds from Transport Victoria</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-icon">☕</div>
+                            <div class="card-title">Coffee Decision</div>
+                            <div class="card-desc">Automatically calculates if you have time for a coffee stop</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-icon">🌤️</div>
+                            <div class="card-title">Weather</div>
+                            <div class="card-desc">Shows temperature and umbrella recommendations</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-icon">📱</div>
+                            <div class="card-title">Zero Config</div>
+                            <div class="card-desc">No server setup needed - everything configures via the web</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Quick Start -->
+            <section class="section" id="quick-start">
+                <h2 class="section-title">🚀 Quick Start</h2>
+                <div class="section-content">
+                    <p>Get up and running in 5 minutes:</p>
+                    
+                    <ol>
+                        <li><strong>Go to the <a href="/setup-wizard.html">Setup Wizard</a></strong></li>
+                        <li><strong>Enter your addresses</strong> - Home, work, and optional coffee stop</li>
+                        <li><strong>Set your arrival time</strong> - When do you need to be at work?</li>
+                        <li><strong>Get your webhook URL</strong> - Copy the URL generated at the end</li>
+                        <li><strong>Configure your device</strong> - Paste the URL in your TRMNL or Kindle settings</li>
+                    </ol>
+                    
+                    <div class="callout success">
+                        <span class="callout-icon">✅</span>
+                        <div>
+                            <strong>That's it!</strong> Your display will start showing your personalized commute.
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Devices -->
+            <section class="section" id="devices">
+                <h2 class="section-title">📟 Supported Devices</h2>
+                <div class="section-content">
+                    <h3>TRMNL Devices (Official)</h3>
+                    <ul>
+                        <li><strong>TRMNL Original</strong> - 7.5" display, 800×480, plug and play</li>
+                        <li><strong>TRMNL Mini</strong> - 4.2" display, 400×300, compact size</li>
+                    </ul>
+                    
+                    <h3>Kindle Devices (Jailbroken)</h3>
+                    <ul>
+                        <li><strong>Kindle Paperwhite 3/4/5</strong> - 6" display, requires jailbreak</li>
+                        <li><strong>Kindle Basic</strong> - 6" display, budget option</li>
+                    </ul>
+                    
+                    <h3>Inkplate (Experimental)</h3>
+                    <ul>
+                        <li><strong>Inkplate 6/10</strong> - ESP32-based, DIY friendly</li>
+                    </ul>
+                    
+                    <p>
+                        <a href="/docs/hardware/DEVICE-COMPATIBILITY.md">View full device compatibility guide →</a>
+                    </p>
+                </div>
+            </section>
+            
+            <!-- Setup Wizard -->
+            <section class="section" id="setup-wizard">
+                <h2 class="section-title">🧙 Setup Wizard</h2>
+                <div class="section-content">
+                    <p>
+                        The <a href="/setup-wizard.html">Setup Wizard</a> guides you through configuration step by step.
+                    </p>
+                    
+                    <h3>Step 1: Addresses</h3>
+                    <p>
+                        Enter your home address, work address, and optionally a coffee shop along your route.
+                        The wizard will find nearby transit stops automatically.
+                    </p>
+                    
+                    <h3>Step 2: Journey Settings</h3>
+                    <p>
+                        Set what time you need to arrive at work. The dashboard will calculate when you need to leave.
+                    </p>
+                    
+                    <h3>Step 3: API Keys (Optional)</h3>
+                    <p>
+                        For live data, you'll need a free API key from 
+                        <a href="https://opendata.transport.vic.gov.au" target="_blank">Transport Victoria OpenData</a>.
+                        Without a key, the system uses scheduled timetables.
+                    </p>
+                    
+                    <div class="callout info">
+                        <span class="callout-icon">💡</span>
+                        <div>
+                            <strong>Tip:</strong> You can skip API keys to test with demo data first, then add keys later.
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- FAQ -->
+            <section class="section" id="faq">
+                <h2 class="section-title">❓ Frequently Asked Questions</h2>
+                <div class="section-content">
+                    <div class="faq-item" onclick="this.classList.toggle('open')">
+                        <div class="faq-question">
+                            <span>How do I get an API key?</span>
+                            <span class="faq-toggle">+</span>
+                        </div>
+                        <div class="faq-answer">
+                            <p>
+                                1. Go to <a href="https://opendata.transport.vic.gov.au" target="_blank">opendata.transport.vic.gov.au</a><br>
+                                2. Create a free account<br>
+                                3. Navigate to "My API Keys"<br>
+                                4. Generate a new key<br>
+                                5. Paste it in the Setup Wizard
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item" onclick="this.classList.toggle('open')">
+                        <div class="faq-question">
+                            <span>Do I need to jailbreak my Kindle?</span>
+                            <span class="faq-toggle">+</span>
+                        </div>
+                        <div class="faq-answer">
+                            <p>
+                                Yes, Kindle devices need to be jailbroken to display custom content. 
+                                This voids your warranty but is safe when following proper guides.
+                                See the <a href="/docs/hardware/DEVICE-COMPATIBILITY.md">device guide</a> for instructions.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item" onclick="this.classList.toggle('open')">
+                        <div class="faq-question">
+                            <span>Why isn't my display updating?</span>
+                            <span class="faq-toggle">+</span>
+                        </div>
+                        <div class="faq-answer">
+                            <p>
+                                Common causes:<br>
+                                • WiFi disconnected - check device network settings<br>
+                                • Webhook URL incorrect - verify in device settings<br>
+                                • Server sleeping - first request may take 10-15 seconds<br>
+                                • Rate limited - wait a few minutes and try again
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item" onclick="this.classList.toggle('open')">
+                        <div class="faq-question">
+                            <span>How accurate is the "time for coffee" feature?</span>
+                            <span class="faq-toggle">+</span>
+                        </div>
+                        <div class="faq-answer">
+                            <p>
+                                The CoffeeDecision engine factors in:<br>
+                                • Walking time to the cafe<br>
+                                • Coffee preparation time (configurable)<br>
+                                • Walking time to your transit stop<br>
+                                • Real-time departure data<br>
+                                • Buffer time for safety<br><br>
+                                It's designed to be conservative - if it says you have time, you really do!
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item" onclick="this.classList.toggle('open')">
+                        <div class="faq-question">
+                            <span>Does this work outside Victoria?</span>
+                            <span class="faq-toggle">+</span>
+                        </div>
+                        <div class="faq-answer">
+                            <p>
+                                Currently, live data is only available for Victoria (Melbourne metro, regional V/Line).
+                                Support for NSW, QLD, and other states is planned for future releases.
+                                You can use demo mode to see how it works anywhere.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Getting Help -->
+            <section class="section" id="getting-help">
+                <h2 class="section-title">🆘 Getting Help</h2>
+                <div class="section-content">
+                    <p>Stuck? Here's how to get help:</p>
+                    
+                    <div class="card-grid">
+                        <div class="card">
+                            <div class="card-icon">📝</div>
+                            <div class="card-title">Report an Issue</div>
+                            <div class="card-desc">
+                                <a href="https://github.com/angusbergman17-cpu/einkptdashboard/issues/new" target="_blank">
+                                    Open a GitHub Issue
+                                </a>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-icon">📖</div>
+                            <div class="card-title">Documentation</div>
+                            <div class="card-desc">
+                                <a href="https://github.com/angusbergman17-cpu/einkptdashboard/tree/main/docs" target="_blank">
+                                    Full docs on GitHub
+                                </a>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-icon">💬</div>
+                            <div class="card-title">Community</div>
+                            <div class="card-desc">
+                                Join discussions on GitHub
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="callout warning">
+                        <span class="callout-icon">⚠️</span>
+                        <div>
+                            <strong>Before reporting:</strong> Check the FAQ above and ensure you're using the latest version.
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <footer class="footer">
+        <div class="footer-support">
+            <a href="https://buymeacoffee.com/angusbergman" target="_blank" rel="noopener" class="support-btn coffee">
+                ☕ Buy me a coffee
+            </a>
+            <a href="https://github.com/sponsors/angusbergman17-cpu" target="_blank" rel="noopener" class="support-btn sponsor">
+                💖 Sponsor
+            </a>
+            <a href="https://github.com/angusbergman17-cpu/einkptdashboard/issues/new?template=feedback.md" target="_blank" rel="noopener" class="support-btn feedback">
+                📝 Feedback
+            </a>
+        </div>
+        <div class="footer-legal">
+            © 2025-2026 <a href="https://github.com/angusbergman17-cpu" target="_blank" rel="noopener">Angus Bergman</a> •
+            <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">CC BY-NC 4.0</a> •
+            <a href="/attribution.html">Attribution</a> •
+            PTV-TRMNL v2.8
+        </div>
+    </footer>
+    
+    <script>
+        // Smooth scroll for sidebar links
+        document.querySelectorAll('.sidebar-nav a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    // Update active state
+                    document.querySelectorAll('.sidebar-nav a').forEach(l => l.classList.remove('active'));
+                    this.classList.add('active');
+                }
+            });
+        });
+        
+        // Update active sidebar link on scroll
+        window.addEventListener('scroll', () => {
+            const sections = document.querySelectorAll('.section');
+            let current = '';
+            
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop - 100;
+                if (pageYOffset >= sectionTop) {
+                    current = section.getAttribute('id');
+                }
+            });
+            
+            document.querySelectorAll('.sidebar-nav a').forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + current) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
