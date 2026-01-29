@@ -1,8 +1,8 @@
 # PTV-TRMNL Development Rules v3.0
 
 **MANDATORY COMPLIANCE DOCUMENT**  
-**Version: 3.2.0  
-**Last Updated: 2026-01-29  
+**Version**: 3.0.0  
+**Last Updated**: 2026-01-28  
 **Copyright (c) 2026 Angus Bergman - Licensed under CC BY-NC 4.0**
 
 ---
@@ -15,8 +15,6 @@
 | V11 Design Spec (Locked) | 🔴 CRITICAL | UI inconsistency, user confusion |
 | API Data Sources | 🟠 HIGH | Incorrect/missing transit data |
 | BMP Rendering Rules | 🟠 HIGH | Display artifacts, memory issues |
-| Location Agnostic Architecture | 🔴 CRITICAL | System fails for non-VIC users |
-| Private Data Protection | 🔴 CRITICAL | Security breach, key exposure |
 | Architecture Boundaries | 🟡 MEDIUM | Maintenance burden, tech debt |
 
 ---
@@ -156,140 +154,6 @@ const apiKey = process.env.ODATA_API_KEY;  // User must configure server
 - Zero-config deployment (no environment variables needed)
 - Self-contained devices (config travels with request)
 - Privacy (API keys stay with device owner)
-
----
-
-
-### 1.4 Location Agnostic Architecture (🚨 CRITICAL)
-
-**ABSOLUTE REQUIREMENT**: The system MUST work for ANY Australian location and transit mode from first deployment.
-
-**Location Agnostic Principles:**
-
-1. **No Hardcoded Locations**
-   - ❌ Never hardcode Melbourne-specific stops, routes, or coordinates
-   - ❌ Never assume Victorian transit data structure
-   - ✅ All locations determined dynamically from user configuration
-   - ✅ Use geocoding to resolve addresses to coordinates
-
-2. **State Detection at Runtime**
-   - System detects user's state from configured addresses
-   - API endpoints selected based on detected state
-   - Fallback timetables organized by state code
-
-3. **Transit Mode Agnostic**
-   - Support ALL transit modes from day one:
-
-| Mode | route_type | States |
-|------|------------|--------|
-| Metro Train | 0 | VIC, NSW, QLD, WA, SA |
-| Tram/Light Rail | 1 | VIC, NSW, SA |
-| Bus | 2 | ALL |
-| Regional Train | 3 | VIC, NSW, QLD |
-| Ferry | 4 | NSW, QLD, WA |
-
-**Implementation Requirements:**
-
-```javascript
-// ❌ FORBIDDEN - Melbourne-specific:
-const FLINDERS_ST_ID = 1071;
-const stops = getVictorianStops();
-
-// ✅ CORRECT - Location agnostic:
-const userState = detectStateFromCoordinates(lat, lon);
-const stops = getStopsForState(userState);
-const nearbyStops = findStopsNearLocation(lat, lon, userState);
-```
-
-**State Support Matrix:**
-
-| State | Code | Transit Authority | API Status |
-|-------|------|-------------------|------------|
-| Victoria | VIC | Transport Victoria | ✅ GTFS-RT |
-| New South Wales | NSW | Transport for NSW | ✅ GTFS-RT |
-| Queensland | QLD | TransLink | ✅ GTFS-RT |
-| Western Australia | WA | Transperth | ✅ GTFS-RT |
-| South Australia | SA | Adelaide Metro | ✅ GTFS-RT |
-| Tasmania | TAS | Metro Tasmania | 🟡 Static |
-| ACT | ACT | Transport Canberra | 🟡 Static |
-| Northern Territory | NT | - | 🔴 Limited |
-
-**Fallback Data Requirements:**
-
-```javascript
-// fallback-timetables.js MUST include:
-module.exports = {
-  VIC: { train: [...], tram: [...], bus: [...] },
-  NSW: { train: [...], bus: [...], ferry: [...] },
-  QLD: { train: [...], bus: [...], ferry: [...] },
-  WA:  { train: [...], bus: [...], ferry: [...] },
-  SA:  { train: [...], tram: [...], bus: [...] },
-  // ... all states
-};
-```
-
-**Pre-Commit Checklist (Location Agnostic):**
-- [ ] No hardcoded stop IDs outside of fallback data
-- [ ] No hardcoded coordinates (except state bounding boxes)
-- [ ] State detection works for all Australian states
-- [ ] Transit mode selection works for all route_types (0-4)
-- [ ] Fallback data exists for target states
-- [ ] UI labels use generic terms ("Train" not "Metro Trains Melbourne")
-
----
-
-
-### 1.5 Private Data Protection (🚨 CRITICAL)
-
-**ABSOLUTE REQUIREMENT**: No private information may appear in public repositories.
-
-**Prohibited in Public Code/Docs:**
-
-| Data Type | Example | Status |
-|-----------|---------|--------|
-| API Keys | `AIzaSy...`, `ce606b90-...` | 🔴 FORBIDDEN |
-| Home/Work Addresses | `1 Clara Street, South Yarra` | 🔴 FORBIDDEN |
-| Personal Coordinates | `-37.8401, 144.9835` | 🔴 FORBIDDEN |
-| Device IDs | Specific TRMNL device identifiers | 🔴 FORBIDDEN |
-| Email Addresses | Personal email addresses | 🔴 FORBIDDEN |
-| Phone Numbers | Any personal phone numbers | 🔴 FORBIDDEN |
-
-**Use Placeholders Instead:**
-
-```javascript
-// ❌ FORBIDDEN in public code:
-const API_KEY = 'AIzaSyA9WYpRfLtBiEQfvTD-ac4ImHBohHsv3yQ';
-const HOME = '1 Clara Street, South Yarra VIC';
-
-// ✅ CORRECT - Use placeholders:
-const API_KEY = process.env.GOOGLE_PLACES_API_KEY || 'YOUR_API_KEY';
-const HOME = config.addresses?.home || '123 Example Street, Melbourne VIC';
-```
-
-**Documentation Examples Must Use:**
-- `YOUR_API_KEY` or `<API_KEY_HERE>`
-- `123 Example Street, Melbourne VIC 3000`
-- `80 Collins Street, Melbourne VIC 3000`
-- `-37.8136, 144.9631` (Melbourne CBD - public landmark)
-- `user@example.com`
-
-**Testing with Real Data:**
-- Real API keys and addresses stored in `PRIVATE-CONFIG.md` (gitignored)
-- CI/CD uses environment secrets, never committed values
-- Test logs must be scrubbed before committing
-
-**Pre-Commit Checklist (Private Data):**
-- [ ] `git diff --cached` shows NO real API keys
-- [ ] `git diff --cached` shows NO personal addresses
-- [ ] `git diff --cached` shows NO private coordinates
-- [ ] All examples use placeholder values
-- [ ] Test output logs are scrubbed
-
-**If Private Data is Accidentally Committed:**
-1. **IMMEDIATELY** rotate the exposed API key
-2. Use `git filter-branch` or BFG Repo Cleaner to purge history
-3. Force push the cleaned history
-4. Document the incident
 
 ---
 
