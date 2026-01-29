@@ -643,7 +643,10 @@
                 if (result.success) {
                     status.style.color = '#48bb78';
                     if (result.testResult && result.testResult.success) {
-                        status.innerHTML = `✅ API key saved and tested successfully!<br><small style="color: #718096;">Service: ${result.testResult.service}, Address found: ${result.testResult.foundAddress}</small>`;
+                        status.innerHTML = `✅ API key saved and validated! Google Places is working.<br><small style="color: #718096;">${result.testResult.predictions} test predictions returned</small>`;
+                    } else if (result.testResult && !result.testResult.success) {
+                        status.style.color = '#f59e0b';
+                        status.innerHTML = `⚠️ API key saved but validation failed:<br><small style="color: #e53e3e;">${result.testResult.message}</small><br><small>Check your Google Cloud Console - ensure Places API (New) is enabled and key has no restrictions blocking it.</small>`;
                     } else {
                         status.innerHTML = '✅ API key saved (test inconclusive - will be used for address searches)';
                     }

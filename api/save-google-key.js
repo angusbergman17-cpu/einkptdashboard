@@ -47,10 +47,44 @@ export default async function handler(req, res) {
 
     console.log('[save-google-key] ✅ Google Places API key saved');
 
+    // Test the key with a real Google Places API call
+    const testKey = apiKey.trim();
+    let testResult = { success: false, message: 'Not tested' };
+    
+    try {
+      const testUrl = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=Sydney+Opera+House&components=country:au&key=${testKey}`;
+      const testResponse = await fetch(testUrl);
+      const testData = await testResponse.json();
+      
+      if (testData.status === 'OK') {
+        testResult = {
+          success: true,
+          message: 'API key validated successfully',
+          predictions: testData.predictions?.length || 0
+        };
+        console.log('[save-google-key] ✅ Google API key test PASSED');
+      } else if (testData.status === 'REQUEST_DENIED') {
+        testResult = {
+          success: false,
+          message: `Google API error: ${testData.error_message || 'REQUEST_DENIED'}`
+        };
+        console.log('[save-google-key] ❌ Google API key test FAILED:', testData.error_message);
+      } else {
+        testResult = {
+          success: false,
+          message: `Google API status: ${testData.status}`
+        };
+      }
+    } catch (testError) {
+      testResult = { success: false, message: testError.message };
+      console.log('[save-google-key] ❌ Test error:', testError.message);
+    }
+
     return res.status(200).json({
       success: true,
-      message: 'API key saved successfully',
-      availableServices: ['google_places']
+      message: 'API key saved',
+      testResult,
+      availableServices: testResult.success ? ['google_places'] : []
     });
 
   } catch (error) {
