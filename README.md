@@ -3,34 +3,31 @@
 ### Smart Transit Display for Australian Public Transport
 
 ![License](https://img.shields.io/badge/license-CC%20BY--NC%204.0-blue)
-![Version](https://img.shields.io/badge/version-3.0.0-green)
+![Version](https://img.shields.io/badge/version-1.0.0-green)
 ![Platform](https://img.shields.io/badge/platform-TRMNL%20%7C%20Kindle-orange)
+![Spec](https://img.shields.io/badge/spec-V10%20Dashboard-purple)
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/angusbergman17-cpu/einkptdashboard)
 
 > Your personal e-ink transit dashboard. Real-time departures, smart journey planning, and the all-important coffee decision — rendered server-side and delivered to your display.
-
-<p align="center">
-  <img src="dashboard-preview.png" alt="PTV-TRMNL Dashboard Preview" width="600">
-</p>
 
 ---
 
 ## ✨ Features
 
-- 🚊 **Real-Time Transit Data** — Live departures from Transport Victoria GTFS-RT
+- 🚊 **Real-Time Transit Data** — Live departures from Transport Victoria OpenData API (GTFS-RT)
 - ☕ **Smart Coffee Decision** — Calculates if you have time to stop for coffee
-- 🗺️ **Multi-Leg Journeys** — Walk → Tram → Train → Walk with accurate timing
-- 🌤️ **Weather Integration** — BOM weather data with umbrella alerts
+- 🗺️ **Multi-Leg Journeys** — Walk → Coffee → Tram → Train → Walk with accurate timing
+- 🌤️ **Weather Integration** — BOM weather data at a glance
 - 🖥️ **E-Ink Optimized** — 1-bit BMP rendering with 20-second partial refresh
-- 🔒 **Self-Hosted** — Your data, your server, your API keys
-- 🆓 **Free to Deploy** — Runs entirely on Vercel/Render free tier
-- 🇦🇺 **All Australian States** — Fallback timetables for every state/territory
+- 🔒 **100% Self-Hosted** — Your data, your server, your API keys
+- 🆓 **Free to Deploy** — Runs entirely on Vercel free tier
+- 🚫 **No TRMNL Cloud** — Custom firmware, zero external dependencies
 
 ---
 
 ## 🏗️ Architecture
 
-PTV-TRMNL uses a **self-hosted distribution model** — each user deploys their own server instance.
+PTV-TRMNL uses a **fully self-hosted distribution model** — each user deploys their own complete stack.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -39,240 +36,120 @@ PTV-TRMNL uses a **self-hosted distribution model** — each user deploys their 
 │    GitHub Fork              Your Server               Your Device       │
 │   ┌───────────┐            ┌───────────┐            ┌───────────┐      │
 │   │ Your Copy │   Deploy   │  Vercel   │   Image    │   TRMNL   │      │
-│   │  of Repo  │ ────────▶  │  Render   │ ────────▶  │  Kindle   │      │
+│   │  of Repo  │ ────────▶  │  (Free)   │ ────────▶  │  Kindle   │      │
 │   └───────────┘            └───────────┘            └───────────┘      │
-│                                  │                                      │
-│                       Your API Keys (env vars)                          │
-│                       Your Preferences (JSON)                           │
+│                                  │                        │            │
+│                       Config Token in URL ◄───────────────┘            │
+│                       (API keys embedded)                               │
 │                                                                         │
-│   ✅ Complete isolation — your data never touches other users           │
-│   ✅ Zero-config — Setup Wizard handles everything                      │
-│   ✅ No central server — you own your entire stack                      │
+│   ✅ Complete data isolation between users                              │
+│   ✅ Zero-config — no environment variables to edit                     │
+│   ✅ No central server dependency                                       │
+│   ✅ Custom firmware only — NO usetrmnl.com                             │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
 **Key Principles:**
-- **Server does ALL the thinking** — fetches data, calculates routes, renders images
-- **Device is dumb** — receives image, displays it, sleeps
-- **No tracking** — your commute data stays on your server
+- **Server does ALL rendering** — fetches data, calculates routes, renders images
+- **Device is dumb** — receives BMP image, displays it, sleeps
+- **Zero-config deployment** — API keys configured via Setup Wizard, embedded in URL tokens
+- **No TRMNL cloud** — custom firmware connects only to YOUR server
 
 ---
 
 ## 📱 Supported Devices
 
-| Device | Resolution | Orientation | Status |
-|--------|-----------|-------------|--------|
-| **TRMNL OG (7.5")** | 800×480 | Landscape | ✅ Fully Supported |
-| **TRMNL Mini** | 600×448 | Landscape | ✅ Fully Supported |
-| **Kindle Paperwhite 5** | 1236×1648 | Portrait | ✅ Supported* |
-| **Kindle Paperwhite 3/4** | 1072×1448 | Portrait | ✅ Supported* |
-| **Kindle (11th gen)** | 1072×1448 | Portrait | ✅ Supported* |
-| **Kindle Basic (10th)** | 600×800 | Portrait | ✅ Supported* |
+| Device | Resolution | Orientation | Bit Depth | Status |
+|--------|-----------|-------------|-----------|--------|
+| **TRMNL OG** | 800×480 | Landscape | 1-bit BMP | ✅ Primary |
+| **TRMNL Mini** | 600×448 | Landscape | 1-bit BMP | ✅ Supported |
+| **Kindle Paperwhite 5** | 1236×1648 | Portrait | 8-bit PNG | ✅ Supported* |
+| **Kindle Paperwhite 3/4** | 1072×1448 | Portrait | 8-bit PNG | ✅ Supported* |
+| **Kindle Voyage** | 1072×1448 | Portrait | 8-bit PNG | ✅ Supported* |
+| **Kindle Touch** | 600×800 | Portrait | 8-bit PNG | ✅ Supported* |
 
-*Kindle devices require jailbreak + TRMNL extension
+*Kindle devices require jailbreak — see [DEVELOPMENT-RULES.md Section 6](DEVELOPMENT-RULES.md#-section-6-compatible-kindle-devices)
 
 ---
 
 ## 🚀 Quick Start
 
-### Step 1: Generate Your Unique Server Name
-
-Your server needs a unique name. Use one of these formats:
-
-```
-ptv-trmnl-[yourname]        → ptv-trmnl-angus
-ptv-trmnl-[suburb]          → ptv-trmnl-southyarra
-transit-display-[random]    → transit-display-7x4k
-[yourname]-commute          → sarah-commute
-```
-
-**Name Generator:** Pick 2-3 words that are meaningful to you:
-```
-[adjective]-[noun]-transit    → clever-koala-transit
-[color]-[animal]-ptv          → blue-wombat-ptv
-[suburb]-[street]-display     → richmond-church-display
-```
-
-> ⚠️ **Important:** Your server name becomes your URL (e.g., `ptv-trmnl-angus.vercel.app`). Choose something memorable but not personally identifiable.
-
----
-
-### Step 2: Fork & Deploy
-
-#### Option A: One-Click Vercel Deploy (Recommended)
+### Step 1: Deploy to Vercel
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/angusbergman17-cpu/einkptdashboard)
 
 1. Click the button above
 2. Sign in with GitHub
-3. **Name your project** using your unique server name from Step 1
+3. Name your project (e.g., `ptv-trmnl-yourname`)
 4. Click **Deploy**
-5. Wait ~60 seconds for deployment
+5. Wait ~60 seconds
 
-Your server will be live at:
-```
-https://[your-project-name].vercel.app
-```
+Your server will be live at: `https://[your-project-name].vercel.app`
 
-#### Option B: Fork + Manual Deploy
+### Step 2: Run the Setup Wizard
 
-1. **Fork the repository:**
-   
-   [![Fork](https://img.shields.io/badge/Fork-Repository-blue?logo=github)](https://github.com/angusbergman17-cpu/einkptdashboard/fork)
-
-2. **Deploy to your platform:**
-   - [Vercel](https://vercel.com/new) — Import your fork
-   - [Render](https://render.com) — New Web Service → Connect repo
-   - [Railway](https://railway.app) — New Project → Deploy from GitHub
-
----
-
-### Step 3: Run the Setup Wizard
-
-Open your server URL and add `/admin`:
+Open your server URL with `/admin`:
 
 ```
-https://[your-server-name].vercel.app/admin
+https://[your-project-name].vercel.app/admin
 ```
 
-The **7-step Setup Wizard** will guide you through:
+The **Setup Wizard** guides you through:
+- 📍 Home, work, and cafe locations
+- 🕐 Work arrival time and coffee preferences
+- 🚊 Transit stop auto-detection
+- 🔑 API keys (optional — works with fallback timetables)
+- 📱 Device selection
 
-| Step | What You'll Configure |
-|------|----------------------|
-| 1️⃣ | **Location** — Detect your state (VIC, NSW, QLD, etc.) |
-| 2️⃣ | **Addresses** — Home, work, and cafe locations |
-| 3️⃣ | **Journey** — Work arrival time, coffee preferences |
-| 4️⃣ | **Transit Stops** — Auto-detected or manual selection |
-| 5️⃣ | **API Keys** — Transport Victoria (optional for live data) |
-| 6️⃣ | **Weather** — BOM station auto-detected from location |
-| 7️⃣ | **Device** — Select your e-ink display type |
+### Step 3: Flash Custom Firmware
 
-> 💡 **No API keys?** The system works with fallback timetables. Add API keys later for real-time data.
+**⚠️ TRMNL devices require custom PTV-TRMNL firmware.**
 
----
+See [DEVELOPMENT-RULES.md Section 5](DEVELOPMENT-RULES.md#-section-5-custom-firmware-requirement) for flashing instructions.
 
-### Step 4: Configure Your Device
-
-#### TRMNL Device
-
-1. Get your **Webhook URL** from the Setup Wizard (Step 7)
-2. In the TRMNL app, create a **Private Plugin**
-3. Paste your webhook URL
-4. Your device will start showing transit data!
-
-#### Kindle (Jailbroken)
-
-1. Install the [TRMNL Kindle Extension](https://github.com/usetrmnl/kindle-trmnl)
-2. Configure the server URL in the extension settings
-3. Set refresh interval (recommended: 5 minutes)
+**Do NOT use stock TRMNL firmware** — it connects to usetrmnl.com, not your server.
 
 ---
 
-## 🔑 API Keys (Optional)
-
-PTV-TRMNL works without API keys using fallback timetables. For **real-time data**, add these:
-
-| Service | Purpose | Get Key |
-|---------|---------|---------|
-| **Transport Victoria** | Live train/tram/bus times | [Register here](https://opendata.transport.vic.gov.au/) |
-| **Google Places** | Better address search | [Google Cloud Console](https://console.cloud.google.com/) |
-
-Add keys via the Setup Wizard or Vercel Environment Variables.
-
----
-
-## 📊 Dashboard Endpoints
-
-Once deployed, your server provides these endpoints:
-
-| Endpoint | Description |
-|----------|-------------|
-| `/` | Landing page with setup detection |
-| `/admin` | Setup Wizard & Dashboard |
-| `/simulator.html` | Device simulator for testing |
-| `/api/screen` | TRMNL webhook (JSON + zones) |
-| `/api/dashboard` | HTML dashboard (800×480) |
-| `/api/zones` | Zone-based partial refresh |
-| `/api/status` | Server health & configuration |
-| `/health` | Simple health check |
-
----
-
-## 🎨 V11 Dashboard Layout
+## 🎨 V10 Dashboard Layout
 
 The dashboard displays your complete journey at a glance:
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│  📍 SOUTH YARRA            07:32        ☀️ 21°  NO UMBRELLA    │
-│     Tuesday 28 January                                          │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ☕ STOP FOR COFFEE                          Arrive: 08:14 AM   │
-│                                              Total: 42 min      │
-│                                                                 │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │ 🚶 Walk to Tram Stop                              5 min │   │
-│  │ 🚊 Tram 86 → Bourke St           Departs 7:41   18 min │   │
-│  │ ☕ Coffee at Proud Mary                           8 min │   │
-│  │ 🚶 Walk to Station                                3 min │   │
-│  │ 🚆 Train → Parliament            Departs 8:02    5 min │   │
-│  │ 🚶 Walk to 80 Collins St                          3 min │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│                                                                 │
-├─────────────────────────────────────────────────────────────────┤
-│  ✓ Good service on all lines                                   │
-│  Data: Transport Victoria • BOM • OpenStreetMap                │
-└─────────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────┐
+│ HEADER (0-94px)                                            │
+│ [Location] [Time 64px] [AM/PM] [Day] [Weather]             │
+├────────────────────────────────────────────────────────────┤
+│ SUMMARY BAR (96-124px)                                     │
+│ LEAVE NOW → Arrive 7:25                              65min │
+├────────────────────────────────────────────────────────────┤
+│ JOURNEY LEGS (132-440px)                                   │
+│ ① 🚶 Walk to stop                                    5 MIN │
+│                         ▼                                  │
+│ ② ☕ Coffee at Norman's                              8 MIN │
+│                         ▼                                  │
+│ ③ 🚃 Train to Flinders                              12 MIN │
+├────────────────────────────────────────────────────────────┤
+│ FOOTER (448-480px)                                         │
+│ 80 COLLINS ST, MELBOURNE                    ARRIVE 8:32    │
+└────────────────────────────────────────────────────────────┘
 ```
+
+**Design Specification:** [specs/DASHBOARD-SPEC-V10.md](specs/DASHBOARD-SPEC-V10.md) (LOCKED)
 
 ---
 
-## 🛠️ Development
+## 📊 API Endpoints
 
-### Local Development
-
-```bash
-# Clone your fork
-git clone https://github.com/YOUR-USERNAME/einkptdashboard.git
-cd einkptdashboard
-
-# Install dependencies
-npm install
-
-# Create environment file
-cp .env.example .env
-# Edit .env with your API keys
-
-# Start development server
-npm run dev
-
-# Open http://localhost:3000
-```
-
-### Project Structure
-
-```
-einkptdashboard/
-├── api/                    # Vercel serverless functions
-│   ├── index.js           # Main Express app wrapper
-│   ├── screen.js          # TRMNL webhook endpoint
-│   ├── zones.js           # Zone-based partial refresh
-│   └── health.js          # Health check
-├── src/
-│   ├── server.js          # Express server
-│   └── services/          # Business logic
-│       ├── journey-planner.js
-│       ├── zone-renderer.js
-│       └── geocoding-service.js
-├── public/                 # Static files
-│   ├── index.html         # Landing page
-│   ├── admin.html         # Advanced admin
-│   ├── admin-v3.html      # Setup wizard
-│   └── simulator.html     # Device simulator
-├── firmware/              # ESP32 firmware for TRMNL
-└── specs/                 # Design specifications
-```
+| Endpoint | Description |
+|----------|-------------|
+| `/` | Landing page |
+| `/admin` | Setup Wizard |
+| `/simulator.html` | Device simulator |
+| `/api/zones` | Zone-based partial refresh (TRMNL) |
+| `/api/screen` | Full screen PNG (webhook) |
+| `/api/kindle/image` | Kindle-optimized PNG |
+| `/api/status` | Server health |
 
 ---
 
@@ -280,20 +157,44 @@ einkptdashboard/
 
 | Document | Description |
 |----------|-------------|
-| [QUICK-START.md](QUICK-START.md) | Fast setup guide |
-| [INSTALL.md](INSTALL.md) | Detailed installation |
-| [DEVELOPMENT-RULES.md](DEVELOPMENT-RULES.md) | Contributing guidelines |
-| [KNOWN-ISSUES.md](KNOWN-ISSUES.md) | Hardware quirks & fixes |
-| [specs/DASHBOARD-SPEC.md](specs/DASHBOARD-SPEC.md) | Dashboard design spec |
+| **[DEVELOPMENT-RULES.md](DEVELOPMENT-RULES.md)** | 🚨 **MANDATORY** — All development rules (v1.3) |
+| [INSTALL.md](INSTALL.md) | Detailed installation guide |
+| [SETUP_GUIDE.md](SETUP_GUIDE.md) | Step-by-step setup |
+| [specs/DASHBOARD-SPEC-V10.md](specs/DASHBOARD-SPEC-V10.md) | Dashboard design spec (LOCKED) |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture |
+| [docs/PROJECT-VISION.md](docs/PROJECT-VISION.md) | Project goals and roadmap |
 
 ---
 
-## 💖 Support the Project
+## 🛠️ Development
 
-If PTV-TRMNL helps you catch your train on time, consider supporting development:
+### Prerequisites
 
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/angusbergman)
-[![GitHub Sponsors](https://img.shields.io/badge/GitHub%20Sponsors-EA4AAA?style=for-the-badge&logo=github-sponsors&logoColor=white)](https://github.com/sponsors/angusbergman17-cpu)
+- Node.js 18+
+- npm or yarn
+- PlatformIO (for firmware)
+
+### Local Development
+
+```bash
+git clone https://github.com/angusbergman17-cpu/einkptdashboard.git
+cd einkptdashboard
+npm install
+npm run dev
+# Open http://localhost:3000
+```
+
+### Before ANY Code Changes
+
+**⚠️ MANDATORY:** Read [DEVELOPMENT-RULES.md](DEVELOPMENT-RULES.md) first.
+
+Key rules:
+- V10 spec is **LOCKED** — no changes without approval
+- Never use "PTV API" — use "Transport Victoria OpenData API"
+- Custom firmware only — NO usetrmnl.com dependencies
+- 1-bit BMP rendering — no grayscale
+- 20-second refresh — hardcoded, do not change
+- CC BY-NC 4.0 license — required on all files
 
 ---
 
@@ -312,18 +213,23 @@ See [LICENSE](LICENSE) for full terms.
 
 ## 🙏 Attribution
 
-PTV-TRMNL uses data from these sources:
+PTV-TRMNL uses data from:
 
-- **Transport Victoria** — Real-time GTFS data (CC BY 4.0)
-- **Bureau of Meteorology** — Weather data (CC BY 3.0 AU)
-- **OpenStreetMap** — Geocoding (ODbL)
-- **TRMNL** — E-ink display platform
+- **Transport Victoria** — GTFS-RT data via OpenData API
+- **Bureau of Meteorology** — Weather data
+- **OpenStreetMap** — Geocoding
+
+---
+
+## 💖 Support
+
+If PTV-TRMNL helps you catch your train on time:
+
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/angusbergman)
 
 ---
 
 <p align="center">
   <strong>Built with ☕ in Melbourne</strong><br>
-  <a href="https://github.com/angusbergman17-cpu/einkptdashboard">GitHub</a> •
-  <a href="https://buymeacoffee.com/angusbergman">Support</a> •
-  <a href="https://github.com/angusbergman17-cpu/einkptdashboard/issues">Issues</a>
+  <sub>Copyright (c) 2025 Angus Bergman — CC BY-NC 4.0</sub>
 </p>

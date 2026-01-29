@@ -1,759 +1,468 @@
-# PTV-TRMNL System Architecture & Workflow
+# PTV-TRMNL System Architecture
 
-**Document Version**: 1.0
-**Date**: January 23, 2026
-**Status**: Design Specification
+**Version:** 2.0  
+**Last Updated:** 2025-01-29  
+**Status:** Active  
+**Specification:** V10 Dashboard (LOCKED)
 
 ---
 
 ## Table of Contents
-1. [Intended Device Workflow](#intended-device-workflow)
-2. [System Architecture](#system-architecture)
-3. [Hardware Specifications](#hardware-specifications)
-4. [Communication Flow](#communication-flow)
-5. [Display Parameters](#display-parameters)
-6. [Boot Failsafes](#boot-failsafes)
-7. [Memory & Storage Management](#memory--storage-management)
-8. [Dashboard Focus](#dashboard-focus)
+
+1. [Overview](#1-overview)
+2. [Distribution Model](#2-distribution-model)
+3. [System Components](#3-system-components)
+4. [Data Flow](#4-data-flow)
+5. [Hardware Specifications](#5-hardware-specifications)
+6. [API Architecture](#6-api-architecture)
+7. [Rendering Pipeline](#7-rendering-pipeline)
+8. [Zone-Based Partial Refresh](#8-zone-based-partial-refresh)
+9. [Security Model](#9-security-model)
+10. [Deployment Architecture](#10-deployment-architecture)
 
 ---
 
-## 1. Intended Device Workflow
+## 1. Overview
 
-### 1.1 Boot Sequence (ONE TIME ONLY)
+PTV-TRMNL is a **fully self-hosted smart transit display system** for Australian public transport. Each user deploys their own complete stack with zero external dependencies.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     BOOT SEQUENCE                           │
-│                 (Occurs once per power cycle)               │
-└─────────────────────────────────────────────────────────────┘
+### Core Principles
 
-STEP 1: Display Initialization
-├─ Clear screen to WHITE
-├─ Set font to FONT_8x8
-└─ Initialize bb_epaper library
+| Principle | Implementation |
+|-----------|----------------|
+| **Self-Hosted** | User owns server, device, and API keys |
+| **Zero-Config** | No environment variables — config via Setup Wizard |
+| **No TRMNL Cloud** | Custom firmware only — never contacts usetrmnl.com |
+| **Server-Side Rendering** | All computation on server — device receives images |
+| **Privacy-First** | Commute data stays on user's server |
 
-STEP 2: System Messages (Sequential, Persistent)
-├─ "PTV-TRMNL System Starting..." ─────> Display at (10, 20)
-├─ "Connecting to WiFi..."        ─────> Display at (10, 40)
-├─ Connect to WiFi (WiFiManager)
-├─ "WiFi OK"                      ─────> Display at (10, 60)
-├─ FULL REFRESH ──────────────────────> Commit logs to screen
-│
-├─ "Fetching data..."             ─────> Display at (10, 80)
-├─ HTTP GET to server
-├─ "Data OK"                      ─────> Display at (10, 100)
-├─ FULL REFRESH ──────────────────────> Commit logs to screen
-│
-├─ "Parsing..."                   ─────> Display at (10, 120)
-├─ Parse JSON response
-├─ "Parse OK"                     ─────> Display at (10, 140)
-├─ FULL REFRESH ──────────────────────> Commit logs to screen
-│
-├─ "Drawing dashboard..."         ─────> Display at (10, 160)
-├─ Clear screen to WHITE
-├─ Draw complete dashboard layout
-├─ FULL REFRESH ──────────────────────> Display dashboard
-│
-└─ "Entering operation mode..."   ─────> Transition to OPERATION
+### Technology Stack
 
-⚠️ CRITICAL: NO REBOOT AFTER THIS POINT ⚠️
-```
-
-### 1.2 Operation Mode (CONTINUOUS LOOP)
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    OPERATION MODE                           │
-│          (Runs continuously - NO REBOOTS)                   │
-└─────────────────────────────────────────────────────────────┘
-
-LOOP START:
-│
-├─ Sleep for 30 seconds (deep sleep)
-├─ Wake up on timer
-│
-├─ Fetch data from server (HTTPS GET)
-├─ Parse JSON response
-│
-├─ Compare with previous values (stored in RAM)
-│
-├─ FOR EACH CHANGED REGION:
-│   ├─ Draw BLACK box over region (anti-ghosting)
-│   ├─ Draw WHITE box over region (anti-ghosting)
-│   ├─ Draw new text/content
-│   └─ PARTIAL REFRESH (only that region)
-│
-├─ Update stored values
-│
-└─ LOOP BACK TO START
-
-⚠️ NEVER CALL esp_restart() OR REBOOT ⚠️
-⚠️ NEVER CLEAR ENTIRE SCREEN (only region boxes) ⚠️
-```
-
-### 1.3 Visual Workflow Diagram
-
-```
-┌──────────────┐
-│ POWER ON     │
-└──────┬───────┘
-       │
-       ▼
-┌──────────────────────────────────────────┐
-│         BOOT SEQUENCE                    │
-│  ┌────────────────────────────────┐     │
-│  │ 1. Init Display                │     │
-│  │ 2. Show Sequential Logs        │     │
-│  │ 3. Connect WiFi                │     │
-│  │ 4. Fetch Initial Data          │     │
-│  │ 5. Parse JSON                  │     │
-│  │ 6. Draw Full Dashboard         │     │
-│  └────────────────────────────────┘     │
-└──────────────┬───────────────────────────┘
-               │
-               │ ⚠️ TRANSITION (NO REBOOT) ⚠️
-               │
-               ▼
-┌──────────────────────────────────────────┐
-│      OPERATION MODE (INFINITE)           │
-│  ┌────────────────────────────────┐     │
-│  │ LOOP:                          │◄────┤
-│  │   1. Sleep 30s                 │     │
-│  │   2. Wake up                   │     │
-│  │   3. Fetch data                │     │
-│  │   4. Compare with previous     │     │
-│  │   5. Update changed regions    │     │
-│  │   6. Partial refresh only      │     │
-│  └────────────────────────────────┘     │
-│               │                          │
-│               └──────────────────────────┤
-└──────────────────────────────────────────┘
-         (runs until power off)
-```
+| Layer | Technology |
+|-------|------------|
+| **Server** | Node.js 18+, Express, Vercel Serverless |
+| **Rendering** | Canvas API, 1-bit BMP generation |
+| **Data** | Transport Victoria OpenData API (GTFS-RT) |
+| **Firmware** | ESP32-C3, PlatformIO, C++ |
+| **Display** | E-ink (800×480 TRMNL, various Kindle) |
 
 ---
 
-## 2. System Architecture
+## 2. Distribution Model
 
-### 2.1 Complete System Diagram
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                          USER'S HOME                                │
-│                                                                     │
-│  ┌────────────────────────────────────────────────────────┐        │
-│  │         TRMNL DEVICE (ESP32-C3 RISC-V)                 │        │
-│  │  ┌──────────────────────────────────────────────┐      │        │
-│  │  │  E-INK DISPLAY (7.5" Waveshare)              │      │        │
-│  │  │  Resolution: 800×480 pixels                  │      │        │
-│  │  │  Orientation: LANDSCAPE (no rotation)        │      │        │
-│  │  │  Driver: bb_epaper library                   │      │        │
-│  │  │  Panel Type: EP75_800x480                    │      │        │
-│  │  └──────────────────────────────────────────────┘      │        │
-│  │                       ▲                                 │        │
-│  │                       │ SPI Communication               │        │
-│  │                       │ (MOSI, SCK, CS, DC, RST, BUSY) │        │
-│  │                       ▼                                 │        │
-│  │  ┌──────────────────────────────────────────────┐      │        │
-│  │  │  FIRMWARE (C++ / PlatformIO)                 │      │        │
-│  │  │  - main.cpp (boot + operation logic)         │      │        │
-│  │  │  - config.h (settings)                       │      │        │
-│  │  │  - WiFiManager (captive portal setup)        │      │        │
-│  │  │  - HTTPClient (HTTPS requests)               │      │        │
-│  │  │  - ArduinoJson (JSON parsing)                │      │        │
-│  │  │  - Preferences (NVS storage)                 │      │        │
-│  │  └──────────────────────────────────────────────┘      │        │
-│  │                       ▲                                 │        │
-│  │                       │ WiFi Connection                 │        │
-│  │                       │ (2.4GHz 802.11 b/g/n)          │        │
-│  └───────────────────────┼─────────────────────────────────┘        │
-│                          │                                          │
-│  ┌───────────────────────┼─────────────────────────────────┐        │
-│  │         WiFi Router   │                                 │        │
-│  │                       │                                 │        │
-│  └───────────────────────┼─────────────────────────────────┘        │
-└────────────────────────────┼──────────────────────────────────────────┘
-                            │
-                            │ INTERNET (HTTPS)
-                            │
-┌────────────────────────────┼──────────────────────────────────────────┐
-│                  RENDER.COM CLOUD                                    │
-│                            │                                          │
-│  ┌─────────────────────────▼───────────────────────────────┐         │
-│  │      NODE.JS SERVER (Express)                           │         │
-│  │      URL: https://your-server-name.vercel.app            │         │
-│  │                                                          │         │
-│  │  ┌────────────────────────────────────────────┐         │         │
-│  │  │  ENDPOINTS:                                │         │         │
-│  │  │  - GET /api/region-updates                 │◄────────┼─────────┼─ FIRMWARE CALLS THIS
-│  │  │    Returns: JSON with 5 regions            │         │         │
-│  │  │    {timestamp, regions: [...]}             │         │         │
-│  │  │                                            │         │         │
-│  │  │  - GET /admin/status                       │         │         │
-│  │  │  - GET /admin/apis                         │         │         │
-│  │  │  - GET /admin/devices                      │         │         │
-│  │  └────────────────────────────────────────────┘         │         │
-│  │                       ▲                                  │         │
-│  │                       │                                  │         │
-│  │  ┌────────────────────┴──────────────────────┐          │         │
-│  │  │  DATA PROCESSING:                         │          │         │
-│  │  │  - server.js (main app)                   │          │         │
-│  │  │  - data-scraper.js (fetch PTV data)       │          │         │
-│  │  │  - opendata.js (PTV API client)           │          │         │
-│  │  │  - Cache: 25 seconds                      │          │         │
-│  │  └────────────────────┬──────────────────────┘          │         │
-│  │                       │                                  │         │
-│  └───────────────────────┼──────────────────────────────────┘         │
-└────────────────────────────┼──────────────────────────────────────────┘
-                            │
-                            │ HTTPS (with auth headers)
-                            │
-┌────────────────────────────▼──────────────────────────────────────────┐
-│              PTV OPEN DATA API (VIC GOVERNMENT)                      │
-│              https://api.opendata.transport.vic.gov.au/               │
-│                                                                       │
-│  ┌─────────────────────────────────────────────────────────┐         │
-│  │  GTFS-REALTIME FEEDS:                                   │         │
-│  │  - Metro Trains: trip-updates, vehicle-positions        │         │
-│  │  - Yarra Trams: trip-updates, vehicle-positions         │         │
-│  │  - Service Alerts                                       │         │
-│  │                                                          │         │
-│  │  Format: Protocol Buffers (protobuf)                    │         │
-│  │  Authentication: Multi-header + query param             │         │
-│  └─────────────────────────────────────────────────────────┘         │
-└───────────────────────────────────────────────────────────────────────┘
-```
-
-### 2.2 Data Flow Chain
+### Self-Hosted Architecture
 
 ```
-PTV API (protobuf)
-    │
-    │ Authenticated HTTPS request
-    │ Headers: KeyID, Ocp-Apim-Subscription-Key
-    │ Query: ?subscription-key=XXX
-    │
-    ▼
-opendata.js
-    │ Decodes protobuf to JSON
-    │ Filters for origin station
-    │
-    ▼
-data-scraper.js
-    │ Processes departures
-    │ City-bound filtering
-    │ Platform 5 prioritization
-    │
-    ▼
-server.js
-    │ Formats as region updates
-    │ Caches for 25 seconds
-    │ Returns simplified JSON:
-    │ {
-    │   "timestamp": "...",
-    │   "regions": [
-    │     {"id": "time", "text": "19:47"},
-    │     {"id": "train1", "text": "5"},
-    │     {"id": "train2", "text": "12"},
-    │     {"id": "tram1", "text": "3"},
-    │     {"id": "tram2", "text": "8"}
-    │   ]
-    │ }
-    │
-    ▼
-HTTPS response to firmware
-    │
-    ▼
-Firmware (HTTPClient)
-    │ Parses JSON
-    │ Extracts region text values
-    │
-    ▼
-Display Rendering
-    │ Updates changed regions only
-    │ Anti-ghosting: BLACK→WHITE→content
-    │ Partial refresh per region
-    │
-    ▼
-E-ink Display
-    Shows live departure times
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    SELF-HOSTED DISTRIBUTION MODEL                        │
+│                                                                          │
+│   ┌─────────────┐        ┌─────────────┐        ┌─────────────┐         │
+│   │  Official   │  Fork  │   User's    │ Deploy │   User's    │         │
+│   │    Repo     │ ─────▶ │    Repo     │ ─────▶ │   Vercel    │         │
+│   └─────────────┘        └─────────────┘        └──────┬──────┘         │
+│                                                         │                │
+│                                                         ▼                │
+│   ┌─────────────────────────────────────────────────────────────────┐   │
+│   │                     USER'S SERVER                                │   │
+│   │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │   │
+│   │  │   Journey   │  │    Zone     │  │     Config Token        │  │   │
+│   │  │   Planner   │──│  Renderer   │──│   (embedded API keys)   │  │   │
+│   │  └─────────────┘  └─────────────┘  └─────────────────────────┘  │   │
+│   └────────────────────────────┬────────────────────────────────────┘   │
+│                                │                                         │
+│                                ▼                                         │
+│   ┌─────────────────────────────────────────────────────────────────┐   │
+│   │                     USER'S DEVICE                                │   │
+│   │  ┌─────────────────────────────────────────────────────────┐    │   │
+│   │  │  Custom PTV-TRMNL Firmware (NOT usetrmnl firmware)      │    │   │
+│   │  │  - Fetches from user's Vercel URL only                  │    │   │
+│   │  │  - Receives 1-bit BMP zones                             │    │   │
+│   │  │  - 20-second partial refresh cycle                      │    │   │
+│   │  └─────────────────────────────────────────────────────────┘    │   │
+│   └─────────────────────────────────────────────────────────────────┘   │
+│                                                                          │
+│   ✅ Complete data isolation — no shared infrastructure                  │
+│   ✅ User owns API keys — embedded in config token                       │
+│   ✅ No central server — each deployment is independent                  │
+│   ❌ NO usetrmnl.com dependency — custom firmware required               │
+└──────────────────────────────────────────────────────────────────────────┘
+```
+
+### Data Isolation
+
+Each user deployment is completely isolated:
+- Own Vercel instance
+- Own API keys (in config token)
+- Own device configuration
+- No shared state between users
+
+---
+
+## 3. System Components
+
+### 3.1 Server Components
+
+```
+src/
+├── server.js                 # Express application entry
+├── services/
+│   ├── journey-planner.js    # Smart route calculation
+│   ├── coffee-decision.js    # CoffeeDecision engine
+│   ├── opendata.js           # Transport Victoria API client
+│   ├── weather-bom.js        # BOM weather integration
+│   └── geocoding-service.js  # Address resolution
+├── renderers/
+│   ├── v10-dashboard-renderer.js  # Full dashboard PNG
+│   ├── v10-journey-renderer.js    # Journey BMP for firmware
+│   └── zone-renderer-v10.js       # Zone-based partial refresh
+└── utils/
+    ├── config-token.js       # Token encode/decode
+    └── bmp-encoder.js        # 1-bit BMP generation
+```
+
+### 3.2 API Layer
+
+```
+api/
+├── index.js          # Main Express wrapper
+├── zones.js          # Zone-based refresh endpoint
+├── screen.js         # Full screen PNG
+├── kindle/
+│   └── image.js      # Kindle-optimized PNG
+├── status.js         # Health check
+└── setup-status.js   # Setup completion check
+```
+
+### 3.3 Firmware Components
+
+```
+firmware/
+├── src/
+│   └── main.cpp              # Main firmware code
+├── include/
+│   └── config.h              # Configuration constants
+├── platformio.ini            # PlatformIO project config
+└── ANTI-BRICK-REQUIREMENTS.md
+```
+
+### 3.4 Public Assets
+
+```
+public/
+├── index.html        # Landing page
+├── admin.html        # Setup Wizard
+├── simulator.html    # Device simulator
+└── assets/           # Fonts, icons
 ```
 
 ---
 
-## 3. Hardware Specifications
+## 4. Data Flow
 
-### 3.1 TRMNL Device (OG Hardware)
+### 4.1 Complete Data Flow
 
-| Component | Specification | Notes |
-|-----------|--------------|-------|
-| **Microcontroller** | ESP32-C3-MINI-1 | RISC-V single-core @ 160MHz |
-| **Flash** | 4MB | SPI flash storage |
-| **RAM** | 320KB SRAM | 16KB RTC SRAM for deep sleep |
-| **WiFi** | 802.11 b/g/n 2.4GHz | Integrated antenna |
-| **Power** | 3.3V, LiPo battery | USB-C charging |
-| **Deep Sleep Current** | <10µA | Ultra-low power mode |
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                           DATA FLOW                                      │
+└─────────────────────────────────────────────────────────────────────────┘
 
-### 3.2 E-ink Display (7.5" Waveshare)
+                    ┌─────────────────────┐
+                    │  Transport Victoria │
+                    │  OpenData API       │
+                    │  (GTFS-RT)          │
+                    └──────────┬──────────┘
+                               │
+                               ▼ 30s cache
+                    ┌─────────────────────┐
+                    │    opendata.js      │
+                    │  - Trip Updates     │
+                    │  - Service Alerts   │
+                    └──────────┬──────────┘
+                               │
+          ┌────────────────────┼────────────────────┐
+          │                    │                    │
+          ▼                    ▼                    ▼
+┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+│  weather-bom.js │  │ journey-planner │  │ coffee-decision │
+│  (5min cache)   │  │     .js         │  │     .js         │
+└────────┬────────┘  └────────┬────────┘  └────────┬────────┘
+         │                    │                    │
+         └────────────────────┼────────────────────┘
+                              │
+                              ▼
+                    ┌─────────────────────┐
+                    │  Dashboard Service  │
+                    │  (data aggregation) │
+                    └──────────┬──────────┘
+                               │
+              ┌────────────────┼────────────────┐
+              │                │                │
+              ▼                ▼                ▼
+    ┌─────────────────┐ ┌───────────────┐ ┌─────────────────┐
+    │ v10-journey-    │ │ v10-dashboard │ │ zone-renderer-  │
+    │ renderer.js     │ │ -renderer.js  │ │ v10.js          │
+    │ (1-bit BMP)     │ │ (Full PNG)    │ │ (Zone JSON)     │
+    └────────┬────────┘ └───────┬───────┘ └────────┬────────┘
+             │                  │                  │
+             ▼                  ▼                  ▼
+    ┌─────────────────┐ ┌───────────────┐ ┌─────────────────┐
+    │  /api/screen    │ │ /api/dashboard│ │  /api/zones     │
+    │  (TRMNL BMP)    │ │ (Preview PNG) │ │ (Partial zones) │
+    └─────────────────┘ └───────────────┘ └─────────────────┘
+```
 
-| Specification | Value | Notes |
-|--------------|-------|-------|
-| **Size** | 7.5 inches diagonal | |
-| **Resolution** | 800×480 pixels | Native landscape |
-| **Technology** | E-Paper (electrophoretic) | Bistable (retains image without power) |
-| **Colors** | Black & White | 2-color display |
-| **Viewing Angle** | >170° | Wide viewing angle |
-| **Refresh Time** | ~2-3 seconds (full) | <0.5s partial refresh |
-| **Interface** | SPI | 4-wire SPI + control pins |
-| **Panel Type** | EP75_800x480 | bb_epaper designation |
+### 4.2 Caching Strategy
 
-### 3.3 Pin Connections (SPI)
-
-| Pin | ESP32-C3 GPIO | Function |
-|-----|---------------|----------|
-| SCK | GPIO 7 | SPI Clock |
-| MOSI | GPIO 8 | Master Out Slave In (data) |
-| CS | GPIO 6 | Chip Select |
-| DC | GPIO 5 | Data/Command |
-| RST | GPIO 10 | Reset |
-| BUSY | GPIO 4 | Busy signal (input from display) |
-
-### 3.4 Power Management
-
-- **Active Mode**: ~80-100mA (WiFi + display refresh)
-- **Deep Sleep**: <10µA (RTC + wakeup timer only)
-- **Wake Sources**:
-  - Timer (30-second intervals)
-  - GPIO interrupt (button press)
+| Data Source | Cache TTL | Reason |
+|-------------|-----------|--------|
+| GTFS-RT Trip Updates | 30 seconds | Real-time accuracy |
+| GTFS-RT Service Alerts | 5 minutes | Changes infrequently |
+| Static GTFS | 24 hours | Schedule data |
+| Weather (BOM) | 5 minutes | Adequate freshness |
+| Google Places | Session only | Address autocomplete |
 
 ---
 
-## 4. Communication Flow
+## 5. Hardware Specifications
 
-### 4.1 Network Stack
+### 5.1 TRMNL OG (Primary Device)
 
-```
-┌─────────────────────────────────────┐
-│  Application Layer                  │
-│  - HTTP GET /api/region-updates     │
-│  - JSON parsing                     │
-└─────────────────┬───────────────────┘
-                  │
-┌─────────────────▼───────────────────┐
-│  Transport Layer                    │
-│  - TLS 1.2 (HTTPS encryption)       │
-│  - TCP connection                   │
-└─────────────────┬───────────────────┘
-                  │
-┌─────────────────▼───────────────────┐
-│  Network Layer                      │
-│  - IPv4                             │
-│  - DHCP (automatic IP assignment)   │
-└─────────────────┬───────────────────┘
-                  │
-┌─────────────────▼───────────────────┐
-│  WiFi Layer (802.11)                │
-│  - WPA2 security                    │
-│  - Auto-reconnect on disconnect     │
-└─────────────────────────────────────┘
-```
+| Component | Specification |
+|-----------|--------------|
+| **Microcontroller** | ESP32-C3 (RISC-V, single-core, 160MHz) |
+| **Display** | 7.5" E-ink, 800×480 pixels, 1-bit |
+| **Connectivity** | WiFi 802.11 b/g/n (2.4GHz) |
+| **Memory** | 400KB SRAM, 4MB Flash |
+| **Power** | USB-C or battery (deep sleep <10µA) |
+| **Refresh** | Partial refresh supported (~500ms) |
 
-### 4.2 API Request Format
+### 5.2 TRMNL Mini
 
-**Firmware → Server**
-```
-GET /api/region-updates HTTP/1.1
-Host: your-server-name.vercel.app
-User-Agent: ESP32-PTV-TRMNL
-Connection: close
-```
+| Component | Specification |
+|-----------|--------------|
+| **Display** | 600×448 pixels, 1-bit |
+| **Other specs** | Same as TRMNL OG |
 
-**Server → Firmware**
+### 5.3 Compatible Kindle Models
+
+| Model | Resolution | Orientation |
+|-------|------------|-------------|
+| Kindle 4 NT | 600×800 | Portrait |
+| Kindle Paperwhite 2-5 | 758-1236×1024-1648 | Portrait |
+| Kindle Touch | 600×800 | Portrait |
+| Kindle Voyage | 1072×1448 | Portrait |
+
+**Requirement:** Jailbreak + kindle-dash package
+
+---
+
+## 6. API Architecture
+
+### 6.1 Endpoint Overview
+
+| Endpoint | Method | Purpose | Response |
+|----------|--------|---------|----------|
+| `/api/zones` | GET | Zone refresh for TRMNL | JSON + BMP data |
+| `/api/screen` | GET | Full screen for webhook | PNG |
+| `/api/kindle/image` | GET | Kindle-optimized | PNG |
+| `/api/status` | GET | Health check | JSON |
+| `/api/setup-status` | GET | Setup completion | JSON |
+
+### 6.2 Zone API Response
+
 ```json
 {
-  "timestamp": "2026-01-23T08:47:08.889Z",
-  "regions": [
-    {"id": "time", "text": "19:47"},
-    {"id": "train1", "text": "5"},
-    {"id": "train2", "text": "12"},
-    {"id": "tram1", "text": "3"},
-    {"id": "tram2", "text": "8"}
+  "timestamp": "2025-01-29T06:00:00.000Z",
+  "zones": [
+    {
+      "id": 0,
+      "changed": true,
+      "x": 0, "y": 0,
+      "w": 800, "h": 94,
+      "bmp": "base64..."
+    }
+  ],
+  "meta": {
+    "totalJourneyTime": 42,
+    "coffeeIncluded": true,
+    "nextDeparture": "07:41"
+  }
+}
+```
+
+### 6.3 Config Token Structure
+
+```javascript
+// Decoded token structure
+{
+  "a": {
+    "home": "1 Clara St, South Yarra VIC",
+    "work": "80 Collins St, Melbourne VIC",
+    "cafe": "Norman Cafe, South Yarra"
+  },
+  "j": {
+    "arrivalTime": "09:00",
+    "coffeeEnabled": true,
+    "coffeeDuration": 8
+  },
+  "k": "transport-victoria-api-key",
+  "g": "google-places-api-key",
+  "s": "VIC"
+}
+```
+
+---
+
+## 7. Rendering Pipeline
+
+### 7.1 V10 Dashboard Layout (LOCKED)
+
+```
+┌────────────────────────────────────────────────────────────┐
+│ HEADER (y: 0-94)                                           │
+│ [Location] [Time 64px] [AM/PM] [Day] [Weather]             │
+├────────────────────────────────────────────────────────────┤
+│ SUMMARY BAR (y: 96-124)                                    │
+│ LEAVE NOW → Arrive 7:25                              65min │
+├────────────────────────────────────────────────────────────┤
+│ JOURNEY LEGS (y: 132-440)                                  │
+│ ① 🚶 Walk to stop                                    5 MIN │
+│                         ▼                                  │
+│ ② ☕ Coffee at Norman's                              8 MIN │
+│                         ▼                                  │
+│ ③ 🚃 Train to Flinders                              12 MIN │
+├────────────────────────────────────────────────────────────┤
+│ FOOTER (y: 448-480)                                        │
+│ 80 COLLINS ST, MELBOURNE                    ARRIVE 8:32    │
+└────────────────────────────────────────────────────────────┘
+```
+
+### 7.2 BMP Output Format
+
+```javascript
+{
+  format: 'bmp',
+  width: 800,
+  height: 480,
+  bitDepth: 1,        // 1-bit monochrome
+  compression: 'none',
+  colorTable: [
+    [245, 245, 240],  // Index 0: e-ink white (#f5f5f0)
+    [26, 26, 26]      // Index 1: black (#1a1a1a)
   ]
 }
 ```
 
-**Key Design Decision**: Text-only format (no coordinates)
-- Firmware controls all layout and positioning
-- Server only provides data values
-- Simpler parsing, less memory usage
+### 7.3 E-ink Constraints
+
+| Constraint | Requirement |
+|------------|-------------|
+| **Bit Depth** | 1-bit only (black/white) |
+| **Anti-aliasing** | Disabled (pixel-perfect fonts) |
+| **Font** | FONT_8x8 only (avoids rotation bugs) |
+| **Grayscale** | Not supported |
+| **Dithering** | Not used |
 
 ---
 
-## 5. Display Parameters
+## 8. Zone-Based Partial Refresh
 
-### 5.1 Confirmed Rendering Specifications
+### 8.1 Zone Layout (V10)
 
-| Parameter | Value | Status |
-|-----------|-------|--------|
-| **Resolution** | 800×480 pixels | ✅ Confirmed |
-| **Orientation** | Landscape (native) | ✅ Locked |
-| **Rotation** | NONE (0°) | ✅ Removed all rotation code |
-| **Coordinate System** | (0,0) = top-left corner | ✅ Standard |
-| **Font Scale** | FONT_8x8, FONT_12x16 | ✅ Working |
-| **Refresh Type (Boot)** | FULL refresh only | ✅ Prevents ghosting |
-| **Refresh Type (Update)** | PARTIAL refresh per region | ✅ Fast updates |
-| **Anti-Ghosting Pattern** | BLACK→WHITE→content | ✅ Required for clean display |
+| Zone ID | Region | Y Range | Purpose |
+|---------|--------|---------|---------|
+| 0 | Header | 0-94 | Time, weather, location |
+| 1 | Summary | 96-124 | Leave time, arrival |
+| 2-5 | Legs | 132-440 | Journey leg cards |
+| 6 | Footer | 448-480 | Destination, arrival time |
 
-### 5.2 Dashboard Layout Coordinates
+### 8.2 Refresh Strategy
 
 ```
-┌────────────────────────────────────────────────────────────────────────┐
-│ (0,0)                                                        (800,0)   │
-│                                                                        │
-│  HEADER (0-60px height)                                                │
-│  ┌──────────────────────────────────────────────────────────────────┐ │
-│  │ ORIGIN STATION (20, 30)                     TIME (680, 30) 19:47    │ │
-│  └──────────────────────────────────────────────────────────────────┘ │
-│                                                                        │
-│  LEFT COLUMN (0-400px)           │  RIGHT COLUMN (400-800px)          │
-│  ┌──────────────────────────────┐│┌──────────────────────────────────┐│
-│  │ METRO TRAINS - CITY   │││ YARRA TRAMS - ROUTE 58           ││
-│  │ (20, 90)                     │││ (420, 90)                        ││
-│  │                              │││                                  ││
-│  │                              │││                                  ││
-│  │   5 min                      │││   3 min                          ││
-│  │   (40, 180)                  │││   (440, 180)                     ││
-│  │                              │││                                  ││
-│  │   12 min                     │││   8 min                          ││
-│  │   (40, 250)                  │││   (440, 250)                     ││
-│  │                              │││                                  ││
-│  └──────────────────────────────┘│└──────────────────────────────────┘│
-│                                                                        │
-│  STATUS BAR (440-480px height)                                         │
-│  ┌──────────────────────────────────────────────────────────────────┐ │
-│  │                    GOOD SERVICE (250, 460)                       │ │
-│  └──────────────────────────────────────────────────────────────────┘ │
-│                                                                        │
-│ (0,480)                                                      (800,480) │
-└────────────────────────────────────────────────────────────────────────┘
+1. Server renders full 800×480 frame
+2. Server compares with previous frame (stored per device)
+3. Server identifies changed zones
+4. Server returns only changed zone BMPs
+5. Firmware fetches zones in batches (max 6)
+6. Firmware applies partial refresh per zone
+7. Cycle repeats every 20 seconds
 ```
 
-### 5.3 Region Update Boxes (Anti-Ghosting)
+### 8.3 Memory Constraints (ESP32-C3)
 
-Each region has a defined box for updates:
-
-| Region ID | Coordinates | Box Size | Purpose |
-|-----------|------------|----------|---------|
-| `time` | (675, 18) | 80×24 | Current time display |
-| `train1` | (35, 168) | 150×30 | First train departure |
-| `train2` | (35, 238) | 150×30 | Second train departure |
-| `tram1` | (435, 168) | 150×30 | First tram departure |
-| `tram2` | (435, 238) | 150×30 | Second tram departure |
-
-**Update Process**:
-1. `fillRect(x, y, w, h, BLACK)` - Clear ghosting
-2. `fillRect(x, y, w, h, WHITE)` - Prepare clean background
-3. `setCursor(x, y)` + `print(text)` - Draw new content
-4. `refresh(PARTIAL)` - Update only this region
+| Resource | Limit | Strategy |
+|----------|-------|----------|
+| Free heap | ~100KB | Zone batching (6 zones/request) |
+| PSRAM | None | Streaming, no full-frame buffer |
+| HTTP response | ~50KB | Batch zones with `?batch=N` |
 
 ---
 
-## 6. Boot Failsafes
+## 9. Security Model
 
-### 6.1 Implemented Safeguards
+### 9.1 Zero-Config Security
 
-| Failsafe | Implementation | Purpose |
-|----------|----------------|---------|
-| **Watchdog Disable** | `esp_task_wdt_delete(NULL)` in setup() | Prevents auto-reboot during slow operations |
-| **Sequential Operations** | One step at a time, full refresh after each | Prevents memory overflow from concurrent tasks |
-| **WiFi Timeout** | `wm.setConfigPortalTimeout(30)` | Prevents infinite hang if WiFi fails |
-| **HTTP Timeout** | 15 seconds max | Prevents network hang |
-| **JSON Size Limit** | 4KB max document size | Prevents heap overflow |
-| **Full Refresh Only (Boot)** | No partial refreshes during boot | Prevents display corruption |
-| **Delay Between Steps** | 500-1000ms delays | Allows display controller to settle |
-| **Error Handling** | Check return codes, fallback to safe state | Graceful degradation |
+- **No server-side secrets** — API keys in config token
+- **Token in URL** — Device URL contains encrypted config
+- **User owns keys** — Keys never stored on central server
+- **Self-contained** — Each deployment is isolated
 
-### 6.2 Memory Safety
+### 9.2 XSS Protection
 
-**Heap Management**:
-- Avoid dynamic allocation in loops
-- Use stack-allocated buffers where possible
-- Clear large buffers after use
-- Monitor available heap: `ESP.getFreeHeap()`
+All user input displayed in HTML must be sanitized:
 
-**Stack Safety**:
-- Limit recursion depth
-- Avoid large stack-allocated arrays
-- Use `static` for large string constants
-
-### 6.3 Display Safety
-
-**Refresh Rate Limiting**:
-- Minimum 500ms between refreshes
-- Full refresh: 2-3 seconds to complete
-- Partial refresh: <500ms to complete
-
-**Command Sequencing**:
-- Always wait for BUSY pin to go LOW
-- Clear framebuffer before new content
-- Proper initialization sequence on wake
-
----
-
-## 7. Memory & Storage Management
-
-### 7.1 RAM Usage Strategy
-
-**Total Available**: 320KB SRAM
-
-| Component | Estimated Usage | Notes |
-|-----------|----------------|-------|
-| **Arduino Core** | ~40KB | System overhead |
-| **WiFi Stack** | ~50KB | Network buffers |
-| **TLS/HTTPS** | ~30KB | Encryption context |
-| **bb_epaper** | ~75KB | Framebuffer (800×480÷8) |
-| **JSON Document** | 4KB | Parsing buffer |
-| **Application** | ~20KB | Variables, stack |
-| **Free** | ~100KB | Safety margin |
-
-**Optimization Techniques**:
-- No full framebuffer in RAM (use display controller memory)
-- Stream JSON parsing (don't load entire response)
-- Reuse buffers where possible
-- Free WiFi resources during deep sleep
-
-### 7.2 Flash Storage (NVS - Preferences)
-
-**Stored Values**:
-- `setup_done` (bool) - First boot completed
-- WiFi credentials (stored by WiFiManager)
-- Previous region values (for change detection)
-
-**Storage Strategy**:
-- Write only when values change
-- Use `preferences.begin()` / `preferences.end()` properly
-- Limit write cycles (flash endurance: ~100k cycles)
-
-### 7.3 RTC Memory (Deep Sleep)
-
-**Preserved During Sleep** (16KB RTC SRAM):
-- Wake count
-- Last update timestamp
-- Boot mode flag
-
-**NOT Preserved**:
-- Heap variables
-- Stack variables
-- Display framebuffer
-
----
-
-## 8. Dashboard Focus
-
-### 8.1 Design Philosophy
-
-**Primary Goal**: Public Information Display System (PIDS)
-- Emulate train station departure boards
-- Clear, readable information at a glance
-- Minimal distraction, maximum utility
-
-**Information Hierarchy**:
-1. **TIME** (most frequently checked)
-2. **Departures** (primary purpose)
-3. **Service status** (alerts only when needed)
-
-### 8.2 Current Dashboard Structure
-
-```
-┌────────────────────────────────────────────────────────────┐
-│                        HEADER                              │
-│  Station Name                              Current Time    │
-├──────────────────────┬─────────────────────────────────────┤
-│   METRO TRAINS       │    YARRA TRAMS                      │
-│   Destination        │    Route Number                     │
-│                      │                                     │
-│   XX min             │    XX min                           │
-│   XX min             │    XX min                           │
-│                      │                                     │
-├──────────────────────┴─────────────────────────────────────┤
-│                   SERVICE STATUS                           │
-│              (GOOD SERVICE / DELAYS / ALERTS)              │
-└────────────────────────────────────────────────────────────┘
-```
-
-### 8.3 Future Enhancement Areas
-
-**Once Core Workflow is Stable**:
-
-1. **Typography**:
-   - Larger fonts for departure times
-   - Bold/italic for emphasis
-   - Better alignment and spacing
-
-2. **Visual Elements**:
-   - Icons for train/tram
-   - Service status indicators (colors/symbols)
-   - Divider lines between sections
-
-3. **Information Density**:
-   - More departures (3-4 per service)
-   - Platform numbers
-   - Real-time vs. scheduled indicators
-
-4. **Alerts**:
-   - Service disruptions
-   - Weather warnings
-   - Special announcements
-
-**NOT A PRIORITY YET**: Focus remains on stable boot → operation workflow
-
----
-
-## 9. Critical Issues to Resolve
-
-### 9.1 Current Problem: Post-Dashboard Reboot
-
-**Symptom**: Device reboots a few seconds after displaying dashboard
-
-**Expected Behavior**:
-```
-Boot → Sequential Logs → Dashboard Display → OPERATION MODE (loop forever)
-```
-
-**Actual Behavior**:
-```
-Boot → Sequential Logs → Dashboard Display → [2-3 seconds] → REBOOT ❌
-```
-
-**Suspected Causes**:
-1. Deep sleep call causing crash
-2. Watchdog timer re-enabling
-3. Preferences write operation failing
-4. Display controller in unstable state
-5. Memory corruption during dashboard render
-
-**Fix Strategy**:
-1. ✅ Remove deep sleep from initial boot (first power-on)
-2. ✅ Add operation mode flag: `setupComplete`
-3. ✅ First boot: stays awake, displays dashboard indefinitely
-4. ✅ Subsequent boots: enter operation mode with sleep cycle
-5. ✅ Debug logging to identify crash location
-
-### 9.2 Required Changes
-
-**Modify `setup()` to**:
-```cpp
-// After dashboard displays successfully:
-if (!setupComplete) {
-    // FIRST BOOT: Stay awake, no sleep
-    setupComplete = true;
-    preferences.putBool("setup_done", true);
-    preferences.end();
-
-    // Show success message
-    bbep.setCursor(10, 180);
-    bbep.print("System ready. Staying awake for verification.");
-    bbep.refresh(REFRESH_FULL, true);
-
-    // DO NOT CALL deepSleep() - let loop() handle updates
-
-} else {
-    // SUBSEQUENT BOOTS: Enter operation mode
-    deepSleep(refreshRate);
-}
-```
-
-**Modify `loop()` to**:
-```cpp
-void loop() {
-    if (setupComplete) {
-        // OPERATION MODE:
-        delay(30000);  // Wait 30 seconds
-
-        // Fetch new data
-        // Compare with previous
-        // Update changed regions only (partial refresh)
-        // NO REBOOT, NO FULL SCREEN CLEAR
-    }
+```javascript
+function sanitize(str) {
+    const map = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'};
+    return str.replace(/[&<>"]/g, c => map[c]);
 }
 ```
 
 ---
 
-## 10. Success Criteria
+## 10. Deployment Architecture
 
-### 10.1 Boot Sequence Success
+### 10.1 Vercel Serverless
 
-- [x] Display initializes in landscape 800×480
-- [x] Sequential logs appear and persist
-- [x] WiFi connects successfully
-- [x] Data fetched from server
-- [x] JSON parsed correctly
-- [x] Dashboard renders fully
-- [ ] **NO REBOOT after dashboard appears** ⚠️
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     VERCEL DEPLOYMENT                        │
+│                                                              │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐       │
+│  │ api/zones.js │  │ api/screen.js│  │ api/status.js│       │
+│  │  (Function)  │  │  (Function)  │  │  (Function)  │       │
+│  └──────────────┘  └──────────────┘  └──────────────┘       │
+│                                                              │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │                 public/ (Static)                      │   │
+│  │  index.html, admin.html, simulator.html, assets/     │   │
+│  └──────────────────────────────────────────────────────┘   │
+│                                                              │
+│  ✅ Free tier: 100K requests/month                          │
+│  ✅ Auto-scaling                                             │
+│  ✅ Global CDN                                               │
+│  ✅ Auto-deploy from GitHub                                  │
+└─────────────────────────────────────────────────────────────┘
+```
 
-### 10.2 Operation Mode Success
+### 10.2 Required Endpoints
 
-- [ ] Device stays awake after first boot
-- [ ] Dashboard remains visible
-- [ ] Updates occur every 30 seconds
-- [ ] Only changed regions refresh
-- [ ] No full screen clears during updates
-- [ ] No reboots during operation
-- [ ] Device visible in admin panel
-
-### 10.3 System Integration Success
-
-- [x] Server responds correctly
-- [x] API returns valid JSON
-- [x] Firmware parses JSON correctly
-- [ ] Display updates show new values
-- [ ] Anti-ghosting works properly
-- [ ] Partial refreshes work in operation mode
-
----
-
-## 11. Next Steps
-
-### Immediate Actions
-
-1. **Fix Post-Dashboard Reboot**:
-   - Modify setup() to skip deep sleep on first boot
-   - Implement loop() for operation mode
-   - Add debug logging to identify crash point
-
-2. **Test Operation Mode**:
-   - Verify device stays awake
-   - Confirm dashboard persists
-   - Test region updates every 30s
-
-3. **Verify Stability**:
-   - Run for 10+ update cycles
-   - Monitor heap usage
-   - Check for memory leaks
-
-### Future Work
-
-4. **Optimize Power**:
-   - Re-enable deep sleep after stability confirmed
-   - Fine-tune sleep intervals
-   - Battery life testing
-
-5. **Dashboard Refinement**:
-   - Typography improvements
-   - Layout adjustments
-   - Visual enhancements
-
-6. **Feature Additions**:
-   - Service alerts
-   - Weather info
-   - Button interactions
+| Endpoint | Purpose |
+|----------|---------|
+| `/api/zones` | Zone data for TRMNL |
+| `/api/screen` | PNG for TRMNL webhook |
+| `/api/kindle/image` | PNG for Kindle devices |
+| `/api/setup-status` | Setup completion check |
 
 ---
 
-**Document Status**: ✅ COMPLETE
-**Next Review**: After reboot issue resolved
-**Owner**: Angus Bergman
-**System Version**: Commit pending
+## References
 
+- [DEVELOPMENT-RULES.md](../DEVELOPMENT-RULES.md) — All development rules (v1.3)
+- [specs/DASHBOARD-SPEC-V10.md](../specs/DASHBOARD-SPEC-V10.md) — Dashboard specification (LOCKED)
+- [PROJECT-VISION.md](PROJECT-VISION.md) — Project goals and roadmap
+
+---
+
+**Document Version:** 2.0  
+**Copyright (c) 2025 Angus Bergman — CC BY-NC 4.0**
