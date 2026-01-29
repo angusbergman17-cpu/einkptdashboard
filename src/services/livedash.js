@@ -1,0 +1,730 @@
+/**
+ * LIVEDASH - Live Dashboard Renderer
+ * 
+ * Renders SmartCommute output as a live dashboard image
+ * optimized for different e-ink device variants.
+ * 
+ * Supported devices:
+ * - TRMNL OG (800×480 landscape)
+ * - TRMNL Mini (400×300 landscape)
+ * - Kindle Paperwhite 3/4 (758×1024 portrait)
+ * - Kindle Paperwhite 5 (1236×1648 portrait)
+ * - Kindle Basic (600×800 portrait)
+ * - Inkplate 6 (800×600 landscape)
+ * - Inkplate 10 (1200×825 landscape)
+ * 
+ * Copyright (c) 2025 Angus Bergman
+ * Licensed under CC BY-NC 4.0
+ */
+
+import { createCanvas } from '@napi-rs/canvas';
+import SmartCommute from '../engines/smart-commute.js';
+
+// =============================================================================
+// DEVICE CONFIGURATIONS
+// =============================================================================
+
+export const DEVICE_CONFIGS = {
+  'trmnl-og': {
+    name: 'TRMNL Original',
+    width: 800,
+    height: 480,
+    orientation: 'landscape',
+    dpi: 117,
+    colors: '1-bit',
+    refreshRate: '20s partial',
+    scale: {
+      header: { height: 94, timeSize: 64, dateSize: 18 },
+      summary: { height: 28, fontSize: 14 },
+      legs: { height: 316, titleSize: 17, subtitleSize: 13, durationSize: 30 },
+      footer: { height: 32, fontSize: 16 }
+    }
+  },
+  'trmnl-mini': {
+    name: 'TRMNL Mini',
+    width: 400,
+    height: 300,
+    orientation: 'landscape',
+    dpi: 117,
+    colors: '1-bit',
+    refreshRate: '20s partial',
+    scale: {
+      header: { height: 60, timeSize: 40, dateSize: 12 },
+      summary: { height: 20, fontSize: 10 },
+      legs: { height: 180, titleSize: 12, subtitleSize: 9, durationSize: 20, maxLegs: 4 },
+      footer: { height: 24, fontSize: 11 }
+    }
+  },
+  'kindle-pw3': {
+    name: 'Kindle Paperwhite 3/4',
+    width: 758,
+    height: 1024,
+    orientation: 'portrait',
+    dpi: 300,
+    colors: '16-grayscale',
+    refreshRate: 'manual',
+    scale: {
+      header: { height: 140, timeSize: 80, dateSize: 24 },
+      summary: { height: 40, fontSize: 18 },
+      legs: { height: 680, titleSize: 24, subtitleSize: 16, durationSize: 40, maxLegs: 7 },
+      footer: { height: 48, fontSize: 20 }
+    }
+  },
+  'kindle-pw5': {
+    name: 'Kindle Paperwhite 5',
+    width: 1236,
+    height: 1648,
+    orientation: 'portrait',
+    dpi: 300,
+    colors: '16-grayscale',
+    refreshRate: 'manual',
+    scale: {
+      header: { height: 200, timeSize: 120, dateSize: 36 },
+      summary: { height: 60, fontSize: 26 },
+      legs: { height: 1100, titleSize: 36, subtitleSize: 24, durationSize: 56, maxLegs: 8 },
+      footer: { height: 72, fontSize: 28 }
+    }
+  },
+  'kindle-basic': {
+    name: 'Kindle Basic',
+    width: 600,
+    height: 800,
+    orientation: 'portrait',
+    dpi: 167,
+    colors: '16-grayscale',
+    refreshRate: 'manual',
+    scale: {
+      header: { height: 100, timeSize: 56, dateSize: 18 },
+      summary: { height: 32, fontSize: 14 },
+      legs: { height: 520, titleSize: 18, subtitleSize: 12, durationSize: 32, maxLegs: 6 },
+      footer: { height: 40, fontSize: 16 }
+    }
+  },
+  'inkplate-6': {
+    name: 'Inkplate 6',
+    width: 800,
+    height: 600,
+    orientation: 'landscape',
+    dpi: 166,
+    colors: '3-bit grayscale',
+    refreshRate: '1s partial',
+    scale: {
+      header: { height: 100, timeSize: 64, dateSize: 20 },
+      summary: { height: 32, fontSize: 16 },
+      legs: { height: 400, titleSize: 20, subtitleSize: 14, durationSize: 36 },
+      footer: { height: 40, fontSize: 18 }
+    }
+  },
+  'inkplate-10': {
+    name: 'Inkplate 10',
+    width: 1200,
+    height: 825,
+    orientation: 'landscape',
+    dpi: 150,
+    colors: '3-bit grayscale',
+    refreshRate: '1s partial',
+    scale: {
+      header: { height: 130, timeSize: 80, dateSize: 24 },
+      summary: { height: 40, fontSize: 20 },
+      legs: { height: 560, titleSize: 26, subtitleSize: 18, durationSize: 44 },
+      footer: { height: 52, fontSize: 22 }
+    }
+  }
+};
+
+// =============================================================================
+// LIVEDASH CLASS
+// =============================================================================
+
+export class LiveDash {
+  constructor(preferences = null) {
+    this.preferences = preferences;
+    this.smartCommute = null;
+    this.currentDevice = 'trmnl-og';
+    this.deviceConfig = DEVICE_CONFIGS['trmnl-og'];
+    
+    // Auto-refresh settings
+    this.autoRefresh = true;
+    this.refreshIntervalMs = 30000; // 30 seconds
+  }
+
+  /**
+   * Initialize LiveDash with SmartCommute
+   */
+  async initialize(preferences = null) {
+    if (preferences) {
+      this.preferences = preferences;
+    }
+    
+    // Initialize SmartCommute
+    this.smartCommute = new SmartCommute(this.preferences);
+    await this.smartCommute.initialize();
+    
+    console.log('📺 LiveDash initialized');
+    console.log(`   Device: ${this.deviceConfig.name} (${this.deviceConfig.width}×${this.deviceConfig.height})`);
+    console.log(`   State: ${this.smartCommute.state}`);
+    
+    return this;
+  }
+
+  /**
+   * Set the target device
+   */
+  setDevice(deviceId) {
+    if (!DEVICE_CONFIGS[deviceId]) {
+      throw new Error(`Unknown device: ${deviceId}. Valid: ${Object.keys(DEVICE_CONFIGS).join(', ')}`);
+    }
+    
+    this.currentDevice = deviceId;
+    this.deviceConfig = DEVICE_CONFIGS[deviceId];
+    
+    console.log(`📱 Device set: ${this.deviceConfig.name} (${this.deviceConfig.width}×${this.deviceConfig.height})`);
+    return this;
+  }
+
+  /**
+   * Render the dashboard for the current device
+   */
+  async render(options = {}) {
+    const forceRefresh = options.forceRefresh || false;
+    
+    // Get journey data from SmartCommute
+    const journeyData = await this.smartCommute.getJourneyRecommendation({ forceRefresh });
+    
+    // Render for current device
+    return this.renderForDevice(journeyData);
+  }
+
+  /**
+   * Render dashboard optimized for the selected device
+   */
+  renderForDevice(data) {
+    const { width, height, scale } = this.deviceConfig;
+    
+    const canvas = createCanvas(width, height);
+    const ctx = canvas.getContext('2d');
+    
+    // White background
+    ctx.fillStyle = '#FFF';
+    ctx.fillRect(0, 0, width, height);
+    
+    let y = 0;
+    
+    // Header
+    y = this.renderHeader(ctx, data, 0, scale.header);
+    
+    // Divider
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, y, width, 2);
+    y += 2;
+    
+    // Summary bar
+    y = this.renderSummary(ctx, data, y, scale.summary);
+    
+    // Gap before legs
+    y += 6;
+    
+    // Journey legs
+    y = this.renderLegs(ctx, data, y, scale.legs);
+    
+    // Footer (at bottom)
+    this.renderFooter(ctx, data, height - scale.footer.height, scale.footer);
+    
+    return canvas.toBuffer('image/png');
+  }
+
+  /**
+   * Render header zone
+   */
+  renderHeader(ctx, data, y, scale) {
+    const { width } = this.deviceConfig;
+    const { height, timeSize, dateSize } = scale;
+    
+    // Get local time
+    const localTime = this.smartCommute.getLocalTime();
+    const timeStr = `${localTime.getHours()}:${localTime.getMinutes().toString().padStart(2, '0')}`;
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const dayStr = days[localTime.getDay()];
+    const dateStr = `${localTime.getDate()} ${months[localTime.getMonth()]}`;
+    
+    // HOME label
+    ctx.fillStyle = '#000';
+    ctx.font = `600 ${Math.round(dateSize * 0.8)}px sans-serif`;
+    ctx.fillText('HOME', 12, y + 18);
+    
+    // Time
+    ctx.font = `900 ${timeSize}px sans-serif`;
+    ctx.fillText(timeStr, 12, y + height - 20);
+    
+    // AM/PM
+    const ampm = localTime.getHours() >= 12 ? 'PM' : 'AM';
+    ctx.font = `600 ${Math.round(timeSize * 0.3)}px sans-serif`;
+    const timeWidth = ctx.measureText(timeStr).width;
+    ctx.fillText(ampm, 12 + timeWidth + 4, y + height - 20);
+    
+    // Day and date (center)
+    ctx.font = `700 ${dateSize}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText(dayStr, width / 2, y + height / 2 - 5);
+    ctx.font = `600 ${Math.round(dateSize * 0.9)}px sans-serif`;
+    ctx.fillText(dateStr, width / 2, y + height / 2 + dateSize);
+    ctx.textAlign = 'left';
+    
+    // Weather box (right)
+    const wxWidth = Math.round(width * 0.15);
+    const wxHeight = Math.round(height * 0.85);
+    const wxX = width - wxWidth - 10;
+    const wxY = y + 8;
+    
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(wxX, wxY, wxWidth, wxHeight);
+    
+    // Temperature
+    const temp = data.weather?.temp || '--';
+    ctx.font = `900 ${Math.round(timeSize * 0.5)}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText(`${temp}°`, wxX + wxWidth / 2, wxY + wxHeight * 0.35);
+    
+    // Condition
+    const condition = data.weather?.condition || 'Unknown';
+    ctx.font = `600 ${Math.round(dateSize * 0.7)}px sans-serif`;
+    ctx.fillText(condition.substring(0, 12), wxX + wxWidth / 2, wxY + wxHeight * 0.55);
+    
+    // Umbrella indicator
+    const umbHeight = Math.round(wxHeight * 0.2);
+    const umbY = wxY + wxHeight - umbHeight - 4;
+    if (data.weather?.umbrella) {
+      ctx.fillStyle = '#000';
+      ctx.fillRect(wxX + 4, umbY, wxWidth - 8, umbHeight);
+      ctx.fillStyle = '#FFF';
+      ctx.font = `700 ${Math.round(umbHeight * 0.7)}px sans-serif`;
+      ctx.fillText('UMBRELLA', wxX + wxWidth / 2, umbY + umbHeight * 0.75);
+    } else {
+      ctx.strokeRect(wxX + 4, umbY, wxWidth - 8, umbHeight);
+      ctx.fillStyle = '#000';
+      ctx.font = `600 ${Math.round(umbHeight * 0.65)}px sans-serif`;
+      ctx.fillText('NO UMBRELLA', wxX + wxWidth / 2, umbY + umbHeight * 0.75);
+    }
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#000';
+    
+    return y + height;
+  }
+
+  /**
+   * Render summary bar
+   */
+  renderSummary(ctx, data, y, scale) {
+    const { width } = this.deviceConfig;
+    const { height, fontSize } = scale;
+    
+    // Black background
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, y, width, height);
+    
+    // Status text
+    ctx.fillStyle = '#FFF';
+    ctx.font = `800 ${fontSize}px sans-serif`;
+    
+    const arriveBy = data.coffee?.arrivalTime || '09:00';
+    const totalMins = data.route?.totalMinutes || '--';
+    
+    let statusText;
+    if (data.transit?.source === 'fallback') {
+      statusText = `SCHEDULED → Arrive ${arriveBy}`;
+    } else if (data.coffee?.urgent) {
+      statusText = `LEAVE NOW → Arrive ${arriveBy}`;
+    } else {
+      statusText = `LEAVE NOW → Arrive ${arriveBy}`;
+    }
+    
+    ctx.fillText(statusText, 12, y + height - (height - fontSize) / 2);
+    
+    // Total time (right)
+    ctx.textAlign = 'right';
+    ctx.fillText(`${totalMins} min total`, width - 12, y + height - (height - fontSize) / 2);
+    ctx.textAlign = 'left';
+    
+    return y + height;
+  }
+
+  /**
+   * Render journey legs
+   */
+  renderLegs(ctx, data, startY, scale) {
+    const { width } = this.deviceConfig;
+    const { height, titleSize, subtitleSize, durationSize, maxLegs = 5 } = scale;
+    
+    // Build legs from route or fallback
+    const legs = this.buildLegsFromData(data);
+    
+    if (legs.length === 0) {
+      ctx.fillStyle = '#000';
+      ctx.font = `700 ${titleSize}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText('No journey configured', width / 2, startY + height / 2);
+      ctx.textAlign = 'left';
+      return startY + height;
+    }
+    
+    const displayLegs = legs.slice(0, maxLegs);
+    const numLegs = displayLegs.length;
+    const arrowHeight = 14;
+    const totalArrowSpace = (numLegs - 1) * arrowHeight;
+    const availableHeight = height - totalArrowSpace - 8;
+    const legHeight = Math.min(80, Math.floor(availableHeight / numLegs));
+    
+    let y = startY;
+    
+    displayLegs.forEach((leg, i) => {
+      const isLast = i === numLegs - 1;
+      this.renderLeg(ctx, leg, i + 1, y, legHeight, scale, isLast);
+      y += legHeight;
+      
+      if (!isLast) {
+        // Arrow connector
+        this.drawArrowConnector(ctx, width / 2, y + 2);
+        y += arrowHeight;
+      }
+    });
+    
+    return y;
+  }
+
+  /**
+   * Render a single leg
+   */
+  renderLeg(ctx, leg, number, y, height, scale, isLast) {
+    const { width } = this.deviceConfig;
+    const { titleSize, subtitleSize, durationSize } = scale;
+    
+    const isSkip = leg.state === 'skip';
+    const isCancelled = leg.state === 'cancelled';
+    const isDelayed = leg.state === 'delayed';
+    
+    const boxX = 10;
+    const boxW = width - 20;
+    const textColor = (isSkip || isCancelled) ? '#888' : '#000';
+    
+    // Background
+    ctx.fillStyle = '#FFF';
+    ctx.fillRect(boxX, y, boxW, height);
+    
+    if (isCancelled) {
+      this.drawHatchedBackground(ctx, boxX, y, boxW - 72, height);
+    }
+    
+    // Border
+    ctx.strokeStyle = textColor;
+    ctx.lineWidth = (leg.type === 'coffee' && !isSkip) || isDelayed ? 3 : 2;
+    if (isSkip || isDelayed) {
+      ctx.setLineDash([6, 4]);
+    }
+    ctx.strokeRect(boxX, y, boxW, height);
+    ctx.setLineDash([]);
+    
+    // Number circle
+    const circleX = boxX + 20;
+    const circleY = y + height / 2;
+    const circleR = Math.min(14, height / 3);
+    
+    ctx.fillStyle = textColor;
+    ctx.beginPath();
+    ctx.arc(circleX, circleY, circleR, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.fillStyle = '#FFF';
+    ctx.font = `700 ${Math.round(circleR * 1.2)}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText(number.toString(), circleX, circleY + circleR / 3);
+    ctx.textAlign = 'left';
+    
+    // Icon
+    const iconX = boxX + 44;
+    const iconY = y + height / 2 - 12;
+    this.drawModeIcon(ctx, leg.type, iconX, iconY, 24, textColor);
+    
+    // Title
+    ctx.fillStyle = textColor;
+    ctx.font = `800 ${titleSize}px sans-serif`;
+    const titleX = boxX + 76;
+    ctx.fillText(leg.title || '', titleX, y + height / 2 - 2);
+    
+    // Subtitle
+    ctx.font = `600 ${subtitleSize}px sans-serif`;
+    ctx.fillText(leg.subtitle || '', titleX, y + height / 2 + titleSize - 2);
+    
+    // Duration box
+    const durBoxW = 68;
+    const durBoxX = boxX + boxW - durBoxW;
+    
+    if (isCancelled) {
+      ctx.fillStyle = '#FFF';
+      ctx.fillRect(durBoxX, y, durBoxW, height);
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(durBoxX, y, durBoxW, height);
+      // X through
+      ctx.beginPath();
+      ctx.moveTo(durBoxX + 10, y + 10);
+      ctx.lineTo(durBoxX + durBoxW - 10, y + height - 10);
+      ctx.moveTo(durBoxX + durBoxW - 10, y + 10);
+      ctx.lineTo(durBoxX + 10, y + height - 10);
+      ctx.stroke();
+      ctx.font = `900 ${Math.round(durationSize * 0.4)}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText('CANCELLED', durBoxX + durBoxW / 2, y + height / 2 + 4);
+    } else if (isSkip) {
+      ctx.fillStyle = '#FFF';
+      ctx.fillRect(durBoxX, y, durBoxW, height);
+      ctx.strokeStyle = '#000';
+      ctx.setLineDash([6, 4]);
+      ctx.lineWidth = 2;
+      ctx.strokeRect(durBoxX, y, durBoxW, height);
+      ctx.setLineDash([]);
+      ctx.font = `900 ${Math.round(durationSize * 0.5)}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText('SKIP', durBoxX + durBoxW / 2, y + height / 2 + 4);
+    } else {
+      ctx.fillStyle = '#000';
+      ctx.fillRect(durBoxX, y, durBoxW, height);
+      ctx.fillStyle = '#FFF';
+      ctx.font = `900 ${durationSize}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText(leg.minutes?.toString() || '--', durBoxX + durBoxW / 2, y + height / 2 + durationSize / 3);
+      ctx.font = `600 ${Math.round(durationSize * 0.4)}px sans-serif`;
+      ctx.fillText(leg.type === 'walk' ? 'MIN WALK' : 'MIN', durBoxX + durBoxW / 2, y + height / 2 + durationSize / 3 + durationSize * 0.4);
+    }
+    
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#000';
+  }
+
+  /**
+   * Render footer
+   */
+  renderFooter(ctx, data, y, scale) {
+    const { width } = this.deviceConfig;
+    const { height, fontSize } = scale;
+    
+    // Black background
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, y, width, height);
+    
+    // Destination
+    ctx.fillStyle = '#FFF';
+    ctx.font = `800 ${fontSize}px sans-serif`;
+    ctx.fillText('WORK', 12, y + height / 2 + fontSize / 3);
+    
+    // ARRIVE label and time
+    ctx.font = `700 ${Math.round(fontSize * 0.8)}px sans-serif`;
+    ctx.textAlign = 'right';
+    ctx.fillText('ARRIVE', width - 80, y + height / 2 + fontSize / 4);
+    
+    const arriveTime = data.coffee?.arrivalTime || '09:00';
+    ctx.font = `900 ${Math.round(fontSize * 1.4)}px sans-serif`;
+    ctx.fillText(arriveTime, width - 12, y + height / 2 + fontSize / 3);
+    
+    ctx.textAlign = 'left';
+  }
+
+  /**
+   * Build legs from SmartCommute data
+   */
+  buildLegsFromData(data) {
+    const legs = [];
+    const route = data.route;
+    const coffee = data.coffee;
+    
+    // If we have a route with coffee segments
+    if (route?.coffeeSegments?.position === 'before-transit') {
+      // Walk to cafe
+      legs.push({
+        type: 'walk',
+        title: 'Walk to Cafe',
+        subtitle: `${route.coffeeSegments.walkToCafe} min walk`,
+        minutes: route.coffeeSegments.walkToCafe,
+        state: 'normal'
+      });
+      
+      // Coffee
+      const coffeeState = coffee?.canGet === false ? 'skip' : 'normal';
+      legs.push({
+        type: 'coffee',
+        title: 'COFFEE',
+        subtitle: coffeeState === 'skip' ? `SKIP — ${coffee?.subtext || 'No time'}` : '☕ TIME FOR COFFEE',
+        minutes: route.coffeeSegments.coffeeTime,
+        state: coffeeState
+      });
+      
+      // Walk to station
+      legs.push({
+        type: 'walk',
+        title: 'Walk to Station',
+        subtitle: `${route.coffeeSegments.walkToStation} min walk`,
+        minutes: route.coffeeSegments.walkToStation,
+        state: 'normal'
+      });
+    } else {
+      // Just walk to station
+      legs.push({
+        type: 'walk',
+        title: 'Walk to Station',
+        subtitle: '5 min walk',
+        minutes: 5,
+        state: 'normal'
+      });
+    }
+    
+    // Transit modes
+    if (route?.modes) {
+      for (const mode of route.modes) {
+        const modeType = this.getModeType(mode.type);
+        legs.push({
+          type: modeType,
+          title: mode.originStation?.name || modeType,
+          subtitle: `${mode.routeNumber || modeType} → ${mode.destinationStation?.name || 'City'}`,
+          minutes: mode.estimatedDuration || mode.liveData?.minutes || 10,
+          state: mode.cancelled ? 'cancelled' : mode.isDelayed ? 'delayed' : 'normal'
+        });
+      }
+    } else {
+      // Fallback transit
+      const transit = data.transit;
+      if (transit?.trains?.length > 0) {
+        const train = transit.trains[0];
+        legs.push({
+          type: 'train',
+          title: 'Train',
+          subtitle: `Train → ${train.destination || 'City'}`,
+          minutes: train.minutes || 10,
+          state: 'normal'
+        });
+      } else if (transit?.trams?.length > 0) {
+        const tram = transit.trams[0];
+        legs.push({
+          type: 'tram',
+          title: `Tram ${tram.routeNumber || ''}`,
+          subtitle: `Tram → ${tram.destination || 'City'}`,
+          minutes: tram.minutes || 10,
+          state: 'normal'
+        });
+      } else if (transit?.buses?.length > 0) {
+        const bus = transit.buses[0];
+        legs.push({
+          type: 'bus',
+          title: `Bus ${bus.routeNumber || ''}`,
+          subtitle: `Bus → ${bus.destination || 'City'}`,
+          minutes: bus.minutes || 15,
+          state: 'normal'
+        });
+      }
+    }
+    
+    // Final walk to work
+    legs.push({
+      type: 'walk',
+      title: 'Walk to Work',
+      subtitle: '5 min walk',
+      minutes: route?.walkingSegments?.stationToWork || 5,
+      state: 'normal'
+    });
+    
+    return legs;
+  }
+
+  /**
+   * Draw arrow connector between legs
+   */
+  drawArrowConnector(ctx, x, y) {
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x - 8, y + 10);
+    ctx.lineTo(x + 8, y + 10);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  /**
+   * Draw hatched background for cancelled legs
+   */
+  drawHatchedBackground(ctx, x, y, w, h) {
+    ctx.save();
+    ctx.strokeStyle = '#CCC';
+    ctx.lineWidth = 1;
+    const spacing = 8;
+    for (let i = -h; i < w; i += spacing) {
+      ctx.beginPath();
+      ctx.moveTo(x + i, y + h);
+      ctx.lineTo(x + i + h, y);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  /**
+   * Draw mode icon
+   */
+  drawModeIcon(ctx, type, x, y, size, color) {
+    ctx.fillStyle = color;
+    ctx.font = `${size}px sans-serif`;
+    
+    const icons = {
+      walk: '🚶',
+      coffee: '☕',
+      train: '🚆',
+      tram: '🚊',
+      bus: '🚌',
+      ferry: '⛴️',
+      lightrail: '🚈'
+    };
+    
+    ctx.fillText(icons[type] || '•', x, y + size);
+  }
+
+  /**
+   * Get mode type string from numeric type
+   */
+  getModeType(type) {
+    const types = { 0: 'train', 1: 'tram', 2: 'bus', 3: 'train', 4: 'ferry', 5: 'lightrail' };
+    return types[type] || 'transit';
+  }
+
+  /**
+   * Get device list
+   */
+  static getDeviceList() {
+    return Object.entries(DEVICE_CONFIGS).map(([id, config]) => ({
+      id,
+      name: config.name,
+      width: config.width,
+      height: config.height,
+      orientation: config.orientation,
+      dpi: config.dpi,
+      colors: config.colors
+    }));
+  }
+
+  /**
+   * Get current status
+   */
+  getStatus() {
+    return {
+      device: this.currentDevice,
+      deviceConfig: {
+        name: this.deviceConfig.name,
+        width: this.deviceConfig.width,
+        height: this.deviceConfig.height,
+        orientation: this.deviceConfig.orientation
+      },
+      smartCommute: this.smartCommute?.getStatus(),
+      autoRefresh: this.autoRefresh,
+      refreshIntervalMs: this.refreshIntervalMs
+    };
+  }
+}
+
+export default LiveDash;
