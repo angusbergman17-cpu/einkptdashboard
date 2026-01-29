@@ -285,7 +285,7 @@ function drawArrowConnector(ctx, centerX, y) {
 }
 
 /**
- * Draw hatched pattern for suspended state
+ * Draw hatched pattern for suspended state - Bold for 1-bit e-ink
  */
 function drawHatchedBackground(ctx, x, y, w, h) {
   ctx.save();
@@ -294,9 +294,10 @@ function drawHatchedBackground(ctx, x, y, w, h) {
   ctx.clip();
   
   ctx.strokeStyle = '#000';
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 3; // Thicker lines
   
-  for (let i = -h; i < w + h; i += 10) {
+  // Wider spacing for clearer pattern
+  for (let i = -h; i < w + h; i += 14) {
     ctx.beginPath();
     ctx.moveTo(x + i, y);
     ctx.lineTo(x + i + h, y + h);
@@ -307,7 +308,7 @@ function drawHatchedBackground(ctx, x, y, w, h) {
 }
 
 /**
- * Draw vertical striped pattern for diverted state
+ * Draw vertical striped pattern for diverted state - Bold for 1-bit e-ink
  */
 function drawVerticalStripes(ctx, x, y, w, h) {
   ctx.save();
@@ -316,8 +317,9 @@ function drawVerticalStripes(ctx, x, y, w, h) {
   ctx.clip();
   
   ctx.fillStyle = '#000';
-  for (let i = 0; i < w; i += 12) {
-    ctx.fillRect(x + i + 5, y, 2, h);
+  // Thicker stripes with wider spacing
+  for (let i = 0; i < w; i += 16) {
+    ctx.fillRect(x + i + 6, y, 4, h);
   }
   
   ctx.restore();
@@ -459,11 +461,16 @@ function renderLeg(ctx, leg, index, y, legHeight, isLast) {
   ctx.fillRect(boxX, y, boxW, boxH);
   
   if (isCancelled) {
-    // Hatched background for suspended
-    drawHatchedBackground(ctx, boxX, y, boxW, boxH);
+    // Hatched background for suspended - but leave text area clear
+    drawHatchedBackground(ctx, boxX, y, boxW - 80, boxH); // Leave duration box area clear
+    // White background for text area
+    ctx.fillStyle = '#FFF';
+    ctx.fillRect(boxX + 40, y + 4, boxW - 130, boxH - 8);
   } else if (isDiverted) {
-    // Vertical stripes for diverted
-    drawVerticalStripes(ctx, boxX, y, boxW, boxH);
+    // Vertical stripes for diverted - leave text area clear
+    drawVerticalStripes(ctx, boxX, y, boxW - 80, boxH);
+    ctx.fillStyle = '#FFF';
+    ctx.fillRect(boxX + 40, y + 4, boxW - 130, boxH - 8);
   }
   
   // Draw border
@@ -549,62 +556,85 @@ function renderLeg(ctx, leg, index, y, legHeight, isLast) {
   const durBoxX = boxX + boxW - durBoxW;
   
   if (isCancelled) {
-    // Text "CANCELLED" - Bold
-    ctx.fillStyle = '#000';
-    ctx.font = '800 12px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('CANCELLED', durBoxX + durBoxW / 2, y + legHeight / 2 + 4);
-  } else if (isSkip) {
-    // Dashed left border, text "SKIP"
-    ctx.strokeStyle = '#000';
-    ctx.setLineDash([4, 4]);
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(durBoxX, y);
-    ctx.lineTo(durBoxX, y + durBoxH);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    
-    ctx.fillStyle = '#000';
-    ctx.font = '800 14px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('SKIP', durBoxX + durBoxW / 2, y + legHeight / 2 + 5);
-  } else if (isDelayed) {
-    // Dashed left border, black text
-    ctx.strokeStyle = '#000';
-    ctx.setLineDash([5, 4]);
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(durBoxX, y);
-    ctx.lineTo(durBoxX, y + durBoxH);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.lineWidth = 2;
-    
-    ctx.fillStyle = '#000';
-    ctx.font = '900 28px sans-serif';
-    ctx.textAlign = 'center';
-    const timeStr = leg.minutes?.toString() || '--';
-    ctx.fillText(timeStr, durBoxX + durBoxW / 2, y + legHeight / 2 + 2);
-    
-    ctx.font = '700 10px sans-serif';
-    const unitLabel = leg.type === 'walk' ? 'MIN WALK' : 'MIN';
-    ctx.fillText(unitLabel, durBoxX + durBoxW / 2, y + legHeight / 2 + 18);
-  } else if (isDiverted) {
-    // White background, black text
-    ctx.fillStyle = '#fff';
+    // CANCELLED - white box with bold black border and text
+    ctx.fillStyle = '#FFF';
     ctx.fillRect(durBoxX, y, durBoxW, durBoxH);
     ctx.strokeStyle = '#000';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(durBoxX, y, durBoxW, durBoxH);
+    
+    // Draw X through box
+    ctx.beginPath();
+    ctx.moveTo(durBoxX + 8, y + 8);
+    ctx.lineTo(durBoxX + durBoxW - 8, y + durBoxH - 8);
+    ctx.moveTo(durBoxX + durBoxW - 8, y + 8);
+    ctx.lineTo(durBoxX + 8, y + durBoxH - 8);
+    ctx.stroke();
+    
+    ctx.fillStyle = '#000';
+    ctx.font = '900 11px sans-serif';
+    ctx.textAlign = 'center';
+    // White background for text
+    ctx.fillStyle = '#FFF';
+    ctx.fillRect(durBoxX + 4, y + legHeight / 2 - 8, durBoxW - 8, 16);
+    ctx.fillStyle = '#000';
+    ctx.fillText('CANCELLED', durBoxX + durBoxW / 2, y + legHeight / 2 + 4);
+  } else if (isSkip) {
+    // SKIP - outlined box with dashed border
+    ctx.fillStyle = '#FFF';
+    ctx.fillRect(durBoxX, y, durBoxW, durBoxH);
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([6, 4]);
+    ctx.strokeRect(durBoxX, y, durBoxW, durBoxH);
+    ctx.setLineDash([]);
+    
+    // Horizontal line through middle
     ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(durBoxX + 10, y + legHeight / 2);
+    ctx.lineTo(durBoxX + durBoxW - 10, y + legHeight / 2);
+    ctx.stroke();
+    
+    ctx.fillStyle = '#000';
+    ctx.font = '900 13px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('SKIP', durBoxX + durBoxW / 2, y + legHeight / 2 - 10);
+  } else if (isDelayed) {
+    // DELAYED - white box with thick dashed border, time in black
+    ctx.fillStyle = '#FFF';
+    ctx.fillRect(durBoxX, y, durBoxW, durBoxH);
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 4;
+    ctx.setLineDash([8, 5]);
+    ctx.strokeRect(durBoxX, y, durBoxW, durBoxH);
+    ctx.setLineDash([]);
+    ctx.lineWidth = 2;
+    
+    ctx.fillStyle = '#000';
+    ctx.font = '900 30px sans-serif';
+    ctx.textAlign = 'center';
+    const timeStr = leg.minutes?.toString() || '--';
+    ctx.fillText(timeStr, durBoxX + durBoxW / 2, y + legHeight / 2 + 4);
+    
+    ctx.font = '800 11px sans-serif';
+    const unitLabel = leg.type === 'walk' ? 'MIN WALK' : 'MIN';
+    ctx.fillText(unitLabel, durBoxX + durBoxW / 2, y + legHeight / 2 + 20);
+  } else if (isDiverted) {
+    // DIVERTED - white box with solid border
+    ctx.fillStyle = '#FFF';
+    ctx.fillRect(durBoxX, y, durBoxW, durBoxH);
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 3;
     ctx.strokeRect(durBoxX, y, durBoxW, durBoxH);
     
     ctx.fillStyle = '#000';
-    ctx.font = '900 28px sans-serif';
+    ctx.font = '900 30px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(leg.minutes?.toString() || '--', durBoxX + durBoxW / 2, y + legHeight / 2 + 2);
+    ctx.fillText(leg.minutes?.toString() || '--', durBoxX + durBoxW / 2, y + legHeight / 2 + 4);
     
-    ctx.font = '700 10px sans-serif';
-    ctx.fillText(leg.type === 'walk' ? 'MIN WALK' : 'MIN', durBoxX + durBoxW / 2, y + legHeight / 2 + 18);
+    ctx.font = '800 11px sans-serif';
+    ctx.fillText(leg.type === 'walk' ? 'MIN WALK' : 'MIN', durBoxX + durBoxW / 2, y + legHeight / 2 + 20);
   } else {
     // Normal: black background, white text
     ctx.fillStyle = '#000';
@@ -613,13 +643,13 @@ function renderLeg(ctx, leg, index, y, legHeight, isLast) {
     ctx.fillStyle = '#FFF';
     const isCoffeeTime = leg.type === 'coffee';
     const timeStr = isCoffeeTime ? `~${leg.minutes || 5}` : (leg.minutes?.toString() || '--');
-    ctx.font = isCoffeeTime ? '900 24px sans-serif' : '900 28px sans-serif';
+    ctx.font = isCoffeeTime ? '900 26px sans-serif' : '900 30px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(timeStr, durBoxX + durBoxW / 2, y + legHeight / 2 + 2);
+    ctx.fillText(timeStr, durBoxX + durBoxW / 2, y + legHeight / 2 + 4);
     
-    ctx.font = '700 10px sans-serif';
+    ctx.font = '800 11px sans-serif';
     const unitLabel = leg.type === 'walk' ? 'MIN WALK' : 'MIN';
-    ctx.fillText(unitLabel, durBoxX + durBoxW / 2, y + legHeight / 2 + 18);
+    ctx.fillText(unitLabel, durBoxX + durBoxW / 2, y + legHeight / 2 + 20);
   }
   
   ctx.textAlign = 'left';
