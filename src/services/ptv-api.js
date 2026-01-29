@@ -1,27 +1,29 @@
 /**
- * PTV Transport Victoria OpenData API Client
+ * Transport Victoria OpenData API Client
  * Provides departures and weather data for the dashboard
  * 
- * Uses PTV v3 API with HMAC-SHA1 signing for departures
+ * Uses Transport Victoria OpenData API with KeyId header auth
  * Uses Open-Meteo for weather (free, no API key required)
  * 
- * Copyright (c) 2026 Angus Bergman
+ * Copyright (c) 2025-2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
  */
 
 import crypto from 'crypto';
 
-// PTV API Configuration
+// Transport Victoria OpenData API Configuration
+// Per Development Rules Section 1.1 - use ODATA_API_KEY only
 const API_BASE = 'https://api-opendata.ptv.vic.gov.au';
-const DEV_ID = process.env.PTV_DEV_ID || process.env.ODATA_API_KEY;
-const API_KEY = process.env.PTV_API_KEY || process.env.ODATA_TOKEN;
+const DEV_ID = process.env.ODATA_DEV_ID || process.env.ODATA_API_KEY;
+const API_KEY = process.env.ODATA_API_KEY || process.env.ODATA_TOKEN;
 
 // Melbourne coordinates (default)
 const MELBOURNE_LAT = -37.8136;
 const MELBOURNE_LON = 144.9631;
 
 /**
- * Sign URL with HMAC-SHA1 for PTV API authentication
+ * Sign URL for Transport Victoria OpenData API authentication
+ * Note: Legacy compatibility function using HMAC signing
  */
 function signUrl(path) {
   if (!DEV_ID || !API_KEY) return null;
@@ -48,7 +50,7 @@ export async function getDepartures(stopId, routeType) {
   
   if (!url) {
     // Mock data when no API keys configured
-    console.log('PTV API: Using mock data (no API keys)');
+    console.log('Transport API: Using mock data (no API keys)');
     const now = getMelbourneTime();
     return [
       { minutes: 3, destination: 'City', platform: '1', scheduled: now.toISOString(), isLive: false },
@@ -86,7 +88,7 @@ export async function getDepartures(stopId, routeType) {
     }).filter(d => d.minutes >= 0);
     
   } catch (e) {
-    console.error('PTV API error:', e.message);
+    console.error('Transport API error:', e.message);
     // Return fallback data on error
     return [
       { minutes: 5, destination: 'City', platform: null, scheduled: null, isLive: false, error: true }

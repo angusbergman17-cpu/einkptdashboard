@@ -240,9 +240,14 @@ export class LiveDash {
     const { width } = this.deviceConfig;
     const { height, timeSize, dateSize } = scale;
     
-    // Get local time
+    // Get local time - MUST use 12-hour format per Rule 12.2
     const localTime = this.smartCommute.getLocalTime();
-    const timeStr = `${localTime.getHours()}:${localTime.getMinutes().toString().padStart(2, '0')}`;
+    const hours24 = localTime.getHours();
+    const hours12 = hours24 % 12 || 12; // Convert to 12-hour (12 instead of 0)
+    const minutes = localTime.getMinutes().toString().padStart(2, '0');
+    const timeStr = `${hours12}:${minutes}`;
+    const ampm = hours24 >= 12 ? 'pm' : 'am';
+    
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const dayStr = days[localTime.getDay()];
@@ -253,12 +258,11 @@ export class LiveDash {
     ctx.font = `600 ${Math.round(dateSize * 0.8)}px sans-serif`;
     ctx.fillText('HOME', 12, y + 18);
     
-    // Time
+    // Time (12-hour format)
     ctx.font = `900 ${timeSize}px sans-serif`;
     ctx.fillText(timeStr, 12, y + height - 20);
     
-    // AM/PM
-    const ampm = localTime.getHours() >= 12 ? 'PM' : 'AM';
+    // AM/PM suffix
     ctx.font = `600 ${Math.round(timeSize * 0.3)}px sans-serif`;
     const timeWidth = ctx.measureText(timeStr).width;
     ctx.fillText(ampm, 12 + timeWidth + 4, y + height - 20);
