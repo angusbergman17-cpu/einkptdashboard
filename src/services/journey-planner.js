@@ -2,16 +2,275 @@
  * Journey Planner Service
  * Builds dynamic route segments based on user-configured journey preferences
  * All routing is derived from user preferences - no hardcoded addresses
+ * Integrates SmartRouteRecommender for auto-detection of optimal routes
  *
- * Copyright (c) 2026 Angus Bergman
+ * Copyright (c) 2025 Angus Bergman
  * Licensed under CC BY-NC 4.0 (Creative Commons Attribution-NonCommercial 4.0 International License)
  * https://creativecommons.org/licenses/by-nc/4.0/
  */
+
+import SmartRouteRecommender from './smart-route-recommender.js';
 
 class JourneyPlanner {
   constructor() {
     this.cache = null;
     this.cacheExpiry = null;
+    this.smartRecommender = new SmartRouteRecommender();
+    this.recommendationCache = null;
+    this.recommendationCacheExpiry = null;
+  }
+
+  /**
+   * Get smart route recommendations based on locations and preferences
+   * Auto-detects optimal routes including coffee-before-transit pattern
+   * 
+   * @param {Object} params - Parameters
+   * @param {Object} params.locations - { home, cafe, work } with lat/lon
+   * @param {Array} params.allStops - All available transit stops
+   * @param {Object} params.preferences - User preferences
+   * @returns {Object} Recommendation result with alternatives and reasoning
+   */
+  async getSmartRecommendations(params) {
+    const { locations, allStops, preferences } = params;
+    
+    // Check cache (valid for 5 minutes since stops don't change often)
+    const now = Date.now();
+    if (this.recommendationCache && this.recommendationCacheExpiry > now) {
+      console.log('📋 Using cached route recommendations');
+      return this.recommendationCache;
+    }
+    
+    console.log('🧠 Generating smart route recommendations...');
+    
+    // Build preference object for recommender
+    const routePrefs = {
+      coffeeEnabled: preferences?.coffeeEnabled !== false,
+      cafeDuration: preferences?.cafeDuration || 5,
+      preferTrain: preferences?.preferTrain !== false,
+      minimizeWalking: preferences?.minimizeWalking !== false,
+      modePriority: preferences?.modePriority || { train: 1, tram: 2, bus: 3, vline: 2 },
+      walking: {
+        maxDistanceMeters: preferences?.maxWalkingDistance || 500,
+        idealDistanceMeters: preferences?.idealWalkingDistance || 300,
+        weightFactor: preferences?.walkingWeightFactor || 2.0,
+        avoidLongWalks: preferences?.avoidLongWalks !== false
+      }
+    };
+    
+    // Get recommendations from smart recommender
+    const result = this.smartRecommender.analyzeAndRecommend(
+      locations,
+      allStops || [],
+      routePrefs
+    );
+    
+    // Cache the result
+    this.recommendationCache = result;
+    this.recommendationCacheExpiry = now + (5 * 60 * 1000);
+    
+    console.log('✅ Route recommendations generated');
+    if (result.recommended) {
+      console.log('   Recommended:', result.recommended.name);
+      console.log('   Pattern:', result.pattern.type);
+      console.log('   Confidence:', Math.round(result.pattern.confidence * 100) + '%');
+    }
+    
+    return result;
+  }
+
+  /**
+   * Use recommended route to calculate full journey
+   * Combines smart recommendations with real-time transit data
+   * 
+   * @param {Object} params - Parameters
+   * @returns {Object} Complete journey calculation
+   */
+  async calculateWithSmartRecommendation(params) {
+    const { locations, allStops, preferences, arrivalTime, liveData } = params;
+    
+    // Get smart recommendations
+    const recommendations = await this.getSmartRecommendations({
+      locations,
+      allStops,
+      preferences
+    });
+    
+    if (!recommendations.recommended) {
+      console.log('⚠️ No smart recommendation available, using fallback');
+      return this.calculateJourney({
+        homeLocation: locations.home,
+        workLocation: locations.work,
+        cafeLocation: locations.cafe,
+        workStartTime: arrivalTime || '09:00',
+        cafeDuration: preferences?.cafeDuration || 5
+      });
+    }
+    
+    // Use recommended route
+    const route = recommendations.recommended;
+    console.log('🚀 Using recommended route:', route.name);
+    
+    // Build journey from recommendation
+    const journey = this.buildJourneyFromRecommendation(route, {
+      locations,
+      arrivalTime: arrivalTime || '09:00',
+      cafeDuration: preferences?.cafeDuration || 5,
+      liveData
+    });
+    
+    return {
+      success: true,
+      journey,
+      recommendation: {
+        name: route.name,
+        pattern: recommendations.pattern.type,
+        confidence: recommendations.pattern.confidence,
+        reasoning: recommendations.reasoning,
+        alternatives: recommendations.routes.slice(0, 5)
+      }
+    };
+  }
+
+  /**
+   * Build complete journey object from a recommendation
+   */
+  buildJourneyFromRecommendation(route, options) {
+    const { locations, arrivalTime, cafeDuration, liveData } = options;
+    const segments = [];
+    
+    // Parse arrival time
+    const [arrHours, arrMins] = arrivalTime.split(':').map(Number);
+    const arrivalMinutes = arrHours * 60 + arrMins;
+    
+    // Start building segments
+    let totalMinutes = 0;
+    
+    // Coffee segments (if pattern is coffee-before-transit)
+    if (route.coffeeSegments?.position === 'before-transit') {
+      segments.push({
+        type: 'walk',
+        from: 'Home',
+        to: 'Cafe',
+        minutes: route.coffeeSegments.walkToCafe,
+        icon: '🚶'
+      });
+      totalMinutes += route.coffeeSegments.walkToCafe;
+      
+      segments.push({
+        type: 'coffee',
+        location: 'Cafe',
+        minutes: cafeDuration,
+        icon: '☕',
+        decision: 'TIME FOR COFFEE'
+      });
+      totalMinutes += cafeDuration;
+      
+      segments.push({
+        type: 'walk',
+        from: 'Cafe',
+        to: route.modes[0]?.originStation?.name || 'Station',
+        minutes: route.coffeeSegments.walkToStation,
+        icon: '🚶'
+      });
+      totalMinutes += route.coffeeSegments.walkToStation;
+    } else {
+      // Direct walk to station
+      const walkTime = route.walkingSegments?.homeToStation || 5;
+      segments.push({
+        type: 'walk',
+        from: 'Home',
+        to: route.modes[0]?.originStation?.name || 'Station',
+        minutes: walkTime,
+        icon: '🚶'
+      });
+      totalMinutes += walkTime;
+    }
+    
+    // Transit segments
+    for (let i = 0; i < route.modes.length; i++) {
+      const mode = route.modes[i];
+      
+      // Wait time
+      segments.push({
+        type: 'wait',
+        location: mode.originStation?.name || 'Station',
+        minutes: 2,
+        icon: '⏳'
+      });
+      totalMinutes += 2;
+      
+      // Transit leg
+      const transitMins = mode.estimatedDuration || 10;
+      segments.push({
+        type: 'transit',
+        mode: this.getModeName(mode.type),
+        icon: this.getModeIcon(mode.type),
+        from: mode.originStation?.name || 'Origin',
+        to: mode.destinationStation?.name || 'Destination',
+        minutes: transitMins,
+        routeNumber: mode.routeNumber,
+        // Add live delay if available
+        delay: liveData?.delays?.[mode.routeNumber] || 0
+      });
+      totalMinutes += transitMins;
+      
+      // Inter-modal walk if not last segment
+      if (i < route.modes.length - 1) {
+        segments.push({
+          type: 'walk',
+          from: mode.destinationStation?.name,
+          to: route.modes[i + 1].originStation?.name,
+          minutes: 3,
+          icon: '🚶'
+        });
+        totalMinutes += 3;
+      }
+    }
+    
+    // Final walk to work
+    const finalWalk = route.walkingSegments?.stationToWork || 5;
+    segments.push({
+      type: 'walk',
+      from: route.modes[route.modes.length - 1]?.destinationStation?.name || 'Station',
+      to: 'Work',
+      minutes: finalWalk,
+      icon: '🚶'
+    });
+    totalMinutes += finalWalk;
+    
+    // Calculate departure time
+    const departureMinutes = arrivalMinutes - totalMinutes;
+    const depHours = Math.floor(departureMinutes / 60);
+    const depMins = departureMinutes % 60;
+    const departureTime = `${String(depHours).padStart(2, '0')}:${String(depMins).padStart(2, '0')}`;
+    
+    // Add times to segments (working backwards)
+    let currentMinutes = arrivalMinutes;
+    for (let i = segments.length - 1; i >= 0; i--) {
+      currentMinutes -= segments[i].minutes;
+      const h = Math.floor(currentMinutes / 60);
+      const m = currentMinutes % 60;
+      segments[i].time = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    }
+    
+    return {
+      departureTime,
+      arrivalTime,
+      totalMinutes,
+      segments,
+      hasCoffee: route.coffeeSegments?.position === 'before-transit',
+      routeName: route.name,
+      pattern: route.pattern,
+      score: route.score
+    };
+  }
+
+  /**
+   * Clear recommendation cache
+   */
+  clearRecommendationCache() {
+    this.recommendationCache = null;
+    this.recommendationCacheExpiry = null;
   }
 
   /**
