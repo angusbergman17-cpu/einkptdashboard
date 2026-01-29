@@ -111,138 +111,359 @@ export default async function handler(req, res) {
 }
 
 /**
- * Generate HTML preview page
+ * Generate HTML preview page with full branding, attribution, and support links
  */
 function generateHtmlPreview(device, config) {
   return `<!DOCTYPE html>
 <html lang="en">
+<!--
+    PTV-TRMNL LiveDash - Smart Transit Display
+    Copyright (c) 2025-2026 Angus Bergman
+    Licensed under CC BY-NC 4.0
+    https://creativecommons.org/licenses/by-nc/4.0/
+-->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LiveDash - ${config.name}</title>
+    <meta name="description" content="Live transit dashboard preview for ${config.name}">
+    <title>LiveDash - ${config.name} | PTV-TRMNL</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚃</text></svg>">
     <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-card: rgba(30, 41, 59, 0.8);
+            --accent: #6366f1;
+            --accent-hover: #818cf8;
+            --success: #22c55e;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+        
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #1a1a2e;
+            background: var(--bg-primary);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            color: var(--text-primary);
+        }
+        
+        /* Header */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 20px;
+            display: flex;
             align-items: center;
-            padding: 20px;
-            color: #eee;
+            justify-content: space-between;
         }
-        h1 {
-            font-size: 24px;
-            margin-bottom: 10px;
-            color: #fff;
+        
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-decoration: none;
         }
+        
+        .brand:hover { opacity: 0.9; }
+        
+        .nav-links {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .nav-link {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        
+        .nav-link:hover {
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+        
+        /* Main Content */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px 20px;
+        }
+        
+        .page-title {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+        
         .device-info {
             font-size: 14px;
-            opacity: 0.7;
-            margin-bottom: 20px;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
         }
+        
         .device-frame {
             background: #000;
             border-radius: 20px;
             padding: 20px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.5);
         }
+        
         .screen {
-            background: #fff;
+            background: #f5f5f0;
             border-radius: 4px;
             overflow: hidden;
             position: relative;
         }
+        
         .screen img {
             display: block;
             width: 100%;
             height: auto;
         }
+        
+        .refresh-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            color: #fff;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .refresh-indicator.live {
+            background: var(--success);
+        }
+        
         .controls {
-            margin-top: 20px;
+            margin-top: 24px;
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
             justify-content: center;
         }
+        
         .btn {
-            background: #4a4a6a;
-            border: none;
-            color: #fff;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
             padding: 10px 20px;
             border-radius: 8px;
             cursor: pointer;
             font-size: 14px;
-            transition: background 0.2s;
+            transition: all 0.2s;
         }
+        
         .btn:hover {
-            background: #6a6a8a;
+            background: var(--accent);
+            border-color: var(--accent);
         }
+        
         .btn.active {
-            background: #7c3aed;
+            background: var(--accent);
+            border-color: var(--accent);
         }
-        .refresh-indicator {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(0,0,0,0.7);
-            color: #fff;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-        }
-        .status {
-            margin-top: 15px;
-            font-size: 12px;
-            opacity: 0.6;
-        }
+        
         select {
-            background: #4a4a6a;
-            border: none;
-            color: #fff;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
             padding: 10px 15px;
             border-radius: 8px;
             font-size: 14px;
             cursor: pointer;
         }
+        
+        .status {
+            margin-top: 16px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        /* Footer */
+        .footer {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            padding: 20px;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        .footer-attribution {
+            margin-bottom: 12px;
+        }
+        
+        .footer-attribution a {
+            color: var(--text-secondary);
+            text-decoration: none;
+        }
+        
+        .footer-attribution a:hover {
+            color: var(--text-primary);
+            text-decoration: underline;
+        }
+        
+        .footer-support {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+        
+        .support-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        
+        .support-btn.coffee {
+            background: #FFDD00;
+            color: #000;
+        }
+        
+        .support-btn.sponsor {
+            background: #db61a2;
+            color: #fff;
+        }
+        
+        .support-btn.feedback {
+            background: var(--accent);
+            color: #fff;
+        }
+        
+        .support-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        
+        .footer-legal {
+            font-size: 12px;
+        }
+        
+        .footer-legal a {
+            color: var(--text-secondary);
+        }
+        
+        .footer-legal a:hover {
+            color: var(--text-primary);
+        }
+        
+        @media (max-width: 600px) {
+            .nav-links { display: none; }
+            .page-title { font-size: 22px; }
+            .device-frame { padding: 10px; border-radius: 12px; }
+            .footer-support { flex-direction: column; align-items: center; }
+            .support-btn { width: 200px; justify-content: center; }
+        }
     </style>
 </head>
 <body>
-    <h1>📺 LiveDash</h1>
-    <div class="device-info">${config.name} • ${config.width}×${config.height} • ${config.orientation}</div>
+    <header class="header">
+        <a href="/" class="brand">
+            <span>🚃</span>
+            <span>PTV-TRMNL</span>
+        </a>
+        <nav class="nav-links">
+            <a href="/" class="nav-link">Home</a>
+            <a href="/setup-wizard.html" class="nav-link">Setup</a>
+            <a href="/admin.html" class="nav-link">Dashboard</a>
+        </nav>
+    </header>
     
-    <div class="device-frame" style="max-width: ${Math.min(config.width + 40, 900)}px">
-        <div class="screen" style="width: ${config.width}px; max-width: 100%; aspect-ratio: ${config.width}/${config.height}">
-            <img id="dashboard" src="/api/livedash?device=${device}&t=${Date.now()}" alt="Dashboard">
-            <div class="refresh-indicator" id="refresh-indicator">Live</div>
+    <main class="main">
+        <h1 class="page-title">📺 LiveDash</h1>
+        <p class="device-info">${config.name} • ${config.width}×${config.height} • ${config.orientation}</p>
+        
+        <div class="device-frame" style="max-width: ${Math.min(config.width + 40, 900)}px">
+            <div class="screen" style="width: ${config.width}px; max-width: 100%; aspect-ratio: ${config.width}/${config.height}">
+                <img id="dashboard" src="/api/livedash?device=${device}&t=${Date.now()}" alt="Smart Transit Dashboard for ${config.name}">
+                <div class="refresh-indicator live" id="refresh-indicator">● Live</div>
+            </div>
         </div>
-    </div>
+        
+        <div class="controls">
+            <select id="device-select" onchange="changeDevice(this.value)" aria-label="Select device">
+                ${Object.entries(DEVICE_CONFIGS).map(([id, cfg]) => 
+                    `<option value="${id}" ${id === device ? 'selected' : ''}>${cfg.name} (${cfg.width}×${cfg.height})</option>`
+                ).join('')}
+            </select>
+            <button class="btn" onclick="refresh()" aria-label="Refresh dashboard">🔄 Refresh</button>
+            <button class="btn active" id="auto-btn" onclick="toggleAuto()" aria-label="Toggle auto-refresh">⏸️ Auto: ON</button>
+        </div>
+        
+        <p class="status" id="status">Last updated: just now</p>
+    </main>
     
-    <div class="controls">
-        <select id="device-select" onchange="changeDevice(this.value)">
-            ${Object.entries(DEVICE_CONFIGS).map(([id, cfg]) => 
-                `<option value="${id}" ${id === device ? 'selected' : ''}>${cfg.name} (${cfg.width}×${cfg.height})</option>`
-            ).join('')}
-        </select>
-        <button class="btn" onclick="refresh()">🔄 Refresh Now</button>
-        <button class="btn" id="auto-btn" onclick="toggleAuto()">⏸️ Auto: ON</button>
-    </div>
-    
-    <div class="status" id="status">Last updated: just now</div>
+    <footer class="footer">
+        <div class="footer-attribution">
+            <strong>Data:</strong>
+            <a href="https://opendata.transport.vic.gov.au" target="_blank" rel="noopener">Transport Victoria OpenData</a> (CC BY 4.0) •
+            <a href="https://www.bom.gov.au" target="_blank" rel="noopener">Bureau of Meteorology</a>
+        </div>
+        <div class="footer-support">
+            <a href="https://buymeacoffee.com/angusbergman" target="_blank" rel="noopener" class="support-btn coffee">
+                ☕ Buy me a coffee
+            </a>
+            <a href="https://github.com/sponsors/angusbergman17-cpu" target="_blank" rel="noopener" class="support-btn sponsor">
+                💖 Sponsor
+            </a>
+            <a href="https://github.com/angusbergman17-cpu/einkptdashboard/issues/new?template=feedback.md&title=[Feedback]" target="_blank" rel="noopener" class="support-btn feedback">
+                📝 Feedback
+            </a>
+        </div>
+        <div class="footer-legal">
+            © 2025-2026 <a href="https://github.com/angusbergman17-cpu" target="_blank" rel="noopener">Angus Bergman</a> •
+            <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">CC BY-NC 4.0</a> •
+            PTV-TRMNL v2.8
+        </div>
+    </footer>
     
     <script>
         let autoRefresh = true;
         let refreshInterval;
+        let lastUpdate = Date.now();
         
         function refresh() {
             const img = document.getElementById('dashboard');
             const indicator = document.getElementById('refresh-indicator');
-            indicator.textContent = 'Updating...';
+            indicator.textContent = '↻ Updating...';
+            indicator.classList.remove('live');
+            
             img.src = '/api/livedash?device=${device}&refresh=true&t=' + Date.now();
             img.onload = () => {
-                indicator.textContent = 'Live';
+                indicator.textContent = '● Live';
+                indicator.classList.add('live');
+                lastUpdate = Date.now();
                 document.getElementById('status').textContent = 'Last updated: just now';
+            };
+            img.onerror = () => {
+                indicator.textContent = '⚠ Error';
+                indicator.classList.remove('live');
             };
         }
         
@@ -255,9 +476,11 @@ function generateHtmlPreview(device, config) {
             const btn = document.getElementById('auto-btn');
             if (autoRefresh) {
                 btn.textContent = '⏸️ Auto: ON';
+                btn.classList.add('active');
                 startAutoRefresh();
             } else {
                 btn.textContent = '▶️ Auto: OFF';
+                btn.classList.remove('active');
                 clearInterval(refreshInterval);
             }
         }
@@ -266,27 +489,22 @@ function generateHtmlPreview(device, config) {
             refreshInterval = setInterval(refresh, 30000);
         }
         
-        // Start auto-refresh
-        startAutoRefresh();
-        
-        // Update status timer
-        setInterval(() => {
+        function updateStatusTimer() {
+            const elapsed = Math.floor((Date.now() - lastUpdate) / 1000);
             const status = document.getElementById('status');
-            const text = status.textContent;
-            if (text.includes('just now')) {
-                // Keep as is for first 10 seconds
+            if (elapsed < 5) {
+                status.textContent = 'Last updated: just now';
+            } else if (elapsed < 60) {
+                status.textContent = 'Last updated: ' + elapsed + 's ago';
             } else {
-                const match = text.match(/(\\d+)s/);
-                if (match) {
-                    const secs = parseInt(match[1]) + 1;
-                    status.textContent = 'Last updated: ' + secs + 's ago';
-                }
+                const mins = Math.floor(elapsed / 60);
+                status.textContent = 'Last updated: ' + mins + 'm ago';
             }
-        }, 1000);
+        }
         
-        setTimeout(() => {
-            document.getElementById('status').textContent = 'Last updated: 1s ago';
-        }, 1000);
+        // Start auto-refresh and status timer
+        startAutoRefresh();
+        setInterval(updateStatusTimer, 1000);
     </script>
 </body>
 </html>`;

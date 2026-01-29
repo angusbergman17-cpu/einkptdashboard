@@ -324,5 +324,32 @@
         function simulateBoot(){const d=document.getElementById("eink-display"),dev=DEVICES[currentDevice],s=getScale(dev),dot=document.getElementById("status-dot"),st=document.getElementById("status-text");d.style.background="#000";d.innerHTML='<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:-apple-system,sans-serif;color:#fff;"><div style="font-size:'+(48*s)+'px;margin-bottom:'+(15*s)+'px;">🚃</div><div style="font-size:'+(24*s)+'px;font-weight:800;margin-bottom:'+(8*s)+'px;">PTV-TRMNL</div><div style="font-size:'+(12*s)+'px;color:#888;margin-bottom:'+(30*s)+'px;">Smart Transit Display</div><div style="display:flex;gap:'+(8*s)+'px;margin-bottom:'+(20*s)+'px;"><div style="width:'+(10*s)+'px;height:'+(10*s)+'px;background:#fff;border-radius:50%;animation:bootPulse 1.5s infinite;"></div><div style="width:'+(10*s)+'px;height:'+(10*s)+'px;background:#fff;border-radius:50%;animation:bootPulse 1.5s infinite 0.2s;"></div><div style="width:'+(10*s)+'px;height:'+(10*s)+'px;background:#fff;border-radius:50%;animation:bootPulse 1.5s infinite 0.4s;"></div></div><div id="boot-status" style="font-size:'+(11*s)+'px;color:#666;">Initializing...</div><div style="position:absolute;bottom:'+(25*s)+'px;font-size:'+(10*s)+'px;color:#444;">v5.18 • E-Ink '+dev.width+'×'+dev.height+'</div></div><style>@keyframes bootPulse{0%,100%{opacity:0.3;transform:scale(0.8);}50%{opacity:1;transform:scale(1);}}</style>';st.textContent="Booting...";const steps=[{text:"Connecting to WiFi...",delay:800},{text:"WiFi connected ✓",delay:500},{text:"Connecting to PTV OpenData API...",delay:700},{text:"Fetching real-time departures...",delay:600},{text:"Loading journey data...",delay:500},{text:"Display ready!",delay:400}];let i=0;function next(){if(i>=steps.length){dot.classList.remove("refreshing");st.textContent="Ready";setTimeout(()=>renderV11Journey(),600);return;}const step=steps[i++];document.getElementById("boot-status").textContent=step.text;st.textContent=step.text;setTimeout(next,step.delay);}next();}
         initDeviceSelector();updateDeviceInfo();updateDisplay();
     </script>
+    
+    <!-- Footer -->
+    <footer style="background: #1e293b; border-top: 1px solid rgba(255,255,255,0.1); padding: 20px; margin-top: 30px; text-align: center; font-size: 13px; color: #94a3b8;">
+        <div style="margin-bottom: 12px;">
+            <strong>Data:</strong>
+            <a href="https://opendata.transport.vic.gov.au" target="_blank" rel="noopener" style="color: #94a3b8;">Transport Victoria OpenData</a> (CC BY 4.0) •
+            <a href="/attribution.html" style="color: #94a3b8;">All Sources</a>
+        </div>
+        <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px;">
+            <a href="https://buymeacoffee.com/angusbergman" target="_blank" rel="noopener" 
+               style="padding: 6px 14px; background: #FFDD00; color: #000; border-radius: 6px; text-decoration: none; font-weight: 500; font-size: 12px;">
+                ☕ Buy me a coffee
+            </a>
+            <a href="https://github.com/sponsors/angusbergman17-cpu" target="_blank" rel="noopener"
+               style="padding: 6px 14px; background: #db61a2; color: #fff; border-radius: 6px; text-decoration: none; font-weight: 500; font-size: 12px;">
+                💖 Sponsor
+            </a>
+            <a href="https://github.com/angusbergman17-cpu/einkptdashboard/issues/new" target="_blank" rel="noopener"
+               style="padding: 6px 14px; background: #6366f1; color: #fff; border-radius: 6px; text-decoration: none; font-weight: 500; font-size: 12px;">
+                📝 Feedback
+            </a>
+        </div>
+        <div style="font-size: 11px;">
+            © 2025-2026 <a href="https://github.com/angusbergman17-cpu" target="_blank" rel="noopener" style="color: #94a3b8;">Angus Bergman</a> •
+            <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener" style="color: #94a3b8;">CC BY-NC 4.0</a>
+        </div>
+    </footer>
 </body>
 </html>

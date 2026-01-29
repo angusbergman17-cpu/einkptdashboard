@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--
+    PTV-TRMNL - Attribution & Credits
+    Copyright (c) 2025-2026 Angus Bergman
+    Licensed under CC BY-NC 4.0
+    https://creativecommons.org/licenses/by-nc/4.0/
+-->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Data sources, credits, and licensing for PTV-TRMNL Smart Transit Display">
+    <title>Attribution & Credits - PTV-TRMNL</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚃</text></svg>">
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-card: rgba(30, 41, 59, 0.8);
+            --accent: #6366f1;
+            --accent-hover: #818cf8;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+        
+        /* Header */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+        
+        .brand:hover { opacity: 0.9; }
+        
+        .nav-links {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .nav-link {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        
+        .nav-link:hover {
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+        
+        /* Main Content */
+        .main {
+            flex: 1;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            width: 100%;
+        }
+        
+        .page-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .page-title {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        .page-subtitle {
+            color: var(--text-secondary);
+            font-size: 16px;
+        }
+        
+        .section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        
+        .section-title {
+            font-size: 20px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-icon {
+            font-size: 24px;
+        }
+        
+        .source-list {
+            list-style: none;
+        }
+        
+        .source-item {
+            padding: 16px;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            margin-bottom: 12px;
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+        
+        .source-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .source-icon {
+            font-size: 28px;
+            min-width: 40px;
+            text-align: center;
+        }
+        
+        .source-info {
+            flex: 1;
+        }
+        
+        .source-name {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+        
+        .source-name a {
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+        
+        .source-name a:hover {
+            color: var(--accent);
+        }
+        
+        .source-desc {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 6px;
+        }
+        
+        .source-license {
+            display: inline-block;
+            background: var(--bg-card);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .license-box {
+            background: var(--bg-primary);
+            border: 2px solid var(--accent);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+        }
+        
+        .license-badge {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+        
+        .license-title {
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+        
+        .license-text {
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+        
+        .license-link {
+            display: inline-block;
+            background: var(--accent);
+            color: #fff;
+            padding: 10px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .license-link:hover {
+            background: var(--accent-hover);
+            transform: translateY(-2px);
+        }
+        
+        /* Support Section */
+        .support-section {
+            text-align: center;
+            padding: 32px;
+        }
+        
+        .support-title {
+            font-size: 24px;
+            margin-bottom: 12px;
+        }
+        
+        .support-text {
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+        
+        .support-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .support-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 15px;
+            transition: all 0.2s;
+        }
+        
+        .support-btn.coffee {
+            background: #FFDD00;
+            color: #000;
+        }
+        
+        .support-btn.sponsor {
+            background: #db61a2;
+            color: #fff;
+        }
+        
+        .support-btn.github {
+            background: #333;
+            color: #fff;
+        }
+        
+        .support-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        /* Footer */
+        .footer {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            padding: 20px;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        .footer a {
+            color: var(--text-secondary);
+        }
+        
+        .footer a:hover {
+            color: var(--text-primary);
+        }
+        
+        @media (max-width: 600px) {
+            .nav-links { display: none; }
+            .page-title { font-size: 26px; }
+            .source-item { flex-direction: column; gap: 12px; }
+            .support-buttons { flex-direction: column; align-items: center; }
+            .support-btn { width: 100%; max-width: 280px; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <a href="/" class="brand">
+            <span>🚃</span>
+            <span>PTV-TRMNL</span>
+        </a>
+        <nav class="nav-links">
+            <a href="/" class="nav-link">Home</a>
+            <a href="/setup-wizard.html" class="nav-link">Setup</a>
+            <a href="/admin.html" class="nav-link">Dashboard</a>
+            <a href="/api/livedash?format=html" class="nav-link">Live View</a>
+        </nav>
+    </header>
+    
+    <main class="main">
+        <div class="page-header">
+            <h1 class="page-title">📜 Attribution & Credits</h1>
+            <p class="page-subtitle">Data sources, licensing, and acknowledgments</p>
+        </div>
+        
+        <!-- Transit Data Sources -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-icon">🚆</span>
+                Transit Data Sources
+            </h2>
+            <ul class="source-list">
+                <li class="source-item">
+                    <span class="source-icon">🚃</span>
+                    <div class="source-info">
+                        <div class="source-name">
+                            <a href="https://opendata.transport.vic.gov.au" target="_blank" rel="noopener">Transport Victoria OpenData</a>
+                        </div>
+                        <p class="source-desc">Real-time train, tram, and bus data via GTFS-RT feeds for Victoria, Australia</p>
+                        <span class="source-license">CC BY 4.0</span>
+                    </div>
+                </li>
+                <li class="source-item">
+                    <span class="source-icon">🚊</span>
+                    <div class="source-info">
+                        <div class="source-name">
+                            <a href="https://opendata.transport.nsw.gov.au" target="_blank" rel="noopener">Transport for NSW Open Data</a>
+                        </div>
+                        <p class="source-desc">Public transport data for New South Wales (future support)</p>
+                        <span class="source-license">CC BY 4.0</span>
+                    </div>
+                </li>
+                <li class="source-item">
+                    <span class="source-icon">🚌</span>
+                    <div class="source-info">
+                        <div class="source-name">
+                            <a href="https://www.data.qld.gov.au" target="_blank" rel="noopener">TransLink Queensland</a>
+                        </div>
+                        <p class="source-desc">Public transport data for Queensland (future support)</p>
+                        <span class="source-license">CC BY 4.0</span>
+                    </div>
+                </li>
+            </ul>
+        </section>
+        
+        <!-- Weather & Location -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-icon">🌤️</span>
+                Weather & Location
+            </h2>
+            <ul class="source-list">
+                <li class="source-item">
+                    <span class="source-icon">☀️</span>
+                    <div class="source-info">
+                        <div class="source-name">
+                            <a href="https://www.bom.gov.au" target="_blank" rel="noopener">Bureau of Meteorology</a>
+                        </div>
+                        <p class="source-desc">Australian weather observations, forecasts, and warnings</p>
+                        <span class="source-license">© Commonwealth of Australia</span>
+                    </div>
+                </li>
+                <li class="source-item">
+                    <span class="source-icon">🗺️</span>
+                    <div class="source-info">
+                        <div class="source-name">
+                            <a href="https://www.openstreetmap.org" target="_blank" rel="noopener">OpenStreetMap / Nominatim</a>
+                        </div>
+                        <p class="source-desc">Address geocoding and reverse geocoding</p>
+                        <span class="source-license">ODbL</span>
+                    </div>
+                </li>
+                <li class="source-item">
+                    <span class="source-icon">📍</span>
+                    <div class="source-info">
+                        <div class="source-name">
+                            <a href="https://developers.google.com/maps/documentation/places" target="_blank" rel="noopener">Google Places API</a>
+                        </div>
+                        <p class="source-desc">Address autocomplete and place details (optional)</p>
+                        <span class="source-license">Google Terms of Service</span>
+                    </div>
+                </li>
+            </ul>
+        </section>
+        
+        <!-- Hardware & Platform -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-icon">📟</span>
+                Hardware & Platform
+            </h2>
+            <ul class="source-list">
+                <li class="source-item">
+                    <span class="source-icon">🖥️</span>
+                    <div class="source-info">
+                        <div class="source-name">
+                            <a href="https://www.waveshare.com" target="_blank" rel="noopener">Waveshare E-Paper</a>
+                        </div>
+                        <p class="source-desc">E-ink display modules for TRMNL devices</p>
+                        <span class="source-license">Commercial</span>
+                    </div>
+                </li>
+                <li class="source-item">
+                    <span class="source-icon">⚡</span>
+                    <div class="source-info">
+                        <div class="source-name">
+                            <a href="https://www.espressif.com" target="_blank" rel="noopener">Espressif ESP32</a>
+                        </div>
+                        <p class="source-desc">ESP32-C3 microcontroller powering TRMNL firmware</p>
+                        <span class="source-license">Apache 2.0</span>
+                    </div>
+                </li>
+            </ul>
+        </section>
+        
+        <!-- Open Source -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-icon">💻</span>
+                Open Source Libraries
+            </h2>
+            <ul class="source-list">
+                <li class="source-item">
+                    <span class="source-icon">🟢</span>
+                    <div class="source-info">
+                        <div class="source-name">Node.js & Express</div>
+                        <p class="source-desc">Server-side JavaScript runtime and web framework</p>
+                        <span class="source-license">MIT</span>
+                    </div>
+                </li>
+                <li class="source-item">
+                    <span class="source-icon">🎨</span>
+                    <div class="source-info">
+                        <div class="source-name">@napi-rs/canvas</div>
+                        <p class="source-desc">High-performance canvas rendering for image generation</p>
+                        <span class="source-license">MIT</span>
+                    </div>
+                </li>
+                <li class="source-item">
+                    <span class="source-icon">▲</span>
+                    <div class="source-info">
+                        <div class="source-name">Vercel</div>
+                        <p class="source-desc">Serverless deployment platform</p>
+                        <span class="source-license">Commercial</span>
+                    </div>
+                </li>
+            </ul>
+        </section>
+        
+        <!-- Project License -->
+        <section class="section">
+            <div class="license-box">
+                <div class="license-badge">📄</div>
+                <h2 class="license-title">Creative Commons BY-NC 4.0</h2>
+                <p class="license-text">
+                    PTV-TRMNL is licensed under the Creative Commons Attribution-NonCommercial 4.0 International License.
+                    <br>You are free to share and adapt this work for non-commercial purposes with attribution.
+                </p>
+                <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener" class="license-link">
+                    View Full License
+                </a>
+            </div>
+        </section>
+        
+        <!-- Support -->
+        <section class="section support-section">
+            <h2 class="support-title">💖 Support This Project</h2>
+            <p class="support-text">
+                PTV-TRMNL is a passion project built in spare time. If you find it useful, 
+                consider supporting continued development.
+            </p>
+            <div class="support-buttons">
+                <a href="https://buymeacoffee.com/angusbergman" target="_blank" rel="noopener" class="support-btn coffee">
+                    ☕ Buy me a coffee
+                </a>
+                <a href="https://github.com/sponsors/angusbergman17-cpu" target="_blank" rel="noopener" class="support-btn sponsor">
+                    💖 Sponsor on GitHub
+                </a>
+                <a href="https://github.com/angusbergman17-cpu/einkptdashboard" target="_blank" rel="noopener" class="support-btn github">
+                    ⭐ Star on GitHub
+                </a>
+            </div>
+        </section>
+    </main>
+    
+    <footer class="footer">
+        <p>
+            © 2025-2026 <a href="https://github.com/angusbergman17-cpu" target="_blank" rel="noopener">Angus Bergman</a> •
+            <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">CC BY-NC 4.0</a> •
+            <a href="https://github.com/angusbergman17-cpu/einkptdashboard/issues/new?template=feedback.md" target="_blank" rel="noopener">Send Feedback</a> •
+            PTV-TRMNL v2.8
+        </p>
+    </footer>
+</body>
+</html>
