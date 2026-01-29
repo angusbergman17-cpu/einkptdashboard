@@ -240,6 +240,20 @@ export default async function handler(req, res) {
     
     // Ultra-lightweight metadata response for ESP32 (tiny JSON)
     if (metadataOnly) {
+      // Check if user has completed setup first
+      const prefs = new PreferencesManager();
+      await prefs.load();
+      
+      if (!prefs.isConfigured()) {
+        console.log('[zones/metadata] Setup not complete - returning setup_required');
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Cache-Control', 'no-cache');
+        return res.status(200).json({
+          setup_required: true,
+          message: 'Complete setup at einkptdashboard.vercel.app'
+        });
+      }
+      
       // Return just zone IDs - firmware fetches each BMP individually
       const zoneIds = Object.keys(ZONES);
       res.setHeader('Content-Type', 'application/json');
