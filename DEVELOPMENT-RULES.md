@@ -310,8 +310,9 @@ const url = 'https://api.opendata.transport.vic.gov.au/...';
 | Component | Correct Name |
 |-----------|-------------|
 | Data Source | Transport Victoria OpenData API |
-| Protocol | GTFS Realtime (GTFS-RT) |
-| Auth Method | KeyId header with `ODATA_API_KEY` |
+| Base URL | `https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1` |
+| Protocol | GTFS Realtime (GTFS-RT) — Protobuf format |
+| Auth Header | `KeyId` (case-sensitive) with UUID format API key |
 | Real-time Data | GTFS-RT Trip Updates |
 | Alerts | GTFS-RT Service Alerts |
 
@@ -873,12 +874,18 @@ Content must be readable at arm's length on an 800×480 display. Test contrast, 
 
 ### 11.1 Transport Victoria OpenData (GTFS-RT)
 
-**Endpoint:** `https://data.ptv.vic.gov.au/downloads/gtfsr/`
+**Base URL:** `https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1`
+
+**Auth Header:** `KeyId` (case-sensitive) with UUID format API key
 
 **Available Feeds:**
-- `TripUpdates` - Real-time arrival predictions
-- `VehiclePositions` - Live vehicle locations
-- `ServiceAlerts` - Disruptions, cancellations
+| Mode | Trip Updates | Vehicle Positions | Service Alerts |
+|------|--------------|-------------------|----------------|
+| Metro | `/metro/trip-updates` | `/metro/vehicle-positions` | `/metro/service-alerts` |
+| Tram | `/tram/trip-updates` | `/tram/vehicle-positions` | `/tram/service-alerts` |
+| Bus | `/bus/trip-updates` | `/bus/vehicle-positions` | `/bus/service-alerts` |
+
+> ⚠️ **Note**: Old endpoint `data.ptv.vic.gov.au` is deprecated as of 2026-01-27
 
 **Caching Rules:**
 | Feed | Cache TTL | Reason |
