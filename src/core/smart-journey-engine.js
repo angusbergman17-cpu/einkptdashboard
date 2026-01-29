@@ -516,6 +516,28 @@ class SmartJourneyEngine {
       return configRoute;
     }
     
+    // Check for preferredRoute with segments (angus-journey.json format)
+    const preferredRoute = this.journeyConfig?.preferredRoute;
+    if (preferredRoute?.segments?.length > 0) {
+      return {
+        name: preferredRoute.name || 'Preferred Route',
+        pattern: preferredRoute.pattern,
+        totalMinutes: preferredRoute.totalMinutes,
+        legs: preferredRoute.segments.map(seg => ({
+          type: seg.type,
+          to: seg.to,
+          from: seg.from,
+          destination: { name: seg.to },
+          origin: { name: seg.from },
+          routeNumber: seg.route,
+          line: seg.line,
+          location: seg.location,
+          minutes: seg.minutes,
+          durationMinutes: seg.minutes
+        }))
+      };
+    }
+    
     // Otherwise use discovered route
     return this.discoveredRoutes[this.selectedRouteIndex] || this.discoveredRoutes[0];
   }
