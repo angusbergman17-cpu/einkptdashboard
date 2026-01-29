@@ -768,9 +768,8 @@ app.get('/', (req, res) => {
   res.sendFile(indexPath, (err) => {
     if (err) {
       console.error('Error serving index.html:', err);
-      console.error('Attempted path:', indexPath);
-      console.error('PROJECT_ROOT:', PROJECT_ROOT);
-      res.status(500).send('Error loading dashboard. Path: ' + indexPath);
+      // Fallback: redirect to admin panel
+      res.redirect('/admin');
     }
   });
 });
