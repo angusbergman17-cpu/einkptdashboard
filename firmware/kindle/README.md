@@ -105,7 +105,7 @@ Create or edit `/mnt/us/extensions/ptv-trmnl/config.sh`:
 # Custom PTV-TRMNL configuration
 
 # Your server URL (change this!)
-export PTV_TRMNL_SERVER="https://your-server.onrender.com"
+export PTV_TRMNL_SERVER="https://your-server.vercel.app"
 
 # Refresh interval in seconds (default: 900 = 15 minutes)
 export PTV_TRMNL_REFRESH=900
@@ -115,7 +115,7 @@ export PTV_TRMNL_REFRESH=900
 
 1. Deploy PTV-TRMNL to Render.com or your own server
 2. Complete the setup wizard in the admin panel
-3. Copy the server URL (e.g., `https://ptv-trmnl-new.onrender.com`)
+3. Copy the server URL (e.g., `https://your-server-name.vercel.app`)
 
 ---
 

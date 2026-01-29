@@ -182,7 +182,7 @@ LOOP START:
 │                            │                                          │
 │  ┌─────────────────────────▼───────────────────────────────┐         │
 │  │      NODE.JS SERVER (Express)                           │         │
-│  │      URL: https://ptv-trmnl-new.onrender.com            │         │
+│  │      URL: https://your-server-name.vercel.app            │         │
 │  │                                                          │         │
 │  │  ┌────────────────────────────────────────────┐         │         │
 │  │  │  ENDPOINTS:                                │         │         │
@@ -364,7 +364,7 @@ E-ink Display
 **Firmware → Server**
 ```
 GET /api/region-updates HTTP/1.1
-Host: ptv-trmnl-new.onrender.com
+Host: your-server-name.vercel.app
 User-Agent: ESP32-PTV-TRMNL
 Connection: close
 ```

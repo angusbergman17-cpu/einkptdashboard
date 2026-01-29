@@ -284,7 +284,7 @@ einkptdashboard/
 | [INSTALL.md](INSTALL.md) | Detailed installation |
 | [DEVELOPMENT-RULES.md](DEVELOPMENT-RULES.md) | Contributing guidelines |
 | [KNOWN-ISSUES.md](KNOWN-ISSUES.md) | Hardware quirks & fixes |
-| [specs/DASHBOARD-SPEC-V10.md](specs/DASHBOARD-SPEC-V10.md) | Dashboard design spec |
+| [specs/DASHBOARD-SPEC.md](specs/DASHBOARD-SPEC.md) | Dashboard design spec |
 
 ---
 

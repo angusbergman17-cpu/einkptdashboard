@@ -274,7 +274,7 @@ class SetupWizard {
 
     await this.question('Press Enter when your Render deployment is complete...');
 
-    const url = await this.question('\nEnter your Render URL (e.g., https://ptv-trmnl-yourname.onrender.com): ');
+    const url = await this.question('\nEnter your Render URL (e.g., https://ptv-trmnl-yourname.vercel.app): ');
     this.log(`✅ Render URL saved: ${url}`, 'green');
 
     return { url: url.trim() };

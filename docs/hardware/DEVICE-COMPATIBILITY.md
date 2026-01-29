@@ -267,7 +267,7 @@ DEVICE_HEIGHT=480
 2. Click **Custom API**
 3. Enter your webhook URL:
    ```
-   https://your-service.onrender.com/api/screen
+   https://your-server-name.vercel.app/api/screen
    ```
 4. Set **Refresh Rate**: 15 minutes (900 seconds)
 5. Click **Save**
@@ -329,12 +329,12 @@ DEVICE_HEIGHT=480
 
 **For Portrait Mode (native)**:
 ```
-https://your-service.onrender.com/api/dashboard?device=kindle-pw3&orientation=portrait
+https://your-server-name.vercel.app/api/dashboard?device=kindle-pw3&orientation=portrait
 ```
 
 **For Landscape Mode (rotated)**:
 ```
-https://your-service.onrender.com/api/dashboard?device=kindle-pw3&orientation=landscape
+https://your-server-name.vercel.app/api/dashboard?device=kindle-pw3&orientation=landscape
 ```
 
 ### Step 5: Set Auto-Refresh
@@ -384,8 +384,8 @@ https://your-service.onrender.com/api/dashboard?device=kindle-pw3&orientation=la
 
 **Example URLs**:
 ```
-https://your-service.onrender.com/api/dashboard?device=kindle-pw5&orientation=portrait
-https://your-service.onrender.com/api/dashboard?device=kindle-4&orientation=landscape
+https://your-server-name.vercel.app/api/dashboard?device=kindle-pw5&orientation=portrait
+https://your-server-name.vercel.app/api/dashboard?device=kindle-4&orientation=landscape
 ```
 
 ### Universal Preview

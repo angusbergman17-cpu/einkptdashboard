@@ -326,7 +326,7 @@ npm start
 
 ### Step 2: Test Route Calculation
 
-1. Open admin panel: `https://ptv-trmnl-new.onrender.com/admin`
+1. Open admin panel: `https://your-server-name.vercel.app/admin`
 2. Scroll to **Smart Route Planner**
 3. Enter addresses:
    - Home: `123 Main St, Your Suburb`
@@ -374,14 +374,14 @@ Test at different times to see peak detection:
 
 ```bash
 # Check cafe busy-ness
-curl -X POST https://ptv-trmnl-new.onrender.com/admin/cafe/busyness \
+curl -X POST https://your-server-name.vercel.app/admin/cafe/busyness \
   -H "Content-Type: application/json" \
   -d '{
     "address": "Your Favorite Cafe"
   }'
 
 # Get peak times info
-curl https://ptv-trmnl-new.onrender.com/admin/cafe/peak-times
+curl https://your-server-name.vercel.app/admin/cafe/peak-times
 ```
 
 ---
@@ -703,7 +703,7 @@ const apiKey = process.env.GOOGLE_PLACES_API_KEY;
 ```bash
 cd /Users/angusbergman/einkptdashboard
 npm start
-open https://ptv-trmnl-new.onrender.com/admin
+open https://your-server-name.vercel.app/admin
 ```
 
 Get that coffee! ☕😊🚆

@@ -235,7 +235,7 @@ MAPBOX_ACCESS_TOKEN=your-mapbox-token  # Fallback geocoding
 ### "Cannot open browser"
 
 **Problem**: Admin panel won't open automatically
-**Solution**: Manually visit `https://your-app.onrender.com/admin`
+**Solution**: Manually visit `https://your-app.vercel.app/admin`
 
 ### "Firmware flashing failed"
 

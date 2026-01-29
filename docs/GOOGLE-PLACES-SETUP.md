@@ -202,7 +202,7 @@ If no API key:
 
 1. Open admin panel:
    ```
-   https://ptv-trmnl-new.onrender.com/admin
+   https://your-server-name.vercel.app/admin
    ```
 
 2. Click in "Preferred Cafe" field
@@ -217,7 +217,7 @@ If no API key:
 
 ```bash
 # Test endpoint directly
-curl "https://ptv-trmnl-new.onrender.com/admin/address/search?query=market+lane+coffee"
+curl "https://your-server-name.vercel.app/admin/address/search?query=market+lane+coffee"
 ```
 
 **With Google API Key**:

@@ -164,7 +164,7 @@ npm install
 1. Clone your repository
 2. Run `npm install` to install dependencies
 3. Start the server with `node server.js`
-4. Assign you a URL: `https://ptv-trmnl.onrender.com`
+4. Assign you a URL: `https://your-server-name.vercel.app`
 
 **Wait Time**: ~5-10 minutes for first deploy
 
@@ -172,7 +172,7 @@ npm install
 
 Once deployment completes:
 
-1. Click the **URL** at the top of the page (looks like `https://your-service.onrender.com`)
+1. Click the **URL** at the top of the page (looks like `https://your-server-name.vercel.app`)
 2. You should see a redirect to `/admin`
 3. The admin panel should load (may take 15s on first cold start)
 
@@ -358,7 +358,7 @@ Data Sources:
 
 ### 5.1 Open Admin Panel
 
-1. Go to your Render URL: `https://your-service.onrender.com/admin`
+1. Go to your Render URL: `https://your-server-name.vercel.app/admin`
 2. Click on the **🚀 Setup & Journey** tab (should be selected by default)
 
 ### 5.2 Enter Your Journey Details
@@ -415,12 +415,12 @@ The system automatically:
 Your TRMNL webhook URL is:
 
 ```
-https://your-service.onrender.com/api/screen
+https://your-server-name.vercel.app/api/screen
 ```
 
 Replace `your-service` with your actual Render service name.
 
-**Example**: `https://ptv-trmnl.onrender.com/api/screen`
+**Example**: `https://your-server-name.vercel.app/api/screen`
 
 ### 6.2 Configure TRMNL Device
 
@@ -439,7 +439,7 @@ Replace `your-service` with your actual Render service name.
 3. Wait ~30 seconds for the display to update
 
 **Option B - Preview on Computer**:
-1. Go to `https://your-service.onrender.com/preview`
+1. Go to `https://your-server-name.vercel.app/preview`
 2. You'll see a live preview of what will appear on your device
 
 ✅ **Success Indicators**:
@@ -600,7 +600,7 @@ The system uses free Bureau of Meteorology (BOM) data - no API key needed!
 1. Device is powered on and connected to WiFi
 2. Webhook URL is correct in TRMNL dashboard
 3. Render service is not sleeping (visit admin panel)
-4. Test webhook: `https://your-service.onrender.com/api/screen`
+4. Test webhook: `https://your-server-name.vercel.app/api/screen`
 
 **Debug**:
 1. Open webhook URL in browser

@@ -24,7 +24,7 @@
 - Data population flows: **Flashing → Setup Wizard → Admin → Live Operation**
 
 **Verification**:
-- Open `https://ptvtrmnl.vercel.app/simulator.html` before any testing
+- Open `https://einkptdashboard.vercel.app/simulator.html` before any testing
 - Confirm simulator responds to server state changes
 - All actions must be watchable in real-time
 

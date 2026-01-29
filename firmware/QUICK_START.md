@@ -27,7 +27,7 @@ Your TRMNL device has been flashed with custom firmware and is ready to connect 
 
 ## Step 3: Configure in Admin Panel
 
-1. Open your admin panel at: `https://ptv-trmnl-new.onrender.com`
+1. Open your admin panel at: `https://your-server-name.vercel.app`
 2. Go to **Settings** or **Device Configuration**
 3. Enter your **home** and **work** addresses
 4. Device will automatically fetch and display:
@@ -129,7 +129,7 @@ pio device monitor
 ### Admin Panel Not Responding
 ```bash
 # Check server status
-curl https://ptv-trmnl-new.onrender.com/api/health
+curl https://your-server-name.vercel.app/api/health
 
 # Should return: {"status":"ok"}
 ```
@@ -172,7 +172,7 @@ This is **required** for ESP32-C3. Do not change these settings.
 ### Server URL
 Your device connects to:
 ```
-https://ptv-trmnl-new.onrender.com
+https://your-server-name.vercel.app
 ```
 
 To change, edit `include/config.h` and reflash.

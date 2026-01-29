@@ -259,7 +259,7 @@ curl http://localhost:3000/api/screen
 - [ ] Service builds successfully
 - [ ] Service starts without errors
 - [ ] Health check passes: `GET /api/status`
-- [ ] Admin panel loads: `https://your-service.onrender.com/admin`
+- [ ] Admin panel loads: `https://your-server-name.vercel.app/admin`
 
 **Check Render Logs**:
 ```
@@ -313,10 +313,10 @@ curl http://localhost:3000/api/screen
 ### 14. TRMNL Device Integration
 
 **Configure TRMNL Device**:
-- [ ] Copy your Render URL: `https://your-service.onrender.com`
+- [ ] Copy your Render URL: `https://your-server-name.vercel.app`
 - [ ] Go to [usetrmnl.com](https://usetrmnl.com/plugins/developer)
 - [ ] Add **Developer Plugin**
-- [ ] Set webhook URL: `https://your-service.onrender.com/api/screen`
+- [ ] Set webhook URL: `https://your-server-name.vercel.app/api/screen`
 - [ ] Save plugin
 - [ ] Device refreshes (may take 1-2 minutes)
 
@@ -401,11 +401,11 @@ curl http://localhost:3000/api/screen
 **Measure with curl**:
 ```bash
 # Cached response
-time curl https://your-service.onrender.com/api/status
+time curl https://your-server-name.vercel.app/api/status
 # Should be < 200ms
 
 # Uncached journey calculation
-time curl https://your-service.onrender.com/api/dashboard
+time curl https://your-server-name.vercel.app/api/dashboard
 # Should be < 2s
 ```
 

@@ -63,7 +63,7 @@ Or manually:
 
 **Wait 3-5 minutes for deployment to complete.**
 
-Your server URL will be: `https://your-app-name.onrender.com`
+Your server URL will be: `https://your-server-name.vercel.app`
 
 ### 3. Flash Device
 
@@ -107,7 +107,7 @@ pio run --target upload
 
 ### 5. Set Up Your Dashboard
 
-1. Open your Render URL in a browser: `https://your-app-name.onrender.com/admin`
+1. Open your Render URL in a browser: `https://your-server-name.vercel.app/admin`
 2. Enter your **home address** (e.g., "1 Clara Street, Fitzroy VIC 3065")
 3. Enter your **work address**
 4. Set your **arrival time** at work (e.g., "9:00 AM")
@@ -170,7 +170,7 @@ Before flashing, update `firmware/include/config.h`:
 
 ```cpp
 // Update this to your Render URL
-#define SERVER_URL "https://your-app-name.onrender.com"
+#define SERVER_URL "https://your-server-name.vercel.app"
 
 // Display dimensions (don't change for OG TRMNL)
 #define DISPLAY_WIDTH 800
@@ -276,7 +276,7 @@ Else:
 ### Test 1: Check Server Health
 
 ```bash
-curl https://your-app-name.onrender.com/api/status
+curl https://your-server-name.vercel.app/api/status
 
 # Should return:
 {"status":"healthy","uptime":"12345","version":"3.0.0"}
@@ -285,7 +285,7 @@ curl https://your-app-name.onrender.com/api/status
 ### Test 2: Check Device Display
 
 ```bash
-curl https://your-app-name.onrender.com/api/display
+curl https://your-server-name.vercel.app/api/display
 
 # Should return JSON with:
 {
@@ -313,7 +313,7 @@ Dashboard updated successfully
 
 ### Test 4: Check Admin Panel
 
-1. Open `https://your-app-name.onrender.com/admin`
+1. Open `https://your-server-name.vercel.app/admin`
 2. Navigate to "Live Data" tab
 3. Verify:
    - ✅ Next departures showing
@@ -484,7 +484,7 @@ See `firmware/docs/FLASHING.md` for detailed USB CDC explanation.
 
 3. **Verify GTFS Data**
    ```bash
-   curl https://your-app-name.onrender.com/api/fallback-stops/VIC
+   curl https://your-server-name.vercel.app/api/fallback-stops/VIC
    # Should return list of stops
    ```
 

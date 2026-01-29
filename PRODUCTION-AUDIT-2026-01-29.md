@@ -2,7 +2,7 @@
 
 **Date**: 2026-01-29  
 **Auditor**: Claude (Automated)  
-**Production URL**: https://ptvtrmnl.vercel.app  
+**Production URL**: https://einkptdashboard.vercel.app  
 **Version Tested**: v2.8.0  
 **Environment**: Vercel Production  
 

@@ -216,7 +216,7 @@ Don't worry - we'll do these one at a time, and you can take breaks!
    - ✅ When you see "Server running on port 3000" - you're done!
 
 8. **Copy your URL:**
-   - At the top, you'll see a URL like: `https://ptv-trmnl.onrender.com`
+   - At the top, you'll see a URL like: `https://your-server-name.vercel.app`
    - 📝 **Save this!** This is your server address
    - Add it to your ptv-keys.txt file as "Server URL: [paste url]"
 
