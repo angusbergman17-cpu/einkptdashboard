@@ -426,34 +426,37 @@
 
             <!-- Step 5: Journey Settings -->
             <div class="step-content" id="step-5">
-                <h2 style="margin-bottom: 20px;">⏰ Step 5: Journey Preferences</h2>
-                <p style="color: #718096; margin-bottom: 25px;">
-                    When do you need to arrive at work?
-                </p>
+                <form novalidate onsubmit="return false;">
+                    <h2 style="margin-bottom: 20px;">⏰ Step 5: Journey Preferences</h2>
+                    <p style="color: #718096; margin-bottom: 25px;">
+                        When do you need to arrive at work?
+                    </p>
 
-                <div class="form-group">
-                    <label class="form-label">Arrival Time at Work</label>
-                    <input type="time" id="arrival-time" class="form-input" value="09:00">
-                </div>
+                    <div class="form-group">
+                        <label class="form-label">Arrival Time at Work</label>
+                        <input type="text" id="arrival-time" class="form-input" value="09:00" placeholder="e.g. 09:00" autocomplete="off">
+                    </div>
 
-                <div class="form-group">
-                    <label class="form-label">
-                        <input type="checkbox" id="include-coffee" checked style="margin-right: 8px;">
-                        Calculate coffee stop times
-                    </label>
-                </div>
+                    <div class="form-group">
+                        <label class="form-label">
+                            <input type="checkbox" id="include-coffee" checked style="margin-right: 8px;">
+                            Calculate coffee stop times
+                        </label>
+                    </div>
 
-                <div id="setup-status"></div>
+                    <div id="setup-status"></div>
 
-                <div class="btn-row">
-                    <button type="button" class="btn btn-secondary" onclick="previousStep(5)">← Back</button>
-                    <button type="button" class="btn" id="complete-setup-btn">🚀 Complete Setup</button>
-                </div>
+                    <div class="btn-row">
+                        <button type="button" class="btn btn-secondary" onclick="previousStep(5)">← Back</button>
+                        <button type="button" class="btn" id="complete-setup-btn">🚀 Complete Setup</button>
+                    </div>
+                </form>
                 <script>
                     document.getElementById('complete-setup-btn').addEventListener('click', function(e) {
                         e.preventDefault();
                         e.stopPropagation();
                         completeSetup();
+                        return false;
                     });
                 </script>
             </div>
