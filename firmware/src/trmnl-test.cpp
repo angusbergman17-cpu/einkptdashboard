@@ -1,5 +1,5 @@
 /**
- * TRMNL Display Test - Exact match to main-v6.cpp pattern
+ * TRMNL Display Test - DMA-capable memory for ESP32-C3
  * 
  * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
@@ -9,6 +9,7 @@
 #include <bb_epaper.h>
 #include "soc/soc.h"
 #include "soc/rtc_cntl_reg.h"
+#include "esp_heap_caps.h"
 
 // CORRECT pins from config.h
 #define EPD_SCK_PIN   7
@@ -18,7 +19,6 @@
 #define EPD_DC_PIN    5
 #define EPD_BUSY_PIN  4
 
-// Exact same declaration as main-v6.cpp
 BBEPAPER bbep(EP75_800x480);
 
 void setup() {
@@ -28,41 +28,60 @@ void setup() {
     delay(2000);
     
     Serial.println("\n========================================");
-    Serial.println("TRMNL Test - Exact main-v6 Pattern");
+    Serial.println("TRMNL Test - DMA Memory Fix");
     Serial.println("========================================");
     
-    // Exact same init as main-v6.cpp initDisplay()
-    Serial.println("→ Init display...");
+    // Initialize
     bbep.initIO(EPD_DC_PIN, EPD_RST_PIN, EPD_BUSY_PIN, EPD_CS_PIN, EPD_MOSI_PIN, EPD_SCK_PIN, 8000000);
     bbep.setPanelType(EP75_800x480);
     bbep.setRotation(0);
-    int rc = bbep.allocBuffer(false);  // false like main-v6!
-    Serial.printf("allocBuffer returned: %d\n", rc);
-    Serial.println("✓ Display initialized");
     
-    // Exact same as showWelcomeScreen()
-    Serial.println("Drawing...");
-    bbep.fillScreen(BBEP_WHITE);  // Clear first!
-    bbep.setFont(FONT_8x8);
-    bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
+    // Allocate DMA-capable memory (ESP32-C3 requirement!)
+    int bufferSize = (800 * 480) / 8;  // 48000 bytes for B/W
+    Serial.printf("Allocating %d bytes DMA memory...\n", bufferSize);
     
-    bbep.setCursor(200, 100);
-    bbep.print("PTV-TRMNL TEST");
+    uint8_t *dmaBuffer = (uint8_t *)heap_caps_malloc(bufferSize, MALLOC_CAP_DMA | MALLOC_CAP_8BIT);
+    if (!dmaBuffer) {
+        Serial.println("DMA malloc failed! Trying regular...");
+        dmaBuffer = (uint8_t *)heap_caps_malloc(bufferSize, MALLOC_CAP_8BIT);
+    }
     
-    bbep.setCursor(200, 150);
-    bbep.print("Custom Firmware Works!");
+    if (!dmaBuffer) {
+        Serial.println("All malloc failed!");
+        return;
+    }
     
-    // Draw a border
-    bbep.drawRect(50, 50, 700, 380, BBEP_BLACK);
+    Serial.printf("Buffer at: 0x%08X\n", (uint32_t)dmaBuffer);
     
-    // Draw filled corners
-    bbep.fillRect(60, 60, 80, 80, BBEP_BLACK);
-    bbep.fillRect(660, 60, 80, 80, BBEP_BLACK);
-    bbep.fillRect(60, 340, 80, 80, BBEP_BLACK);
-    bbep.fillRect(660, 340, 80, 80, BBEP_BLACK);
+    // Clear to white (0xFF = white for e-ink)
+    memset(dmaBuffer, 0xFF, bufferSize);
+    
+    // Set as display buffer
+    bbep.setBuffer(dmaBuffer);
+    
+    Serial.println("Drawing pattern...");
+    
+    // Draw border
+    bbep.drawRect(10, 10, 780, 460, BBEP_BLACK);
+    bbep.drawRect(20, 20, 760, 440, BBEP_BLACK);
+    
+    // Draw X
+    for (int i = 0; i < 5; i++) {
+        bbep.drawLine(30+i, 30, 770+i, 450, BBEP_BLACK);
+        bbep.drawLine(770-i, 30, 30-i, 450, BBEP_BLACK);
+    }
+    
+    // Corner boxes
+    bbep.fillRect(40, 40, 100, 100, BBEP_BLACK);
+    bbep.fillRect(660, 40, 100, 100, BBEP_BLACK);
+    bbep.fillRect(40, 340, 100, 100, BBEP_BLACK);
+    bbep.fillRect(660, 340, 100, 100, BBEP_BLACK);
+    
+    // Center box
+    bbep.fillRect(300, 190, 200, 100, BBEP_BLACK);
     
     Serial.println("Refreshing...");
-    rc = bbep.refresh(REFRESH_FULL, true);
+    int rc = bbep.refresh(REFRESH_FULL, true);
     Serial.printf("refresh returned: %d\n", rc);
     
     Serial.println("Done!");
