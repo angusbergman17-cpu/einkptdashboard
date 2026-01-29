@@ -25,15 +25,6 @@
                     "name": "Status",
                     "priority": 4,
                     "action": "./ptv-trmnl-launcher.sh status"
-                },
-                {
-                    "name": "---",
-                    "priority": 5
-                },
-                {
-                    "name": "Configure Server",
-                    "priority": 6,
-                    "action": "./configure.sh"
                 }
             ]
         }

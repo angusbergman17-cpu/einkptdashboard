@@ -1,20 +1,8 @@
 #!/bin/sh
-#
-# PTV-TRMNL Device Configuration
-# Kindle Paperwhite 3 (7th Generation)
-#
-# Display: 1072 x 1448 pixels
-# PPI: 300
-# Orientation: Portrait
-#
+# Kindle Paperwhite 3 (7th gen) - Device Configuration
+# Copyright (c) 2026 Angus Bergman - CC BY-NC 4.0
 
-export PTV_TRMNL_DEVICE="kindle-pw3"
-export PTV_TRMNL_WIDTH=1072
-export PTV_TRMNL_HEIGHT=1448
-export PTV_TRMNL_PPI=300
-export PTV_TRMNL_ORIENTATION="portrait"
-export PTV_TRMNL_DEVICE_NAME="Kindle Paperwhite 3"
-
-# Display refresh settings (optimized for Carta display)
-export PTV_TRMNL_FULL_REFRESH_INTERVAL=10  # Full refresh every 10 updates
-export PTV_TRMNL_DITHER_MODE="ordered"     # Dithering for grayscale
+export DEVICE_MODEL="kindle-pw3"
+export DEVICE_RESOLUTION="1072x1448"
+export DEVICE_PPI="300"
+export DEVICE_ORIENTATION="portrait"
