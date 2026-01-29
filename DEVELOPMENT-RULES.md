@@ -1315,7 +1315,175 @@ git push origin v3.0.0        # Push tag
 
 ---
 
-**Document Version:** 1.4  
+## 📎 Appendix D: TRMNL OG Custom Firmware — Critical Bugs & Fixes
+
+**Added:** 2026-01-29 (from multi-week debugging session)
+
+This appendix documents critical bugs discovered during TRMNL OG custom firmware development and their solutions. **MANDATORY READING** before any firmware or zone-renderer work.
+
+### D.1 Zone Name Alignment (CRITICAL)
+
+**Bug:** Firmware zone definitions MUST match API zone names exactly.
+
+| ❌ WRONG (Firmware) | ✅ CORRECT (API) |
+|---------------------|------------------|
+| `leg0`, `leg1`, `leg2`, `leg3` | `legs` (single zone) |
+| `status` | `summary` |
+
+**Symptom:** Device hangs at "Fetching transit data..." with 404 errors in serial log.
+
+**Fix:** Firmware ZONES array must be:
+```cpp
+static const ZoneDef ZONES[] = {
+    {"header",  0,   0,   800, 94},
+    {"divider", 0,   94,  800, 2},
+    {"summary", 0,   96,  800, 28},
+    {"legs",    0,   132, 800, 316},
+    {"footer",  0,   448, 800, 32},
+};
+```
+
+**Rule:** Always verify firmware zone names match `/api/zones` response before flashing.
+
+---
+
+### D.2 BMP Format for bb_epaper (CRITICAL)
+
+**Bug:** bb_epaper library requires **bottom-up DIB format**, not top-down.
+
+| Property | ❌ WRONG | ✅ CORRECT |
+|----------|----------|------------|
+| DIB Height | Negative (-480) | Positive (480) |
+| Pixel Order | Top-to-bottom | Bottom-to-top |
+
+**Symptom:** Display shows garbage, inverted, or nothing.
+
+**Fix in zone-renderer.js:**
+```javascript
+// DIB header - use POSITIVE height for bottom-up
+dib.writeInt32LE(h, 8);  // Positive = bottom-up
+
+// Write pixels bottom-to-top
+for (let y = h - 1; y >= 0; y--) {
+    // ... pixel data
+}
+```
+
+**Rule:** NEVER use negative height in BMP DIB headers for bb_epaper.
+
+---
+
+### D.3 Vercel Serverless Font Registration (CRITICAL)
+
+**Bug:** Vercel serverless functions have **NO system fonts**. `fillText()` silently fails.
+
+**Symptom:** Zone BMPs render icons and layout but **NO TEXT** appears.
+
+**Fix:** Bundle fonts and register with GlobalFonts:
+
+```javascript
+import { createCanvas, GlobalFonts } from '@napi-rs/canvas';
+import path from 'path';
+
+// Register fonts BEFORE any canvas operations
+const fontsDir = path.join(__dirname, '../../fonts');
+GlobalFonts.registerFromPath(path.join(fontsDir, 'Inter-Bold.ttf'), 'Inter');
+GlobalFonts.registerFromPath(path.join(fontsDir, 'Inter-Regular.ttf'), 'Inter');
+
+// Use registered font name
+ctx.font = '800 17px Inter';  // NOT 'sans-serif'
+```
+
+**Required files:**
+- `fonts/Inter-Bold.ttf`
+- `fonts/Inter-Regular.ttf`
+
+**Rule:** ALWAYS bundle TTF fonts and call `GlobalFonts.registerFromPath()` before rendering.
+
+---
+
+### D.4 Zone Buffer Size
+
+**Bug:** Default 20KB buffer too small for `legs` zone (31KB).
+
+**Symptom:** Partial render, memory corruption, or crash.
+
+**Fix in firmware:**
+```cpp
+#define ZONE_BUFFER_SIZE 40960  // 40KB minimum
+```
+
+**Zone sizes for reference:**
+| Zone | Size |
+|------|------|
+| header | ~9.5 KB |
+| divider | ~0.3 KB |
+| summary | ~2.9 KB |
+| legs | ~31.7 KB |
+| footer | ~3.3 KB |
+
+**Rule:** Buffer must be >= largest zone size + padding.
+
+---
+
+### D.5 Gateway Timeout Workaround
+
+**Bug:** Clawdbot gateway has 10-second timeout. PlatformIO flash takes 15-20s.
+
+**Symptom:** Flash commands timeout, leaving zombie esptool processes.
+
+**Fix:** Use `nohup` for background execution:
+```bash
+nohup ~/.platformio/penv/bin/pio run -e trmnl -t upload > /tmp/pio-flash.log 2>&1 &
+# Check result after ~20 seconds
+tail -20 /tmp/pio-flash.log
+```
+
+**Rule:** Long-running commands (>10s) MUST use nohup or background execution.
+
+---
+
+### D.6 Zombie esptool Processes
+
+**Bug:** Failed/timed-out flash attempts leave esptool in uninterruptible sleep (U state).
+
+**Symptom:** Serial port locked, subsequent flashes fail, `kill -9` doesn't work.
+
+**Fix:** Physical USB disconnect required.
+1. Unplug TRMNL USB cable
+2. Wait 3 seconds
+3. Replug
+4. Verify with `ls /dev/cu.usb*`
+
+**Rule:** If serial port is locked and processes can't be killed, USB disconnect is the only solution.
+
+---
+
+### D.7 Pre-Flash Checklist
+
+Before ANY firmware flash:
+
+- [ ] Verify zone names match API (`/api/zones?format=json`)
+- [ ] Confirm buffer size >= 40KB
+- [ ] Kill any existing esptool processes
+- [ ] Verify USB device present (`ls /dev/cu.usbmodem*`)
+- [ ] Use nohup for remote flashing
+
+---
+
+### D.8 Pre-Deploy Checklist (Zone Renderer)
+
+Before ANY zone-renderer.js deployment:
+
+- [ ] Fonts bundled in `fonts/` directory
+- [ ] `GlobalFonts.registerFromPath()` called before rendering
+- [ ] All `ctx.font` uses registered font name (not `sans-serif`)
+- [ ] BMP uses positive height (bottom-up format)
+- [ ] Test with `/api/screen?demo=normal` before device test
+
+---
+
+**Document Version:** 1.5  
 **Maintained By:** Angus Bergman  
 **Last Updated:** 2026-01-29
 
