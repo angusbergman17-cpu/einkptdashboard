@@ -631,7 +631,7 @@
             nextBtn.style.display = 'none';
 
             try {
-                const response = await fetch('/admin/apis/force-save-google-places', {
+                const response = await fetch('/api/save-google-key', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ apiKey: apiKey })
