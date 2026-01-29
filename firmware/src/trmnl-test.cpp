@@ -1,5 +1,6 @@
 /**
- * TRMNL Display Test - NO allocBuffer (like v5.8 working)
+ * TRMNL Display Test - WORKING! 
+ * Key: NO allocBuffer(), use FONT_8x8
  * 
  * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
@@ -19,7 +20,6 @@
 #define EPD_BUSY_PIN  4
 #define PIN_INTERRUPT 2
 
-// Like v5.8 working
 BBEPAPER bbep(EP75_800x480);
 
 void setup() {
@@ -29,51 +29,66 @@ void setup() {
     delay(500);
     
     Serial.println("\n========================================");
-    Serial.println("TRMNL Test - v5.8 Working Pattern");
-    Serial.println("(NO allocBuffer!)");
+    Serial.println("PTV-TRMNL Custom Firmware");
+    Serial.println("Display Test - WORKING!");
     Serial.println("========================================");
     
-    // EXACT pattern from v5.8 working firmware
+    // Init display - NO allocBuffer()!
     bbep.initIO(EPD_DC_PIN, EPD_RST_PIN, EPD_BUSY_PIN, EPD_CS_PIN,
                 EPD_MOSI_PIN, EPD_SCK_PIN, 8000000);
     bbep.setPanelType(EP75_800x480);
     bbep.setRotation(0);
     pinMode(PIN_INTERRUPT, INPUT_PULLUP);
     
-    Serial.println("✓ Display init");
-    Serial.println("  Panel: EP75 800x480");
-    Serial.println("  NO allocBuffer called!");
+    Serial.println("✓ Display initialized");
     
-    // Like showBootScreen()
-    Serial.println("Drawing...");
+    // Clear screen
     bbep.fillScreen(BBEP_WHITE);
     
-    bbep.setFont(FONT_12x16);
+    // Use FONT_8x8 to avoid rotation bug!
+    bbep.setFont(FONT_8x8);
     bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
     
-    bbep.setCursor(200, 100);
-    bbep.print("PTV-TRMNL TEST");
+    // Header
+    bbep.setCursor(280, 30);
+    bbep.print("PTV-TRMNL CUSTOM FIRMWARE");
     
-    bbep.setCursor(200, 150);
-    bbep.print("Custom Firmware Works!");
-    
-    bbep.setCursor(200, 200);
-    bbep.print("v5.8 Pattern - No allocBuffer");
+    bbep.setCursor(320, 60);
+    bbep.print("Display Test PASSED!");
     
     // Draw border
-    bbep.drawRect(50, 50, 700, 380, BBEP_BLACK);
-    bbep.drawRect(55, 55, 690, 370, BBEP_BLACK);
+    bbep.drawRect(10, 10, 780, 460, BBEP_BLACK);
+    bbep.drawRect(15, 15, 770, 450, BBEP_BLACK);
     
-    // Draw corners
-    bbep.fillRect(60, 60, 80, 80, BBEP_BLACK);
-    bbep.fillRect(660, 60, 80, 80, BBEP_BLACK);
-    bbep.fillRect(60, 340, 80, 80, BBEP_BLACK);
-    bbep.fillRect(660, 340, 80, 80, BBEP_BLACK);
+    // Draw corner boxes
+    bbep.fillRect(25, 25, 80, 80, BBEP_BLACK);
+    bbep.fillRect(695, 25, 80, 80, BBEP_BLACK);
+    bbep.fillRect(25, 375, 80, 80, BBEP_BLACK);
+    bbep.fillRect(695, 375, 80, 80, BBEP_BLACK);
     
-    Serial.println("Refreshing...");
+    // Center info box
+    bbep.drawRect(200, 150, 400, 180, BBEP_BLACK);
+    bbep.setCursor(220, 170);
+    bbep.print("Key Findings:");
+    bbep.setCursor(220, 190);
+    bbep.print("1. DO NOT call allocBuffer()");
+    bbep.setCursor(220, 210);
+    bbep.print("2. Use FONT_8x8 (not 12x16)");
+    bbep.setCursor(220, 230);
+    bbep.print("3. Pins: SCK=7 MOSI=8 CS=6");
+    bbep.setCursor(220, 250);
+    bbep.print("4. Pins: DC=5 RST=10 BUSY=4");
+    bbep.setCursor(220, 280);
+    bbep.print("Ready for production!");
+    
+    // Footer
+    bbep.setCursor(250, 420);
+    bbep.print("einkptdashboard.vercel.app");
+    
+    Serial.println("Drawing complete, refreshing...");
     bbep.refresh(REFRESH_FULL, true);
     
-    Serial.println("Done!");
+    Serial.println("Done! Display working!");
 }
 
 void loop() {
