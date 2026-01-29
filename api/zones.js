@@ -21,6 +21,7 @@ import SmartJourneyEngine from '../src/core/smart-journey-engine.js';
 import { renderZones, clearCache, ZONES } from '../src/services/zone-renderer.js';
 import { getScenario, getScenarioNames } from '../src/services/journey-scenarios.js';
 import { generateRandomJourney } from '../src/services/random-journey.js';
+import PreferencesManager from '../src/data/preferences-manager.js';
 
 // Singleton engine instance
 let journeyEngine = null;
@@ -326,6 +327,21 @@ export default async function handler(req, res) {
       res.setHeader('X-Journey-Legs', journey.legs.length.toString());
       
       return res.status(200).json(zonesResult);
+    }
+    
+    // Check if user has completed setup
+    const prefs = new PreferencesManager();
+    await prefs.load();
+    
+    if (!prefs.isConfigured()) {
+      console.log('[zones] Setup not complete - returning setup_required');
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Cache-Control', 'no-cache');
+      return res.status(200).json({
+        setup_required: true,
+        message: 'Please complete setup at einkptdashboard.vercel.app',
+        timestamp: new Date().toISOString()
+      });
     }
     
     // Get current time

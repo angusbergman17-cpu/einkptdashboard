@@ -74,7 +74,8 @@ enum State {
     STATE_FETCH_ZONES,
     STATE_RENDER,
     STATE_IDLE,
-    STATE_ERROR
+    STATE_ERROR,
+    STATE_SETUP_REQUIRED
 };
 
 // ============================================================================
@@ -89,6 +90,7 @@ State currentState = STATE_INIT;
 char serverUrl[128] = "";
 bool wifiConnected = false;
 bool initialDrawDone = false;
+bool setupRequired = false;
 
 // Timing
 unsigned long lastRefresh = 0;
@@ -113,8 +115,10 @@ WiFiManagerParameter customServerUrl("server", "Server URL", "", 120);
 
 void initDisplay();
 void showWelcomeScreen();
-void showConnectingScreen();
+void showWiFiSetupScreen();
+void showConnectingScreen();  // Alias for showWiFiSetupScreen
 void showConfiguredScreen();
+void showSetupRequiredScreen();
 void showErrorScreen(const char* msg);
 void loadSettings();
 void saveSettings();
@@ -279,6 +283,10 @@ void loop() {
                 consecutiveErrors = 0;
                 lastRefresh = now;
                 currentState = STATE_RENDER;
+            } else if (setupRequired) {
+                // Server says setup not complete - show setup screen
+                Serial.println("→ Setup required, showing setup screen");
+                currentState = STATE_SETUP_REQUIRED;
             } else {
                 consecutiveErrors++;
                 lastErrorTime = now;
@@ -341,6 +349,16 @@ void loop() {
             break;
         
         // ----------------------------------------------------------------
+        case STATE_SETUP_REQUIRED:
+            Serial.println("→ STATE: Setup Required");
+            showSetupRequiredScreen();
+            
+            // Check again after 30 seconds
+            delay(30000);
+            currentState = STATE_FETCH_ZONES;
+            break;
+        
+        // ----------------------------------------------------------------
         case STATE_ERROR:
             showErrorScreen("Connection failed");
             delay(10000);
@@ -384,76 +402,202 @@ void initDisplay() {
 
 void showWelcomeScreen() {
     bbep.fillScreen(BBEP_WHITE);
+    
+    // Black header bar
+    bbep.fillRect(0, 0, 800, 60, BBEP_BLACK);
     bbep.setFont(FONT_8x8);
+    bbep.setTextColor(BBEP_WHITE, BBEP_BLACK);
+    bbep.setCursor(200, 15);
+    bbep.print("PTV-TRMNL SMART TRANSIT DISPLAY");
+    bbep.setCursor(380, 35);
+    bbep.printf("v%s", FIRMWARE_VERSION);
+    
+    // Setup box
     bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
+    bbep.drawRect(100, 80, 600, 280, BBEP_BLACK);
+    bbep.drawRect(101, 81, 598, 278, BBEP_BLACK); // Double line effect
     
-    bbep.setCursor(200, 80);
-    bbep.printf("PTV-TRMNL v%s", FIRMWARE_VERSION);
+    // Title
+    bbep.setCursor(300, 100);
+    bbep.print("FIRST TIME SETUP");
     
-    bbep.drawRect(100, 120, 600, 240, BBEP_BLACK);
-    
+    // Instructions
     bbep.setCursor(120, 140);
-    bbep.print("SETUP INSTRUCTIONS");
-    
-    bbep.setCursor(120, 180);
     bbep.print("1. Connect to WiFi: PTV-TRMNL-Setup");
-    
-    bbep.setCursor(120, 210);
+    bbep.setCursor(120, 165);
     bbep.print("   Password: transport123");
     
-    bbep.setCursor(120, 250);
+    bbep.setCursor(120, 200);
     bbep.print("2. Open browser: 192.168.4.1");
     
-    bbep.setCursor(120, 290);
-    bbep.print("3. Enter WiFi credentials & server URL");
+    bbep.setCursor(120, 235);
+    bbep.print("3. Select your WiFi and enter password");
     
-    bbep.setCursor(200, 400);
-    bbep.print("github.com/angusbergman17-cpu/einkptdashboard");
+    bbep.setCursor(120, 270);
+    bbep.print("4. Server: einkptdashboard.vercel.app");
     
-    bbep.setCursor(280, 430);
+    bbep.setCursor(120, 305);
+    bbep.print("5. Save and wait for dashboard");
+    
+    // Footer
+    bbep.setCursor(220, 450);
     bbep.print("(c) 2026 Angus Bergman - CC BY-NC 4.0");
     
     bbep.refresh(REFRESH_FULL, true);
     lastFullRefresh = millis();
 }
 
-void showConnectingScreen() {
+void showWiFiSetupScreen() {
     bbep.fillScreen(BBEP_WHITE);
+    
+    // Black header bar
+    bbep.fillRect(0, 0, 800, 60, BBEP_BLACK);
     bbep.setFont(FONT_8x8);
+    bbep.setTextColor(BBEP_WHITE, BBEP_BLACK);
+    bbep.setCursor(200, 15);
+    bbep.print("PTV-TRMNL SMART TRANSIT DISPLAY");
+    bbep.setCursor(330, 35);
+    bbep.print("WiFi Setup Mode");
+    
+    // WiFi Configuration title
     bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
+    bbep.setCursor(300, 90);
+    bbep.print("WiFi CONFIGURATION");
     
-    bbep.setCursor(300, 200);
-    bbep.print("Connecting to WiFi...");
+    // AP info box
+    bbep.drawRect(200, 120, 400, 100, BBEP_BLACK);
+    bbep.drawRect(201, 121, 398, 98, BBEP_BLACK);
     
+    bbep.setCursor(270, 140);
+    bbep.print("Connect to this network:");
+    
+    bbep.setCursor(290, 170);
+    bbep.print("PTV-TRMNL-Setup");
+    
+    bbep.setCursor(270, 195);
+    bbep.print("Password: transport123");
+    
+    // Browser instructions
     bbep.setCursor(200, 250);
-    bbep.print("If no network found, connect to:");
+    bbep.print("Then open your browser to:");
+    bbep.setCursor(200, 275);
+    bbep.print("http://192.168.4.1");
     
-    bbep.setCursor(200, 280);
-    bbep.print("PTV-TRMNL-Setup (password: transport123)");
+    // Bullet points
+    bbep.setCursor(200, 320);
+    bbep.print("* Select your home WiFi network");
+    bbep.setCursor(200, 345);
+    bbep.print("* Enter your WiFi password");
+    bbep.setCursor(200, 370);
+    bbep.print("* Server URL: einkptdashboard.vercel.app");
+    bbep.setCursor(200, 395);
+    bbep.print("* Click Save and wait for dashboard");
     
-    bbep.setFont(FONT_6x8);
-    bbep.setCursor(240, 450);
-    bbep.print("System designed & built by Angus Bergman");
+    // Footer
+    bbep.setCursor(220, 450);
+    bbep.print("(c) 2026 Angus Bergman - CC BY-NC 4.0");
     
     bbep.refresh(REFRESH_FULL, true);
 }
 
+// Keep old name as alias for compatibility
+void showConnectingScreen() {
+    showWiFiSetupScreen();
+}
+
 void showConfiguredScreen() {
     bbep.fillScreen(BBEP_WHITE);
+    
+    // Black header bar
+    bbep.fillRect(0, 0, 800, 60, BBEP_BLACK);
     bbep.setFont(FONT_8x8);
+    bbep.setTextColor(BBEP_WHITE, BBEP_BLACK);
+    bbep.setCursor(200, 15);
+    bbep.print("PTV-TRMNL SMART TRANSIT DISPLAY");
+    bbep.setCursor(300, 35);
+    bbep.printf("v%s - Setup Complete", FIRMWARE_VERSION);
+    
+    // Big checkmark
     bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
+    bbep.setCursor(385, 100);
+    bbep.print("*");  // Placeholder - would need custom glyph for proper checkmark
     
-    bbep.setCursor(300, 180);
-    bbep.print("CONNECTED!");
+    // SETUP COMPLETE title
+    bbep.setCursor(310, 150);
+    bbep.print("SETUP COMPLETE");
     
-    bbep.setCursor(100, 220);
-    bbep.print("Server:");
+    // Config details box
+    bbep.drawRect(150, 190, 500, 160, BBEP_BLACK);
     
-    bbep.setCursor(100, 250);
-    bbep.print(serverUrl);
+    bbep.setCursor(170, 210);
+    bbep.print("* WiFi: Connected");
     
-    bbep.setCursor(250, 300);
-    bbep.print("Fetching transit data...");
+    bbep.setCursor(170, 235);
+    bbep.printf("* Server: %s", serverUrl);
+    
+    bbep.setCursor(170, 260);
+    bbep.print("* Home: Configured");
+    
+    bbep.setCursor(170, 285);
+    bbep.print("* Work: Configured");
+    
+    bbep.setCursor(170, 310);
+    bbep.print("* Cafe: Configured");
+    
+    // Loading message
+    bbep.setCursor(260, 380);
+    bbep.print("Dashboard will appear shortly...");
+    
+    // Footer
+    bbep.setCursor(220, 450);
+    bbep.print("(c) 2026 Angus Bergman - CC BY-NC 4.0");
+    
+    bbep.refresh(REFRESH_FULL, true);
+}
+
+void showSetupRequiredScreen() {
+    bbep.fillScreen(BBEP_WHITE);
+    
+    // Black header bar
+    bbep.fillRect(0, 0, 800, 60, BBEP_BLACK);
+    bbep.setFont(FONT_8x8);
+    bbep.setTextColor(BBEP_WHITE, BBEP_BLACK);
+    bbep.setCursor(200, 15);
+    bbep.print("PTV-TRMNL SMART TRANSIT DISPLAY");
+    bbep.setCursor(300, 35);
+    bbep.printf("v%s - Setup Required", FIRMWARE_VERSION);
+    
+    // Setup required title
+    bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
+    bbep.setCursor(280, 100);
+    bbep.print("COMPLETE WEB SETUP");
+    
+    // Instructions box
+    bbep.drawRect(100, 130, 600, 200, BBEP_BLACK);
+    bbep.drawRect(101, 131, 598, 198, BBEP_BLACK);
+    
+    bbep.setCursor(120, 160);
+    bbep.print("Your device is connected but needs configuration.");
+    
+    bbep.setCursor(120, 200);
+    bbep.print("Please visit:");
+    
+    bbep.setCursor(120, 235);
+    bbep.print("  einkptdashboard.vercel.app");
+    
+    bbep.setCursor(120, 275);
+    bbep.print("Then enter your Home, Work, and Cafe addresses");
+    
+    bbep.setCursor(120, 300);
+    bbep.print("in the Setup Wizard.");
+    
+    // Status
+    bbep.setCursor(220, 370);
+    bbep.print("Checking for setup completion...");
+    
+    // Footer
+    bbep.setCursor(220, 450);
+    bbep.print("(c) 2026 Angus Bergman - CC BY-NC 4.0");
     
     bbep.refresh(REFRESH_FULL, true);
 }
@@ -550,15 +694,28 @@ bool fetchZoneList(bool forceAll) {
         feedWatchdog();
         
         int httpCode = http.GET();
-        http.end();
-        delete client;
         
         if (httpCode != 200) {
             Serial.printf("✗ Metadata check failed: %d\n", httpCode);
+            http.end();
+            delete client;
             return false;
         }
         
-        Serial.println("✓ Server reachable");
+        // Parse response to check for setup_required
+        String payload = http.getString();
+        http.end();
+        delete client;
+        
+        // Check for setup_required flag
+        if (payload.indexOf("setup_required") > 0 && payload.indexOf("true") > 0) {
+            Serial.println("! Setup required - user needs to configure at web dashboard");
+            setupRequired = true;
+            return false;
+        }
+        
+        setupRequired = false;
+        Serial.println("✓ Server reachable, setup complete");
     }
     
     delay(100);
