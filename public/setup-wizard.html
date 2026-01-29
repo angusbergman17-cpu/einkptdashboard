@@ -198,14 +198,16 @@
 
         .authority-name {
             font-size: 18px;
-            font-weight: 600;
+            font-weight: 700;
             margin-bottom: 5px;
+            color: #1a202c;  /* Dark text for contrast on white cards */
         }
 
         .authority-desc {
             font-size: 14px;
-            color: #718096;
+            color: #4a5568;  /* Darker gray for better readability */
             margin-bottom: 10px;
+            font-weight: 500;
         }
 
         .authority-link {
@@ -536,7 +538,7 @@
 
         // Transit Authorities Configuration
         const AUTHORITIES = {
-            VIC: { name: 'Public Transport Victoria (PTV)', state: 'Victoria', url: 'https://www.ptv.vic.gov.au/footer/data-and-reporting/datasets/opendata-api/' },
+            VIC: { name: 'Transport Victoria OpenData', state: 'Victoria', url: 'https://opendata.transport.vic.gov.au/' },
             NSW: { name: 'Transport for NSW', state: 'New South Wales', url: 'https://opendata.transport.nsw.gov.au/user/register' },
             QLD: { name: 'TransLink Queensland', state: 'Queensland', url: 'https://www.data.qld.gov.au/' },
             WA: { name: 'Transperth', state: 'Western Australia', url: 'https://www.transperth.wa.gov.au/About/Spatial-Data-Access' },
