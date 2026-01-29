@@ -27,7 +27,7 @@ class SmartJourneyEngine {
     this.journeyConfig = null;
     this.coffeeEngine = null;
     this.discoveredRoutes = [];
-    this.selectedRouteIndex = 0;
+    this.selectedRouteIndex = 1; // Default to multi-modal (tram → train)
     this.cache = {
       routes: null,
       routesCacheTime: null,
