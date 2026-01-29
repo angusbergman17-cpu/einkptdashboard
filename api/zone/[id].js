@@ -46,6 +46,91 @@ async function getEngine() {
   return journeyEngine;
 }
 
+/**
+ * Build leg title from route leg
+ */
+function buildLegTitle(leg) {
+  const cap = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+  switch (leg.type) {
+    case 'walk': {
+      const dest = leg.to || leg.destination?.name;
+      if (dest === 'cafe' || dest?.toLowerCase()?.includes('cafe')) return 'Walk to Cafe';
+      if (dest === 'work' || dest === 'WORK') return 'Walk to Office';
+      if (dest?.toLowerCase()?.includes('station')) return 'Walk to Station';
+      if (dest?.toLowerCase()?.includes('stop')) return 'Walk to Stop';
+      return `Walk to ${cap(dest) || 'Station'}`;
+    }
+    case 'coffee': return `Coffee at ${leg.location || 'Cafe'}`;
+    case 'train': return `Train to ${leg.destination?.name || leg.to || 'City'}`;
+    case 'tram': return `Tram ${leg.routeNumber || ''} to ${leg.destination?.name || leg.to || 'City'}`.trim();
+    case 'bus': return `Bus ${leg.routeNumber || ''} to ${leg.destination?.name || leg.to || 'City'}`.trim();
+    default: return leg.title || 'Continue';
+  }
+}
+
+/**
+ * Build leg subtitle
+ */
+function buildLegSubtitle(leg, transitData) {
+  switch (leg.type) {
+    case 'walk': return `${leg.minutes || 5} min walk`;
+    case 'coffee': return 'TIME FOR COFFEE';
+    case 'train': {
+      const nextTrain = transitData?.trains?.[0];
+      return nextTrain ? `Next: ${nextTrain.minutes} min` : 'Check departures';
+    }
+    case 'tram': {
+      const nextTram = transitData?.trams?.[0];
+      return nextTram ? `Next: ${nextTram.minutes} min` : 'Check departures';
+    }
+    default: return leg.subtitle || '';
+  }
+}
+
+/**
+ * Build journey legs from route
+ */
+function buildJourneyLegs(route, transitData, coffeeDecision) {
+  if (!route?.legs) return [];
+  
+  const legs = [];
+  let legNumber = 1;
+  
+  for (const leg of route.legs) {
+    const baseLeg = {
+      number: legNumber++,
+      type: leg.type,
+      title: buildLegTitle(leg),
+      subtitle: buildLegSubtitle(leg, transitData),
+      minutes: leg.minutes || leg.durationMinutes || 0,
+      state: 'normal'
+    };
+    
+    if (leg.type === 'coffee') {
+      if (!coffeeDecision?.canGet) {
+        baseLeg.state = 'skip';
+        baseLeg.subtitle = coffeeDecision?.subtext || 'SKIP - No time';
+        legNumber--;
+      } else {
+        baseLeg.subtitle = coffeeDecision?.subtext || 'TIME FOR COFFEE';
+      }
+    }
+    
+    if (['train', 'tram', 'bus'].includes(leg.type)) {
+      const departures = leg.type === 'train' ? transitData?.trains :
+                         leg.type === 'tram' ? transitData?.trams : [];
+      if (departures?.[0]?.isDelayed) {
+        baseLeg.state = 'delayed';
+        baseLeg.minutes = departures[0].minutes;
+      }
+    }
+    
+    legs.push(baseLeg);
+  }
+  
+  return legs;
+}
+
 function buildDemoData(scenario) {
   const journeyLegs = (scenario.steps || []).map((step, idx) => ({
     number: idx + 1,
@@ -122,7 +207,20 @@ export default async function handler(req, res) {
       const transitData = { trains, trams, disruptions };
       const coffeeDecision = engine.calculateCoffeeDecision(transitData, route?.legs || []);
       
-      // Build minimal dashboard data for zone
+      // Build journey legs from route
+      const journeyLegs = buildJourneyLegs(route, transitData, coffeeDecision);
+      const totalMinutes = journeyLegs.filter(l => l.state !== 'skip').reduce((t, l) => t + (l.minutes || 0), 0);
+      const statusType = journeyLegs.some(l => l.state === 'delayed') ? 'delay' : 
+                         disruptions.length > 0 ? 'disruption' : 'normal';
+      
+      // Calculate leave time
+      const arrivalTime = config?.journey?.arrivalTime || '09:00';
+      const [arrH, arrM] = arrivalTime.split(':').map(Number);
+      const targetMins = arrH * 60 + arrM;
+      const nowMins = now.getHours() * 60 + now.getMinutes();
+      const leaveInMinutes = Math.max(0, targetMins - totalMinutes - nowMins);
+      
+      // Build dashboard data for zone
       dashboardData = {
         location: locations.home?.address || 'Home',
         current_time: formatTime(now),
@@ -131,11 +229,11 @@ export default async function handler(req, res) {
         temp: weather?.temp ?? '--',
         condition: weather?.condition || 'N/A',
         umbrella: weather?.umbrella || false,
-        status_type: 'normal',
-        arrive_by: config?.journey?.arrivalTime || '09:00',
-        total_minutes: 30,
-        leave_in_minutes: null,
-        journey_legs: [],
+        status_type: statusType,
+        arrive_by: arrivalTime,
+        total_minutes: totalMinutes || 30,
+        leave_in_minutes: leaveInMinutes > 0 ? leaveInMinutes : null,
+        journey_legs: journeyLegs,
         destination: locations.work?.address || 'Work'
       };
     }
