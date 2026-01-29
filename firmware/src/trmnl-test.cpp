@@ -1,5 +1,5 @@
 /**
- * TRMNL Display Test - Use allocBuffer properly
+ * TRMNL Display Test - Exact match to main-v6.cpp pattern
  * 
  * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
@@ -18,7 +18,7 @@
 #define EPD_DC_PIN    5
 #define EPD_BUSY_PIN  4
 
-// Instantiate with panel type in constructor
+// Exact same declaration as main-v6.cpp
 BBEPAPER bbep(EP75_800x480);
 
 void setup() {
@@ -28,44 +28,40 @@ void setup() {
     delay(2000);
     
     Serial.println("\n========================================");
-    Serial.println("TRMNL Test - allocBuffer Method");
+    Serial.println("TRMNL Test - Exact main-v6 Pattern");
     Serial.println("========================================");
     
-    // Initialize IO
+    // Exact same init as main-v6.cpp initDisplay()
+    Serial.println("→ Init display...");
     bbep.initIO(EPD_DC_PIN, EPD_RST_PIN, EPD_BUSY_PIN, EPD_CS_PIN, EPD_MOSI_PIN, EPD_SCK_PIN, 8000000);
-    
-    // Let bb_epaper allocate and manage its own buffer
-    // true = clear to white on alloc
-    int rc = bbep.allocBuffer(true);
+    bbep.setPanelType(EP75_800x480);
+    bbep.setRotation(0);
+    int rc = bbep.allocBuffer(false);  // false like main-v6!
     Serial.printf("allocBuffer returned: %d\n", rc);
+    Serial.println("✓ Display initialized");
     
-    if (rc != BBEP_SUCCESS) {
-        Serial.println("allocBuffer failed!");
-        return;
-    }
+    // Exact same as showWelcomeScreen()
+    Serial.println("Drawing...");
+    bbep.fillScreen(BBEP_WHITE);  // Clear first!
+    bbep.setFont(FONT_8x8);
+    bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
     
-    Serial.println("Drawing pattern...");
+    bbep.setCursor(200, 100);
+    bbep.print("PTV-TRMNL TEST");
     
-    // Draw border
-    bbep.drawRect(10, 10, 780, 460, BBEP_BLACK);
-    bbep.drawRect(15, 15, 770, 450, BBEP_BLACK);
+    bbep.setCursor(200, 150);
+    bbep.print("Custom Firmware Works!");
     
-    // Draw big X
-    for (int i = 0; i < 3; i++) {
-        bbep.drawLine(20+i, 20, 780+i, 460, BBEP_BLACK);
-        bbep.drawLine(780-i, 20, 20-i, 460, BBEP_BLACK);
-    }
+    // Draw a border
+    bbep.drawRect(50, 50, 700, 380, BBEP_BLACK);
     
-    // Draw filled boxes in corners
-    bbep.fillRect(30, 30, 100, 100, BBEP_BLACK);
-    bbep.fillRect(670, 30, 100, 100, BBEP_BLACK);
-    bbep.fillRect(30, 350, 100, 100, BBEP_BLACK);
-    bbep.fillRect(670, 350, 100, 100, BBEP_BLACK);
+    // Draw filled corners
+    bbep.fillRect(60, 60, 80, 80, BBEP_BLACK);
+    bbep.fillRect(660, 60, 80, 80, BBEP_BLACK);
+    bbep.fillRect(60, 340, 80, 80, BBEP_BLACK);
+    bbep.fillRect(660, 340, 80, 80, BBEP_BLACK);
     
-    // Center box
-    bbep.fillRect(300, 200, 200, 80, BBEP_BLACK);
-    
-    Serial.println("Refreshing display...");
+    Serial.println("Refreshing...");
     rc = bbep.refresh(REFRESH_FULL, true);
     Serial.printf("refresh returned: %d\n", rc);
     
