@@ -18,10 +18,12 @@ import PreferencesManager from '../src/data/preferences-manager.js';
 const TRANSIT_VALIDATORS = {
   VIC: {
     name: 'Transport Victoria OpenData',
-    testUrl: 'https://data.ptv.vic.gov.au/downloads/gtfsr/metro-bus-vehicle-positions.json',
+    // NEW API endpoint (as of 2026-01-27) - returns protobuf
+    testUrl: 'https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1/metro/vehicle-positions',
     validateResponse: (response, data) => {
-      // Victoria GTFS-RT returns protobuf or JSON depending on endpoint
-      // A valid response has header with gtfsRealtimeVersion
+      // Victoria GTFS-RT returns protobuf data
+      // 200 OK with data = valid key
+      // 401/403 = invalid key
       if (response.ok) {
         return { success: true, message: 'API key validated successfully' };
       }
@@ -123,9 +125,10 @@ async function testApiKey(apiKey, state) {
       'Accept': 'application/json'
     };
 
-    // Add state-specific auth headers
+    // Add state-specific auth headers (per DEVELOPMENT-RULES.md)
     if (state === 'VIC') {
-      headers['Ocp-Apim-Subscription-Key'] = apiKey.trim();
+      // Victoria uses KeyId header (case-sensitive) with UUID format key
+      headers['KeyId'] = apiKey.trim();
     } else if (state === 'NSW') {
       headers['Authorization'] = `apikey ${apiKey.trim()}`;
     } else if (state === 'QLD') {
