@@ -764,7 +764,15 @@ async function getRegionUpdates() {
 
 // Landing page - serve the unified dashboard/setup page
 app.get('/', (req, res) => {
-  res.sendFile(path.join(PROJECT_ROOT, 'public', 'index.html'));
+  const indexPath = path.join(PROJECT_ROOT, 'public', 'index.html');
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      console.error('Error serving index.html:', err);
+      console.error('Attempted path:', indexPath);
+      console.error('PROJECT_ROOT:', PROJECT_ROOT);
+      res.status(500).send('Error loading dashboard. Path: ' + indexPath);
+    }
+  });
 });
 
 // Health check endpoint (for monitoring/uptime checks)
