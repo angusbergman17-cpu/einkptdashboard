@@ -1,43 +1,41 @@
 /**
  * /api/screen - Full Dashboard PNG for TRMNL Webhook
  * 
- * Renders the complete V11 dashboard as an 800×480 PNG image.
- * Uses Smart Journey Calculator + Coffee Decision Engine.
+ * Renders the complete V10 dashboard as an 800×480 PNG image.
+ * 
+ * Data Flow (per DEVELOPMENT-RULES.md v3):
+ * User Config → Data Sources → Engines → Data Model → Renderer
  * 
  * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
  */
 
-import { getDepartures, getWeather } from '../src/services/ptv-api.js';
-import CoffeeDecision from '../src/core/coffee-decision.js';
+import { getDepartures, getDisruptions, getWeather } from '../src/services/ptv-api.js';
+import SmartJourneyEngine from '../src/core/smart-journey-engine.js';
 import { renderFullDashboard } from '../src/services/zone-renderer.js';
 
-// Config
-const TRAIN_STOP_ID = parseInt(process.env.TRAIN_STOP_ID) || 1071;
-const TRAM_STOP_ID = parseInt(process.env.TRAM_STOP_ID) || 2500;
-const COFFEE_SHOP = process.env.COFFEE_SHOP || 'Cafe';
-const WORK_ARRIVAL_TIME = process.env.WORK_ARRIVAL || '09:00';
+// Singleton engine instance (initialized once)
+let journeyEngine = null;
 
-const JOURNEY_CONFIG = {
-  walkToWork: parseInt(process.env.WALK_TO_WORK) || 5,
-  homeToCafe: parseInt(process.env.HOME_TO_CAFE) || 5,
-  makeCoffee: parseInt(process.env.MAKE_COFFEE) || 5,
-  cafeToTransit: parseInt(process.env.CAFE_TO_TRANSIT) || 2,
-  transitRide: parseInt(process.env.TRANSIT_RIDE) || 5,
-  trainRide: parseInt(process.env.TRAIN_RIDE) || 15,
-  platformChange: parseInt(process.env.PLATFORM_CHANGE) || 3
-};
-
+/**
+ * Get Melbourne local time
+ */
 function getMelbourneTime() {
   return new Date(new Date().toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
 }
 
+/**
+ * Format time as HH:MM
+ */
 function formatTime(date) {
-  return date.toLocaleTimeString('en-AU', {
-    timeZone: 'Australia/Melbourne', hour: '2-digit', minute: '2-digit', hour12: false
-  });
+  const h = date.getHours();
+  const m = date.getMinutes();
+  return `${h}:${m.toString().padStart(2, '0')}`;
 }
 
+/**
+ * Format date parts for display
+ */
 function formatDateParts(date) {
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -47,105 +45,272 @@ function formatDateParts(date) {
   };
 }
 
-function buildJourneyLegs(trains, trams, coffeeDecision) {
+/**
+ * Initialize the Smart Journey Engine
+ */
+async function getEngine() {
+  if (!journeyEngine) {
+    journeyEngine = new SmartJourneyEngine();
+    await journeyEngine.initialize();
+  }
+  return journeyEngine;
+}
+
+/**
+ * Build journey legs from engine route with live transit data
+ */
+function buildJourneyLegs(route, transitData, coffeeDecision) {
+  if (!route?.legs) return [];
+  
   const legs = [];
   let legNumber = 1;
   
-  const nextTrain = trains[0] || null;
-  const nextTram = trams[0] || null;
-  const useTram = nextTram && (!nextTrain || nextTram.minutes < nextTrain.minutes);
-  const primaryTransit = useTram ? nextTram : nextTrain;
-  const transitType = useTram ? 'tram' : 'train';
-  
-  if (coffeeDecision.canGet) {
-    legs.push({ number: legNumber++, type: 'coffee', icon: '☕', title: `Coffee at ${COFFEE_SHOP}`, subtitle: coffeeDecision.subtext, minutes: JOURNEY_CONFIG.makeCoffee, state: coffeeDecision.urgent ? 'delayed' : 'normal' });
-    legs.push({ number: legNumber++, type: 'walk', icon: '🚶', title: 'Walk to Station', subtitle: `${JOURNEY_CONFIG.homeToCafe + JOURNEY_CONFIG.cafeToTransit} min walk`, minutes: JOURNEY_CONFIG.homeToCafe + JOURNEY_CONFIG.cafeToTransit, state: 'normal' });
-  } else {
-    legs.push({ number: legNumber++, type: 'walk', icon: '🚶', title: 'Walk to Station', subtitle: coffeeDecision.subtext || 'No time for coffee', minutes: JOURNEY_CONFIG.homeToCafe + JOURNEY_CONFIG.cafeToTransit, state: coffeeDecision.urgent ? 'delayed' : 'normal' });
+  for (const leg of route.legs) {
+    const baseLeg = {
+      number: legNumber++,
+      type: leg.type,
+      title: buildLegTitle(leg),
+      subtitle: buildLegSubtitle(leg, transitData),
+      minutes: leg.minutes || leg.durationMinutes || 0,
+      state: 'normal'
+    };
+    
+    // Handle coffee leg state based on coffee decision
+    if (leg.type === 'coffee') {
+      if (!coffeeDecision.canGet) {
+        baseLeg.state = 'skip';
+        baseLeg.subtitle = coffeeDecision.subtext || 'SKIP — No time';
+        legNumber--; // Don't increment for skipped leg
+      } else {
+        baseLeg.subtitle = coffeeDecision.subtext || 'TIME FOR COFFEE';
+      }
+    }
+    
+    // Check for delays on transit legs
+    if (['train', 'tram', 'bus'].includes(leg.type)) {
+      const liveData = findMatchingDeparture(leg, transitData);
+      if (liveData) {
+        baseLeg.minutes = liveData.minutes;
+        if (liveData.isDelayed) {
+          baseLeg.state = 'delayed';
+          baseLeg.subtitle = `+${liveData.delayMinutes} MIN • ${baseLeg.subtitle}`;
+        }
+      }
+    }
+    
+    legs.push(baseLeg);
   }
-  
-  if (primaryTransit) {
-    const dest = primaryTransit.destination || 'City';
-    const nextTimes = [primaryTransit, ...(useTram ? trams : trains).slice(1, 3)].map(t => t.minutes).join(', ');
-    legs.push({ 
-      number: legNumber++, 
-      type: transitType, 
-      icon: useTram ? '🚃' : '🚃', 
-      title: `${useTram ? 'Tram' : 'Train'} to ${dest}`, 
-      subtitle: `Next: ${nextTimes} min`, 
-      minutes: primaryTransit.minutes, 
-      state: primaryTransit.delayed ? 'delayed' : 'normal' 
-    });
-  }
-  
-  if (useTram && nextTrain) {
-    legs.push({ number: legNumber++, type: 'walk', icon: '🚶', title: 'Walk to Train', subtitle: `${JOURNEY_CONFIG.platformChange} min`, minutes: JOURNEY_CONFIG.platformChange, state: 'normal' });
-    const nextTrainTimes = trains.slice(0, 3).map(t => t.minutes).join(', ');
-    legs.push({ number: legNumber++, type: 'train', icon: '🚃', title: `Train to ${nextTrain.destination}`, subtitle: `Next: ${nextTrainTimes} min`, minutes: nextTrain.minutes, state: 'normal' });
-  }
-  
-  legs.push({ number: legNumber++, type: 'walk', icon: '🚶', title: 'Walk to Work', subtitle: `${JOURNEY_CONFIG.walkToWork} min walk`, minutes: JOURNEY_CONFIG.walkToWork, state: 'normal' });
   
   return legs;
 }
 
+/**
+ * Build leg title
+ */
+function buildLegTitle(leg) {
+  switch (leg.type) {
+    case 'walk':
+      return `Walk to ${leg.to || leg.destination?.name || 'Station'}`;
+    case 'coffee':
+      return `Coffee at ${leg.location || 'Cafe'}`;
+    case 'train':
+      return `Train to ${leg.destination?.name || 'City'}`;
+    case 'tram':
+      return `Tram ${leg.routeNumber || ''} to ${leg.destination?.name || 'City'}`.trim();
+    case 'bus':
+      return `Bus ${leg.routeNumber || ''} to ${leg.destination?.name || 'City'}`.trim();
+    default:
+      return leg.title || 'Continue';
+  }
+}
+
+/**
+ * Build leg subtitle with live data
+ */
+function buildLegSubtitle(leg, transitData) {
+  switch (leg.type) {
+    case 'walk':
+      if (leg.from) return `From ${leg.from}`;
+      if (leg.to) return leg.to;
+      return `${leg.minutes || leg.durationMinutes || 0} min walk`;
+    case 'coffee':
+      return 'TIME FOR COFFEE';
+    case 'train':
+    case 'tram':
+    case 'bus': {
+      const departures = findDeparturesForLeg(leg, transitData);
+      if (departures.length > 0) {
+        const times = departures.slice(0, 3).map(d => d.minutes).join(', ');
+        const lineName = leg.routeNumber || leg.origin?.name || '';
+        return lineName ? `${lineName} • Next: ${times} min` : `Next: ${times} min`;
+      }
+      return leg.origin?.name || '';
+    }
+    default:
+      return leg.subtitle || '';
+  }
+}
+
+/**
+ * Find matching departure from live data
+ */
+function findMatchingDeparture(leg, transitData) {
+  if (!transitData) return null;
+  
+  const departures = leg.type === 'train' ? transitData.trains :
+                     leg.type === 'tram' ? transitData.trams :
+                     leg.type === 'bus' ? transitData.buses : [];
+  
+  if (!departures?.length) return null;
+  
+  // Find by route number if available
+  if (leg.routeNumber) {
+    const match = departures.find(d => 
+      d.routeNumber?.toString() === leg.routeNumber.toString()
+    );
+    if (match) return match;
+  }
+  
+  // Otherwise return first departure
+  return departures[0];
+}
+
+/**
+ * Find all departures for a leg type
+ */
+function findDeparturesForLeg(leg, transitData) {
+  if (!transitData) return [];
+  
+  return leg.type === 'train' ? (transitData.trains || []) :
+         leg.type === 'tram' ? (transitData.trams || []) :
+         leg.type === 'bus' ? (transitData.buses || []) : [];
+}
+
+/**
+ * Calculate total journey time
+ */
 function calculateTotalMinutes(legs) {
-  return legs.reduce((total, leg) => total + (leg.minutes || 0), 0);
+  return legs
+    .filter(l => l.state !== 'skip')
+    .reduce((total, leg) => total + (leg.minutes || 0), 0);
 }
 
-function calculateLeaveInMinutes(now, totalMinutes) {
-  const [hours, mins] = WORK_ARRIVAL_TIME.split(':').map(Number);
-  const nowMins = now.getHours() * 60 + now.getMinutes();
-  return Math.max(0, hours * 60 + mins - totalMinutes - nowMins);
+/**
+ * Determine status type from journey state
+ */
+function getStatusType(legs, disruptions) {
+  // Check for suspended services
+  if (legs.some(l => l.state === 'suspended' || l.state === 'cancelled')) {
+    return 'disruption';
+  }
+  
+  // Check for delays
+  if (legs.some(l => l.state === 'delayed')) {
+    return 'delay';
+  }
+  
+  // Check for active disruptions
+  if (disruptions?.length > 0) {
+    return 'disruption';
+  }
+  
+  return 'normal';
 }
 
+/**
+ * Calculate arrival time
+ */
+function calculateArrivalTime(now, totalMinutes) {
+  const arrival = new Date(now.getTime() + totalMinutes * 60000);
+  return formatTime(arrival);
+}
+
+/**
+ * Main handler - Vercel serverless function
+ */
 export default async function handler(req, res) {
   try {
+    // Get current time
     const now = getMelbourneTime();
     const currentTime = formatTime(now);
     const { day, date } = formatDateParts(now);
     
-    const [trains, trams, weather] = await Promise.all([
-      getDepartures(TRAIN_STOP_ID, 0),
-      getDepartures(TRAM_STOP_ID, 1),
-      getWeather()
+    // Initialize engine and get route
+    const engine = await getEngine();
+    const route = engine.getSelectedRoute();
+    const locations = engine.getLocations();
+    const config = engine.journeyConfig;
+    
+    // Fetch live data from sources
+    const trainStopId = parseInt(process.env.TRAIN_STOP_ID) || 1071;
+    const tramStopId = parseInt(process.env.TRAM_STOP_ID) || 2500;
+    
+    const [trains, trams, weather, disruptions] = await Promise.all([
+      getDepartures(trainStopId, 0),
+      getDepartures(tramStopId, 1),
+      getWeather(locations.home?.lat, locations.home?.lon),
+      getDisruptions(0).catch(() => [])
     ]);
     
-    const coffeeEngine = new CoffeeDecision(JOURNEY_CONFIG);
-    const [arrHours, arrMins] = WORK_ARRIVAL_TIME.split(':').map(Number);
-    coffeeEngine.setTargetArrival(arrHours, arrMins);
+    const transitData = { trains, trams, disruptions };
     
-    const coffeeDecision = coffeeEngine.calculate(trains[0]?.minutes || 30, trams, '');
-    const journeyLegs = buildJourneyLegs(trains, trams, coffeeDecision);
+    // Get coffee decision from engine
+    const coffeeDecision = engine.calculateCoffeeDecision(transitData, route?.legs || []);
+    
+    // Build journey legs (Data Model)
+    const journeyLegs = buildJourneyLegs(route, transitData, coffeeDecision);
     const totalMinutes = calculateTotalMinutes(journeyLegs);
-    const leaveInMinutes = calculateLeaveInMinutes(now, totalMinutes);
+    const statusType = getStatusType(journeyLegs, disruptions);
     
+    // Calculate timing
+    const arrivalTime = config?.journey?.arrivalTime || '09:00';
+    const [arrH, arrM] = arrivalTime.split(':').map(Number);
+    const targetMins = arrH * 60 + arrM;
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    const leaveInMinutes = Math.max(0, targetMins - totalMinutes - nowMins);
+    
+    // Calculate delay if applicable
+    let delayMinutes = null;
+    if (statusType === 'delay' || statusType === 'disruption') {
+      const delayedLegs = journeyLegs.filter(l => l.state === 'delayed');
+      delayMinutes = delayedLegs.reduce((sum, l) => sum + (l.delayMinutes || 0), 0);
+    }
+    
+    // Build Dashboard Data Model (per DEVELOPMENT-RULES.md)
     const dashboardData = {
-      location: process.env.HOME_ADDRESS || '68 Cambridge St, Collingwood',
+      location: locations.home?.address || process.env.HOME_ADDRESS || 'Home',
       current_time: currentTime,
       day,
       date,
       temp: weather?.temp ?? '--',
       condition: weather?.condition || 'N/A',
-      umbrella: (weather?.condition || '').toLowerCase().includes('rain'),
-      status_type: coffeeDecision.urgent ? 'delay' : 'normal',
-      arrive_by: WORK_ARRIVAL_TIME,
+      umbrella: weather?.umbrella || false,
+      status_type: statusType,
+      delay_minutes: delayMinutes,
+      arrive_by: arrivalTime,
       total_minutes: totalMinutes,
       leave_in_minutes: leaveInMinutes > 0 ? leaveInMinutes : null,
       journey_legs: journeyLegs,
-      destination: process.env.WORK_ADDRESS || '80 Collins St, Melbourne'
+      destination: locations.work?.address || process.env.WORK_ADDRESS || 'Work'
     };
     
+    // Render to PNG (V10 Renderer)
     const png = renderFullDashboard(dashboardData);
     
+    // Send response
     res.setHeader('Content-Type', 'image/png');
-    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('X-Dashboard-Timestamp', now.toISOString());
+    res.setHeader('X-Route-Name', route?.name || 'default');
     res.setHeader('Content-Length', png.length);
     
     return res.status(200).send(png);
     
   } catch (error) {
     console.error('Screen render error:', error);
-    return res.status(500).send('Render failed: ' + error.message);
+    
+    // Return error image or message
+    res.setHeader('Content-Type', 'text/plain');
+    return res.status(500).send(`Render failed: ${error.message}`);
   }
 }
