@@ -23,12 +23,17 @@
   "redirects": [
     {
       "source": "/",
-      "destination": "/admin.html",
+      "destination": "/setup-wizard.html",
       "permanent": false
     },
     {
       "source": "/admin",
       "destination": "/admin.html",
+      "permanent": false
+    },
+    {
+      "source": "/setup",
+      "destination": "/setup-wizard.html",
       "permanent": false
     }
   ],
