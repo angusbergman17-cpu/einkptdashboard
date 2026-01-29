@@ -1,5 +1,5 @@
 /**
- * TRMNL Display Test - Draw visible pattern with proper init
+ * TRMNL Display Test - Proper buffer initialization
  * 
  * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
@@ -27,24 +27,27 @@ void setup() {
     delay(2000);
     
     Serial.println("\n========================================");
-    Serial.println("TRMNL Test - Draw Pattern");
+    Serial.println("TRMNL Test - Fixed Buffer Init");
     Serial.println("========================================");
-    Serial.printf("Pins: SCK=%d, MOSI=%d, CS=%d, DC=%d, RST=%d, BUSY=%d\n",
-                  EPD_SCK_PIN, EPD_MOSI_PIN, EPD_CS_PIN, EPD_DC_PIN, EPD_RST_PIN, EPD_BUSY_PIN);
     
-    // Initialize
+    // Initialize display
     bbep.initIO(EPD_DC_PIN, EPD_RST_PIN, EPD_BUSY_PIN, EPD_CS_PIN, EPD_MOSI_PIN, EPD_SCK_PIN, 8000000);
     bbep.setPanelType(EP75_800x480);
     bbep.setRotation(0);
-    bbep.allocBuffer(false);
     
-    Serial.println("Step 1: Clear to WHITE...");
-    bbep.fillScreen(BBEP_WHITE);
-    bbep.refresh(REFRESH_FULL, true);
-    delay(1000);
+    // Allocate our own zeroed buffer
+    uint8_t *buffer = (uint8_t*)calloc(48000, 1);  // calloc zeros the memory
+    if (!buffer) {
+        Serial.println("Buffer alloc failed!");
+        return;
+    }
+    // Set all bits to 1 (white) - e-ink: 1=white, 0=black
+    memset(buffer, 0xFF, 48000);
+    bbep.setBuffer(buffer);
+    Serial.println("Buffer allocated and cleared to white");
     
-    Serial.println("Step 2: Draw test pattern...");
-    bbep.fillScreen(BBEP_WHITE);
+    // Clear screen first
+    Serial.println("Drawing pattern...");
     
     // Draw border
     bbep.drawRect(10, 10, 780, 460, BBEP_BLACK);
@@ -60,24 +63,13 @@ void setup() {
     bbep.fillRect(30, 350, 100, 100, BBEP_BLACK);
     bbep.fillRect(670, 350, 100, 100, BBEP_BLACK);
     
-    // Draw center text area
+    // Center box
     bbep.fillRect(300, 200, 200, 80, BBEP_BLACK);
     
-    Serial.println("Step 3: Refresh display...");
-    int rc = bbep.refresh(REFRESH_FULL, true);
-    Serial.printf("refresh returned: %d\n", rc);
+    Serial.println("Refreshing display...");
+    bbep.refresh(REFRESH_FULL, true);
     
-    Serial.println("Step 4: Wait 3 seconds...");
-    delay(3000);
-    
-    Serial.println("Done! You should see:");
-    Serial.println("- Double border");
-    Serial.println("- Big X across screen");
-    Serial.println("- 4 black squares in corners");
-    Serial.println("- Black rectangle in center");
-    
-    // Don't sleep - keep display powered
-    Serial.println("Display staying on (no sleep)");
+    Serial.println("Done! Should show pattern now.");
 }
 
 void loop() {
