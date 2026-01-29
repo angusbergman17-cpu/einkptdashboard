@@ -89,6 +89,7 @@ These rules govern all development on PTV-TRMNL. Compliance is mandatory.
 - 5.1 TRMNL Hardware Specifications
 - 5.2 Custom Firmware Requirements
 - 5.3 Flashing Procedure
+- 5.4 Critical bb_epaper ESP32-C3 Findings (2026-01-29)
 </details>
 
 <details>
@@ -577,6 +578,69 @@ pio device monitor -b 115200
 ```
 
 **Bootloader Mode:** Hold BOOT button while pressing RESET, then release.
+
+### 5.4 Critical bb_epaper ESP32-C3 Findings (2026-01-29)
+
+**🔴 CRITICAL DISCOVERY**: Display shows static/garbage if `allocBuffer()` is called!
+
+**Tested on:** TRMNL OG (ESP32-C3 RISC-V, 7.5" E-ink 800×480)
+
+**Root Cause:** bb_epaper library has ESP32-C3 (RISC-V) incompatibility with `allocBuffer()`. The library's buffer allocation code skips DMA-compatible memory handling for RISC-V architectures, causing the display to show uninitialized memory.
+
+**WORKING Initialization Pattern:**
+```cpp
+// Declare with panel type in constructor
+BBEPAPER bbep(EP75_800x480);
+
+void setup() {
+    // Initialize pins - CORRECT ORDER
+    bbep.initIO(EPD_DC_PIN, EPD_RST_PIN, EPD_BUSY_PIN, EPD_CS_PIN,
+                EPD_MOSI_PIN, EPD_SCK_PIN, 8000000);
+    bbep.setPanelType(EP75_800x480);
+    bbep.setRotation(0);
+    pinMode(PIN_INTERRUPT, INPUT_PULLUP);
+    
+    // ⚠️ DO NOT CALL allocBuffer()!
+    // Just start drawing directly:
+    bbep.fillScreen(BBEP_WHITE);
+    bbep.setFont(FONT_8x8);  // NOT FONT_12x16!
+    // ... draw content ...
+    bbep.refresh(REFRESH_FULL, true);
+}
+```
+
+**BROKEN Pattern (causes static):**
+```cpp
+// ❌ These cause garbage/static display:
+bbep.allocBuffer(true);   // BROKEN
+bbep.allocBuffer(false);  // BROKEN
+bbep.setBuffer(customBuf); // BROKEN
+```
+
+**Correct Pin Configuration (TRMNL OG):**
+| Signal | GPIO | Note |
+|--------|------|------|
+| SCK | 7 | SPI Clock |
+| MOSI | 8 | SPI Data |
+| CS | 6 | Chip Select |
+| DC | 5 | Data/Command |
+| RST | 10 | Reset |
+| BUSY | 4 | Busy signal |
+| INT | 2 | Button interrupt |
+
+**Font Rotation Bug:**
+- `FONT_12x16` renders text rotated 90° counter-clockwise
+- **Fix:** Use `FONT_8x8` only for TRMNL OG hardware
+
+**Testing Summary (2026-01-29):**
+| Test | Result |
+|------|--------|
+| GxEPD2 library | ❌ Static (wrong library for TRMNL) |
+| bb_epaper + allocBuffer() | ❌ Static |
+| bb_epaper + setBuffer() | ❌ Static |
+| bb_epaper + NO allocBuffer | ✅ WORKING |
+| FONT_12x16 | ❌ Rotated 90° |
+| FONT_8x8 | ✅ Correct orientation |
 
 ---
 
