@@ -674,7 +674,8 @@ void showPairingScreen() {
             int byte_idx = row * CC_LOGO_BYTES_PER_ROW + (col / 8);
             int bit_idx = 7 - (col % 8);
             uint8_t byte_val = pgm_read_byte(&CC_LOGO_DATA[byte_idx]);
-            if (byte_val & (1 << bit_idx)) {
+            if (!(byte_val & (1 << bit_idx))) {
+                // Draw black where BMP has 0 (logo is black in original BMP)
                 bbep.drawPixel(logoX + col, logoY + row, BBEP_BLACK);
             }
         }

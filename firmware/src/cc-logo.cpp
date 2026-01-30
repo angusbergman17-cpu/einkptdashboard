@@ -28,8 +28,8 @@ void drawCCLogo(int x, int y) {
             
             uint8_t byte_val = pgm_read_byte(&CC_LOGO_DATA[byte_idx]);
             
-            if (byte_val & (1 << bit_idx)) {
-                // Draw black pixel
+            if (!(byte_val & (1 << bit_idx))) {
+                // Draw black pixel where BMP has 0 (logo is black in BMP)
                 bbep.drawPixel(x + col, y + row, BBEP_BLACK);
             }
         }
