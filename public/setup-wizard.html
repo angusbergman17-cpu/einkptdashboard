@@ -927,14 +927,17 @@
             };
 
             try {
+                console.log('Step 1: Sending config to /admin/setup/complete');
                 // Save configuration
                 const response = await fetch('/admin/setup/complete', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(config)
                 });
+                console.log('Step 2: Got response, status:', response.status);
 
                 const result = await response.json();
+                console.log('Step 3: Parsed JSON result:', result);
 
                 if (result.success) {
                     // Generate webhook URL for TRMNL device
@@ -989,7 +992,8 @@
                     alert('Setup failed: ' + result.error);
                 }
             } catch (e) {
-                alert('Error: ' + e.message);
+                console.error('Setup error:', e);
+                alert('Error: ' + e.message + '\n\nStack: ' + (e.stack || 'no stack'));
             }
         };
 
