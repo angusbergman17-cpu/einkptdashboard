@@ -1484,11 +1484,40 @@ grep -r "oldValue" public/    # Find UI references
 
 ---
 
-## 📜 Section 20: Licensing
+## 📜 Section 20: Licensing & Intellectual Property
 
 **CRITICAL**: All original work MUST use CC BY-NC 4.0 license.
 
-### License Header (Required in all files)
+### 20.1 Intellectual Property
+
+All intellectual property rights are owned by **Angus Bergman**.
+
+### 20.2 Trademarks
+
+The following are **unregistered trademarks (™)** of Angus Bergman:
+
+| Mark | Description |
+|------|-------------|
+| **Commute Compute™** | Primary brand name |
+| **Commute Compute System™** | Full system name |
+| **SmartCommute™** | Journey calculation engine |
+| **CCDash™** | Dashboard rendering system |
+| **CC LiveDash™** | Live display output system |
+| **CCFirm™** | Custom firmware family |
+| **CC Logo** | Arrow-integrated CC letterform |
+
+### 20.3 Firmware Naming Convention
+
+All custom firmware MUST use the **CCFirm** prefix:
+
+| Firmware | Target Device |
+|----------|---------------|
+| CCFirmTRMNL | TRMNL e-ink display |
+| CCFirmKindle | Jailbroken Kindle devices |
+| CCFirmWaveshare | Waveshare e-ink displays |
+| CCFirmESP32 | Generic ESP32 e-ink setups |
+
+### 20.4 License Header (Required in all files)
 
 ```
 Copyright (c) 2026 Angus Bergman
@@ -1496,9 +1525,15 @@ Licensed under CC BY-NC 4.0 (Creative Commons Attribution-NonCommercial 4.0 Inte
 https://creativecommons.org/licenses/by-nc/4.0/
 ```
 
+### 20.5 Prohibited Licenses
+
 **Prohibited licenses for original work:**
 - ❌ MIT, Apache, GPL/LGPL, BSD
 - ✅ Third-party libraries retain their original licenses
+
+### 20.6 Full Legal Documentation
+
+See **LEGAL.md** for complete intellectual property documentation.
 
 ---
 

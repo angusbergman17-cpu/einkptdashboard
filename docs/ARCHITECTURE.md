@@ -1,9 +1,24 @@
-# Commute Compute System Architecture
+# Commute Compute System™ Architecture
 
 **Version:** 3.0  
 **Last Updated:** 2026-01-30  
 **Status:** Active  
-**Specification:** CCDash V10 (LOCKED)
+**Specification:** CCDash™ V10 (LOCKED)  
+**Copyright:** (c) 2026 Angus Bergman — CC BY-NC 4.0
+
+---
+
+## Intellectual Property Notice
+
+The following are **unregistered trademarks (™)** of Angus Bergman:
+- **Commute Compute™** — Primary brand
+- **Commute Compute System™** — Full system
+- **SmartCommute™** — Journey engine
+- **CCDash™** — Dashboard renderer
+- **CC LiveDash™** — Multi-device output
+- **CCFirm™** — Custom firmware family (CCFirmTRMNL, CCFirmKindle, etc.)
+
+See **LEGAL.md** for complete IP documentation.
 
 ---
 
