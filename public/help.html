@@ -25,14 +25,14 @@
         :root {
             --bg-primary: #1a2744;
             --bg-secondary: #1e293b;
-            --bg-card: rgba(30, 41, 59, 0.8);
+            --bg-card: #1e293b;
             --accent: #4fb28e;
-            --accent-hover: #818cf8;
+            --accent-dim: #3d8a6d;
             --success: #22c55e;
-            --warning: #f59e0b;
-            --text-primary: #f8fafc;
+            --warning: #eab308;
+            --text-primary: #f1f5f9;
             --text-secondary: #94a3b8;
-            --border: rgba(255, 255, 255, 0.1);
+            --border: #334155;
         }
         
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -77,19 +77,24 @@
         
         .nav-link {
             background: transparent;
-            border: 1px solid var(--border);
+            border: none;
+            border-bottom: 2px solid transparent;
             color: var(--text-secondary);
-            padding: 8px 16px;
-            border-radius: 8px;
+            padding: 8px 12px;
             font-size: 14px;
+            font-weight: 500;
             text-decoration: none;
-            transition: all 0.2s;
+            transition: color 0.15s, border-color 0.15s;
         }
         
-        .nav-link:hover, .nav-link.active {
-            background: var(--accent);
-            border-color: var(--accent);
+        .nav-link:hover {
             color: var(--text-primary);
+            border-bottom-color: var(--text-muted);
+        }
+        
+        .nav-link.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
         }
         
         /* Layout */
