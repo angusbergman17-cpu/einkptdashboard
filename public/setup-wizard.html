@@ -927,9 +927,13 @@
             };
 
             try {
-                console.log('Step 1: Sending config to /admin/setup/complete');
+                // Use absolute URL to avoid iOS Safari relative URL issues
+                const baseUrl = window.location.origin;
+                console.log('Step 1: Base URL:', baseUrl);
+                console.log('Step 1b: Sending config to /admin/setup/complete');
+                
                 // Save configuration
-                const response = await fetch('/admin/setup/complete', {
+                const response = await fetch(baseUrl + '/admin/setup/complete', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(config)
@@ -955,11 +959,13 @@
                         additionalAPIs: { google_places: document.getElementById('google-places-api-key')?.value || '' }
                     };
                     
-                    const webhookResponse = await fetch('/admin/generate-webhook', { 
+                    console.log('Step 4: Generating webhook URL');
+                    const webhookResponse = await fetch(baseUrl + '/admin/generate-webhook', { 
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ config: fullConfig })
                     });
+                    console.log('Step 5: Got webhook response, status:', webhookResponse.status);
                     const webhookResult = await webhookResponse.json();
                     
                     let webhookHtml = '';
