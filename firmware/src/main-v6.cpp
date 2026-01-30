@@ -283,61 +283,31 @@ void loop() {
         // ----------------------------------------------------------------
         case STATE_WAITING_SETUP: {
             // Stage 2b: Wait for setup wizard to be completed
-            static unsigned long lastCheckTime = 0;
+            // For now, skip this check and go straight to dashboard
+            // TODO: Implement /api/setup-status endpoint on server
+            
+            static unsigned long setupStartTime = 0;
             static bool waitingScreenShown = false;
             
             feedWatchdog();
             
-            // Show waiting screen (once)
+            // Show waiting screen briefly
             if (!waitingScreenShown) {
-                Serial.println("→ STATE: Waiting for Setup Wizard");
-                showWaitingSetupScreen();
+                Serial.println("→ STATE: Waiting for Setup (skipping check for now)");
+                showConfiguredScreen();  // Show "Setup Complete" instead
                 waitingScreenShown = true;
-                lastCheckTime = millis();
+                setupStartTime = millis();
             }
             
-            // Poll server every 5 seconds to check if setup is complete
-            if (millis() - lastCheckTime >= 5000) {
-                lastCheckTime = millis();
-                Serial.println("[SETUP] Checking if setup wizard is complete...");
-                
-                // Check /api/setup-status endpoint
-                WiFiClientSecure* client = new WiFiClientSecure();
-                if (client) {
-                    client->setInsecure();
-                    HTTPClient http;
-                    
-                    String url = String(serverUrl);
-                    if (!url.endsWith("/")) url += "/";
-                    url += "api/setup-status";
-                    url.replace("//api", "/api");
-                    
-                    http.setTimeout(10000);
-                    if (http.begin(*client, url)) {
-                        int httpCode = http.GET();
-                        if (httpCode == 200) {
-                            String response = http.getString();
-                            // Check for "complete":true in response
-                            if (response.indexOf("\"complete\":true") >= 0 || 
-                                response.indexOf("\"configured\":true") >= 0) {
-                                Serial.println("✓ Setup wizard complete!");
-                                waitingScreenShown = false;
-                                showConfiguredScreen();
-                                delay(2000);
-                                currentState = STATE_FETCH_ZONES;
-                            } else {
-                                Serial.println("→ Setup not complete yet, waiting...");
-                            }
-                        } else {
-                            Serial.printf("→ Setup status check: %d\n", httpCode);
-                        }
-                        http.end();
-                    }
-                    delete client;
-                }
+            // Wait 3 seconds then proceed to dashboard
+            // TODO: Replace with actual /api/setup-status check when endpoint exists
+            if (millis() - setupStartTime >= 3000) {
+                Serial.println("✓ Proceeding to dashboard");
+                waitingScreenShown = false;
+                currentState = STATE_FETCH_ZONES;
             }
             
-            delay(100);  // Small delay to prevent tight loop
+            delay(100);
             break;
         }
         
@@ -553,29 +523,14 @@ void showBootScreen() {
     Serial.println("→ Showing boot screen (large logo)");
     bbep.fillScreen(BBEP_WHITE);
     
-    // Draw LARGE CC logo centered on screen
-    // Logo is 150x150, screen is 800x480
-    // Center: x = (800-150)/2 = 325, y = (480-150)/2 = 165
-    int logoX = (800 - CC_LOGO_WIDTH) / 2;
-    int logoY = (480 - CC_LOGO_HEIGHT) / 2 - 30;  // Slightly above center
-    
-    // Draw logo pixel by pixel (0 = black in BMP)
-    for (int row = 0; row < CC_LOGO_HEIGHT; row++) {
-        for (int col = 0; col < CC_LOGO_WIDTH; col++) {
-            int byte_idx = row * CC_LOGO_BYTES_PER_ROW + (col / 8);
-            int bit_idx = 7 - (col % 8);
-            uint8_t byte_val = pgm_read_byte(&CC_LOGO_DATA[byte_idx]);
-            if (!(byte_val & (1 << bit_idx))) {
-                // Draw black where BMP has 0 (logo is black)
-                bbep.drawPixel(logoX + col, logoY + row, BBEP_BLACK);
-            }
-        }
-    }
+    // Draw CC logo using the shared function (handles pixel drawing)
+    // Center logo vertically: y = (480-150)/2 - 30 = ~135
+    drawCCLogoCentered(135, 800);
     
     // "COMMUTE COMPUTE" text below logo
     bbep.setFont(FONT_8x8);
     bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
-    bbep.setCursor(310, logoY + CC_LOGO_HEIGHT + 20);
+    bbep.setCursor(310, 135 + CC_LOGO_HEIGHT + 20);
     bbep.print("COMMUTE COMPUTE");
     
     bbep.refresh(REFRESH_FULL, true);
