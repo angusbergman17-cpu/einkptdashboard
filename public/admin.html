@@ -4048,8 +4048,8 @@
                 <div style="padding: 15px; background: rgba(102, 126, 234, 0.1); border-radius: 8px;">
                     <div style="font-weight: 600; margin-bottom: 10px; font-size: 14px;">📍 Addresses</div>
                     <div style="font-size: 13px; line-height: 1.8;">
-                        <div><strong>Home:</strong> ${sanitize(status.addresses.home || 'Not set'}</div>
-                        <div><strong>Work:</strong> ${sanitize(status.addresses.work || 'Not set'}</div>
+                        <div><strong>Home:</strong> ${sanitize(status.addresses.home || 'Not set')}</div>
+                        <div><strong>Work:</strong> ${sanitize(status.addresses.work || 'Not set')}</div>
                         ${status.addresses.cafe ? `<div><strong>Cafe:</strong> ${sanitize(status.addresses.cafe)}</div>` : ''}
                     </div>
                 </div>
@@ -6492,8 +6492,8 @@
 
                             dropdown.innerHTML = confidenceHeader + data.results.map(result => `
                                 <div class="autocomplete-item" onclick='selectAddress("${inputId}", "${dropdownId}", ${JSON.stringify(result).replace(/'/g, "\\'")})'>
-                                    <div style="font-weight: 600; margin-bottom: 3px;">${sanitize(result.display_name || result.address}</div>
-                                    <div style="font-size: 12px; opacity: 0.7;">${sanitize(result.full_address || ''}</div>
+                                    <div style="font-weight: 600; margin-bottom: 3px;">${sanitize(result.display_name || result.address)}</div>
+                                    <div style="font-size: 12px; opacity: 0.7;">${sanitize(result.full_address || '')}</div>
                                     <div style="font-size: 10px; opacity: 0.5; margin-top: 2px;">Source: ${result.source || 'Unknown'}</div>
                                 </div>
                             `).join('');
