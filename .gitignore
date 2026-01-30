@@ -3,6 +3,7 @@ node_modules/
 
 # Environment variables
 .env
+.env.local
 .test-config.json
 
 # Logs
@@ -25,6 +26,20 @@ Thumbs.db
 cache/
 user-preferences.json
 devices.json
-user-preferences.json
-\n# Private configuration (never commit)\nPRIVATE-CONFIG.md\n.env\n.env.local\n*.secret
 data/preferences.json
+
+# Private configuration (never commit)
+PRIVATE-CONFIG.md
+*.secret
+
+# Firmware build artifacts
+firmware/build/
+firmware/.pio/
+firmware/captures/
+firmware/*.bin
+firmware/*.elf
+
+# PlatformIO
+.pio/
+.pioenvs/
+.piolibdeps/

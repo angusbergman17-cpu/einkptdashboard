@@ -2017,26 +2017,6 @@ app.get('/api/setup', async (req, res) => {
   });
 });
 
-// Version check endpoint for deployment verification
-app.get('/api/version', (req, res) => {
-  const prefs = preferences.get();
-  const setupAddresses = Boolean(prefs?.journey?.homeAddress && prefs?.journey?.workAddress);
-  const setupTransitAPI = Boolean(prefs?.apis?.transport?.apiKey);
-  const setupJourney = Boolean(prefs?.journey?.transitRoute?.mode1?.departure);
-
-  res.json({
-    version: '2.6.0',
-    deployment: 'v5.15-setup-flags',
-    timestamp: new Date().toISOString(),
-    setupFlagsEnabled: true,
-    setupStatus: {
-      addresses: setupAddresses,
-      transitAPI: setupTransitAPI,
-      journey: setupJourney
-    }
-  });
-});
-
 // Display content endpoint (compatible with custom firmware v5.9+)
 app.get('/api/display', async (req, res) => {
   const friendlyID = req.headers.id || req.headers['ID'];

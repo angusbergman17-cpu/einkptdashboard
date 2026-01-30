@@ -16,7 +16,7 @@
  * https://creativecommons.org/licenses/by-nc/4.0/
  */
 
-import { createCanvas, registerFont } from 'canvas';
+import { createCanvas, GlobalFonts } from '@napi-rs/canvas';
 import path from 'path';
 import { fileURLToPath } from 'url';
 

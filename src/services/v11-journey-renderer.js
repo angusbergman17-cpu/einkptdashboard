@@ -14,7 +14,7 @@
  * Licensed under CC BY-NC 4.0
  */
 
-import { createCanvas } from 'canvas';
+import { createCanvas, GlobalFonts } from '@napi-rs/canvas';
 
 // =============================================================================
 // BMP CONVERSION (1-bit monochrome for e-ink)

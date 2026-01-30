@@ -14,16 +14,17 @@ export default async function handler(req, res) {
   }
 
   res.json({
-    version: 'v2.5.0',
+    version: 'v3.0.0',
     date: new Date().toISOString().split('T')[0],
     system: {
-      version: '2.5.0',
-      name: 'Commute Compute'
+      version: '3.0.0',
+      name: 'Commute Compute System'
     },
     components: {
-      setupWizard: { version: 'v1.5.0' },
-      livedash: { version: 'v2.1.0' },
-      smartCommute: { version: 'v2.0.0' }
+      setupWizard: { version: 'v2.0.0' },
+      livedash: { version: 'v3.0.0' },
+      smartCommute: { version: 'v3.0.0' },
+      ccDash: { version: 'v13.0.0' }
     },
     environment: 'vercel-serverless'
   });
