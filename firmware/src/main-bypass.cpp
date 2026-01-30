@@ -133,12 +133,19 @@ bool fetchAndDrawZones() {
         return false;
     }
     
-    String payload = http.getString();
+    int contentLength = http.getSize();
+    Serial.printf("Response size: %d bytes\n", contentLength);
+    
+    // Stream directly into JSON parser to save memory
+    WiFiClient* stream = http.getStreamPtr();
+    
+    // ArduinoJson 7.x - use JsonDocument (auto-sizes, heap allocated)
+    JsonDocument doc;
+    DeserializationError err = deserializeJson(doc, *stream);
     http.end();
     
-    JsonDocument doc;
-    if (deserializeJson(doc, payload)) {
-        Serial.println("JSON parse failed");
+    if (err) {
+        Serial.printf("JSON parse failed: %s\n", err.c_str());
         return false;
     }
     
