@@ -18,7 +18,7 @@ These rules govern all development on Commute Compute. Compliance is mandatory.
 | **System** | Commute Compute System | Commute Compute / CC | General references |
 | **Repository** | CommuteCompute | — | GitHub repo (will be renamed) |
 | **Dashboard Design** | CCDashDesignV10 | CCDash | Dashboard specification (LOCKED) |
-| **Dashboard Renderer** | CCDashRenderer | CCDash | Renders CCDashDesignV10 to PNG/BMP |
+| **Dashboard Renderer** | CCDashRendererV13 | CCDash | Renders CCDashDesignV10 to PNG/BMP |
 | **Multi-Device Renderer** | CC LiveDash | LiveDash | LiveDash endpoint/service |
 | **Journey Engine** | SmartCommute | SmartCommute | KEEP as-is (journey + coffee calculations) |
 
@@ -43,8 +43,8 @@ The system was previously known as "Commute Compute". Update any remaining refer
 | commute-compute-config | cc-config |
 | V10 Dashboard | CCDashDesignV10 |
 | V10 spec | CCDashDesignV10 spec |
-| v13 renderer | CCDashRenderer |
-| zone-renderer-v13.js | ccdash-renderer.js |
+| v13 renderer | CCDashRendererV13 |
+| zone-renderer-v13.js | ccdash-renderer-v13.js |
 | LiveDash (standalone) | CC LiveDash |
 
 **Note:** "SmartCommute" is retained as the journey calculation engine name.

@@ -39,7 +39,7 @@ import { decodeConfigToken, encodeConfigToken, generateWebhookUrl } from './util
 import { renderDashboard, renderTestPattern } from "./services/image-renderer.js";
 import { renderZones, clearCache as clearZoneCache, ZONES } from "./services/zone-renderer.js";
 import { getChangedZones as getChangedZonesV12, renderSingleZone as renderSingleZoneV12, getZoneDefinition as getZoneDefV12, ZONES as ZONES_V12, clearCache as clearZoneCacheV12 } from "./services/zone-renderer-v12.js";
-import { getChangedZones as getChangedZonesCCDash, renderSingleZone as renderSingleZoneCCDash, getZoneDefinition as getZoneDefCCDash, getActiveZones as getActiveZonesCCDash, ZONES as ZONES_CCDASH, clearCache as clearZoneCacheCCDash, renderFullScreen as renderFullScreenCCDash } from "./services/ccdash-renderer.js";
+import { getChangedZones as getChangedZonesCCDash, renderSingleZone as renderSingleZoneCCDash, getZoneDefinition as getZoneDefCCDash, getActiveZones as getActiveZonesCCDash, ZONES as ZONES_CCDASH, clearCache as clearZoneCacheCCDash, renderFullScreen as renderFullScreenCCDash } from "./services/ccdash-renderer-v13.js";
 import SmartJourneyEngine from "./core/smart-journey-engine.js";
 
 // Setup error handlers early (before any async operations)

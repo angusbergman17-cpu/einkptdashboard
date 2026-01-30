@@ -195,7 +195,7 @@ einkptdashboard/
 │   │   ├── weather-bom.js        # BOM weather
 │   │   ├── zone-renderer.js      # Zone BMP generation
 │   │   ├── zone-renderer-v12.js
-│   │   └── ccdash-renderer.js
+│   │   └── ccdash-renderer-v13.js
 │   ├── utils/                    # Utilities
 │   │   ├── australian-cities.js  # City data
 │   │   ├── config.js             # App config
@@ -550,7 +550,7 @@ einkptdashboard/
 |----------|---------|--------|
 | `zone-renderer.js` | Original zone renderer | Active |
 | `zone-renderer-v12.js` | Improved zone handling | Active |
-| `ccdash-renderer.js` | Latest improvements | Active |
+| `ccdash-renderer-v13.js` | Latest improvements | Active |
 | `v11-dashboard-renderer.js` | Full dashboard | Active |
 | `v11-journey-renderer.js` | Journey-focused | Active |
 | `livedash.js` | Multi-device | Active |

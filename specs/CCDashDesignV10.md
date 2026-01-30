@@ -4,7 +4,7 @@
 **Last Updated:** 2026-01-30  
 **Display:** 800×480px e-ink (TRMNL device)  
 **Refresh:** 20-second partial refresh cycle
-**Renderer:** CCDashRenderer (ccdash-renderer.js)
+**Renderer:** CCDashRendererV13 (ccdash-renderer-v13.js)
 
 ---
 

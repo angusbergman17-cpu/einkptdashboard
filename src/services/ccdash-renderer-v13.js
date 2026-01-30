@@ -1,5 +1,5 @@
 /**
- * CCDashRenderer - Implements CCDashDesignV10 Specification
+ * CCDashRendererV13 - Implements CCDashDesignV10 Specification
  * Clean, modern PIDS-style display for e-ink
  * 
  * Layout (800x480):
