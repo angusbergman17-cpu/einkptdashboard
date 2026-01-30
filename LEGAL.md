@@ -14,17 +14,21 @@ All intellectual property rights in the Commute Compute System, including but no
 
 ## Trademarks
 
-The following are **unregistered trademarks (™)** of Angus Bergman:
+The following are **unregistered trademarks (™)** owned by **Angus Bergman**:
 
-| Mark | Type | Description |
-|------|------|-------------|
-| **Commute Compute™** | Word Mark | Primary brand name |
-| **Commute Compute System™** | Word Mark | Full system name |
-| **SmartCommute™** | Word Mark | Journey calculation engine |
-| **CCDash™** | Word Mark | Dashboard rendering system |
-| **CC LiveDash™** | Word Mark | Live display output system |
-| **CCFirm™** | Word Mark | Custom firmware family |
-| **CC Logo** | Design Mark | Arrow-integrated CC letterform |
+| Mark | Type | Owner | Copyright |
+|------|------|-------|-----------|
+| **Commute Compute™** | Word Mark | Angus Bergman | © 2026 Angus Bergman |
+| **Commute Compute System™** | Word Mark | Angus Bergman | © 2026 Angus Bergman |
+| **SmartCommute™** | Word Mark | Angus Bergman | © 2026 Angus Bergman |
+| **CCDash™** | Word Mark | Angus Bergman | © 2026 Angus Bergman |
+| **CC LiveDash™** | Word Mark | Angus Bergman | © 2026 Angus Bergman |
+| **CCFirm™** | Word Mark | Angus Bergman | © 2026 Angus Bergman |
+| **CC Logo** | Design Mark | Angus Bergman | © 2026 Angus Bergman |
+
+### Ownership Statement
+
+All trademarks, service marks, trade names, logos, and designs listed above are the exclusive intellectual property of **Angus Bergman**. All associated copyrights, including but not limited to source code, documentation, specifications, and brand assets relating to each trademark, are owned by Angus Bergman.
 
 ### Firmware Naming Convention
 

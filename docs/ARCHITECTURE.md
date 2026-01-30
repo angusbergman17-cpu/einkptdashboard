@@ -10,13 +10,16 @@
 
 ## Intellectual Property Notice
 
-The following are **unregistered trademarks (™)** of Angus Bergman:
-- **Commute Compute™** — Primary brand
-- **Commute Compute System™** — Full system
-- **SmartCommute™** — Journey engine
-- **CCDash™** — Dashboard renderer
-- **CC LiveDash™** — Multi-device output
-- **CCFirm™** — Custom firmware family (CCFirmTRMNL, CCFirmKindle, etc.)
+All trademarks and associated copyrights are owned by **Angus Bergman**:
+
+| Trademark | Copyright |
+|-----------|-----------|
+| Commute Compute™ | © 2026 Angus Bergman |
+| Commute Compute System™ | © 2026 Angus Bergman |
+| SmartCommute™ | © 2026 Angus Bergman |
+| CCDash™ | © 2026 Angus Bergman |
+| CC LiveDash™ | © 2026 Angus Bergman |
+| CCFirm™ | © 2026 Angus Bergman |
 
 See **LEGAL.md** for complete IP documentation.
 

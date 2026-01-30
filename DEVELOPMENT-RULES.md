@@ -1494,17 +1494,19 @@ All intellectual property rights are owned by **Angus Bergman**.
 
 ### 20.2 Trademarks
 
-The following are **unregistered trademarks (™)** of Angus Bergman:
+The following are **unregistered trademarks (™)** owned by **Angus Bergman**, with all associated copyrights:
 
-| Mark | Description |
-|------|-------------|
-| **Commute Compute™** | Primary brand name |
-| **Commute Compute System™** | Full system name |
-| **SmartCommute™** | Journey calculation engine |
-| **CCDash™** | Dashboard rendering system |
-| **CC LiveDash™** | Live display output system |
-| **CCFirm™** | Custom firmware family |
-| **CC Logo** | Arrow-integrated CC letterform |
+| Mark | Description | Copyright Owner |
+|------|-------------|-----------------|
+| **Commute Compute™** | Primary brand name | © 2026 Angus Bergman |
+| **Commute Compute System™** | Full system name | © 2026 Angus Bergman |
+| **SmartCommute™** | Journey calculation engine | © 2026 Angus Bergman |
+| **CCDash™** | Dashboard rendering system | © 2026 Angus Bergman |
+| **CC LiveDash™** | Live display output system | © 2026 Angus Bergman |
+| **CCFirm™** | Custom firmware family | © 2026 Angus Bergman |
+| **CC Logo** | Arrow-integrated CC letterform | © 2026 Angus Bergman |
+
+**Ownership:** All trademarks and associated intellectual property are exclusively owned by Angus Bergman.
 
 ### 20.3 Firmware Naming Convention
 
