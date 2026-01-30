@@ -65,6 +65,9 @@ export default async function handler(req, res) {
     const device = req.query.device || 'trmnl-og';
 
     // Transform config to SmartCommute preferences format
+    const apiKey = config.api?.key;
+    console.log(`[device] API key from token: ${apiKey ? apiKey.substring(0,8)+'...' : 'null'}`);
+    
     const preferences = {
       homeAddress: config.addresses?.home,
       homeLocation: config.locations?.home,
@@ -77,10 +80,13 @@ export default async function handler(req, res) {
       apiMode: config.apiMode,
       // API keys in format expected by SmartCommute engine
       api: {
-        key: config.api?.key
+        key: apiKey
       },
-      transitApiKey: config.api?.key
+      transitApiKey: apiKey
     };
+    
+    console.log(`[device] preferences.api.key: ${preferences.api?.key ? preferences.api.key.substring(0,8)+'...' : 'null'}`);
+    console.log(`[device] preferences.transitApiKey: ${preferences.transitApiKey ? preferences.transitApiKey.substring(0,8)+'...' : 'null'}`);
 
     // Initialize LiveDash with the config
     const liveDash = new LiveDash();
@@ -90,7 +96,7 @@ export default async function handler(req, res) {
     if (format === 'json') {
       // Return JSON data
       const journeyData = await liveDash.smartCommute.getJourneyRecommendation({});
-      return res.json({
+      const result = {
         status: 'ok',
         config: {
           home: config.addresses?.home,
@@ -98,7 +104,20 @@ export default async function handler(req, res) {
           arrivalTime: config.journey?.arrivalTime
         },
         journey: journeyData
-      });
+      };
+      
+      // Include debug info if requested
+      if (req.query.debug === '1') {
+        result.debug = {
+          hasApiKey: !!apiKey,
+          apiKeyPrefix: apiKey ? apiKey.substring(0,8) : null,
+          fallbackMode: liveDash.smartCommute.fallbackMode,
+          state: liveDash.smartCommute.state,
+          hasTransitKey: !!liveDash.smartCommute.apiKeys?.transitKey
+        };
+      }
+      
+      return res.json(result);
     }
 
     // Default: return dashboard image
