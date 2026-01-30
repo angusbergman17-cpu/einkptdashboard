@@ -33,7 +33,7 @@
 // VERSION & CONFIG
 // ============================================================================
 
-#define FIRMWARE_VERSION "7.0.0"
+#define FIRMWARE_VERSION "7.0.1"
 
 // Buffer size - must be >= 40KB for legs zone (31KB)
 #define ZONE_BUFFER_SIZE 45000
@@ -175,21 +175,27 @@ void setup() {
     bbep.setPanelType(EP75_800x480);
     bbep.setRotation(0);
     pinMode(PIN_INTERRUPT, INPUT_PULLUP);
+    delay(100);  // Let display settle
     Serial.println("✓ Display initialized");
     
     // Draw boot screen - THE ONLY FULL-SCREEN DRAW BEFORE ZONE RENDERING
     Serial.println("→ Drawing boot screen...");
+    Serial.println("  → fillScreen...");
     bbep.fillScreen(BBEP_WHITE);
+    Serial.println("  → setFont...");
     bbep.setFont(FONT_8x8);  // FONT_8x8 ONLY per Section 5.4
+    Serial.println("  → setTextColor...");
     bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
     
     // "COMMUTE COMPUTE" centered
+    Serial.println("  → drawing text...");
     bbep.setCursor(310, 235);
     bbep.print("COMMUTE COMPUTE");
     
     // Version below
     bbep.setCursor(370, 255);
-    bbep.printf("v%s", FIRMWARE_VERSION);
+    bbep.print("v");
+    bbep.print(FIRMWARE_VERSION);
     
     // Do the ONE AND ONLY full refresh before zone rendering
     bbep.refresh(REFRESH_FULL, true);
@@ -362,7 +368,12 @@ void loop() {
 // ============================================================================
 
 void loadSettings() {
-    preferences.begin("ccfirm", true);  // Read-only
+    // Open preferences - create if doesn't exist
+    if (!preferences.begin("ccfirm", false)) {  // Read-write mode to create
+        Serial.println("→ Creating preferences namespace...");
+        preferences.end();
+        preferences.begin("ccfirm", false);
+    }
     
     String url = preferences.getString("serverUrl", "");
     if (url.length() > 0) {
