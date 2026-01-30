@@ -10,7 +10,8 @@
 // Direct WiFi credentials (WiFiManager crashes on ESP32-C3)
 #define WIFI_SSID "Optus_FA6C6E"
 #define WIFI_PASS "gular43572ch"
-#include <ArduinoJson.h>
+// ArduinoJson REMOVED - causes ESP32-C3 stack corruption
+// Using manual JSON parsing instead
 #include <bb_epaper.h>
 #include "base64.hpp"
 #include "soc/soc.h"
@@ -62,6 +63,38 @@ Zone zones[MAX_ZONES];
 int zoneCount = 0;
 uint8_t* zoneBmpBuffer = nullptr;
 char* zoneDataBuffers[MAX_ZONES] = {nullptr};
+
+// Simple JSON parsing helpers (ArduinoJson causes ESP32-C3 stack corruption)
+String jsonGetString(const String& json, const char* key) {
+    String search = String("\"") + key + "\":\"";
+    int start = json.indexOf(search);
+    if (start < 0) return "";
+    start += search.length();
+    int end = json.indexOf("\"", start);
+    if (end < 0) return "";
+    return json.substring(start, end);
+}
+
+int jsonGetInt(const String& json, const char* key) {
+    String search = String("\"") + key + "\":";
+    int start = json.indexOf(search);
+    if (start < 0) return 0;
+    start += search.length();
+    // Skip whitespace
+    while (start < json.length() && (json[start] == ' ' || json[start] == '\t')) start++;
+    int end = start;
+    while (end < json.length() && (isdigit(json[end]) || json[end] == '-')) end++;
+    return json.substring(start, end).toInt();
+}
+
+bool jsonGetBool(const String& json, const char* key) {
+    String search = String("\"") + key + "\":";
+    int start = json.indexOf(search);
+    if (start < 0) return false;
+    start += search.length();
+    while (start < json.length() && json[start] == ' ') start++;
+    return json.substring(start, start + 4) == "true";
+}
 
 // Function declarations
 void initDisplay();
@@ -274,17 +307,17 @@ void showPairingScreen() {
 }
 
 bool pollPairingServer() {
-    WiFiClientSecure* client = new WiFiClientSecure();
-    client->setInsecure();
+    // Use stack-allocated client like working trmnl-direct code
+    WiFiClientSecure client;
+    client.setInsecure();
     HTTPClient http;
     
     String url = String(DEFAULT_SERVER) + "/api/pair/" + String(pairingCode);
     Serial.printf("Polling: %s\n", url.c_str());
     
     http.setTimeout(10000);
-    if (!http.begin(*client, url)) {
+    if (!http.begin(client, url)) {
         Serial.println("HTTP begin failed");
-        delete client;
         return false;
     }
     
@@ -292,36 +325,25 @@ bool pollPairingServer() {
     if (code != 200) {
         Serial.printf("HTTP error: %d\n", code);
         http.end();
-        delete client;
         return false;
     }
     
     String payload = http.getString();
     http.end();
-    delete client;
     
-    // Use heap-allocated JSON document to avoid stack overflow on ESP32-C3
-    JsonDocument* doc = new JsonDocument();
-    if (deserializeJson(*doc, payload)) {
-        Serial.println("JSON parse error");
-        delete doc;
-        return false;
-    }
+    // Simple JSON parsing without ArduinoJson
+    String status = jsonGetString(payload, "status");
+    Serial.printf("Pairing status: %s\n", status.c_str());
     
-    const char* status = (*doc)["status"] | "unknown";
-    Serial.printf("Pairing status: %s\n", status);
-    
-    if (strcmp(status, "paired") == 0) {
-        const char* url = (*doc)["webhookUrl"] | "";
-        if (strlen(url) > 0) {
-            strncpy(webhookUrl, url, sizeof(webhookUrl) - 1);
+    if (status == "paired") {
+        String webhook = jsonGetString(payload, "webhookUrl");
+        if (webhook.length() > 0) {
+            strncpy(webhookUrl, webhook.c_str(), sizeof(webhookUrl) - 1);
             Serial.printf("Paired! Webhook: %s\n", webhookUrl);
-            delete doc;
             return true;
         }
     }
     
-    delete doc;
     return false;
 }
 
@@ -431,8 +453,9 @@ unsigned long getBackoffDelay() {
 bool fetchZoneUpdates(bool forceAll) {
     if (strlen(webhookUrl) == 0) return false;
     
-    WiFiClientSecure* client = new WiFiClientSecure();
-    client->setInsecure();
+    // Use stack-allocated client like working trmnl-direct code
+    WiFiClientSecure client;
+    client.setInsecure();
     HTTPClient http;
     
     // Extract base URL from webhook URL for zones API
@@ -448,8 +471,7 @@ bool fetchZoneUpdates(bool forceAll) {
     Serial.printf("Fetch: %s\n", url.c_str());
     http.setTimeout(30000);
     
-    if (!http.begin(*client, url)) {
-        delete client;
+    if (!http.begin(client, url)) {
         return false;
     }
     
@@ -458,45 +480,66 @@ bool fetchZoneUpdates(bool forceAll) {
     
     if (code != 200) {
         http.end();
-        delete client;
         return false;
     }
     
     String payload = http.getString();
     http.end();
-    delete client;
     
-    // Use heap-allocated JSON document to avoid stack overflow on ESP32-C3
-    // Zone data can be 50KB+ with base64 BMPs - stack is only ~8KB
-    JsonDocument* doc = new JsonDocument();
-    if (deserializeJson(*doc, payload)) {
-        delete doc;
-        return false;
-    }
+    // Manual JSON parsing - find zones array
+    // Format: {"zones":[{...},{...}]}
+    int zonesStart = payload.indexOf("\"zones\":[");
+    if (zonesStart < 0) return false;
+    zonesStart += 9; // Skip past "zones":[
     
     zoneCount = 0;
-    JsonArray zonesArr = (*doc)["zones"].as<JsonArray>();
+    int pos = zonesStart;
     
-    for (JsonObject z : zonesArr) {
-        if (zoneCount >= MAX_ZONES) break;
+    while (pos < payload.length() && zoneCount < MAX_ZONES) {
+        // Find start of zone object
+        int objStart = payload.indexOf("{", pos);
+        if (objStart < 0) break;
+        
+        // Find matching closing brace (handle nested strings with escaped chars)
+        int braceCount = 1;
+        int objEnd = objStart + 1;
+        bool inString = false;
+        while (objEnd < payload.length() && braceCount > 0) {
+            char c = payload[objEnd];
+            if (c == '\\' && inString) {
+                objEnd++; // Skip escaped char
+            } else if (c == '"') {
+                inString = !inString;
+            } else if (!inString) {
+                if (c == '{') braceCount++;
+                else if (c == '}') braceCount--;
+            }
+            objEnd++;
+        }
+        
+        if (braceCount != 0) break;
+        
+        // Extract zone object
+        String zoneJson = payload.substring(objStart, objEnd);
         
         Zone& zone = zones[zoneCount];
-        const char* id = z["id"] | "unknown";
-        strncpy(zone.id, id, ZONE_ID_MAX_LEN - 1);
+        String id = jsonGetString(zoneJson, "id");
+        strncpy(zone.id, id.c_str(), ZONE_ID_MAX_LEN - 1);
+        zone.id[ZONE_ID_MAX_LEN - 1] = '\0';
         
-        zone.x = z["x"] | 0;
-        zone.y = z["y"] | 0;
-        zone.w = z["w"] | 0;
-        zone.h = z["h"] | 0;
-        zone.changed = z["changed"] | false;
+        zone.x = jsonGetInt(zoneJson, "x");
+        zone.y = jsonGetInt(zoneJson, "y");
+        zone.w = jsonGetInt(zoneJson, "w");
+        zone.h = jsonGetInt(zoneJson, "h");
+        zone.changed = jsonGetBool(zoneJson, "changed");
         
-        const char* data = z["data"] | (const char*)nullptr;
-        if (data && zoneDataBuffers[zoneCount]) {
-            size_t dataLen = strlen(data);
-            if (dataLen < ZONE_DATA_MAX_LEN) {
-                strcpy(zoneDataBuffers[zoneCount], data);
+        // Extract data field (base64 BMP)
+        String data = jsonGetString(zoneJson, "data");
+        if (data.length() > 0 && zoneDataBuffers[zoneCount]) {
+            if (data.length() < ZONE_DATA_MAX_LEN) {
+                strcpy(zoneDataBuffers[zoneCount], data.c_str());
                 zone.data = zoneDataBuffers[zoneCount];
-                zone.dataLen = dataLen;
+                zone.dataLen = data.length();
             } else {
                 zone.data = nullptr;
             }
@@ -505,10 +548,16 @@ bool fetchZoneUpdates(bool forceAll) {
         }
         
         zoneCount++;
+        pos = objEnd;
+        
+        // Check for end of array
+        if (payload.indexOf("]", pos) < payload.indexOf("{", pos) || payload.indexOf("{", pos) < 0) {
+            break;
+        }
     }
     
-    delete doc;
-    return true;
+    Serial.printf("Parsed %d zones\n", zoneCount);
+    return zoneCount > 0;
 }
 
 bool decodeAndDrawZone(Zone& zone) {
