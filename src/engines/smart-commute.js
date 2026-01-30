@@ -28,6 +28,7 @@
  */
 
 import SmartRouteRecommender from '../services/smart-route-recommender.js';
+import * as ptvApi from '../services/ptv-api.js';
 import CoffeeDecision from '../core/coffee-decision.js';
 
 // =============================================================================
@@ -515,8 +516,52 @@ export class SmartCommute {
    * Fetch live transit data from state API
    */
   async fetchLiveTransitData() {
-    // State-specific API calls would go here
-    // For now, throw to trigger fallback
+    // State-specific API calls
+    if (this.state === 'VIC') {
+      // Use PTV API client for Victoria
+      try {
+        // Get nearby stops from preferences or use defaults
+        const trainStopId = this.preferences.trainStopId || 1071; // South Yarra default
+        const tramStopId = this.preferences.tramStopId || 2500;   // Chapel St default
+        
+        const [trains, trams, buses] = await Promise.all([
+          ptvApi.getDepartures(trainStopId, 0), // 0 = train
+          ptvApi.getDepartures(tramStopId, 1),  // 1 = tram
+          Promise.resolve([])                     // 2 = bus (skip for now)
+        ]);
+        
+        return {
+          trains: trains.map(t => ({
+            minutes: t.minutes,
+            destination: t.destination,
+            platform: t.platform,
+            isScheduled: !t.isLive,
+            isDelayed: t.isDelayed,
+            delayMinutes: t.delayMinutes,
+            source: t.isLive ? 'live' : 'scheduled'
+          })),
+          trams: trams.map(t => ({
+            minutes: t.minutes,
+            destination: t.destination,
+            isScheduled: !t.isLive,
+            source: t.isLive ? 'live' : 'scheduled'
+          })),
+          buses: buses.map(b => ({
+            minutes: b.minutes,
+            destination: b.destination,
+            isScheduled: !b.isLive,
+            source: b.isLive ? 'live' : 'scheduled'
+          })),
+          source: 'ptv-api',
+          timestamp: new Date().toISOString()
+        };
+      } catch (error) {
+        console.log(`⚠️ PTV API error: ${error.message}`);
+        throw error; // Let caller handle fallback
+      }
+    }
+    
+    // Other states - not yet implemented
     throw new Error('Live API not implemented for ' + this.state);
   }
 
@@ -556,12 +601,35 @@ export class SmartCommute {
   }
 
   /**
-   * Fetch weather from BOM API
+   * Fetch weather from Open-Meteo API (via ptv-api module)
    */
   async fetchBomWeather(location) {
-    // BOM API implementation would go here
-    // For now, return fallback
-    return this.getFallbackWeather();
+    // Use Open-Meteo (free, no key) via ptv-api client
+    try {
+      const lat = location?.lat || this.preferences.homeLocation?.lat || -37.8136;
+      const lon = location?.lon || this.preferences.homeLocation?.lon || 144.9631;
+      
+      const weather = await ptvApi.getWeather(lat, lon);
+      
+      // Map weather code to icon
+      const iconMap = {
+        'Clear': '☀️', 'Mostly Clear': '🌤️', 'Partly Cloudy': '⛅', 'Cloudy': '☁️',
+        'Foggy': '🌫️', 'Drizzle': '🌧️', 'Rain': '🌧️', 'Heavy Rain': '🌧️',
+        'Snow': '❄️', 'Heavy Snow': '❄️', 'Showers': '🌦️', 'Heavy Showers': '🌧️',
+        'Storm': '⛈️', 'Unknown': '❓'
+      };
+      
+      return {
+        temp: weather.temp,
+        condition: weather.condition,
+        icon: iconMap[weather.condition] || '❓',
+        umbrella: weather.umbrella,
+        source: weather.error ? 'fallback' : 'open-meteo'
+      };
+    } catch (error) {
+      console.log(`⚠️ Weather fetch failed: ${error.message}`);
+      return this.getFallbackWeather();
+    }
   }
 
   /**

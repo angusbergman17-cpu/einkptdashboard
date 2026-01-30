@@ -74,7 +74,12 @@ export default async function handler(req, res) {
       targetArrival: config.journey?.arrivalTime,
       preferCoffee: config.journey?.coffeeEnabled,
       preferredRoute: config.journey?.transitRoute,
-      apiMode: config.apiMode
+      apiMode: config.apiMode,
+      // API keys in format expected by SmartCommute engine
+      api: {
+        key: config.api?.key
+      },
+      transitApiKey: config.api?.key
     };
 
     // Initialize LiveDash with the config
