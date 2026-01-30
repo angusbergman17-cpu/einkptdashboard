@@ -22,6 +22,7 @@
 11. [SmartCommute Engine](#11-smartcommute-engine) *(New in v2.1)*
 12. [LiveDash Multi-Device Renderer](#12-livedash-multi-device-renderer) *(New in v2.1)*
 13. [CoffeeDecision Patterns](#13-coffeedecision-patterns) *(New in v2.1)*
+14. [Setup Wizard & Free-Tier Architecture](#14-setup-wizard--free-tier-architecture) *(New in v2.2)*
 
 ---
 
@@ -575,14 +576,87 @@ if (interchange.hasCafe &&
 
 ---
 
-## References
+## 14. Setup Wizard & Free-Tier Architecture
 
-- [DEVELOPMENT-RULES.md](../DEVELOPMENT-RULES.md) — All development rules (v1.4)
-- [specs/DASHBOARD-SPEC-V10.md](../specs/DASHBOARD-SPEC-V10.md) — Dashboard specification (LOCKED)
-- [PROJECT-VISION.md](PROJECT-VISION.md) — Project goals and roadmap
-- [CHANGELOG.md](CHANGELOG.md) — Version history
+*Added in v2.2 (January 2026)*
+
+### 14.1 Overview
+
+The Setup Wizard enables zero-config deployment by encoding all user preferences into a webhook URL token. No server-side storage required — works perfectly on Vercel serverless.
+
+### 14.2 Free-Tier Principle
+
+**The entire system MUST be usable for free by any user.**
+
+| Service | Status | Cost |
+|---------|--------|------|
+| Vercel Hosting | Required | FREE |
+| OpenStreetMap Nominatim | Fallback geocoding | FREE |
+| Transport Victoria OpenData | Required | FREE (registration) |
+| BOM Weather | Required | FREE |
+| Google Places | Optional | Paid (skippable) |
+
+### 14.3 Setup-Time Caching
+
+All location data is geocoded ONCE during setup, then cached in the webhook URL:
+
+```
+SETUP (one-time)           RUNTIME (zero API calls)
+────────────────           ───────────────────────
+Geocode addresses    →     URL token contains:
+Fetch cafe hours     →     • lat/lon coordinates
+Encode in URL token  →     • cafe business hours
+                           • all preferences
+```
+
+### 14.4 API Mode Toggle
+
+| Mode | Runtime Calls | Cost |
+|------|---------------|------|
+| **Free Mode** (default) | None | $0 |
+| **Live Mode** | Google Places | $$ |
+
+### 14.5 Vercel Serverless Endpoints
+
+| Endpoint | Purpose |
+|----------|---------|
+| `/api/admin/setup-complete` | Validate setup data |
+| `/api/admin/generate-webhook` | Generate config token URL |
+| `/api/cafe-details` | One-time cafe data fetch |
+| `/api/address-search` | Geocoding (Google/OSM fallback) |
+
+### 14.6 Config Token Structure
+
+```javascript
+{
+  "a": {},       // addresses (text)
+  "l": {},       // locations (lat/lon - CACHED)
+  "s": "VIC",    // state
+  "t": "09:00",  // arrival time
+  "c": true,     // coffee enabled
+  "k": "",       // transit API key
+  "cf": {},      // cafe data (CACHED)
+  "m": "cached"  // API mode
+}
+```
+
+### 14.7 Related Documentation
+
+- [Setup Wizard Architecture](setup/SETUP-WIZARD-ARCHITECTURE.md) — Full technical details
+- [DEVELOPMENT-RULES.md Section 17.3](../DEVELOPMENT-RULES.md) — Free-tier rules
+- [Appendix E](../DEVELOPMENT-RULES.md) — Setup troubleshooting
 
 ---
 
-**Document Version:** 2.1  
+## References
+
+- [DEVELOPMENT-RULES.md](../DEVELOPMENT-RULES.md) — All development rules (v1.6)
+- [specs/DASHBOARD-SPEC-V10.md](../specs/DASHBOARD-SPEC-V10.md) — Dashboard specification (LOCKED)
+- [PROJECT-VISION.md](PROJECT-VISION.md) — Project goals and roadmap
+- [CHANGELOG.md](CHANGELOG.md) — Version history
+- [Setup Wizard Architecture](setup/SETUP-WIZARD-ARCHITECTURE.md) — Setup system details
+
+---
+
+**Document Version:** 2.2  
 **Copyright (c) 2025-2026 Angus Bergman — CC BY-NC 4.0**

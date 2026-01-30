@@ -1684,9 +1684,72 @@ Before ANY zone-renderer.js deployment:
 
 ---
 
-**Document Version:** 1.5  
+## 📎 Appendix E: Setup Wizard Troubleshooting
+
+### E.1 Common Errors
+
+| Error Message | Cause | Solution |
+|---------------|-------|----------|
+| `Error at [parsing response JSON]` | Endpoint returned HTML not JSON | Endpoint doesn't exist on Vercel — use `/api/` paths |
+| `Error at [fetching setup/complete]` | Network/CORS error | Check endpoint URL, verify Vercel deployment |
+| `The string did not match expected pattern` | iOS Safari form validation | Add `inputmode="text"` to inputs |
+| `Page not found` on API call | Express routes on Vercel | Use `/api/admin/*` not `/admin/*` |
+| Setup works desktop, fails mobile | Relative URL issues | Use `window.location.origin + path` |
+
+### E.2 Vercel Serverless Path Mapping
+
+Express routes do NOT work on Vercel. Files in `/api/` folder become endpoints:
+
+| File Path | Endpoint |
+|-----------|----------|
+| `/api/admin/setup-complete.js` | `POST /api/admin/setup-complete` |
+| `/api/admin/generate-webhook.js` | `POST /api/admin/generate-webhook` |
+| `/api/cafe-details.js` | `POST /api/cafe-details` |
+| `/api/address-search.js` | `GET /api/address-search` |
+
+### E.3 iOS Safari Required Fixes
+
+```html
+<!-- All text inputs need these attributes -->
+<input type="text" autocomplete="off" inputmode="text">
+
+<!-- Buttons need formnovalidate -->
+<button type="button" formnovalidate>Complete Setup</button>
+
+<!-- Forms need novalidate -->
+<form novalidate onsubmit="return false;">
+```
+
+### E.4 Debug Commands
+
+```bash
+# Test setup-complete endpoint
+curl -X POST https://yoursite.vercel.app/api/admin/setup-complete \
+  -H "Content-Type: application/json" \
+  -d '{"addresses":{},"authority":"VIC","arrivalTime":"09:00"}'
+
+# Test generate-webhook endpoint  
+curl -X POST https://yoursite.vercel.app/api/admin/generate-webhook \
+  -H "Content-Type: application/json" \
+  -d '{"config":{"state":"VIC","apiMode":"cached"}}'
+
+# Verify response is JSON (not HTML)
+curl -s ... | head -c 1  # Should be "{" not "<"
+```
+
+### E.5 Reference Documentation
+
+| Topic | Document |
+|-------|----------|
+| Full setup architecture | `docs/setup/SETUP-WIZARD-ARCHITECTURE.md` |
+| Free-tier rules | DEVELOPMENT-RULES.md Section 17.3 |
+| API endpoint details | `docs/api/` |
+
+---
+
+**Document Version:** 1.6  
 **Maintained By:** Angus Bergman  
-**Last Updated:** 2026-01-29
+**Last Updated:** 2026-01-30
 
 ---
 
