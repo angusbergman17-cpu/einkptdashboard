@@ -316,6 +316,8 @@ export class SmartCommute {
   detectApiKeys(prefs) {
     const keys = {};
     
+    console.log(`[SmartCommute] detectApiKeys: prefs.api?.key=${prefs.api?.key ? prefs.api.key.substring(0,8)+'...' : 'null'}, prefs.transitApiKey=${prefs.transitApiKey ? prefs.transitApiKey.substring(0,8)+'...' : 'null'}`);
+    
     // Transit API keys
     keys.transitKey = prefs.api?.key || prefs.transitApiKey || 
                       process.env.ODATA_API_KEY || process.env.TRANSIT_API_KEY;
@@ -529,6 +531,7 @@ export class SmartCommute {
         const tramStopId = this.preferences.tramStopId || 2500;   // Chapel St default
         
         // Pass API key directly to each call (Zero-Config: no env vars)
+        console.log(`[SmartCommute] fetchLiveTransitData: transitKey=${this.apiKeys.transitKey ? this.apiKeys.transitKey.substring(0,8)+'...' : 'null'}`);
         const apiOptions = { apiKey: this.apiKeys.transitKey };
         
         const [trains, trams, buses] = await Promise.all([

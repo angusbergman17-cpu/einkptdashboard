@@ -50,10 +50,16 @@ function getDevId() {
 function signUrl(path) {
   const devId = getDevId();
   const apiKey = getApiKey();
-  if (!devId || !apiKey) return null;
+  console.log(`[ptv-api] signUrl: devId=${devId ? devId.substring(0,8)+'...' : 'null'}, hasKey=${!!apiKey}`);
+  if (!devId || !apiKey) {
+    console.log('[ptv-api] No API credentials - returning null');
+    return null;
+  }
   const fullPath = path + (path.includes('?') ? '&' : '?') + `devid=${devId}`;
   const signature = crypto.createHmac('sha1', apiKey).update(fullPath).digest('hex').toUpperCase();
-  return `${API_BASE}${fullPath}&signature=${signature}`;
+  const url = `${API_BASE}${fullPath}&signature=${signature}`;
+  console.log(`[ptv-api] Signed URL generated for ${path.split('?')[0]}`);
+  return url;
 }
 
 /**
@@ -71,8 +77,10 @@ function getMelbourneTime() {
  * @returns {Array} - Array of departure objects with minutes, destination, platform
  */
 export async function getDepartures(stopId, routeType, options = {}) {
+  console.log(`[ptv-api] getDepartures: stopId=${stopId}, routeType=${routeType}, hasApiKey=${!!options.apiKey}`);
   // Allow API key to be passed directly (Zero-Config compliance)
   if (options.apiKey) {
+    console.log(`[ptv-api] Setting API key from options: ${options.apiKey.substring(0,8)}...`);
     setApiKey(options.apiKey, options.devId);
   }
   const url = signUrl(`/v3/departures/route_type/${routeType}/stop/${stopId}?max_results=5`);
