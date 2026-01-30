@@ -2,34 +2,97 @@
 
 ## Primary Palette
 
-| Name | Hex | Tailwind | Usage |
-|------|-----|----------|-------|
-| **CC Green** | `#10b981` | `emerald-500` | Primary accent, "COMPUTE" text, inner C |
-| **CC White** | `#f1f5f9` | `slate-100` | Text, "COMMUTE" text, outer C |
-| **CC Background** | `#0f172a` | `slate-900` | Dark backgrounds |
+| Name | Hex | CSS Variable | RGB | Usage |
+|------|-----|--------------|-----|-------|
+| **CC Navy** | `#1a2744` | `--cc-navy` | 26, 39, 68 | Backgrounds, containers |
+| **CC Teal** | `#4fb28e` | `--cc-teal` | 79, 178, 142 | Buttons, links, accents |
+| **CC Teal Dark** | `#2d6b5a` | `--cc-teal-dark` | 45, 107, 90 | Hover states, shadows |
+| **CC White** | `#ffffff` | `--cc-white` | 255, 255, 255 | Text, highlights |
+| **CC Grey** | `#a8b0bc` | `--cc-grey` | 168, 176, 188 | Secondary text, icons |
 
 ## Extended Palette
 
-| Name | Hex | Tailwind | Usage |
-|------|-----|----------|-------|
-| CC Green Light | `#34d399` | `emerald-400` | Hover states |
-| CC Green Dark | `#059669` | `emerald-600` | Active states |
-| CC Slate | `#94a3b8` | `slate-400` | Secondary text |
-| CC Slate Light | `#cbd5e1` | `slate-300` | Borders |
+| Name | Hex | CSS Variable | Usage |
+|------|-----|--------------|-------|
+| CC Teal Light | `#6ec9a8` | `--cc-teal-light` | Hover accents |
+| CC Navy Light | `#2a3d5c` | `--cc-navy-light` | Lighter backgrounds |
+| CC Navy Dark | `#0f1a2e` | `--cc-navy-dark` | Darker backgrounds |
 
-## E-ink Display Colors
+## CSS Variables (Copy & Paste)
 
-For 1-bit e-ink rendering:
-- **Black**: `#000000` (text, icons)
-- **White**: `#FFFFFF` (background)
+```css
+:root {
+  /* Primary Palette */
+  --cc-navy: #1a2744;
+  --cc-teal: #4fb28e;
+  --cc-teal-dark: #2d6b5a;
+  --cc-white: #ffffff;
+  --cc-grey: #a8b0bc;
+  
+  /* RGB Versions (for rgba() usage) */
+  --cc-navy-rgb: 26, 39, 68;
+  --cc-teal-rgb: 79, 178, 142;
+  
+  /* Extended Palette */
+  --cc-teal-light: #6ec9a8;
+  --cc-navy-light: #2a3d5c;
+  --cc-navy-dark: #0f1a2e;
+}
 
-No grayscale or intermediate tones per DEVELOPMENT-RULES Section 9.1.
+/* Example Usage */
+.button {
+  background: var(--cc-teal);
+  color: var(--cc-white);
+}
+
+.button:hover {
+  background: var(--cc-teal-dark);
+}
+
+.overlay {
+  background: rgba(var(--cc-navy-rgb), 0.9);
+}
+```
 
 ## Typography
 
-- **Primary Font**: `system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`
-- **Logo Font**: Sans-serif, weight 600 (COMMUTE) / 700 (COMPUTE)
-- **Letter Spacing**: 8px for logo text
+| Element | Font | Weight | Color | Letter-spacing |
+|---------|------|--------|-------|----------------|
+| **COMMUTE** | Montserrat | 500 (Medium) | `#4fb28e` | 0.25em |
+| **COMPUTE** | Montserrat | 700 (Bold) | `#ffffff` | 0.25em |
+
+**Font Stack:** `'Montserrat', system-ui, -apple-system, sans-serif`
+
+## E-Ink Display Assets (1-bit BMP)
+
+Pure black and white bitmap files for e-ink displays (TRMNL, Kindle, Waveshare).
+All files are **1-bit depth** — no grayscale, no dithering.
+
+### Mark Only (Icon)
+
+| Filename | Size | Notes |
+|----------|------|-------|
+| `cc_mark_64x64.bmp` | 574 bytes | Tiny icon, dashboard headers |
+| `cc_mark_128x128.bmp` | 2.1 KB | Small icon |
+| `cc_mark_256x256.bmp` | 8.3 KB | Medium icon |
+| `cc_mark_400x400.bmp` | 20.9 KB | Good for TRMNL |
+
+### Full Logo with Wordmark
+
+| Filename | Size | Notes |
+|----------|------|-------|
+| `cc_logo_480x480.bmp` | 28.9 KB | Square format |
+| `cc_logo_800x480.bmp` | 48.1 KB | Landscape format |
+| `cc_logo_trmnl.bmp` | 48.1 KB | TRMNL optimized |
+
+All files have `_inverted` variants (white on black) for dark displays.
+
+### E-Ink Usage Notes
+
+- **TRMNL:** Use `cc_logo_trmnl.bmp` for splash screens
+- **Refresh Rate:** 1-bit renders faster than grayscale on most e-ink
+- **Inverted:** Use `_inverted` variants for dark-background displays
+- **Corner Icon:** 64×64 mark works well in dashboard headers
 
 ## Logo Usage
 
