@@ -969,7 +969,7 @@
                 <div id="wizard-step-2" class="wizard-step">
                     <h3 style="margin-bottom: 16px;">Step 2: Transit API (Optional)</h3>
                     <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">
-                        For real-time data, add your PTV API key. Skip to use timetable data.
+                        For real-time data, add your Transport Victoria OpenData API credentials. Skip to use timetable data.
                     </p>
                     
                     <div class="form-group">
@@ -988,12 +988,12 @@
                     
                     <div class="form-group">
                         <label class="form-label">Developer ID</label>
-                        <input type="text" id="w-devid" class="form-input" placeholder="Your PTV Developer ID">
+                        <input type="text" id="w-devid" class="form-input" placeholder="Your OpenData Developer ID">
                     </div>
                     
                     <div class="form-group">
                         <label class="form-label">API Key</label>
-                        <input type="text" id="w-apikey" class="form-input" placeholder="Your PTV API Key">
+                        <input type="text" id="w-apikey" class="form-input" placeholder="Your OpenData API Key">
                     </div>
                     
                     <div style="display: flex; gap: 12px; margin-top: 16px;">
@@ -1189,6 +1189,17 @@
         }
         
         // ==================== EMBEDDED WIZARD ====================
+        // XSS Sanitization (DEVELOPMENT-RULES Section 17.1)
+        function sanitizeInput(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#x27;');
+        }
+        
         let wizardStep = 1;
         
         function wizardNext(step) {
@@ -1231,11 +1242,12 @@
             status.innerHTML = '<p style="color: var(--accent);">Saving your configuration...</p>';
             
             try {
+                // Sanitize all user inputs (DEVELOPMENT-RULES Section 17.1)
                 const config = {
                     addresses: {
-                        home: document.getElementById('w-home').value.trim(),
-                        work: document.getElementById('w-work').value.trim(),
-                        cafe: document.getElementById('w-cafe').value.trim()
+                        home: sanitizeInput(document.getElementById('w-home').value.trim()),
+                        work: sanitizeInput(document.getElementById('w-work').value.trim()),
+                        cafe: sanitizeInput(document.getElementById('w-cafe').value.trim())
                     },
                     journey: {
                         arrivalTime: document.getElementById('w-arrival').value,
@@ -1243,8 +1255,8 @@
                     },
                     state: document.getElementById('w-state').value,
                     api: {
-                        devId: document.getElementById('w-devid').value.trim(),
-                        key: document.getElementById('w-apikey').value.trim()
+                        devId: sanitizeInput(document.getElementById('w-devid').value.trim()),
+                        key: sanitizeInput(document.getElementById('w-apikey').value.trim())
                     }
                 };
                 
