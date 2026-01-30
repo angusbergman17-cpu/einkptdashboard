@@ -31,7 +31,7 @@
 // CONFIGURATION
 // ============================================================================
 
-#define FIRMWARE_VERSION "6.2.1"
+#define FIRMWARE_VERSION "6.2.2"
 #define SCREEN_W 800
 #define SCREEN_H 480
 #define ZONE_BUFFER_SIZE 40000  // Needs to fit legs zone (~32KB)
@@ -316,18 +316,18 @@ void loop() {
                 Serial.println("→ STATE: Waiting for Setup (skipping check for now)");
                 showConfiguredScreen();  // Show "Setup Complete" instead
                 waitingScreenShown = true;
-                setupStartTime = millis();
+                
             }
             
             // Wait 3 seconds then proceed to dashboard
             // TODO: Replace with actual /api/setup-status check when endpoint exists
             if (millis() - setupStartTime >= 3000) {
-                Serial.println("✓ Setup complete - staying on this screen for testing");
-                Serial.println("  (Remove this block to proceed to dashboard)");
-                // Reset timer to stay on this screen
-                setupStartTime = millis();
-                // DEBUG: Stay here instead of crashing in STATE_FETCH_ZONES
-                // currentState = STATE_FETCH_ZONES;
+                
+                
+                
+                
+                
+                currentState = STATE_FETCH_ZONES;
             }
             
             delay(100);
