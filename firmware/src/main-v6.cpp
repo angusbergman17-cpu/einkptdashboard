@@ -25,6 +25,7 @@
 #include "esp_task_wdt.h"
 #include "../include/config.h"
 #include "../include/cc-logo-draw.h"
+#include "../include/prerendered-screens.h"
 
 // ============================================================================
 // CONFIGURATION
@@ -125,6 +126,7 @@ WiFiManagerParameter customServerUrl("server", "Server URL", "", 120);
 // ============================================================================
 
 void initDisplay();
+void displayPrerenderedScreen(const uint8_t* data, int width, int height);
 void showBootScreen();        // Stage 1: Large CC logo while booting
 void showWelcomeScreen();
 void showPairingScreen();
@@ -190,11 +192,24 @@ void setup() {
     // Initialize display (quick, non-blocking)
     initDisplay();
     
-    // Set initial state - start with boot screen (Stage 1)
-    currentState = STATE_BOOT;
+    // ========================================
+    // PRE-RENDERED SCREENS (hardcoded, instant)
+    // ========================================
     
-    Serial.println("✓ Setup complete");
-    Serial.println("→ Entering loop() - device ready");
+    // Screen 1: Boot screen with large CC logo
+    Serial.println("→ Displaying boot screen (pre-rendered)...");
+    displayPrerenderedScreen(SCREEN1_BOOT_DATA, SCREEN1_BOOT_WIDTH, SCREEN1_BOOT_HEIGHT);
+    delay(2500);  // Show for 2.5 seconds
+    
+    // Screen 2: WiFi Setup screen with instructions  
+    Serial.println("→ Displaying setup screen (pre-rendered)...");
+    displayPrerenderedScreen(SCREEN2_SETUP_DATA, SCREEN2_SETUP_WIDTH, SCREEN2_SETUP_HEIGHT);
+    
+    // Now proceed to WiFi init
+    currentState = STATE_WIFI_CONNECT;
+    
+    Serial.println("✓ Setup complete - screens displayed");
+    Serial.println("→ Entering loop() - starting WiFi");
     Serial.println();
 }
 
@@ -229,9 +244,9 @@ void loop() {
         
         // ----------------------------------------------------------------
         case STATE_WIFI_CONNECT: {
-            // Stage 2: WiFi Setup with smaller logo + instructions
-            Serial.println("→ STATE: WiFi Connect (Stage 2 - Setup Screen)");
-            showWiFiSetupScreen();
+            // WiFi Setup - screen already shown in setup(), just do WiFi init
+            Serial.println("→ STATE: WiFi Connect");
+            // Note: Setup screen (Screen 2) already displayed in setup()
             
             feedWatchdog();
             
@@ -514,6 +529,32 @@ void initDisplay() {
     // See DEVELOPMENT-RULES.md Section 5.4
     pinMode(PIN_INTERRUPT, INPUT_PULLUP);
     Serial.println("✓ Display initialized");
+}
+
+// ============================================================================
+// Display pre-rendered screen from PROGMEM (1-bit packed, 1=black)
+// ============================================================================
+void displayPrerenderedScreen(const uint8_t* data, int width, int height) {
+    bbep.fillScreen(BBEP_WHITE);
+    
+    int bytes_per_row = (width + 7) / 8;
+    
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            int byte_idx = y * bytes_per_row + (x / 8);
+            int bit_idx = 7 - (x % 8);  // MSB first
+            
+            uint8_t byte_val = pgm_read_byte(&data[byte_idx]);
+            
+            if (byte_val & (1 << bit_idx)) {
+                // Draw black pixel where bit=1
+                bbep.drawPixel(x, y, BBEP_BLACK);
+            }
+        }
+    }
+    
+    bbep.refresh(REFRESH_FULL, true);
+    lastFullRefresh = millis();
 }
 
 // ============================================================================
