@@ -366,7 +366,7 @@ User Request
 - [ ] All text readable at arm's length
 - [ ] No text overflow or clipping
 - [ ] Duration boxes aligned properly
-- [ ] Arrow connectors centered
+- [ ] Arrow connectors centred
 - [ ] Footer visible at bottom
 - [ ] Weather box proportioned correctly
 

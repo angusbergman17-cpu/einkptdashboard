@@ -61,7 +61,7 @@ The system was previously known as "Commute Compute". Update any remaining refer
 | 5 | [Custom Firmware Requirement](#-section-5-custom-firmware-requirement) | 🔴 CRITICAL | TRMNL hardware specs, firmware requirements, flashing |
 | 6 | [Compatible Kindle Devices](#-section-6-compatible-kindle-devices) | 🟠 HIGH | Supported models, jailbreak, kindle-dash setup |
 | 7 | [Spec Integrity](#-section-7-spec-integrity) | 🔴 CRITICAL | V10 immutability, zone boundaries |
-| 8 | [Design Specification (LOCKED)](#-section-8-design-specification-locked) | 🔴 CRITICAL | Display dimensions, layout, colors, icons, states |
+| 8 | [Design Specification (LOCKED)](#-section-8-design-specification-locked) | 🔴 CRITICAL | Display dimensions, layout, colours, icons, states |
 | 9 | [E-ink Constraints](#-section-9-e-ink-constraints) | 🟠 HIGH | 1-bit depth, partial refresh, no anti-aliasing |
 | 10 | [BMP Rendering Rules](#-section-10-bmp-rendering-rules) | 🟠 HIGH | Output format, memory constraints, zone refresh |
 | 11 | [API & Data Rules](#-section-11-api--data-rules) | 🟠 HIGH | GTFS-RT, caching, weather, Google Places |

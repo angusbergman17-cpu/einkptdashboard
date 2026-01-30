@@ -150,7 +150,7 @@ No central server, no shared infrastructure, no SaaS model. Each user deploys th
 - Unlimited scaling (each user pays their own hosting)
 
 ### Specification-Driven Development
-All UI and behavior is defined in locked specifications (V10 Dashboard Spec). Changes require explicit approval and version bumps. This prevents:
+All UI and behaviour is defined in locked specifications (V10 Dashboard Spec). Changes require explicit approval and version bumps. This prevents:
 - UI inconsistency
 - Scope creep
 - Breaking changes
@@ -163,7 +163,7 @@ All UI and behavior is defined in locked specifications (V10 Dashboard Spec). Ch
 ### E-ink Display Limitations
 | Constraint | Impact |
 |------------|--------|
-| 1-bit color | Black and white only, no grayscale |
+| 1-bit colour | Black and white only, no grayscale |
 | Slow refresh | 2-3 seconds full, 500ms partial |
 | Ghosting | Requires anti-ghosting patterns |
 | Power | Optimized for battery life (deep sleep) |

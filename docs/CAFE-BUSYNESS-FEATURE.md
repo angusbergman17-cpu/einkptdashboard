@@ -179,7 +179,7 @@ const busyDetector = new CafeBusyDetector();
 **Coffee Segment Display**: Shows busy indicator
 ```javascript
 ${seg.type === 'coffee' ? `Get Coffee ${seg.busyIcon || ''}` : ...}
-// Plus colored busy-ness text below
+// Plus coloured busy-ness text below
 ```
 
 **Summary Stats**: Added "Wait Time" column with busy icon
@@ -676,7 +676,7 @@ const apiKey = process.env.GOOGLE_PLACES_API_KEY;
 - Detects cafe busy-ness automatically
 - Adjusts coffee wait times dynamically (2-8 min)
 - Uses live data when available, falls back to peak detection
-- Visual indicators in admin UI with colors and icons
+- Visual indicators in admin UI with colours and icons
 - Ensures accurate route timing even during rushes
 
 **Data Sources**:
