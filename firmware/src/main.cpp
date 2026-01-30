@@ -486,11 +486,23 @@ bool fetchZoneUpdates(bool forceAll) {
     String payload = http.getString();
     http.end();
     
+    Serial.printf("Payload size: %d bytes\n", payload.length());
+    
     // Manual JSON parsing - find zones array
     // Format: {"zones":[{...},{...}]}
     int zonesStart = payload.indexOf("\"zones\":[");
-    if (zonesStart < 0) return false;
+    if (zonesStart < 0) {
+        Serial.println("ERROR: zones array not found in response");
+        Serial.printf("Response start: %.100s\n", payload.c_str());
+        return false;
+    }
     zonesStart += 9; // Skip past "zones":[
+    
+    // Check if zones array is empty
+    if (payload[zonesStart] == ']') {
+        Serial.println("Zones array is empty");
+        return false;
+    }
     
     zoneCount = 0;
     int pos = zonesStart;
@@ -533,8 +545,12 @@ bool fetchZoneUpdates(bool forceAll) {
         zone.h = jsonGetInt(zoneJson, "h");
         zone.changed = jsonGetBool(zoneJson, "changed");
         
+        Serial.printf("Zone %d: id=%s x=%d y=%d w=%d h=%d changed=%d\n", 
+                      zoneCount, zone.id, zone.x, zone.y, zone.w, zone.h, zone.changed);
+        
         // Extract data field (base64 BMP)
         String data = jsonGetString(zoneJson, "data");
+        Serial.printf("  Data length: %d\n", data.length());
         if (data.length() > 0 && zoneDataBuffers[zoneCount]) {
             if (data.length() < ZONE_DATA_MAX_LEN) {
                 strcpy(zoneDataBuffers[zoneCount], data.c_str());
