@@ -1,65 +1,42 @@
 /**
  * Transport Victoria OpenData API Client
- * Provides departures and weather data for the dashboard
  * 
- * Uses Transport Victoria OpenData API with KeyId header auth
+ * Uses Transport Victoria OpenData API with GTFS-RT format
+ * Per DEVELOPMENT-RULES Section 1.3 and 11.1:
+ * - Base URL: https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1
+ * - Auth: KeyId header (case-sensitive) with UUID format API key
+ * - Format: GTFS Realtime (Protobuf)
+ * 
  * Uses Open-Meteo for weather (free, no API key required)
  * 
  * Copyright (c) 2025-2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
  */
 
-import crypto from 'crypto';
-
 // Transport Victoria OpenData API Configuration
-// Per Development Rules Section 3 - Zero-Config: API keys come from user config, not env vars
-const API_BASE = 'https://api-opendata.ptv.vic.gov.au';
+// Per Development Rules Section 1.1 & 11.1 - GTFS-RT via OpenData
+const API_BASE = 'https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1';
 
 // Melbourne coordinates (default)
 const MELBOURNE_LAT = -37.8136;
 const MELBOURNE_LON = 144.9631;
 
-// Runtime API key storage (set via setApiKey())
+// Runtime API key storage (from user config token - Zero-Config compliant)
 let runtimeApiKey = null;
-let runtimeDevId = null;
 
 /**
  * Set API key at runtime (from user config token)
  * Per Development Rules Section 3: Zero-Config - users never edit env files
  */
-export function setApiKey(apiKey, devId = null) {
+export function setApiKey(apiKey) {
   runtimeApiKey = apiKey;
-  runtimeDevId = devId || apiKey; // Use same key as devId if not provided
 }
 
 /**
- * Get current API key (runtime takes precedence)
+ * Get current API key (runtime takes precedence, but per Section 3, should ONLY use runtime)
  */
 function getApiKey() {
-  return runtimeApiKey || process.env.ODATA_API_KEY || process.env.ODATA_TOKEN;
-}
-
-function getDevId() {
-  return runtimeDevId || process.env.ODATA_DEV_ID || getApiKey();
-}
-
-/**
- * Sign URL for Transport Victoria OpenData API authentication
- * Note: Legacy compatibility function using HMAC signing
- */
-function signUrl(path) {
-  const devId = getDevId();
-  const apiKey = getApiKey();
-  console.log(`[ptv-api] signUrl: devId=${devId ? devId.substring(0,8)+'...' : 'null'}, hasKey=${!!apiKey}`);
-  if (!devId || !apiKey) {
-    console.log('[ptv-api] No API credentials - returning null');
-    return null;
-  }
-  const fullPath = path + (path.includes('?') ? '&' : '?') + `devid=${devId}`;
-  const signature = crypto.createHmac('sha1', apiKey).update(fullPath).digest('hex').toUpperCase();
-  const url = `${API_BASE}${fullPath}&signature=${signature}`;
-  console.log(`[ptv-api] Signed URL generated for ${path.split('?')[0]}`);
-  return url;
+  return runtimeApiKey; // Zero-Config: NO fallback to process.env
 }
 
 /**
@@ -70,106 +47,187 @@ function getMelbourneTime() {
 }
 
 /**
- * Get departures for a stop
- * @param {number} stopId - PTV stop ID
- * @param {number} routeType - 0=train, 1=tram, 2=bus
- * @param {Object} options - Optional config { apiKey, devId }
- * @returns {Array} - Array of departure objects with minutes, destination, platform
+ * Fetch GTFS-RT feed from Transport Victoria OpenData API
+ * @param {string} mode - 'metro', 'tram', or 'bus'
+ * @param {string} feed - 'trip-updates', 'vehicle-positions', or 'service-alerts'
+ * @param {Object} options - { apiKey }
  */
-export async function getDepartures(stopId, routeType, options = {}) {
-  console.log(`[ptv-api] getDepartures: stopId=${stopId}, routeType=${routeType}, hasApiKey=${!!options.apiKey}`);
-  // Allow API key to be passed directly (Zero-Config compliance)
+async function fetchGtfsRt(mode, feed, options = {}) {
   if (options.apiKey) {
-    console.log(`[ptv-api] Setting API key from options: ${options.apiKey.substring(0,8)}...`);
-    setApiKey(options.apiKey, options.devId);
+    setApiKey(options.apiKey);
   }
-  const url = signUrl(`/v3/departures/route_type/${routeType}/stop/${stopId}?max_results=5`);
   
-  if (!url) {
-    // Mock data when no API keys configured
-    console.log('Transport API: Using mock data (no API keys)');
-    const now = getMelbourneTime();
-    return [
-      { minutes: 3, destination: 'City', platform: '1', scheduled: now.toISOString(), isLive: false },
-      { minutes: 8, destination: 'City', platform: '1', scheduled: now.toISOString(), isLive: false },
-      { minutes: 15, destination: 'City', platform: '1', scheduled: now.toISOString(), isLive: false }
-    ];
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    console.log('[ptv-api] No API key configured - returning empty');
+    return null;
   }
+  
+  const url = `${API_BASE}/${mode}/${feed}`;
+  console.log(`[ptv-api] Fetching: ${url}`);
   
   try {
-    console.log(`[ptv-api] Fetching departures: ${url.substring(0, 80)}...`);
-    const res = await fetch(url, { timeout: 10000 });
-    console.log(`[ptv-api] Response status: ${res.status}`);
-    if (!res.ok) {
-      const errorText = await res.text().catch(() => 'no body');
-      console.log(`[ptv-api] Error response: ${errorText.substring(0, 200)}`);
-      throw new Error(`HTTP ${res.status}: ${errorText.substring(0, 100)}`);
+    const response = await fetch(url, {
+      headers: {
+        'KeyId': apiKey  // Case-sensitive as per dev rules
+      },
+      timeout: 10000
+    });
+    
+    console.log(`[ptv-api] Response status: ${response.status}`);
+    
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => 'no body');
+      console.log(`[ptv-api] Error: ${errorText.substring(0, 200)}`);
+      throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 100)}`);
     }
-    const data = await res.json();
-    console.log(`[ptv-api] Got ${data.departures?.length || 0} departures`);
     
-    const now = new Date();
+    // GTFS-RT returns Protobuf - for now, check if JSON fallback available
+    const contentType = response.headers.get('content-type');
+    console.log(`[ptv-api] Content-Type: ${contentType}`);
     
-    return (data.departures || []).slice(0, 5).map(d => {
-      const scheduled = new Date(d.scheduled_departure_utc);
-      const estimated = d.estimated_departure_utc ? new Date(d.estimated_departure_utc) : scheduled;
-      const minutes = Math.round((estimated - now) / 60000);
-      const isDelayed = d.estimated_departure_utc && estimated > scheduled;
-      const delayMinutes = isDelayed ? Math.round((estimated - scheduled) / 60000) : 0;
-      
-      return {
-        minutes: Math.max(0, minutes),
-        destination: d.direction?.direction_name || 'City',
-        platform: d.platform_number || null,
-        scheduled: scheduled.toISOString(),
-        estimated: estimated.toISOString(),
-        isLive: !!d.estimated_departure_utc,
-        isDelayed,
-        delayMinutes,
-        routeId: d.route_id,
-        runId: d.run_id
-      };
-    }).filter(d => d.minutes >= 0);
+    if (contentType?.includes('application/json')) {
+      return await response.json();
+    }
     
-  } catch (e) {
-    console.error('Transport API error:', e.message);
-    // Return fallback data on error
-    return [
-      { minutes: 5, destination: 'City', platform: null, scheduled: null, isLive: false, error: true }
-    ];
+    // Protobuf response - would need protobuf decoder
+    // For now, return raw buffer for processing
+    const buffer = await response.arrayBuffer();
+    console.log(`[ptv-api] Got ${buffer.byteLength} bytes of protobuf data`);
+    
+    // TODO: Decode protobuf with gtfs-realtime-bindings
+    // For now, return indicator that we got live data
+    return { raw: true, size: buffer.byteLength, contentType };
+    
+  } catch (error) {
+    console.error(`[ptv-api] Fetch error: ${error.message}`);
+    throw error;
   }
 }
 
 /**
- * Get service disruptions for a route type
- * @param {number} routeType - 0=train, 1=tram, 2=bus
- * @returns {Array} - Array of disruption objects
+ * Get departures for a stop
+ * @param {number} stopId - Stop ID
+ * @param {number} routeType - 0=train/metro, 1=tram, 2=bus
+ * @param {Object} options - { apiKey }
+ * @returns {Array} - Array of departure objects
  */
-export async function getDisruptions(routeType) {
-  const url = signUrl(`/v3/disruptions/route_types/${routeType}`);
+export async function getDepartures(stopId, routeType, options = {}) {
+  console.log(`[ptv-api] getDepartures: stopId=${stopId}, routeType=${routeType}, hasApiKey=${!!options.apiKey}`);
   
-  if (!url) {
-    return [];
-  }
+  // Map route type to GTFS-RT mode
+  const modeMap = { 0: 'metro', 1: 'tram', 2: 'bus' };
+  const mode = modeMap[routeType] || 'metro';
   
   try {
-    const res = await fetch(url, { timeout: 10000 });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
+    const data = await fetchGtfsRt(mode, 'trip-updates', options);
     
-    return (data.disruptions?.metro_train || data.disruptions?.metro_tram || data.disruptions?.metro_bus || [])
-      .filter(d => d.disruption_status === 'Current')
-      .map(d => ({
-        id: d.disruption_id,
-        title: d.title,
-        description: d.description,
-        type: d.disruption_type,
-        status: d.disruption_status,
-        routes: d.routes?.map(r => r.route_name) || []
-      }));
+    if (!data) {
+      // No API key - return mock data
+      console.log('[ptv-api] Using mock data (no API key)');
+      return getMockDepartures(routeType);
+    }
+    
+    if (data.raw) {
+      // Got protobuf data but can't decode yet
+      // TODO: Install gtfs-realtime-bindings and decode
+      console.log('[ptv-api] Got live protobuf data, using scheduled fallback until decoder implemented');
+      return getMockDepartures(routeType, 'scheduled');
+    }
+    
+    // Process JSON response (if API provides JSON fallback)
+    // This would need to be adapted based on actual response format
+    return processGtfsRtDepartures(data, stopId);
+    
+  } catch (error) {
+    console.log(`[ptv-api] getDepartures error: ${error.message}`);
+    return getMockDepartures(routeType, 'error');
+  }
+}
+
+/**
+ * Process GTFS-RT trip updates into departure format
+ */
+function processGtfsRtDepartures(data, stopId) {
+  // GTFS-RT TripUpdates structure:
+  // entity[].tripUpdate.stopTimeUpdate[].{stopId, arrival, departure}
+  
+  const now = new Date();
+  const departures = [];
+  
+  if (data.entity) {
+    for (const entity of data.entity) {
+      const tripUpdate = entity.tripUpdate;
+      if (!tripUpdate) continue;
       
-  } catch (e) {
-    console.error('Disruptions API error:', e.message);
+      for (const stu of tripUpdate.stopTimeUpdate || []) {
+        if (stu.stopId === String(stopId)) {
+          const departureTime = stu.departure?.time || stu.arrival?.time;
+          if (departureTime) {
+            const depDate = new Date(departureTime * 1000);
+            const minutes = Math.round((depDate - now) / 60000);
+            if (minutes >= 0) {
+              departures.push({
+                minutes,
+                destination: tripUpdate.trip?.tripHeadsign || 'City',
+                platform: null,
+                isLive: true,
+                source: 'gtfs-rt'
+              });
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  return departures.slice(0, 5);
+}
+
+/**
+ * Get mock departures for testing/fallback
+ */
+function getMockDepartures(routeType, source = 'mock') {
+  const now = getMelbourneTime();
+  const destinations = {
+    0: 'City', // Metro
+    1: 'City', // Tram
+    2: 'City'  // Bus
+  };
+  
+  return [
+    { minutes: 3, destination: destinations[routeType], platform: '1', isLive: false, source },
+    { minutes: 8, destination: destinations[routeType], platform: '1', isLive: false, source },
+    { minutes: 15, destination: destinations[routeType], platform: '1', isLive: false, source }
+  ];
+}
+
+/**
+ * Get service disruptions
+ * @param {number} routeType - 0=train, 1=tram, 2=bus
+ * @param {Object} options - { apiKey }
+ */
+export async function getDisruptions(routeType, options = {}) {
+  const modeMap = { 0: 'metro', 1: 'tram', 2: 'bus' };
+  const mode = modeMap[routeType] || 'metro';
+  
+  try {
+    const data = await fetchGtfsRt(mode, 'service-alerts', options);
+    
+    if (!data || data.raw) {
+      return [];
+    }
+    
+    // Process GTFS-RT service alerts
+    return (data.entity || []).map(entity => ({
+      id: entity.id,
+      title: entity.alert?.headerText?.translation?.[0]?.text || 'Alert',
+      description: entity.alert?.descriptionText?.translation?.[0]?.text || '',
+      type: 'disruption'
+    }));
+    
+  } catch (error) {
+    console.log(`[ptv-api] getDisruptions error: ${error.message}`);
     return [];
   }
 }
@@ -213,15 +271,17 @@ export async function getWeather(lat = MELBOURNE_LAT, lon = MELBOURNE_LON) {
       condition,
       umbrella,
       precipitation,
-      weatherCode
+      weatherCode,
+      source: 'open-meteo'
     };
     
   } catch (e) {
-    console.error('Weather error:', e.message);
+    console.error('[ptv-api] Weather error:', e.message);
     return {
       temp: 20,
       condition: 'Unknown',
       umbrella: false,
+      source: 'fallback',
       error: true
     };
   }
@@ -229,20 +289,21 @@ export async function getWeather(lat = MELBOURNE_LAT, lon = MELBOURNE_LON) {
 
 /**
  * Get all data needed for dashboard in one call
- * @param {Object} config - Configuration with stopIds
+ * @param {Object} config - Configuration with stopIds and apiKey
  * @returns {Object} - Combined data for dashboard
  */
 export async function getDashboardData(config = {}) {
-  const trainStopId = config.trainStopId || parseInt(process.env.TRAIN_STOP_ID) || 1071;
-  const tramStopId = config.tramStopId || parseInt(process.env.TRAM_STOP_ID) || 2500;
+  const trainStopId = config.trainStopId || 1071;
+  const tramStopId = config.tramStopId || 2500;
   const lat = config.lat || MELBOURNE_LAT;
   const lon = config.lon || MELBOURNE_LON;
+  const options = { apiKey: config.apiKey };
   
   const [trains, trams, weather, disruptions] = await Promise.all([
-    getDepartures(trainStopId, 0),
-    getDepartures(tramStopId, 1),
+    getDepartures(trainStopId, 0, options),
+    getDepartures(tramStopId, 1, options),
     getWeather(lat, lon),
-    getDisruptions(0).catch(() => [])
+    getDisruptions(0, options).catch(() => [])
   ]);
   
   return {
@@ -254,4 +315,4 @@ export async function getDashboardData(config = {}) {
   };
 }
 
-export default { getDepartures, getDisruptions, getWeather, getDashboardData };
+export default { getDepartures, getDisruptions, getWeather, getDashboardData, setApiKey };
