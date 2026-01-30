@@ -1299,6 +1299,91 @@ async function saveApiKey(apiKey) {
 }
 ```
 
+### 17.3 Free-Tier Architecture (MANDATORY)
+
+**Principle:** The entire system MUST be usable for free by any user. No required paid APIs.
+
+#### 17.3.1 API Cost Classification
+
+| Service | Status | Cost | Notes |
+|---------|--------|------|-------|
+| Vercel Hosting | ✅ Required | FREE | Free tier sufficient for personal use |
+| Transport Victoria OpenData | ✅ Required | FREE | Requires free registration |
+| BOM Weather | ✅ Required | FREE | Public data, no API key |
+| OpenStreetMap Nominatim | ✅ Fallback | FREE | Address geocoding fallback |
+| Google Places API | ⚠️ Optional | PAID | Must be skippable, OSM fallback required |
+
+#### 17.3.2 Setup-Time Caching Strategy
+
+**All location data MUST be cached during setup, not fetched at runtime.**
+
+```
+SETUP (one-time API calls)          RUNTIME (zero API calls in Free Mode)
+──────────────────────────          ─────────────────────────────────────
+1. User enters addresses     →      Webhook URL contains ALL cached data:
+2. Geocode via OSM/Google    →      • Home/work/cafe lat/lon  
+3. Cache cafe business hours →      • Cafe business hours
+4. Encode in webhook URL     →      • User preferences
+                                    • API mode flag
+                             
+                                    Dashboard reads from URL token only.
+                                    NO external API calls required.
+```
+
+#### 17.3.3 API Mode Toggle
+
+Users MUST be able to choose between:
+
+| Mode | Runtime API Calls | Cost | Use Case |
+|------|-------------------|------|----------|
+| **Free Mode** (default) | None | $0 | Standard users |
+| **Live Mode** (optional) | Google Places | $$ | Users wanting real-time cafe busy-ness |
+
+#### 17.3.4 Implementation Requirements
+
+1. **Geocoding:**
+   - Primary: Google Places (if user provides key)
+   - Fallback: OpenStreetMap Nominatim (always available, free)
+   - Cache result in webhook URL token during setup
+
+2. **Cafe Business Hours:**
+   - Fetch ONCE during setup
+   - Cache in webhook URL token
+   - Fallback to default Melbourne cafe hours if no API
+
+3. **Webhook URL Token:**
+   - Must contain ALL data needed for dashboard rendering
+   - Encoded as base64url for URL safety
+   - No server-side storage required (Vercel serverless compatible)
+
+4. **UI Clarity:**
+   - Never claim paid APIs are "free"
+   - Always show "Skip" option for optional APIs
+   - Explain free alternatives clearly
+
+#### 17.3.5 Config Token Structure
+
+```javascript
+{
+  a: {},      // addresses (display text)
+  l: {},      // locations (lat/lon - CACHED)
+  s: 'VIC',   // state
+  t: '09:00', // arrival time
+  c: true,    // coffee enabled
+  k: '',      // transit API key (free)
+  cf: {},     // cafe data (CACHED: name, hours, placeId)
+  m: 'cached' // API mode: 'cached' | 'live'
+}
+```
+
+#### 17.3.6 Prohibited Patterns
+
+- ❌ Runtime geocoding calls
+- ❌ Required paid API keys
+- ❌ Server-side storage dependencies (breaks Vercel serverless)
+- ❌ Misleading "free" claims for paid services
+- ❌ Features that silently fail without paid APIs
+
 ---
 
 ## 🔄 Section 18: Change Management
