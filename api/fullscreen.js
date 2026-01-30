@@ -127,55 +127,20 @@ function canvasTo1BitBMP(canvas) {
 
 export default async function handler(req, res) {
   try {
-    const prefs = new PreferencesManager();
-    if (!prefs.isValid()) {
-      res.setHeader('Content-Type', 'application/octet-stream');
-      res.setHeader('X-Error', 'setup_required');
-      return res.status(503).send(Buffer.alloc(0));
-    }
-    
-    const now = getMelbourneTime();
-    const currentTime = formatTime(now);
-    const { day, date } = formatDateParts(now);
-    
-    const engine = await getEngine();
-    const route = engine.getSelectedRoute();
-    const locations = engine.getLocations();
-    const config = engine.journeyConfig;
-    
-    const trainStopId = parseInt(process.env.TRAIN_STOP_ID) || 1071;
-    const tramStopId = parseInt(process.env.TRAM_STOP_ID) || 2500;
-    
-    const [trains, trams, weather, disruptions] = await Promise.all([
-      getDepartures(trainStopId, 0),
-      getDepartures(tramStopId, 1),
-      getWeather(locations.home?.lat, locations.home?.lon),
-      getDisruptions(0).catch(() => [])
-    ]);
-    
-    const transitData = { trains, trams, disruptions };
-    const coffeeDecision = engine.calculateCoffeeDecision(transitData, route?.legs || []);
-    
-    // Simplified dashboard data
-    const dashboardData = {
-      location: locations.home?.address || 'Home',
-      current_time: currentTime,
-      day,
-      date,
-      temp: weather?.temp ?? '--',
-      condition: weather?.condition || 'N/A',
-      umbrella: weather?.umbrella || false,
-      status_type: 'normal',
-      arrive_by: config?.journey?.arrivalTime || '09:00',
-      total_minutes: 30,
-      journey_legs: [],
-      destination: locations.work?.address || 'Work'
-    };
-    
-    // Render to canvas
+    // Create a simple white canvas with "Hello" text
     const canvas = createCanvas(WIDTH, HEIGHT);
-    const renderer = new CCDashRendererV13(canvas);
-    renderer.render(dashboardData);
+    const ctx = canvas.getContext('2d');
+    
+    // White background
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+    
+    // Black text
+    ctx.fillStyle = 'black';
+    ctx.font = 'bold 48px sans-serif';
+    ctx.fillText('Commute Compute', 200, 200);
+    ctx.font = '32px sans-serif';
+    ctx.fillText(new Date().toISOString(), 200, 280);
     
     // Convert to 1-bit BMP
     const bmpData = canvasTo1BitBMP(canvas);
@@ -187,6 +152,7 @@ export default async function handler(req, res) {
     
   } catch (error) {
     console.error('Fullscreen API error:', error);
-    return res.status(500).send(Buffer.alloc(0));
+    res.setHeader('Content-Type', 'text/plain');
+    return res.status(500).send(`Error: ${error.message}`);
   }
 }
