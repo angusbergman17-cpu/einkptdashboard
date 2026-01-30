@@ -375,7 +375,8 @@ void saveSettings() {
 
 void connectWiFi() {
     showConnectingScreen();
-    WiFiManager wm;
+    // WiFiManager MUST be static - destroying it corrupts LWIP callbacks (0xbaad5678 crash)
+    static WiFiManager wm;
     wm.setConfigPortalTimeout(180);
     
     if (wm.autoConnect("PTV-TRMNL-Setup", "transport123")) {
