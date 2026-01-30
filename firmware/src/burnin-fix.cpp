@@ -38,24 +38,19 @@ void setup() {
     
     Serial.println("Display initialized. Starting recovery...");
     
-    // Do 10 full white-black-white cycles
-    for (int i = 0; i < 10; i++) {
-        Serial.printf("\nCycle %d/10:\n", i + 1);
+    // Do 50 full white-black-white cycles (aggressive recovery)
+    for (int i = 0; i < 50; i++) {
+        Serial.printf("\nCycle %d/50:\n", i + 1);
         
         Serial.println("  -> WHITE");
         bbep.fillScreen(BBEP_WHITE);
         bbep.refresh(REFRESH_FULL, true);
-        delay(1000);
+        delay(300);
         
         Serial.println("  -> BLACK");
         bbep.fillScreen(BBEP_BLACK);
         bbep.refresh(REFRESH_FULL, true);
-        delay(1000);
-        
-        Serial.println("  -> WHITE");
-        bbep.fillScreen(BBEP_WHITE);
-        bbep.refresh(REFRESH_FULL, true);
-        delay(1000);
+        delay(300);
     }
     
     Serial.println("\n=== RECOVERY COMPLETE ===");
