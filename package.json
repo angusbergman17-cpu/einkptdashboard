@@ -38,6 +38,7 @@
   "author": "Angus",
   "license": "CC-BY-NC-4.0",
   "devDependencies": {
+    "md-to-pdf": "^5.2.5",
     "puppeteer": "^24.36.1"
   }
 }

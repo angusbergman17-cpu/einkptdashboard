@@ -631,8 +631,8 @@
                 autocompleteDebounce = setTimeout(async () => {
                     try {
                         // Get Google key from localStorage if validated
-                        const googleKey = localStorage.getItem('cc_google_places_key');
-                        const googleValidated = localStorage.getItem('cc_google_places_validated') === 'true';
+                        const googleKey = localStorage.getItem('cc-google-places-key');
+                        const googleValidated = localStorage.getItem('cc-google-places-validated') === 'true';
                         
                         let url = `/api/address-search?q=${encodeURIComponent(query)}`;
                         if (googleKey && googleValidated) {
@@ -710,8 +710,8 @@
 
                 if (result.success && result.saved) {
                     // Store validated key in localStorage for use in address searches
-                    localStorage.setItem('cc_google_places_key', apiKey);
-                    localStorage.setItem('cc_google_places_validated', 'true');
+                    localStorage.setItem('cc-google-places-key', apiKey);
+                    localStorage.setItem('cc-google-places-validated', 'true');
                     console.log('✅ Google key saved to localStorage for address searches');
                     
                     status.style.color = '#48bb78';
@@ -906,9 +906,9 @@
 
                 if (result.success && result.testResult?.success) {
                     // Store in localStorage like Google key
-                    localStorage.setItem('cc_transit_api_key', apiKey);
-                    localStorage.setItem('cc_transit_api_validated', 'true');
-                    localStorage.setItem('ptv_transit_state', selectedAuthority);
+                    localStorage.setItem('cc-transit-api-key', apiKey);
+                    localStorage.setItem('cc-transit-api-validated', 'true');
+                    localStorage.setItem('cc-transit-state', selectedAuthority);
                     
                     status.innerHTML = `<span style="color: #48bb78;">✅ API key saved and validated! Real-time data enabled.</span>`;
                     btn.textContent = '✓ Saved & Tested';
@@ -933,10 +933,10 @@
             const nextBtn = document.getElementById('step-4-next-btn');
             
             // Clear any stored transit key
-            localStorage.removeItem('cc_transit_api_key');
-            localStorage.removeItem('cc_transit_api_validated');
-            localStorage.setItem('ptv_transit_fallback', 'timetable');
-            localStorage.setItem('ptv_transit_state', selectedAuthority);
+            localStorage.removeItem('cc-transit-api-key');
+            localStorage.removeItem('cc-transit-api-validated');
+            localStorage.setItem('cc-transit-fallback', 'timetable');
+            localStorage.setItem('cc-transit-state', selectedAuthority);
             
             status.style.display = 'block';
             status.innerHTML = '<span style="color: #f6ad55;">⚠️ Using timetable fallback. You can add an API key later in Settings.</span>';
@@ -971,7 +971,7 @@
                     arrivalTime: arrivalTime,
                     includeCoffee: document.getElementById('include-coffee').checked,
                     credentials: {
-                        apiKey: document.getElementById('api-key')?.value || localStorage.getItem('cc_transit_api_key') || ''
+                        apiKey: document.getElementById('api-key')?.value || localStorage.getItem('cc-transit-api-key') || ''
                     }
                 };
 

@@ -4667,14 +4667,6 @@
                     return;
                 }
                 
-                // Also save the token via legacy endpoint if provided
-                if (apiToken && apiToken.trim()) {
-                    await fetch(BASE_URL + '/admin/apis', {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ ptv_opendata: { api_key: apiKey, token: apiToken } })
-                    });
-                }
-                
                 // Refresh API keys status display
                 setTimeout(() => updateAPIKeysStatus(), 500);
             } catch (e) {
