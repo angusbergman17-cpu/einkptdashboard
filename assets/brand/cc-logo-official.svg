@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="400" height="500" viewBox="0 0 400 500" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="400" height="500" fill="#0f172a"/>
+  
+  <!-- 
+    Commute Compute Official Logo
+    Colors: 
+    - Background: #0f172a (slate-900)
+    - White: #f1f5f9 (slate-100)
+    - Green: #10b981 (emerald-500)
+  -->
+  
+  <!-- CC Icon - Outer C White -->
+  <path d="
+    M 220 50
+    L 130 50
+    C 60 50, 60 150, 60 150
+    C 60 150, 60 250, 130 250
+    L 220 250
+    L 220 210
+    L 130 210
+    C 100 210, 100 150, 100 150
+    C 100 150, 100 90, 130 90
+    L 220 90
+    Z
+  " fill="#f1f5f9"/>
+  
+  <!-- CC Icon - Inner C Green with Arrow -->
+  <path d="
+    M 260 70
+    L 150 70
+    C 85 70, 85 150, 85 150
+    C 85 150, 85 230, 150 230
+    L 260 230
+    L 260 190
+    L 150 190
+    C 125 190, 125 150, 125 150
+    C 125 150, 125 110, 150 110
+    L 260 110
+    Z
+  " fill="#10b981"/>
+  
+  <!-- Arrow head on green C -->
+  <polygon points="260,70 300,90 260,110" fill="#10b981"/>
+  
+  <!-- Text: COMMUTE - exactly aligned -->
+  <text x="200" y="330" 
+        font-family="system-ui, -apple-system, sans-serif" 
+        font-size="42" 
+        font-weight="600"
+        letter-spacing="8"
+        text-anchor="middle" 
+        fill="#f1f5f9">COMMUTE</text>
+  
+  <!-- Text: COMPUTE - exactly aligned below -->
+  <text x="200" y="380" 
+        font-family="system-ui, -apple-system, sans-serif" 
+        font-size="42" 
+        font-weight="700"
+        letter-spacing="8"
+        text-anchor="middle" 
+        fill="#10b981">COMPUTE</text>
+</svg>
