@@ -19,7 +19,7 @@
 #define ZONE_DATA_MAX_LEN 8000
 // Override config.h version
 #undef FIRMWARE_VERSION
-#define FIRMWARE_VERSION "6.1-stable"
+#define FIRMWARE_VERSION "6.2-ghostbuster"
 
 // Default server for pairing API
 #define DEFAULT_SERVER "https://einkptdashboard.vercel.app"
@@ -91,6 +91,19 @@ void setup() {
     
     initZoneBuffers();
     initDisplay();
+    
+    // GHOST BUSTER: Full screen clear cycle to remove artifacts
+    Serial.println("Clearing e-ink ghosting...");
+    bbep.fillScreen(BBEP_WHITE);
+    bbep.refresh(REFRESH_FULL, true);
+    delay(500);
+    bbep.fillScreen(BBEP_BLACK);
+    bbep.refresh(REFRESH_FULL, true);
+    delay(500);
+    bbep.fillScreen(BBEP_WHITE);
+    bbep.refresh(REFRESH_FULL, true);
+    delay(500);
+    Serial.println("Ghost clear complete");
     
     Serial.println("Setup complete");
 }
