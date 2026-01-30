@@ -311,6 +311,7 @@ void loop() {
             
             delay(100);  // Small delay to prevent tight loop
             break;
+        }
         
         // ----------------------------------------------------------------
         case STATE_FETCH_ZONES: {
