@@ -2,9 +2,14 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
-#include <WiFiManager.h>
+// WiFiManager disabled - causes ESP32-C3 crash (0xbaad5678)
+// #include <WiFiManager.h>
 #include <Preferences.h>
 #include <nvs_flash.h>
+
+// Direct WiFi credentials (WiFiManager crashes on ESP32-C3)
+#define WIFI_SSID "Optus_FA6C6E"
+#define WIFI_PASS "gular43572ch"
 #include <ArduinoJson.h>
 #include <bb_epaper.h>
 #include "base64.hpp"
@@ -375,11 +380,20 @@ void saveSettings() {
 
 void connectWiFi() {
     showConnectingScreen();
-    // WiFiManager MUST be static - destroying it corrupts LWIP callbacks (0xbaad5678 crash)
-    static WiFiManager wm;
-    wm.setConfigPortalTimeout(180);
     
-    if (wm.autoConnect("PTV-TRMNL-Setup", "transport123")) {
+    // Direct WiFi connection (WiFiManager crashes on ESP32-C3)
+    Serial.printf("Connecting to %s...\n", WIFI_SSID);
+    WiFi.begin(WIFI_SSID, WIFI_PASS);
+    
+    int attempts = 0;
+    while (WiFi.status() != WL_CONNECTED && attempts < 30) {
+        delay(500);
+        Serial.print(".");
+        attempts++;
+    }
+    Serial.println();
+    
+    if (WiFi.status() == WL_CONNECTED) {
         wifiConnected = true;
         Serial.printf("Connected: %s\n", WiFi.localIP().toString().c_str());
     } else {
