@@ -911,26 +911,27 @@
         };
 
         window.completeSetup = async function() {
-            console.log('completeSetup called');
-            
-            const arrivalTime = document.getElementById('arrival-time').value;
-            console.log('Arrival time value:', arrivalTime);
-            
-            const config = {
-                addresses: addresses,
-                authority: selectedAuthority,
-                arrivalTime: arrivalTime,
-                includeCoffee: document.getElementById('include-coffee').checked,
-                credentials: {
-                    apiKey: document.getElementById('api-key')?.value || localStorage.getItem('ptv_transit_api_key') || ''
-                }
-            };
-
+            let lastStep = 'init';
             try {
+                lastStep = 'getting arrival time';
+                const arrivalTime = document.getElementById('arrival-time').value;
+                
+                lastStep = 'building config';
+                const config = {
+                    addresses: addresses,
+                    authority: selectedAuthority,
+                    arrivalTime: arrivalTime,
+                    includeCoffee: document.getElementById('include-coffee').checked,
+                    credentials: {
+                        apiKey: document.getElementById('api-key')?.value || localStorage.getItem('ptv_transit_api_key') || ''
+                    }
+                };
+
+                lastStep = 'getting baseUrl';
                 // Use absolute URL to avoid iOS Safari relative URL issues
                 const baseUrl = window.location.origin;
-                console.log('Step 1: Base URL:', baseUrl);
-                console.log('Step 1b: Sending config to /admin/setup/complete');
+                
+                lastStep = 'fetching setup/complete';
                 
                 // Save configuration
                 const response = await fetch(baseUrl + '/admin/setup/complete', {
@@ -938,10 +939,11 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(config)
                 });
-                console.log('Step 2: Got response, status:', response.status);
-
+                
+                lastStep = 'parsing response JSON';
                 const result = await response.json();
-                console.log('Step 3: Parsed JSON result:', result);
+                
+                lastStep = 'checking result.success';
 
                 if (result.success) {
                     // Generate webhook URL for TRMNL device
@@ -959,13 +961,14 @@
                         additionalAPIs: { google_places: document.getElementById('google-places-api-key')?.value || '' }
                     };
                     
-                    console.log('Step 4: Generating webhook URL');
+                    lastStep = 'fetching generate-webhook';
                     const webhookResponse = await fetch(baseUrl + '/admin/generate-webhook', { 
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ config: fullConfig })
                     });
-                    console.log('Step 5: Got webhook response, status:', webhookResponse.status);
+                    
+                    lastStep = 'parsing webhook JSON';
                     const webhookResult = await webhookResponse.json();
                     
                     let webhookHtml = '';
@@ -999,7 +1002,7 @@
                 }
             } catch (e) {
                 console.error('Setup error:', e);
-                alert('Error: ' + e.message + '\n\nStack: ' + (e.stack || 'no stack'));
+                alert('Error at [' + lastStep + ']: ' + e.message);
             }
         };
 
