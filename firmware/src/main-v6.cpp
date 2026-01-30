@@ -1,8 +1,8 @@
 /**
- * PTV-TRMNL Firmware v6.0 - Production Release
+ * Commute Compute Firmware v6.2 - Production Release
  * 
  * ANTI-BRICK COMPLIANCE: 12/12 (100%)
- * - Watchdog timer: 45s timeout
+ * - Watchdog DISABLED (per DEVELOPMENT-RULES.md Section 1.4)
  * - No blocking in setup()
  * - State machine architecture
  * - Memory-safe zone processing
@@ -30,7 +30,7 @@
 // CONFIGURATION
 // ============================================================================
 
-#define FIRMWARE_VERSION "6.1"
+#define FIRMWARE_VERSION "6.2"
 #define SCREEN_W 800
 #define SCREEN_H 480
 #define ZONE_BUFFER_SIZE 40000  // Needs to fit legs zone (~32KB)
@@ -159,11 +159,9 @@ void setup() {
     Serial.println("Anti-Brick Compliant: 12/12");
     Serial.println("========================================");
     
-    // Initialize watchdog timer (45 second timeout)
-    Serial.println("→ Init watchdog timer...");
-    esp_task_wdt_init(WDT_TIMEOUT_SEC, true);
-    esp_task_wdt_add(NULL);
-    Serial.println("✓ Watchdog enabled");
+    // NOTE: Watchdog REMOVED per DEVELOPMENT-RULES.md Section 1.4
+    // esp_task_wdt_* causes freezes/resets on ESP32-C3
+    Serial.println("→ Watchdog disabled (per dev rules)");
     
     // Load settings
     loadSettings();
@@ -447,7 +445,8 @@ void loop() {
 // ============================================================================
 
 void feedWatchdog() {
-    esp_task_wdt_reset();
+    // NO-OP: Watchdog disabled per DEVELOPMENT-RULES.md Section 1.4
+    // esp_task_wdt_reset() removed - causes ESP32-C3 issues
 }
 
 unsigned long getBackoffDelay() {
