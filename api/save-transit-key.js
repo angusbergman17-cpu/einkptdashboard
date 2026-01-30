@@ -228,34 +228,48 @@ export default async function handler(req, res) {
 
     // Validation passed - save to preferences
     console.log(`[save-transit-key] ✅ Validation passed, saving key...`);
-    
+
+    // Detect Vercel environment
+    const isVercel = !!(process.env.VERCEL || process.env.VERCEL_ENV);
+
     const prefs = new PreferencesManager();
     await prefs.load();
 
     const currentPrefs = prefs.get();
-    
+
     if (!currentPrefs.api) {
       currentPrefs.api = {};
     }
-    
+
     currentPrefs.api.key = apiKey.trim();
     currentPrefs.api.state = state;
     currentPrefs.api.lastValidated = new Date().toISOString();
     currentPrefs.api.validationStatus = 'valid';
-    
+
     prefs.preferences = currentPrefs;
     await prefs.save();
 
     console.log(`[save-transit-key] ✅ ${state} Transit API key saved with validated status`);
 
+    // Build response message based on environment
+    let message = 'API key validated successfully!';
+    let persistenceNote = null;
+
+    if (isVercel) {
+      persistenceNote = 'Note: On Vercel, set ODATA_API_KEY environment variable in your project settings for persistence.';
+      message = 'API key validated! Add ODATA_API_KEY to Vercel environment variables for persistence.';
+    }
+
     // Return success result
     return res.status(200).json({
       success: true,
-      message: 'API key saved and validated successfully',
+      message,
+      persistenceNote,
       testResult,
-      saved: true,
+      saved: !isVercel, // Only truly saved if not on Vercel
       state,
-      keyMasked: apiKey.trim().substring(0, 8) + '...'
+      keyMasked: apiKey.trim().substring(0, 8) + '...',
+      environment: isVercel ? 'vercel' : 'standard'
     });
 
   } catch (error) {

@@ -15,6 +15,8 @@ class PreferencesManager {
   constructor() {
     this.preferencesFile = path.join(process.cwd(), 'user-preferences.json');
     this.preferences = null;
+    // Detect Vercel serverless environment (read-only filesystem)
+    this.isVercel = !!(process.env.VERCEL || process.env.VERCEL_ENV);
     this.defaultPreferences = {
       // Personal addresses
       addresses: {
@@ -325,7 +327,12 @@ class PreferencesManager {
           this.preferences.api.key = process.env.ODATA_API_KEY;
         }
 
-        await this.save();
+        // Only try to save if NOT on Vercel (filesystem is read-only there)
+        if (!this.isVercel) {
+          await this.save();
+        } else {
+          console.log('ℹ️  Running on Vercel - skipping file save (use USER_CONFIG env var)');
+        }
         return this.preferences;
       }
 
@@ -338,8 +345,19 @@ class PreferencesManager {
 
   /**
    * Save preferences to file
+   * Note: On Vercel serverless, file saves won't persist - use USER_CONFIG env var instead
    */
   async save() {
+    // On Vercel, warn and skip filesystem save (won't persist anyway)
+    if (this.isVercel) {
+      console.log('⚠️  Vercel detected - file saves won\'t persist. Use USER_CONFIG env var for persistence.');
+      // Still update in-memory preferences for this request
+      if (this.preferences.meta) {
+        this.preferences.meta.lastModified = new Date().toISOString();
+      }
+      return true; // Return true to not break callers
+    }
+
     try {
       // Update last modified timestamp
       if (this.preferences.meta) {

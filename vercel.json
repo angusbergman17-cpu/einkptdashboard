@@ -2,7 +2,8 @@
   "version": 2,
   "functions": {
     "api/index.js": {
-      "includeFiles": "public/**,src/**,data/**,config/**,fonts/**"
+      "includeFiles": "public/**,src/**,data/**,config/**,fonts/**",
+      "maxDuration": 30
     },
     "api/screen.js": {
       "includeFiles": "src/**,config/**,fonts/**"
@@ -41,6 +42,34 @@
     {
       "source": "/health",
       "destination": "/api/health"
+    },
+    {
+      "source": "/admin/:path*",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/api/profiles/:path*",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/api/region-updates",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/api/decisions/:path*",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/api/journey-cache",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/api/journey-recalculate",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/api/feedback",
+      "destination": "/api/index"
     },
     {
       "source": "/api/screen",
