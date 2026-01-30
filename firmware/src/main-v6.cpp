@@ -31,7 +31,7 @@
 // CONFIGURATION
 // ============================================================================
 
-#define FIRMWARE_VERSION "6.2.2"
+#define FIRMWARE_VERSION "6.2.3"
 #define SCREEN_W 800
 #define SCREEN_H 480
 #define ZONE_BUFFER_SIZE 40000  // Needs to fit legs zone (~32KB)
@@ -314,7 +314,7 @@ void loop() {
             // Show waiting screen briefly
             if (!waitingScreenShown) {
                 Serial.println("→ STATE: Waiting for Setup (skipping check for now)");
-                showConfiguredScreen();  // Show "Setup Complete" instead
+                // showConfiguredScreen();  // SKIP - triggers bb_epaper crash
                 waitingScreenShown = true;
                 
             }
