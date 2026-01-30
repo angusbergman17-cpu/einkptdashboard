@@ -50,6 +50,19 @@ All trademarks © 2026 Angus Bergman.
 
 ---
 
+## Project Scale
+
+| Metric | Count |
+|--------|-------|
+| **Total Source Files** | 176 |
+| **JavaScript** | 31,243 lines |
+| **HTML** | 18,165 lines |
+| **Markdown (docs)** | 23,960 lines |
+| **C++ (firmware)** | 3,077 lines |
+| **Total Lines of Code** | **76,445** |
+
+---
+
 ## Target Users
 
 ### Primary: Australian Capital City Commuters
