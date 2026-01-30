@@ -3,7 +3,7 @@
 **MANDATORY COMPLIANCE DOCUMENT**  
 **Version:** 1.5  
 **Last Updated:** 2026-01-29  
-**Copyright (c) 2025 Angus Bergman — Licensed under CC BY-NC 4.0**
+**Copyright (c) 2026 Angus Bergman — Licensed under CC BY-NC 4.0**
 
 These rules govern all development on PTV-TRMNL. Compliance is mandatory.
 
@@ -1453,7 +1453,7 @@ grep -r "oldValue" public/    # Find UI references
 ### License Header (Required in all files)
 
 ```
-Copyright (c) 2025 Angus Bergman
+Copyright (c) 2026 Angus Bergman
 Licensed under CC BY-NC 4.0 (Creative Commons Attribution-NonCommercial 4.0 International License)
 https://creativecommons.org/licenses/by-nc/4.0/
 ```
