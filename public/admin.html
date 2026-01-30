@@ -4056,7 +4056,7 @@
                 <div style="padding: 15px; background: rgba(246, 173, 85, 0.1); border-radius: 8px;">
                     <div style="font-weight: 600; margin-bottom: 10px; font-size: 14px;">⏰ Journey Preferences</div>
                     <div style="font-size: 13px; line-height: 1.8;">
-                        <div><strong>Arrival Time:</strong> ${status.journey.arrivalTime || 'Not set'}</div>
+                        <div><strong>Arrival Time:</strong> ${formatTime12h(status.journey.arrivalTime) || 'Not set'}</div>
                         <div><strong>Coffee Stops:</strong> ${status.journey.coffeeEnabled ? '✓ Enabled' : '✗ Disabled'}</div>
                         ${status.journey.walkingTimes ? `
                             <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1);">
@@ -4578,6 +4578,15 @@
             }
         }
         
+        // Convert 24-hour time to 12-hour format (DEVELOPMENT-RULES 12.2)
+        function formatTime12h(time24) {
+            if (!time24) return '';
+            const [hours24, minutes] = time24.split(':').map(Number);
+            const hours12 = hours24 % 12 || 12;
+            const ampm = hours24 >= 12 ? 'pm' : 'am';
+            return `${hours12}:${minutes.toString().padStart(2, '0')}${ampm}`;
+        }
+        
         function updateConfigSummary(prefs) {
             const summaryEl = document.getElementById('config-summary');
             if (summaryEl && prefs) {
@@ -4585,7 +4594,7 @@
                 if (prefs.addresses?.home) parts.push(`🏠 ${prefs.addresses.home}`);
                 if (prefs.addresses?.work) parts.push(`💼 ${prefs.addresses.work}`);
                 if (prefs.addresses?.cafe) parts.push(`☕ ${prefs.addresses.cafe}`);
-                if (prefs.journey?.arrivalTime) parts.push(`⏰ Arrive by ${prefs.journey.arrivalTime}`);
+                if (prefs.journey?.arrivalTime) parts.push(`⏰ Arrive by ${formatTime12h(prefs.journey.arrivalTime)}`);
                 if (prefs.state) parts.push(`📍 ${prefs.state}`);
                 if (prefs.apiMode) parts.push(`☁️ ${prefs.apiMode === 'cached' ? 'Free Mode' : 'Live Mode'}`);
                 
