@@ -17,7 +17,9 @@
 #define ZONE_BMP_MAX_SIZE 20000
 #define ZONE_ID_MAX_LEN 32
 #define ZONE_DATA_MAX_LEN 8000
-#define FIRMWARE_VERSION "6.0-pairing"
+// Override config.h version
+#undef FIRMWARE_VERSION
+#define FIRMWARE_VERSION "6.1-stable"
 
 // Default server for pairing API
 #define DEFAULT_SERVER "https://einkptdashboard.vercel.app"
@@ -29,11 +31,11 @@ Preferences preferences;
 char webhookUrl[256] = "";
 char pairingCode[8] = "";
 unsigned long lastRefresh = 0;
-const unsigned long REFRESH_INTERVAL = 20000;
-const unsigned long FULL_REFRESH_INTERVAL = 300000;
+const unsigned long REFRESH_INTERVAL = DEFAULT_REFRESH_INTERVAL;
+const unsigned long FULL_REFRESH_INTERVAL = DEFAULT_FULL_REFRESH;
 unsigned long lastFullRefresh = 0;
 int partialRefreshCount = 0;
-const int MAX_PARTIAL_BEFORE_FULL = 30;
+// MAX_PARTIAL_BEFORE_FULL is defined in config.h
 bool wifiConnected = false;
 bool devicePaired = false;
 bool initialDrawDone = false;
