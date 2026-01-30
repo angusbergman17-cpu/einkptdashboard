@@ -25,7 +25,7 @@
 #include "esp_task_wdt.h"
 #include "../include/config.h"
 #include "../include/cc-logo-draw.h"
-#include "../include/prerendered-screens.h"
+// Note: prerendered-screens.h removed - too large, causes crash
 
 // ============================================================================
 // CONFIGURATION
@@ -193,17 +193,17 @@ void setup() {
     initDisplay();
     
     // ========================================
-    // PRE-RENDERED SCREENS (hardcoded, instant)
+    // BOOT SCREENS (simple text-based, fast)
     // ========================================
     
-    // Screen 1: Boot screen with large CC logo
-    Serial.println("→ Displaying boot screen (pre-rendered)...");
-    displayPrerenderedScreen(SCREEN1_BOOT_DATA, SCREEN1_BOOT_WIDTH, SCREEN1_BOOT_HEIGHT);
+    // Screen 1: Boot screen with CC logo
+    Serial.println("→ Displaying boot screen...");
+    showBootScreen();
     delay(2500);  // Show for 2.5 seconds
     
-    // Screen 2: WiFi Setup screen with instructions  
-    Serial.println("→ Displaying setup screen (pre-rendered)...");
-    displayPrerenderedScreen(SCREEN2_SETUP_DATA, SCREEN2_SETUP_WIDTH, SCREEN2_SETUP_HEIGHT);
+    // Screen 2: WiFi Setup screen
+    Serial.println("→ Displaying setup screen...");
+    showWiFiSetupScreen();
     
     // Now proceed to WiFi init
     currentState = STATE_WIFI_CONNECT;
@@ -558,20 +558,20 @@ void displayPrerenderedScreen(const uint8_t* data, int width, int height) {
 }
 
 // ============================================================================
-// Stage 1: Boot Screen - Large CC Logo (centered, no text)
+// Stage 1: Boot Screen - CC Logo + Text
 // ============================================================================
 void showBootScreen() {
-    Serial.println("→ Showing boot screen (large logo)");
+    Serial.println("→ Showing boot screen");
     bbep.fillScreen(BBEP_WHITE);
-    
-    // Draw CC logo using the shared function (handles pixel drawing)
-    // Center logo vertically: y = (480-150)/2 - 30 = ~135
-    drawCCLogoCentered(135, 800);
-    
-    // "COMMUTE COMPUTE" text below logo
     bbep.setFont(FONT_8x8);
     bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
-    bbep.setCursor(310, 135 + CC_LOGO_HEIGHT + 20);
+    
+    // Draw CC logo (150x150) centered
+    // Note: drawCCLogoCentered draws 22,500 pixels which is acceptable
+    drawCCLogoCentered(140, 800);
+    
+    // "COMMUTE COMPUTE" text below logo
+    bbep.setCursor(310, 310);
     bbep.print("COMMUTE COMPUTE");
     
     bbep.refresh(REFRESH_FULL, true);
