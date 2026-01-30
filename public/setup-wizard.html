@@ -305,7 +305,7 @@
 
                 <div class="form-group" style="margin-top: 25px;">
                     <label class="form-label">Google Places API (New) Key (Optional)</label>
-                    <input type="text" id="google-places-api-key" class="form-input" placeholder="Enter your Google Places API (new) key...">
+                    <input type="text" id="google-places-api-key" class="form-input" placeholder="Enter your Google Places API (new) key..." autocomplete="off" inputmode="text">
                     <a href="https://console.cloud.google.com/apis/library/places-backend.googleapis.com" target="_blank" style="font-size: 13px; color: #6366f1; display: block; margin-top: 8px;">
                         Get a free Google Places API (new) key →
                     </a>
@@ -355,19 +355,19 @@
 
                 <div class="form-group" style="position: relative;">
                     <label class="form-label">🏠 Home Address</label>
-                    <input type="text" id="home-address" class="form-input" placeholder="Start typing your home address..." autocomplete="off">
+                    <input type="text" id="home-address" class="form-input" placeholder="Start typing your home address..." autocomplete="off" inputmode="text">
                     <div id="home-suggestions" class="autocomplete-dropdown"></div>
                 </div>
 
                 <div class="form-group" style="position: relative;">
                     <label class="form-label">💼 Work Address</label>
-                    <input type="text" id="work-address" class="form-input" placeholder="Start typing your work address..." autocomplete="off">
+                    <input type="text" id="work-address" class="form-input" placeholder="Start typing your work address..." autocomplete="off" inputmode="text">
                     <div id="work-suggestions" class="autocomplete-dropdown"></div>
                 </div>
 
                 <div class="form-group" style="position: relative;">
                     <label class="form-label">☕ Favorite Cafe (Optional)</label>
-                    <input type="text" id="cafe-address" class="form-input" placeholder="Your go-to coffee spot...">
+                    <input type="text" id="cafe-address" class="form-input" placeholder="Your go-to coffee spot..." autocomplete="off" inputmode="text">
                     <div id="cafe-suggestions" class="autocomplete-dropdown"></div>
                 </div>
 
@@ -434,7 +434,7 @@
 
                     <div class="form-group">
                         <label class="form-label">Arrival Time at Work</label>
-                        <input type="text" id="arrival-time" class="form-input" value="09:00" placeholder="e.g. 09:00" autocomplete="off">
+                        <input type="text" id="arrival-time" class="form-input" value="09:00" placeholder="e.g. 09:00" autocomplete="off" inputmode="text">
                     </div>
 
                     <div class="form-group">
@@ -448,7 +448,7 @@
 
                     <div class="btn-row">
                         <button type="button" class="btn btn-secondary" onclick="previousStep(5)">← Back</button>
-                        <button type="button" class="btn" id="complete-setup-btn">🚀 Complete Setup</button>
+                        <button type="button" class="btn" id="complete-setup-btn" formnovalidate>🚀 Complete Setup</button>
                     </div>
                 </form>
                 <script>
@@ -823,7 +823,7 @@
                 html = `
                     <div class="form-group">
                         <label class="form-label" style="color: #e2e8f0;">Transport Victoria OpenData API Key</label>
-                        <input type="text" id="api-key" class="form-input" placeholder="UUID format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" style="-webkit-text-security: disc;">
+                        <input type="text" id="api-key" class="form-input" placeholder="Enter your API key" autocomplete="off" inputmode="text" style="-webkit-text-security: disc;">
                         <small style="color: #a0aec0; margin-top: 5px; display: block;">
                             Register at <a href="https://opendata.transport.vic.gov.au/" target="_blank" style="color: #6366f1;">opendata.transport.vic.gov.au</a> — Subscribe to GTFS Realtime feeds
                         </small>
@@ -833,7 +833,7 @@
                 html = `
                     <div class="form-group">
                         <label class="form-label" style="color: #e2e8f0;">${auth.name} API Key</label>
-                        <input type="text" id="api-key" class="form-input" placeholder="Your API Key" autocomplete="off" style="-webkit-text-security: disc;">
+                        <input type="text" id="api-key" class="form-input" placeholder="Your API Key" autocomplete="off" inputmode="text" style="-webkit-text-security: disc;">
                         <small style="color: #a0aec0; margin-top: 5px; display: block;">
                             Register at <a href="${auth.url}" target="_blank" style="color: #6366f1;">${auth.url}</a>
                         </small>
