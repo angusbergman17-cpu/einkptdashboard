@@ -240,23 +240,8 @@ export default async function handler(req, res) {
     
     // Ultra-lightweight metadata response for ESP32 (tiny JSON)
     if (metadataOnly) {
-      // Check if user has completed setup first
-      const prefs = new PreferencesManager();
-      await prefs.load();
-      
-      if (!prefs.isConfigured()) {
-        console.log('[zones/metadata] Setup not complete - returning setup_required');
-        const host = req.headers.host || req.headers['x-forwarded-host'] || 'your-server';
-        const protocol = req.headers['x-forwarded-proto'] || 'https';
-        res.setHeader('Content-Type', 'application/json');
-        res.setHeader('Cache-Control', 'no-cache');
-        return res.status(200).json({
-          setup_required: true,
-          message: `Complete setup at ${protocol}://${host}/setup-wizard.html`
-        });
-      }
-      
-      // Return just zone IDs - firmware fetches each BMP individually
+      // Always return zone IDs - firmware will fetch demo data if setup not complete
+      // This prevents broken pairing flow crash on ESP32
       const zoneIds = Object.keys(ZONES);
       res.setHeader('Content-Type', 'application/json');
       res.setHeader('Cache-Control', 'no-cache');
