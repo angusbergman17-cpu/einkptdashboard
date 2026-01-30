@@ -1547,6 +1547,59 @@ See **LEGAL.md** for complete intellectual property documentation.
 
 ---
 
+## 📱 Section 21: Device Setup Flow (MANDATORY)
+
+**🔴 CRITICAL**: All devices MUST follow this exact setup sequence.
+
+### 21.1 Boot Sequence
+
+| Stage | Screen | Duration | Exit Condition |
+|-------|--------|----------|----------------|
+| 1. Boot | Large CC logo centered | 2-3 seconds | Initialization complete |
+| 2. WiFi Setup | Smaller CC logo + instructions + copyright | Until configured | Setup wizard complete |
+| 3. Dashboard | Live journey display | Continuous | Device reset |
+
+### 21.2 Boot Screen (Stage 1)
+
+- **Large CC logo** centered on screen
+- Display while device initializes WiFi stack
+- No text, just branding
+- Duration: 2-3 seconds
+
+### 21.3 WiFi Setup Screen (Stage 2)
+
+**Layout:**
+- Smaller CC logo at top
+- Setup instructions in middle
+- Copyright stamp at bottom
+
+**🚨 CRITICAL**: Device MUST remain on this screen until setup wizard is complete. No skipping to dashboard without full configuration.
+
+**User Instructions to Display:**
+1. Fork the git repo
+2. Set up free server at Render.com with custom server name
+3. Connect e-ink device to WiFi network
+4. Set server URL as `[your-name].onrender.app`
+5. Complete setup wizard on web
+
+### 21.4 Post-Setup (Stage 3)
+
+After setup wizard is complete:
+1. Device transitions to live dashboard
+2. User accesses admin page on computer/phone for configuration changes
+3. Dashboard refreshes every 20 seconds (partial) / 10 minutes (full)
+
+### 21.5 Hosting Platform
+
+**Primary**: Render.com (free tier)
+- URL format: `https://[custom-name].onrender.app`
+- Zero-config deployment from forked repo
+- Free tier sufficient for personal use
+
+**Alternative**: Vercel (also free tier supported)
+
+---
+
 ## 📎 Appendix A: Quick Commands
 
 ```bash
