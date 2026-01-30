@@ -19,7 +19,7 @@
 #define ZONE_DATA_MAX_LEN 8000
 // Override config.h version
 #undef FIRMWARE_VERSION
-#define FIRMWARE_VERSION "6.3-stable"
+#define FIRMWARE_VERSION "6.4-factory-reset"
 
 // Default server for pairing API
 #define DEFAULT_SERVER "https://einkptdashboard.vercel.app"
@@ -91,6 +91,15 @@ void setup() {
     
     initZoneBuffers();
     initDisplay();
+    
+    // FACTORY RESET: Clear all saved settings
+    Serial.println("FACTORY RESET - clearing all settings...");
+    preferences.begin("cc-device", false);
+    preferences.clear();
+    preferences.end();
+    webhookUrl[0] = '\0';
+    devicePaired = false;
+    Serial.println("Settings cleared!");
     
     // GHOST BUSTER: Full screen clear cycle to remove artifacts
     Serial.println("Clearing e-ink ghosting...");
