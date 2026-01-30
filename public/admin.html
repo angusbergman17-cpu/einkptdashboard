@@ -1576,12 +1576,12 @@
 
         <!-- Navigation -->
         <div class="nav-tabs">
-            <button class="nav-tab" onclick="showTab('setup')">🚀 Setup & Journey</button>
-            <button class="nav-tab" onclick="showTab('api')">🔑 API Settings</button>
-            <button class="nav-tab active" onclick="showTab('live')">🚊 Live Data</button>
-            <button class="nav-tab advanced-only" onclick="showTab('config')">Configuration</button>
-            <button class="nav-tab advanced-only" onclick="showTab('architecture')">🏗️ Architecture</button>
-            <button class="nav-tab advanced-only" onclick="showTab('system')">🧠 System & Support</button>
+            <button class="nav-tab" onclick="showTab('setup', this)">🚀 Setup & Journey</button>
+            <button class="nav-tab" onclick="showTab('api', this)">🔑 API Settings</button>
+            <button class="nav-tab active" onclick="showTab('live', this)">🚊 Live Data</button>
+            <button class="nav-tab advanced-only" onclick="showTab('config', this)">Configuration</button>
+            <button class="nav-tab advanced-only" onclick="showTab('architecture', this)">🏗️ Architecture</button>
+            <button class="nav-tab advanced-only" onclick="showTab('system', this)">🧠 System & Support</button>
         </div>
 
         <!-- Setup & Journey Tab -->
@@ -1818,7 +1818,7 @@
                 <p style="opacity: 0.7; margin-bottom: 30px; max-width: 500px; margin-left: auto; margin-right: auto; line-height: 1.6;">
                     Complete the journey setup first to see live transit data, departure times, and journey recommendations.
                 </p>
-                <button class="btn btn-primary" onclick="showTab('setup')" style="padding: 12px 30px; font-size: 16px;">
+                <button class="btn btn-primary" onclick="showTab('setup', this)" style="padding: 12px 30px; font-size: 16px;">
                     → Go to Setup
                 </button>
             </div>
@@ -1834,7 +1834,7 @@
                             <div id="data-source-subtitle" style="font-size: 13px; opacity: 0.85;">Configure API keys in API Settings to enable real-time updates</div>
                         </div>
                     </div>
-                    <button id="data-source-action-btn" class="btn btn-secondary" onclick="showTab('api')" style="padding: 10px 20px; font-size: 14px; white-space: nowrap;">
+                    <button id="data-source-action-btn" class="btn btn-secondary" onclick="showTab('api', this)" style="padding: 10px 20px; font-size: 14px; white-space: nowrap;">
                         → API Settings
                     </button>
                 </div>
@@ -2169,7 +2169,7 @@
                 <div style="font-weight: 600; margin-bottom: 6px;">🔑 Looking for API Settings?</div>
                 <div style="font-size: 14px; opacity: 0.9;">
                     API credentials have been moved to the <strong>API Settings</strong> tab for easier configuration.
-                    <button class="btn btn-secondary" onclick="showTab('api')" style="margin-left: 10px; padding: 6px 16px; font-size: 13px;">
+                    <button class="btn btn-secondary" onclick="showTab('api', this)" style="margin-left: 10px; padding: 6px 16px; font-size: 13px;">
                         → Go to API Settings
                     </button>
                 </div>
@@ -3725,11 +3725,11 @@
                 });
         }
 
-        function showTab(tabId) {
+        function showTab(tabId, btn) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
             document.getElementById('tab-' + tabId).classList.add('active');
-            event.target.classList.add('active');
+            if (btn) btn.classList.add('active');
 
             // Update API keys status when API tab is shown
             if (tabId === 'api') {
@@ -4035,7 +4035,7 @@
                     <div style="padding: 30px; background: rgba(255,255,255,0.05); border-radius: 8px; text-align: center;">
                         <div style="font-size: 40px; opacity: 0.3; margin-bottom: 15px;">⚙️</div>
                         <div style="opacity: 0.7; margin-bottom: 15px;">No configuration yet</div>
-                        <button class="btn btn-primary" onclick="showTab('setup')">→ Go to Setup</button>
+                        <button class="btn btn-primary" onclick="showTab('setup', this)">→ Go to Setup</button>
                     </div>
                 `;
                 return;
@@ -6403,10 +6403,10 @@
 
                             <div style="font-weight: 600; margin-bottom: 10px;">What's Next?</div>
                             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                                <button class="btn btn-primary" onclick="showTab('api')" style="flex: 1; min-width: 200px;">
+                                <button class="btn btn-primary" onclick="showTab('api', this)" style="flex: 1; min-width: 200px;">
                                     🔑 Configure API Keys for Live Data
                                 </button>
-                                <button class="btn btn-secondary" onclick="showTab('live')" style="flex: 1; min-width: 200px;">
+                                <button class="btn btn-secondary" onclick="showTab('live', this)" style="flex: 1; min-width: 200px;">
                                     👀 View Journey with Fallback Data
                                 </button>
                             </div>
