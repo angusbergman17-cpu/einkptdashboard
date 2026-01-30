@@ -60,7 +60,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>🚃 Commute Compute Firmware Simulator v6.0</h1>
+            <h1><img src="/assets/brand/cc-logo-128.png" alt="CC" style="height: 28px; vertical-align: middle; margin-right: 8px;">Commute Compute Firmware Simulator v6.0</h1>
             <p>Accurate firmware emulation - same zone fetching, BMP rendering, refresh timing & memory constraints</p>
         </header>
         
@@ -297,42 +297,56 @@
             document.getElementById('btn-boot').disabled = false;
         }
         
+        // Preload logo
+        const ccLogo = new Image();
+        ccLogo.src = '/assets/brand/cc-logo-1bit-200.png';
+        
+        function drawLogo(x, y, width) {
+            if (ccLogo.complete && ccLogo.naturalWidth > 0) {
+                const aspect = ccLogo.naturalHeight / ccLogo.naturalWidth;
+                const height = width * aspect;
+                ctx.drawImage(ccLogo, x - width/2, y, width, height);
+                return height;
+            }
+            return 0;
+        }
+        
         function showWelcomeScreen() {
             ctx.fillStyle = '#f5f5f0';
             ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
             
-            // Header bar
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, 800, 60);
+            // Draw logo centered at top
+            const logoHeight = drawLogo(400, 30, 150);
             
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 16px monospace';
+            // Title below logo
+            ctx.fillStyle = '#000';
+            ctx.font = 'bold 18px monospace';
             ctx.textAlign = 'center';
-            ctx.fillText('Commute Compute SMART TRANSIT DISPLAY', 400, 25);
+            ctx.fillText('SMART TRANSIT DISPLAY', 400, 30 + logoHeight + 30);
             ctx.font = '12px monospace';
-            ctx.fillText('v' + FIRMWARE_VERSION, 400, 45);
+            ctx.fillText('Firmware v' + FIRMWARE_VERSION, 400, 30 + logoHeight + 50);
             
             // Setup box
+            const boxTop = 30 + logoHeight + 70;
             ctx.strokeStyle = '#000';
             ctx.lineWidth = 2;
-            ctx.strokeRect(80, 80, 640, 280);
+            ctx.strokeRect(80, boxTop, 640, 200);
             
             ctx.fillStyle = '#000';
             ctx.font = 'bold 14px monospace';
-            ctx.fillText('FIRST TIME SETUP', 400, 110);
+            ctx.fillText('FIRST TIME SETUP', 400, boxTop + 25);
             
             ctx.font = '12px monospace';
             ctx.textAlign = 'left';
-            ctx.fillText('1. Connect to WiFi: CommuteCompute-Setup', 100, 150);
-            ctx.fillText('   Password: transport123', 100, 170);
-            ctx.fillText('2. Open browser: 192.168.4.1', 100, 200);
-            ctx.fillText('3. Select your WiFi and enter password', 100, 230);
-            ctx.fillText('4. Server: ' + window.location.host, 100, 260);
-            ctx.fillText('5. Save and wait for dashboard', 100, 290);
+            ctx.fillText('1. Connect to WiFi: CommuteCompute-Setup', 100, boxTop + 55);
+            ctx.fillText('   Password: transport123', 100, boxTop + 75);
+            ctx.fillText('2. Open browser: 192.168.4.1', 100, boxTop + 105);
+            ctx.fillText('3. Select your WiFi and enter password', 100, boxTop + 135);
+            ctx.fillText('4. Server: ' + window.location.host, 100, boxTop + 165);
             
             ctx.textAlign = 'center';
             ctx.font = '10px monospace';
-            ctx.fillText('© 2026 Angus Bergman • CC BY-NC 4.0', 400, 450);
+            ctx.fillText('© 2026 Angus Bergman • CC BY-NC 4.0', 400, 465);
             log('showWelcomeScreen() rendered');
         }
         
@@ -341,41 +355,39 @@
             ctx.fillStyle = '#f5f5f0';
             ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
             
-            // Header bar
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, 800, 60);
+            // Draw logo centered at top
+            const logoHeight = drawLogo(400, 20, 120);
             
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 16px monospace';
+            ctx.fillStyle = '#000';
+            ctx.font = 'bold 14px monospace';
             ctx.textAlign = 'center';
-            ctx.fillText('Commute Compute SMART TRANSIT DISPLAY', 400, 25);
-            ctx.font = '12px monospace';
-            ctx.fillText('WiFi Setup Mode', 400, 45);
+            ctx.fillText('WiFi Setup Mode', 400, 20 + logoHeight + 20);
             
-            ctx.fillStyle = '#000';
             ctx.font = 'bold 18px monospace';
-            ctx.fillText('📶 WiFi CONFIGURATION', 400, 100);
+            ctx.fillText('WiFi CONFIGURATION', 400, 20 + logoHeight + 50);
             
             // AP Info box
+            const boxTop = 20 + logoHeight + 70;
             ctx.strokeStyle = '#000';
             ctx.lineWidth = 3;
-            ctx.strokeRect(200, 130, 400, 120);
+            ctx.strokeRect(200, boxTop, 400, 100);
             
             ctx.font = 'bold 14px monospace';
-            ctx.fillText('Connect to this network:', 400, 160);
+            ctx.fillText('Connect to this network:', 400, boxTop + 25);
             
-            ctx.font = 'bold 20px monospace';
-            ctx.fillText('CommuteCompute-Setup', 400, 195);
+            ctx.font = 'bold 18px monospace';
+            ctx.fillText('CommuteCompute-Setup', 400, boxTop + 55);
             
             ctx.font = '14px monospace';
-            ctx.fillText('Password: transport123', 400, 230);
+            ctx.fillText('Password: transport123', 400, boxTop + 85);
             
             // Instructions
             ctx.font = '12px monospace';
             ctx.textAlign = 'left';
-            ctx.fillText('Then open your browser to:', 200, 290);
+            const instrTop = boxTop + 120;
+            ctx.fillText('Then open your browser to:', 200, instrTop);
             ctx.font = 'bold 16px monospace';
-            ctx.fillText('http://192.168.4.1', 200, 315);
+            ctx.fillText('http://192.168.4.1', 200, instrTop + 25);
             
             ctx.font = '12px monospace';
             ctx.fillText('• Select your home WiFi network', 200, 360);
@@ -394,41 +406,37 @@
             ctx.fillStyle = '#f5f5f0';
             ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
             
-            // Header bar
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, 800, 60);
+            // Draw logo centered at top
+            const logoHeight = drawLogo(400, 20, 100);
             
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 16px monospace';
-            ctx.textAlign = 'center';
-            ctx.fillText('Commute Compute SMART TRANSIT DISPLAY', 400, 25);
+            ctx.fillStyle = '#000';
             ctx.font = '12px monospace';
-            ctx.fillText('v' + FIRMWARE_VERSION + ' • Setup Complete', 400, 45);
+            ctx.textAlign = 'center';
+            ctx.fillText('v' + FIRMWARE_VERSION + ' • Setup Complete', 400, 20 + logoHeight + 15);
             
             // Big checkmark
-            ctx.fillStyle = '#000';
-            ctx.font = 'bold 80px monospace';
-            ctx.fillText('✓', 400, 180);
+            ctx.font = 'bold 60px monospace';
+            ctx.fillText('✓', 400, 20 + logoHeight + 75);
             
-            ctx.font = 'bold 24px monospace';
-            ctx.fillText('SETUP COMPLETE', 400, 230);
+            ctx.font = 'bold 20px monospace';
+            ctx.fillText('SETUP COMPLETE', 400, 20 + logoHeight + 105);
             
             // Config details box
+            const boxTop = 20 + logoHeight + 125;
             ctx.strokeStyle = '#000';
             ctx.lineWidth = 2;
-            ctx.strokeRect(150, 260, 500, 150);
+            ctx.strokeRect(150, boxTop, 500, 130);
             
             ctx.font = '14px monospace';
             ctx.textAlign = 'left';
-            ctx.fillText('✓ WiFi: Connected (192.168.1.42)', 170, 290);
-            ctx.fillText('✓ Server: ' + window.location.host, 170, 315);
-            ctx.fillText('✓ Home: 42 Brunswick St, Fitzroy', 170, 340);
-            ctx.fillText('✓ Work: 200 Bourke St, Melbourne', 170, 365);
-            ctx.fillText('✓ Cafe: Industry Beans, Rose St', 170, 390);
+            ctx.fillText('✓ WiFi: Connected (192.168.1.42)', 170, boxTop + 25);
+            ctx.fillText('✓ Server: ' + window.location.host, 170, boxTop + 50);
+            ctx.fillText('✓ Home: 42 Brunswick St, Fitzroy', 170, boxTop + 75);
+            ctx.fillText('✓ Work: 200 Bourke St, Melbourne', 170, boxTop + 100);
             
             ctx.textAlign = 'center';
             ctx.font = 'bold 14px monospace';
-            ctx.fillText('Dashboard will appear shortly...', 400, 440);
+            ctx.fillText('Dashboard will appear shortly...', 400, boxTop + 150);
             
             ctx.font = '10px monospace';
             ctx.fillText('© 2026 Angus Bergman • CC BY-NC 4.0', 400, 465);

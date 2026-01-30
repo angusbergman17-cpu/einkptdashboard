@@ -232,16 +232,22 @@ create_error_image() {
 
 show_setup_required() {
     display_clear
-    eips 10 5 "================================" 2>/dev/null
-    eips 10 7 "  COMMUTE COMPUTE SETUP" 2>/dev/null
-    eips 10 9 "================================" 2>/dev/null
-    eips 10 12 "  Setup Required" 2>/dev/null
-    eips 10 15 "  Please complete setup at:" 2>/dev/null
-    eips 10 17 "  $CC_SERVER/setup-wizard.html" 2>/dev/null
-    eips 10 20 "  Then configure this device" 2>/dev/null
-    eips 10 22 "  with the webhook URL." 2>/dev/null
-    eips 10 25 "  Edit config.sh:" 2>/dev/null
-    eips 10 27 "  CC_WEBHOOK_URL=\"...\"" 2>/dev/null
+    
+    # Display logo if available
+    local LOGO_FILE="$SCRIPT_DIR/cc-logo.bmp"
+    if [ -f "$LOGO_FILE" ]; then
+        eips -g "$LOGO_FILE" 2>/dev/null
+        sleep 1
+    fi
+    
+    eips 10 20 "================================" 2>/dev/null
+    eips 10 22 "  COMMUTE COMPUTE SETUP" 2>/dev/null
+    eips 10 24 "================================" 2>/dev/null
+    eips 10 27 "  Setup Required" 2>/dev/null
+    eips 10 30 "  Please complete setup at:" 2>/dev/null
+    eips 10 32 "  $CC_SERVER/setup-wizard.html" 2>/dev/null
+    eips 10 35 "  Then configure this device" 2>/dev/null
+    eips 10 37 "  with the webhook URL." 2>/dev/null
 }
 
 show_connecting() {
@@ -255,14 +261,22 @@ show_connecting() {
 
 show_welcome() {
     display_clear
-    eips 10 5 "================================" 2>/dev/null
-    eips 10 7 "  COMMUTE COMPUTE v$VERSION" 2>/dev/null
-    eips 10 9 "  Smart Transit Display" 2>/dev/null
-    eips 10 11 "================================" 2>/dev/null
-    eips 10 14 "  Device: $(get_model)" 2>/dev/null
-    eips 10 16 "  Resolution: $(get_resolution)" 2>/dev/null
-    eips 10 18 "  MAC: $(get_mac)" 2>/dev/null
-    eips 10 21 "  Starting..." 2>/dev/null
+    
+    # Display logo if available
+    local LOGO_FILE="$SCRIPT_DIR/cc-logo.bmp"
+    if [ -f "$LOGO_FILE" ]; then
+        # Center logo on screen (approximate)
+        eips -g "$LOGO_FILE" 2>/dev/null
+        sleep 1
+    fi
+    
+    eips 10 20 "================================" 2>/dev/null
+    eips 10 22 "  COMMUTE COMPUTE v$VERSION" 2>/dev/null
+    eips 10 24 "  Smart Transit Display" 2>/dev/null
+    eips 10 26 "================================" 2>/dev/null
+    eips 10 29 "  Device: $(get_model)" 2>/dev/null
+    eips 10 31 "  Resolution: $(get_resolution)" 2>/dev/null
+    eips 10 33 "  Starting..." 2>/dev/null
 }
 
 # ============================================================================
