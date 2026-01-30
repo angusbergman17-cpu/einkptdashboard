@@ -300,24 +300,28 @@ bool pollPairingServer() {
     http.end();
     delete client;
     
-    JsonDocument doc;
-    if (deserializeJson(doc, payload)) {
+    // Use heap-allocated JSON document to avoid stack overflow on ESP32-C3
+    JsonDocument* doc = new JsonDocument();
+    if (deserializeJson(*doc, payload)) {
         Serial.println("JSON parse error");
+        delete doc;
         return false;
     }
     
-    const char* status = doc["status"] | "unknown";
+    const char* status = (*doc)["status"] | "unknown";
     Serial.printf("Pairing status: %s\n", status);
     
     if (strcmp(status, "paired") == 0) {
-        const char* url = doc["webhookUrl"] | "";
+        const char* url = (*doc)["webhookUrl"] | "";
         if (strlen(url) > 0) {
             strncpy(webhookUrl, url, sizeof(webhookUrl) - 1);
             Serial.printf("Paired! Webhook: %s\n", webhookUrl);
+            delete doc;
             return true;
         }
     }
     
+    delete doc;
     return false;
 }
 
@@ -462,13 +466,16 @@ bool fetchZoneUpdates(bool forceAll) {
     http.end();
     delete client;
     
-    JsonDocument doc;
-    if (deserializeJson(doc, payload)) {
+    // Use heap-allocated JSON document to avoid stack overflow on ESP32-C3
+    // Zone data can be 50KB+ with base64 BMPs - stack is only ~8KB
+    JsonDocument* doc = new JsonDocument();
+    if (deserializeJson(*doc, payload)) {
+        delete doc;
         return false;
     }
     
     zoneCount = 0;
-    JsonArray zonesArr = doc["zones"].as<JsonArray>();
+    JsonArray zonesArr = (*doc)["zones"].as<JsonArray>();
     
     for (JsonObject z : zonesArr) {
         if (zoneCount >= MAX_ZONES) break;
@@ -500,6 +507,7 @@ bool fetchZoneUpdates(bool forceAll) {
         zoneCount++;
     }
     
+    delete doc;
     return true;
 }
 
