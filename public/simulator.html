@@ -20,7 +20,7 @@
         .device-selector { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
         .device-btn { padding: 10px 16px; background: #334155; border: 2px solid #475569; border-radius: 8px; color: #f8fafc; font-size: 13px; cursor: pointer; transition: all 0.2s; }
         .device-btn:hover { background: #475569; }
-        .device-btn.active { background: #6366f1; border-color: #818cf8; }
+        .device-btn.active { background: #4fb28e; border-color: #818cf8; }
         .main-layout { display: grid; grid-template-columns: 1fr 350px; gap: 20px; }
         .display-wrapper { background: #1e293b; padding: 20px; border-radius: 12px; border: 2px solid #334155; display: flex; flex-direction: column; align-items: center; }
         .display-info { display: flex; justify-content: space-between; width: 100%; margin-bottom: 15px; font-size: 12px; color: #64748b; }
@@ -34,16 +34,16 @@
         .rect-box { position: absolute; border: 2px solid #1a1a1a; }
         .ghosting { opacity: 0.15; }
         .controls { background: #1e293b; padding: 20px; border-radius: 12px; border: 2px solid #334155; max-height: 700px; overflow-y: auto; }
-        .controls h2 { font-size: 16px; margin-bottom: 15px; color: #6366f1; }
+        .controls h2 { font-size: 16px; margin-bottom: 15px; color: #4fb28e; }
         .control-section { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #334155; }
         .control-section:last-child { border-bottom: none; }
         .control-section h3 { font-size: 12px; color: #94a3b8; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
         .control-group { margin-bottom: 10px; }
         .control-group label { display: block; font-size: 11px; color: #64748b; margin-bottom: 3px; }
         .control-group input, .control-group select { width: 100%; padding: 8px 10px; background: #1a2744; border: 1px solid #334155; border-radius: 6px; color: #f8fafc; font-size: 13px; }
-        .control-group input:focus, .control-group select:focus { outline: none; border-color: #6366f1; }
+        .control-group input:focus, .control-group select:focus { outline: none; border-color: #4fb28e; }
         .button-row { display: flex; gap: 8px; margin-top: 15px; }
-        button { flex: 1; padding: 10px; background: #6366f1; border: none; border-radius: 6px; color: white; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+        button { flex: 1; padding: 10px; background: #4fb28e; border: none; border-radius: 6px; color: white; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
         button:hover { background: #4f46e5; }
         button.secondary { background: #334155; }
         button.secondary:hover { background: #475569; }
@@ -56,7 +56,7 @@
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
         .refresh-zones { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 10px; }
         .zone { padding: 5px; background: #334155; border-radius: 4px; text-align: center; font-size: 10px; cursor: pointer; }
-        .zone.active { background: #6366f1; }
+        .zone.active { background: #4fb28e; }
         .zone.dirty { background: #f59e0b; }
         footer { text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #334155; color: #64748b; font-size: 12px; }
         
@@ -108,13 +108,13 @@
         .global-nav .nav-link:hover {
             background: rgba(30, 41, 59, 0.8);
             color: #f8fafc;
-            border-color: #6366f1;
+            border-color: #4fb28e;
         }
         
         .global-nav .nav-link.active {
-            background: #6366f1;
+            background: #4fb28e;
             color: white;
-            border-color: #6366f1;
+            border-color: #4fb28e;
         }
         
         body { padding-top: 56px; }
@@ -128,7 +128,7 @@
             position: absolute;
             top: -40px;
             left: 0;
-            background: #6366f1;
+            background: #4fb28e;
             color: white;
             padding: 8px 16px;
             z-index: 1001;
@@ -142,7 +142,7 @@
         
         /* Focus visible for keyboard navigation */
         *:focus-visible {
-            outline: 2px solid #6366f1;
+            outline: 2px solid #4fb28e;
             outline-offset: 2px;
         }
     </style>
@@ -326,7 +326,7 @@
         }
 
         function simulateFlash(){const d=document.getElementById("eink-display"),dev=DEVICES[currentDevice],s=getScale(dev),dot=document.getElementById("status-dot"),st=document.getElementById("status-text");refreshCount=0;partialCount=0;dot.classList.add("refreshing");d.style.background="#000";d.innerHTML='<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:monospace;color:#0f0;"><div style="font-size:'+(24*s)+'px;color:#fff;margin-bottom:'+(25*s)+'px;">⚡ FIRMWARE FLASH</div><div style="width:'+(500*s)+'px;height:'+(25*s)+'px;background:#222;border:2px solid #0f0;border-radius:4px;overflow:hidden;margin-bottom:'+(12*s)+'px;"><div id="flash-progress" style="width:0%;height:100%;background:linear-gradient(90deg,#0a0,#0f0);transition:width 0.3s;"></div></div><div id="flash-text" style="font-size:'+(14*s)+'px;color:#0f0;">Initializing...</div><div style="font-size:'+(10*s)+'px;color:#666;margin-top:'+(15*s)+'px;">DO NOT DISCONNECT DEVICE</div></div>';st.textContent="Flashing firmware...";const steps=[{pct:10,text:"Erasing flash memory...",delay:400},{pct:25,text:"Writing bootloader...",delay:500},{pct:40,text:"Writing firmware_main...",delay:600},{pct:55,text:"Writing firmware_backup...",delay:500},{pct:70,text:"Writing config partition...",delay:400},{pct:85,text:"Verifying checksums...",delay:500},{pct:100,text:"Flash complete!",delay:300}];let i=0;function next(){if(i>=steps.length){setTimeout(()=>simulateSetup(),800);return;}const step=steps[i++];document.getElementById("flash-progress").style.width=step.pct+"%";document.getElementById("flash-text").textContent="Flashing Commute Compute v5.18 ... "+step.pct+"%";st.textContent=step.text;setTimeout(next,step.delay);}next();}
-        function simulateSetup(){const d=document.getElementById("eink-display"),dev=DEVICES[currentDevice],s=getScale(dev),st=document.getElementById("status-text");d.style.background="#fff";d.innerHTML='<div style="width:100%;height:100%;padding:'+(30*s)+'px;font-family:-apple-system,sans-serif;color:#000;"><div style="font-size:'+(28*s)+'px;font-weight:800;margin-bottom:'+(8*s)+'px;">🚃 Commute Compute Setup</div><div style="font-size:'+(12*s)+'px;color:#666;margin-bottom:'+(25*s)+'px;">Configure your smart transit display</div><div style="background:#f5f5f5;border:2px solid #000;padding:'+(15*s)+'px;margin-bottom:'+(15*s)+'px;"><div style="font-size:'+(11*s)+'px;font-weight:700;margin-bottom:'+(8*s)+'px;">📍 HOME ADDRESS</div><div style="background:#fff;border:1px solid #ccc;padding:'+(10*s)+'px;font-size:'+(13*s)+'px;" id="setup-home">Detecting location...</div></div><div style="background:#f5f5f5;border:2px solid #000;padding:'+(15*s)+'px;margin-bottom:'+(15*s)+'px;"><div style="font-size:'+(11*s)+'px;font-weight:700;margin-bottom:'+(8*s)+'px;">🏢 WORK ADDRESS</div><div style="background:#fff;border:1px solid #ccc;padding:'+(10*s)+'px;font-size:'+(13*s)+'px;" id="setup-work">Waiting...</div></div><div style="background:#f5f5f5;border:2px solid #000;padding:'+(15*s)+'px;"><div style="font-size:'+(11*s)+'px;font-weight:700;margin-bottom:'+(8*s)+'px;">☕ COFFEE STOP</div><div style="background:#fff;border:1px solid #ccc;padding:'+(10*s)+'px;font-size:'+(13*s)+'px;" id="setup-coffee">Optional</div></div><div style="display:flex;gap:'+(10*s)+'px;margin-top:'+(20*s)+'px;"><div style="flex:1;background:#000;color:#fff;padding:'+(12*s)+'px;text-align:center;font-weight:700;font-size:'+(13*s)+'px;">← BACK</div><div style="flex:2;background:#6366f1;color:#fff;padding:'+(12*s)+'px;text-align:center;font-weight:700;font-size:'+(13*s)+'px;">CONTINUE →</div></div></div>';st.textContent="Setup wizard...";setTimeout(()=>{document.getElementById("setup-home").textContent="68 Cambridge St, Collingwood VIC 3066";st.textContent="Home configured";},600);setTimeout(()=>{document.getElementById("setup-work").textContent="80 Collins St, Melbourne VIC 3000";st.textContent="Work configured";},1200);setTimeout(()=>{document.getElementById("setup-coffee").textContent="Proud Mary, 172 Oxford St";st.textContent="Setup complete!";},1800);setTimeout(()=>simulateBoot(),2500);}
+        function simulateSetup(){const d=document.getElementById("eink-display"),dev=DEVICES[currentDevice],s=getScale(dev),st=document.getElementById("status-text");d.style.background="#fff";d.innerHTML='<div style="width:100%;height:100%;padding:'+(30*s)+'px;font-family:-apple-system,sans-serif;color:#000;"><div style="font-size:'+(28*s)+'px;font-weight:800;margin-bottom:'+(8*s)+'px;">🚃 Commute Compute Setup</div><div style="font-size:'+(12*s)+'px;color:#666;margin-bottom:'+(25*s)+'px;">Configure your smart transit display</div><div style="background:#f5f5f5;border:2px solid #000;padding:'+(15*s)+'px;margin-bottom:'+(15*s)+'px;"><div style="font-size:'+(11*s)+'px;font-weight:700;margin-bottom:'+(8*s)+'px;">📍 HOME ADDRESS</div><div style="background:#fff;border:1px solid #ccc;padding:'+(10*s)+'px;font-size:'+(13*s)+'px;" id="setup-home">Detecting location...</div></div><div style="background:#f5f5f5;border:2px solid #000;padding:'+(15*s)+'px;margin-bottom:'+(15*s)+'px;"><div style="font-size:'+(11*s)+'px;font-weight:700;margin-bottom:'+(8*s)+'px;">🏢 WORK ADDRESS</div><div style="background:#fff;border:1px solid #ccc;padding:'+(10*s)+'px;font-size:'+(13*s)+'px;" id="setup-work">Waiting...</div></div><div style="background:#f5f5f5;border:2px solid #000;padding:'+(15*s)+'px;"><div style="font-size:'+(11*s)+'px;font-weight:700;margin-bottom:'+(8*s)+'px;">☕ COFFEE STOP</div><div style="background:#fff;border:1px solid #ccc;padding:'+(10*s)+'px;font-size:'+(13*s)+'px;" id="setup-coffee">Optional</div></div><div style="display:flex;gap:'+(10*s)+'px;margin-top:'+(20*s)+'px;"><div style="flex:1;background:#000;color:#fff;padding:'+(12*s)+'px;text-align:center;font-weight:700;font-size:'+(13*s)+'px;">← BACK</div><div style="flex:2;background:#4fb28e;color:#fff;padding:'+(12*s)+'px;text-align:center;font-weight:700;font-size:'+(13*s)+'px;">CONTINUE →</div></div></div>';st.textContent="Setup wizard...";setTimeout(()=>{document.getElementById("setup-home").textContent="68 Cambridge St, Collingwood VIC 3066";st.textContent="Home configured";},600);setTimeout(()=>{document.getElementById("setup-work").textContent="80 Collins St, Melbourne VIC 3000";st.textContent="Work configured";},1200);setTimeout(()=>{document.getElementById("setup-coffee").textContent="Proud Mary, 172 Oxford St";st.textContent="Setup complete!";},1800);setTimeout(()=>simulateBoot(),2500);}
         function simulateBoot(){const d=document.getElementById("eink-display"),dev=DEVICES[currentDevice],s=getScale(dev),dot=document.getElementById("status-dot"),st=document.getElementById("status-text");d.style.background="#000";d.innerHTML='<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:-apple-system,sans-serif;color:#fff;"><div style="font-size:'+(48*s)+'px;margin-bottom:'+(15*s)+'px;">🚃</div><div style="font-size:'+(24*s)+'px;font-weight:800;margin-bottom:'+(8*s)+'px;">Commute Compute</div><div style="font-size:'+(12*s)+'px;color:#888;margin-bottom:'+(30*s)+'px;">Smart Transit Display</div><div style="display:flex;gap:'+(8*s)+'px;margin-bottom:'+(20*s)+'px;"><div style="width:'+(10*s)+'px;height:'+(10*s)+'px;background:#fff;border-radius:50%;animation:bootPulse 1.5s infinite;"></div><div style="width:'+(10*s)+'px;height:'+(10*s)+'px;background:#fff;border-radius:50%;animation:bootPulse 1.5s infinite 0.2s;"></div><div style="width:'+(10*s)+'px;height:'+(10*s)+'px;background:#fff;border-radius:50%;animation:bootPulse 1.5s infinite 0.4s;"></div></div><div id="boot-status" style="font-size:'+(11*s)+'px;color:#666;">Initializing...</div><div style="position:absolute;bottom:'+(25*s)+'px;font-size:'+(10*s)+'px;color:#444;">v5.18 • E-Ink '+dev.width+'×'+dev.height+'</div></div><style>@keyframes bootPulse{0%,100%{opacity:0.3;transform:scale(0.8);}50%{opacity:1;transform:scale(1);}}</style>';st.textContent="Booting...";const steps=[{text:"Connecting to WiFi...",delay:800},{text:"WiFi connected ✓",delay:500},{text:"Connecting to PTV OpenData API...",delay:700},{text:"Fetching real-time departures...",delay:600},{text:"Loading journey data...",delay:500},{text:"Display ready!",delay:400}];let i=0;function next(){if(i>=steps.length){dot.classList.remove("refreshing");st.textContent="Ready";setTimeout(()=>renderV11Journey(),600);return;}const step=steps[i++];document.getElementById("boot-status").textContent=step.text;st.textContent=step.text;setTimeout(next,step.delay);}next();}
         initDeviceSelector();updateDeviceInfo();updateDisplay();
     </script>
@@ -348,7 +348,7 @@
                 💖 Sponsor
             </a>
             <a href="https://github.com/angusbergman17-cpu/einkptdashboard/issues/new" target="_blank" rel="noopener"
-               style="padding: 6px 14px; background: #6366f1; color: #fff; border-radius: 6px; text-decoration: none; font-weight: 500; font-size: 12px;">
+               style="padding: 6px 14px; background: #4fb28e; color: #fff; border-radius: 6px; text-decoration: none; font-weight: 500; font-size: 12px;">
                 📝 Feedback
             </a>
         </div>

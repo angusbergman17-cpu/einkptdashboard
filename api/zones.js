@@ -246,11 +246,13 @@ export default async function handler(req, res) {
       
       if (!prefs.isConfigured()) {
         console.log('[zones/metadata] Setup not complete - returning setup_required');
+        const host = req.headers.host || req.headers['x-forwarded-host'] || 'your-server';
+        const protocol = req.headers['x-forwarded-proto'] || 'https';
         res.setHeader('Content-Type', 'application/json');
         res.setHeader('Cache-Control', 'no-cache');
         return res.status(200).json({
           setup_required: true,
-          message: 'Complete setup at your-server/setup-wizard.html'
+          message: `Complete setup at ${protocol}://${host}/setup-wizard.html`
         });
       }
       
@@ -349,11 +351,13 @@ export default async function handler(req, res) {
     
     if (!prefs.isConfigured()) {
       console.log('[zones] Setup not complete - returning setup_required');
+      const host = req.headers.host || req.headers['x-forwarded-host'] || 'your-server';
+      const protocol = req.headers['x-forwarded-proto'] || 'https';
       res.setHeader('Content-Type', 'application/json');
       res.setHeader('Cache-Control', 'no-cache');
       return res.status(200).json({
         setup_required: true,
-        message: 'Please complete setup at your-server/setup-wizard.html',
+        message: `Please complete setup at ${protocol}://${host}/setup-wizard.html`,
         timestamp: new Date().toISOString()
       });
     }

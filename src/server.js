@@ -5715,7 +5715,7 @@ app.get('/admin/live-display', async (req, res) => {
 
         .back-btn {
             display: inline-block;
-            background: rgba(99, 102, 241, 0.8);
+            background: rgba(79, 178, 142, 0.8);
             color: white;
             padding: 10px 20px;
             border-radius: 8px;
@@ -5726,7 +5726,7 @@ app.get('/admin/live-display', async (req, res) => {
         }
 
         .back-btn:hover {
-            background: rgba(99, 102, 241, 1);
+            background: rgba(79, 178, 142, 1);
             transform: translateY(-1px);
         }
 
@@ -6011,7 +6011,7 @@ app.get('/admin/live-display', async (req, res) => {
                     <div style="font-size: 12px; opacity: 0.8;">${stateName} • ${dataSourceMode} Mode</div>
                 </div>
             </div>
-            ${!hasLiveData ? '<a href="/admin#tab-api" style="background: #6366f1; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 500;">Configure API Keys</a>' : ''}
+            ${!hasLiveData ? '<a href="/admin#tab-api" style="background: #4fb28e; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 500;">Configure API Keys</a>' : ''}
         </div>
 
         <div class="header">
@@ -6551,7 +6551,7 @@ app.get('/preview', requireConfiguration, (req, res) => {
         }
 
         .btn-primary {
-          background: #6366f1;
+          background: #4fb28e;
           color: white;
           padding: 10px 20px;
           border-radius: 8px;
@@ -6566,7 +6566,7 @@ app.get('/preview', requireConfiguration, (req, res) => {
         .btn-primary:hover {
           background: #4f46e5;
           transform: translateY(-1px);
-          box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+          box-shadow: 0 2px 8px rgba(79, 178, 142, 0.4);
         }
 
         .btn-secondary {
@@ -6609,10 +6609,10 @@ app.get('/preview', requireConfiguration, (req, res) => {
         }
 
         .config-item {
-          background: rgba(99, 102, 241, 0.05);
+          background: rgba(79, 178, 142, 0.05);
           padding: 12px 16px;
           border-radius: 8px;
-          border-left: 3px solid #6366f1;
+          border-left: 3px solid #4fb28e;
         }
 
         .config-item label {
@@ -6724,7 +6724,7 @@ app.get('/preview', requireConfiguration, (req, res) => {
         }
 
         .endpoints-list a {
-          color: #6366f1;
+          color: #4fb28e;
           text-decoration: none;
           font-weight: 600;
           font-family: 'Courier New', monospace;
@@ -6815,7 +6815,7 @@ app.get('/preview', requireConfiguration, (req, res) => {
               <value>${dataSourceMode === 'live' ? 'Real-time API' : 'Fallback Timetables'}</value>
             </div>
           </div>
-          ${deviceParam ? '<div style="margin-top: 15px; padding: 12px; background: rgba(99, 102, 241, 0.1); border-radius: 8px; border-left: 3px solid #6366f1; font-size: 13px;"><strong>Testing Mode:</strong> Preview showing ' + deviceName + '. <a href="/preview" style="color: #6366f1; font-weight: 600;">View your configured device</a></div>' : '<div style="margin-top: 15px; padding: 12px; background: rgba(99, 102, 241, 0.1); border-radius: 8px; border-left: 3px solid #6366f1; font-size: 13px;"><strong>Tip:</strong> Test other devices by adding ?device=kindle-pw5 to the URL</div>'}
+          ${deviceParam ? '<div style="margin-top: 15px; padding: 12px; background: rgba(79, 178, 142, 0.1); border-radius: 8px; border-left: 3px solid #4fb28e; font-size: 13px;"><strong>Testing Mode:</strong> Preview showing ' + deviceName + '. <a href="/preview" style="color: #4fb28e; font-weight: 600;">View your configured device</a></div>' : '<div style="margin-top: 15px; padding: 12px; background: rgba(79, 178, 142, 0.1); border-radius: 8px; border-left: 3px solid #4fb28e; font-size: 13px;"><strong>Tip:</strong> Test other devices by adding ?device=kindle-pw5 to the URL</div>'}
         </div>
 
         <!-- Preview Section -->

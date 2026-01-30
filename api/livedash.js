@@ -214,9 +214,9 @@ function generateHtmlPreview(device, config) {
             --bg-primary: #1a2744;
             --bg-secondary: #1e293b;
             --bg-card: rgba(30, 41, 59, 0.8);
-            --accent: #6366f1;
-            --accent-hover: #818cf8;
-            --success: #22c55e;
+            --accent: #4fb28e;
+            --accent-hover: #6ec9a8;
+            --success: #4fb28e;
             --text-primary: #f8fafc;
             --text-secondary: #94a3b8;
             --border: rgba(255, 255, 255, 0.1);

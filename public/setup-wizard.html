@@ -79,7 +79,7 @@
         }
 
         .step.active {
-            background: #6366f1;
+            background: #4fb28e;
             color: white;
             transform: scale(1.2);
         }
@@ -127,12 +127,12 @@
 
         .form-input:focus {
             outline: none;
-            border-color: #6366f1;
+            border-color: #4fb28e;
             background: rgba(30, 41, 59, 0.8);
         }
 
         .btn {
-            background: #6366f1;
+            background: #4fb28e;
             color: white;
             border: none;
             padding: 14px 32px;
@@ -193,12 +193,12 @@
         }
 
         .authority-card:hover {
-            border-color: #6366f1;
+            border-color: #4fb28e;
             transform: translateX(5px);
         }
 
         .authority-card.selected {
-            border-color: #6366f1;
+            border-color: #4fb28e;
             background: #f7fafc;
         }
 
@@ -218,7 +218,7 @@
 
         .authority-link {
             font-size: 13px;
-            color: #6366f1;
+            color: #4fb28e;
             text-decoration: none;
         }
 
@@ -312,7 +312,7 @@
                 <div class="form-group" style="margin-top: 25px;">
                     <label class="form-label">Google Places API (New) Key (Optional)</label>
                     <input type="text" id="google-places-api-key" class="form-input" placeholder="Enter your Google Places API (new) key..." autocomplete="off" inputmode="text">
-                    <a href="https://console.cloud.google.com/apis/library/places-backend.googleapis.com" target="_blank" style="font-size: 13px; color: #6366f1; display: block; margin-top: 8px;">
+                    <a href="https://console.cloud.google.com/apis/library/places-backend.googleapis.com" target="_blank" style="font-size: 13px; color: #4fb28e; display: block; margin-top: 8px;">
                         Get Google Places API key (has free tier) →
                     </a>
                     <small style="font-size: 12px; color: #a0aec0; display: block; margin-top: 5px;">
@@ -409,7 +409,7 @@
                     For <strong>real-time</strong> transit data, enter your API key. Without it, we'll use <strong>timetable data</strong> as a fallback.
                 </p>
 
-                <div class="info-box" style="background: rgba(99, 102, 241, 0.1); border-left: 3px solid #6366f1; padding: 12px 15px; margin-bottom: 20px; border-radius: 6px;">
+                <div class="info-box" style="background: rgba(79, 178, 142, 0.1); border-left: 3px solid #4fb28e; padding: 12px 15px; margin-bottom: 20px; border-radius: 6px;">
                     <strong style="color: #a0aec0;">💡 Why get an API key?</strong><br>
                     <span style="color: #718096; font-size: 13px;">Real-time data shows live delays, cancellations, and accurate arrival times. Timetable fallback uses scheduled times only.</span>
                 </div>
@@ -450,7 +450,7 @@
                         </label>
                     </div>
 
-                    <div class="form-group" style="margin-top: 20px; padding: 15px; background: rgba(99, 102, 241, 0.1); border-radius: 8px;">
+                    <div class="form-group" style="margin-top: 20px; padding: 15px; background: rgba(79, 178, 142, 0.1); border-radius: 8px;">
                         <label class="form-label" style="margin-bottom: 10px;">☁️ API Usage Mode</label>
                         <div style="margin-bottom: 10px;">
                             <label style="display: flex; align-items: center; cursor: pointer;">
@@ -533,7 +533,7 @@
                     💖 Sponsor
                 </a>
                 <a href="https://github.com/angusbergman17-cpu/einkptdashboard/issues/new?template=feedback.md&title=[Setup Feedback]" target="_blank" rel="noopener"
-                   style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background: #6366f1; color: #fff; border-radius: 8px; text-decoration: none; font-weight: 500; font-size: 13px;">
+                   style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background: #4fb28e; color: #fff; border-radius: 8px; text-decoration: none; font-weight: 500; font-size: 13px;">
                     📝 Feedback
                 </a>
             </div>
@@ -848,7 +848,7 @@
             const auth = AUTHORITIES[selectedAuthority];
             document.getElementById('api-info').innerHTML = `
                 <strong style="color: #e2e8f0;">📄 Get ${auth.name} API Key</strong><br>
-                <span style="color: #a0aec0;">Visit: <a href="${auth.url}" target="_blank" style="color: #6366f1;">${auth.url}</a></span>
+                <span style="color: #a0aec0;">Visit: <a href="${auth.url}" target="_blank" style="color: #4fb28e;">${auth.url}</a></span>
             `;
 
             let html = '';
@@ -858,7 +858,7 @@
                         <label class="form-label" style="color: #e2e8f0;">Transport Victoria OpenData API Key</label>
                         <input type="text" id="api-key" class="form-input" placeholder="Enter your API key" autocomplete="off" inputmode="text" style="-webkit-text-security: disc;">
                         <small style="color: #a0aec0; margin-top: 5px; display: block;">
-                            Register at <a href="https://opendata.transport.vic.gov.au/" target="_blank" style="color: #6366f1;">opendata.transport.vic.gov.au</a> — Subscribe to GTFS Realtime feeds
+                            Register at <a href="https://opendata.transport.vic.gov.au/" target="_blank" style="color: #4fb28e;">opendata.transport.vic.gov.au</a> — Subscribe to GTFS Realtime feeds
                         </small>
                     </div>
                 `;
@@ -868,7 +868,7 @@
                         <label class="form-label" style="color: #e2e8f0;">${auth.name} API Key</label>
                         <input type="text" id="api-key" class="form-input" placeholder="Your API Key" autocomplete="off" inputmode="text" style="-webkit-text-security: disc;">
                         <small style="color: #a0aec0; margin-top: 5px; display: block;">
-                            Register at <a href="${auth.url}" target="_blank" style="color: #6366f1;">${auth.url}</a>
+                            Register at <a href="${auth.url}" target="_blank" style="color: #4fb28e;">${auth.url}</a>
                         </small>
                     </div>
                 `;
@@ -955,7 +955,7 @@
             // Show processing status
             document.getElementById('setup-status').innerHTML = `
                 <div style="text-align: center; padding: 20px;">
-                    <div style="color: #6366f1; font-size: 18px; margin-bottom: 10px;">⏳ Processing setup...</div>
+                    <div style="color: #4fb28e; font-size: 18px; margin-bottom: 10px;">⏳ Processing setup...</div>
                     <p style="color: #94a3b8;">Saving your configuration</p>
                 </div>
             `;
