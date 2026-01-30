@@ -17,7 +17,8 @@ These rules govern all development on Commute Compute. Compliance is mandatory.
 |-----------|-----------|------------|-------|
 | **System** | Commute Compute System | Commute Compute / CC | General references |
 | **Repository** | CommuteCompute | — | GitHub repo (will be renamed) |
-| **Dashboard Renderer** | CCDash V10 | CCDash | Dashboard rendering references |
+| **Dashboard Design** | CCDashDesignV10 | CCDash | Dashboard specification (LOCKED) |
+| **Dashboard Renderer** | CCDashRenderer | CCDash | Renders CCDashDesignV10 to PNG/BMP |
 | **Multi-Device Renderer** | CC LiveDash | LiveDash | LiveDash endpoint/service |
 | **Journey Engine** | SmartCommute | SmartCommute | KEEP as-is (journey + coffee calculations) |
 
@@ -40,7 +41,10 @@ The system was previously known as "Commute Compute". Update any remaining refer
 | commute-compute | commute-compute |
 | commutecompute | commutecompute |
 | commute-compute-config | cc-config |
-| V10 Dashboard | CCDash V10 |
+| V10 Dashboard | CCDashDesignV10 |
+| V10 spec | CCDashDesignV10 spec |
+| v13 renderer | CCDashRenderer |
+| zone-renderer-v13.js | ccdash-renderer.js |
 | LiveDash (standalone) | CC LiveDash |
 
 **Note:** "SmartCommute" is retained as the journey calculation engine name.
@@ -265,7 +269,7 @@ The system was previously known as "Commute Compute". Update any remaining refer
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 1.6 | 2026-01-30 | Angus Bergman | **REBRAND**: Commute Compute → Commute Compute System. Added Section 0 (Naming Conventions). Updated all references: CCDash V10, CC LiveDash. SmartCommute engine name retained. |
+| 1.6 | 2026-01-30 | Angus Bergman | **REBRAND**: Commute Compute → Commute Compute System. Added Section 0 (Naming Conventions). Updated all references: CCDashDesignV10, CC LiveDash. SmartCommute engine name retained. |
 | 1.5 | 2026-01-29 | Angus Bergman | Added: API Key Validation requirements (17.2) — mandatory validation for all API keys entered via admin panel including format checks, live testing, and user feedback requirements |
 | 1.4 | 2026-01-29 | Angus Bergman | Added: console.log forbidden term (1.1), 12-hour time code pattern (12.2), file naming consistency (13.5), forbidden terms grep verification (14.1.1) |
 | 1.3 | 2025-01-29 | Angus Bergman | Added full document index with version control |
@@ -757,7 +761,7 @@ IMAGE_URL="https://your-deployment.vercel.app/api/kindle/image"
 ## 🔒 Section 7: Spec Integrity
 
 ### 7.1 V10 Spec is Immutable
-The locked specification in `specs/DASHBOARD-SPEC-V10.md` cannot be modified without explicit approval from the project owner. Any changes require a new version number and formal review.
+The locked specification in `specs/CCDashDesignV10.md` cannot be modified without explicit approval from the project owner. Any changes require a new version number and formal review.
 
 ### 7.2 Zone Boundaries are Sacred
 Zone pixel coordinates defined in the spec are fixed. Never modify the x, y, width, or height of any zone. The entire system depends on these boundaries for partial refresh.
@@ -1017,7 +1021,7 @@ curl "https://your-server.vercel.app/api/livedash?device=trmnl&token=eyJ..."
 ## ⚙️ Section 12: Business Logic
 
 ### 12.1 CoffeeDecision is Sacred
-The CoffeeDecision engine logic is specified exactly in the V10 spec. Implement it precisely as documented. No "improvements" or "optimisations" that alter the decision logic.
+The CoffeeDecision engine logic is specified exactly in the CCDashDesignV10 spec. Implement it precisely as documented. No "improvements" or "optimisations" that alter the decision logic.
 
 ### 12.2 12-hour Time Format
 All times displayed to users must be in 12-hour format with am/pm. No 24-hour time, ever. This is a deliberate UX decision.
@@ -1432,12 +1436,12 @@ The following require **explicit approval** before modification:
 
 | Element | Document | Reason |
 |---------|----------|--------|
-| Zone layout positions | DASHBOARD-SPEC-V10.md | UI consistency |
-| Status bar variants | DASHBOARD-SPEC-V10.md | User expectations |
-| Leg states | DASHBOARD-SPEC-V10.md | Visual language |
-| Color palette | DASHBOARD-SPEC-V10.md | E-ink optimization |
-| Mode icons | DASHBOARD-SPEC-V10.md | Brand consistency |
-| CoffeeDecision logic | DASHBOARD-SPEC-V10.md | Core feature |
+| Zone layout positions | CCDashDesignV10.md | UI consistency |
+| Status bar variants | CCDashDesignV10.md | User expectations |
+| Leg states | CCDashDesignV10.md | Visual language |
+| Color palette | CCDashDesignV10.md | E-ink optimization |
+| Mode icons | CCDashDesignV10.md | Brand consistency |
+| CoffeeDecision logic | CCDashDesignV10.md | Core feature |
 | Anti-brick rules | This document | Device safety |
 
 ### 18.2 Modification Process
@@ -1586,7 +1590,7 @@ git push origin v3.0.0        # Push tag
 
 | Topic | Document |
 |-------|----------|
-| Dashboard Specification | `specs/DASHBOARD-SPEC-V10.md` |
+| Dashboard Specification | `specs/CCDashDesignV10.md` |
 | System Architecture | `docs/SYSTEM-ARCHITECTURE.md` |
 | Distribution Guide | `DISTRIBUTION.md` |
 | Firmware Anti-Brick | `firmware/ANTI-BRICK-REQUIREMENTS.md` |

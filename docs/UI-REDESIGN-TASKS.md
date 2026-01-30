@@ -102,7 +102,7 @@ Moved to `/public/archive/`:
 |---|------|-------------|
 | 1 | `0f1ba48` | livedash 12-hour time fix |
 | 2 | `7160746` | DEVELOPMENT-RULES.md v1.4 |
-| 3 | `938403e` | V10 spec compliance + multi-device docs |
+| 3 | `938403e` | CCDashDesignV10 spec compliance + multi-device docs |
 | 4 | `d5d3a2e` | Phase 1 - LiveDash, Attribution page |
 | 5 | `01823a2` | Phase 2 - Complete footer coverage |
 | 6 | `03e427e` | Phase 3 - Unified Preview, Help page |

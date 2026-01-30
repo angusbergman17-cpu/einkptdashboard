@@ -531,7 +531,7 @@ The entire system works on free infrastructure:
 ## Completed ✅
 
 - Core server architecture
-- CCDash™ V10 specification
+- CCDash™ CCDashDesignV10 specification
 - SmartCommute™ engine
 - CC LiveDash™ multi-device renderer
 - CCFirm™ custom firmware

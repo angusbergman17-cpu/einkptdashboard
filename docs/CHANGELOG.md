@@ -46,12 +46,12 @@ All notable changes to this project are documented here.
 ## [2026-01-28] — V10 Dashboard Specification Lock
 
 ### Added
-- DASHBOARD-SPEC-V10.md — Complete locked specification
+- CCDashDesignV10.md — Complete locked specification
 - Multi-device documentation
 - Zone-based rendering specification
 
 ### Changed
-- V10 spec now **LOCKED** — changes require explicit approval
+- CCDashDesignV10 spec now **LOCKED** — changes require explicit approval
 - Zone boundaries formalized (header, summary, legs, footer)
 
 ### Firmware

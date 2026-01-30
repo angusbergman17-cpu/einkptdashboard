@@ -183,7 +183,7 @@ The dashboard displays your complete journey at a glance:
 └────────────────────────────────────────────────────────────┘
 ```
 
-**Design Specification:** [specs/DASHBOARD-SPEC-V10.md](specs/DASHBOARD-SPEC-V10.md) (🔒 LOCKED)
+**Design Specification:** [specs/CCDashDesignV10.md](specs/CCDashDesignV10.md) (🔒 LOCKED)
 
 ---
 
@@ -241,7 +241,7 @@ The dashboard displays your complete journey at a glance:
 |----------|-------------|
 | **[DEVELOPMENT-RULES.md](DEVELOPMENT-RULES.md)** | 🚨 **MANDATORY** — All development rules (v1.6, 21 sections) |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture (v4.0) |
-| [specs/DASHBOARD-SPEC-V10.md](specs/DASHBOARD-SPEC-V10.md) | Dashboard design spec (🔒 LOCKED) |
+| [specs/CCDashDesignV10.md](specs/CCDashDesignV10.md) | Dashboard design spec (🔒 LOCKED) |
 
 ### Setup & Installation
 
@@ -303,7 +303,7 @@ pio device monitor         # Serial monitor
 **⚠️ MANDATORY:** Read [DEVELOPMENT-RULES.md](DEVELOPMENT-RULES.md) first.
 
 Key rules:
-- CCDash™ V10 spec is **LOCKED** — no changes without approval
+- CCDash™ CCDashDesignV10 spec is **LOCKED** — no changes without approval
 - Never use "PTV API" — use "Transport Victoria OpenData API"
 - CCFirm™ custom firmware only — NO usetrmnl.com dependencies
 - 1-bit BMP rendering — no grayscale

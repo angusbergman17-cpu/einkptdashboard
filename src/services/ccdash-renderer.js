@@ -1,5 +1,5 @@
 /**
- * Zone Renderer V13 - Complete UI/UX Redesign
+ * CCDashRenderer - Implements CCDashDesignV10 Specification
  * Clean, modern PIDS-style display for e-ink
  * 
  * Layout (800x480):

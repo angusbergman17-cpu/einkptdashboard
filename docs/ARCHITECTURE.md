@@ -195,7 +195,7 @@ einkptdashboard/
 │   │   ├── weather-bom.js        # BOM weather
 │   │   ├── zone-renderer.js      # Zone BMP generation
 │   │   ├── zone-renderer-v12.js
-│   │   └── zone-renderer-v13.js
+│   │   └── ccdash-renderer.js
 │   ├── utils/                    # Utilities
 │   │   ├── australian-cities.js  # City data
 │   │   ├── config.js             # App config
@@ -228,7 +228,7 @@ einkptdashboard/
 │   ├── Inter-Bold.ttf
 │   └── Inter-Regular.ttf
 ├── specs/
-│   └── DASHBOARD-SPEC-V10.md     # Locked spec
+│   └── CCDashDesignV10.md     # Locked spec
 ├── docs/                         # Documentation
 └── DEVELOPMENT-RULES.md          # Development rules (v1.6)
 ```
@@ -550,7 +550,7 @@ einkptdashboard/
 |----------|---------|--------|
 | `zone-renderer.js` | Original zone renderer | Active |
 | `zone-renderer-v12.js` | Improved zone handling | Active |
-| `zone-renderer-v13.js` | Latest improvements | Active |
+| `ccdash-renderer.js` | Latest improvements | Active |
 | `v11-dashboard-renderer.js` | Full dashboard | Active |
 | `v11-journey-renderer.js` | Journey-focused | Active |
 | `livedash.js` | Multi-device | Active |
@@ -1210,7 +1210,7 @@ CCFirm™ is the custom firmware family for Commute Compute devices. All devices
 ## References
 
 - [DEVELOPMENT-RULES.md](../DEVELOPMENT-RULES.md) — All development rules (v1.6)
-- [specs/DASHBOARD-SPEC-V10.md](../specs/DASHBOARD-SPEC-V10.md) — Dashboard specification (LOCKED)
+- [specs/CCDashDesignV10.md](../specs/CCDashDesignV10.md) — Dashboard specification (LOCKED)
 - [firmware/ANTI-BRICK-REQUIREMENTS.md](../firmware/ANTI-BRICK-REQUIREMENTS.md) — Firmware safety rules
 - [firmware/BOOT-SEQUENCE.md](../firmware/BOOT-SEQUENCE.md) — Boot sequence documentation
 - [firmware/PAIRING-SPEC.md](../firmware/PAIRING-SPEC.md) — Device pairing specification

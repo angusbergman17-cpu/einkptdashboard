@@ -81,7 +81,7 @@
       "changes": [
         "REBRAND: Commute Compute → Commute Compute System",
         "Added Section 0 (Naming Conventions) to DEVELOPMENT-RULES.md",
-        "Updated all internal references: CCDash V10, CC LiveDash",
+        "Updated all internal references: CCDashDesignV10, CC LiveDash",
         "SmartCommute engine name retained",
         "Updated localStorage keys: commute-compute-* → cc-*"
       ]

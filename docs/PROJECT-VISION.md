@@ -286,7 +286,7 @@ Things we explicitly **will not** pursue:
 
 ### Decision Making
 - Major changes require specification updates
-- V10 spec is LOCKED — changes require new version
+- CCDashDesignV10 spec is LOCKED — changes require new version
 - DEVELOPMENT-RULES.md v1.6 is the source of truth
 - Community input welcome via GitHub Issues
 

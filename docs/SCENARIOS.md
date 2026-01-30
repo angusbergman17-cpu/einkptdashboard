@@ -403,7 +403,7 @@ START
 
 ## Related Documents
 
-- [DASHBOARD-SPEC-V10.md](../specs/DASHBOARD-SPEC-V10.md) — Visual specification (LOCKED)
+- [CCDashDesignV10.md](../specs/CCDashDesignV10.md) — Visual specification (LOCKED)
 - [ARCHITECTURE.md](ARCHITECTURE.md) — System architecture
 - [DEVELOPMENT-RULES.md](../DEVELOPMENT-RULES.md) — Development rules
 

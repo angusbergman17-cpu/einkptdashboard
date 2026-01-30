@@ -535,7 +535,7 @@ Weather check
   +---> Rain likely? -> "BRING UMBRELLA"
   |
   v
-Render CCDash V10 layout
+Render CCDashDesignV10 layout
   |
   v
 Send to device
@@ -730,7 +730,7 @@ Visual indicators:
 
 # Part 7: Visual Design System
 
-## The Layout I Designed (CCDash V10)
+## The Layout I Designed (CCDashDesignV10)
 
 ```
 +------------------------------------------+
@@ -883,7 +883,7 @@ Done! Device displays your commute.
 
 | Phase | Items |
 |-------|-------|
-| Foundation | Core server, V10 spec, zone refresh, VIC API, weather |
+| Foundation | Core server, CCDashDesignV10 spec, zone refresh, VIC API, weather |
 | Firmware | CCFirm, anti-brick rules, state machine |
 | Documentation | DEVELOPMENT-RULES v1.6, Architecture v4.0 |
 | Multi-State | SmartCommute, CC LiveDash, NSW, QLD support |

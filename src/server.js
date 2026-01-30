@@ -39,7 +39,7 @@ import { decodeConfigToken, encodeConfigToken, generateWebhookUrl } from './util
 import { renderDashboard, renderTestPattern } from "./services/image-renderer.js";
 import { renderZones, clearCache as clearZoneCache, ZONES } from "./services/zone-renderer.js";
 import { getChangedZones as getChangedZonesV12, renderSingleZone as renderSingleZoneV12, getZoneDefinition as getZoneDefV12, ZONES as ZONES_V12, clearCache as clearZoneCacheV12 } from "./services/zone-renderer-v12.js";
-import { getChangedZones as getChangedZonesV13, renderSingleZone as renderSingleZoneV13, getZoneDefinition as getZoneDefV13, getActiveZones as getActiveZonesV13, ZONES as ZONES_V13, clearCache as clearZoneCacheV13, renderFullScreen as renderFullScreenV13 } from "./services/zone-renderer-v13.js";
+import { getChangedZones as getChangedZonesCCDash, renderSingleZone as renderSingleZoneCCDash, getZoneDefinition as getZoneDefCCDash, getActiveZones as getActiveZonesCCDash, ZONES as ZONES_CCDASH, clearCache as clearZoneCacheCCDash, renderFullScreen as renderFullScreenCCDash } from "./services/ccdash-renderer.js";
 import SmartJourneyEngine from "./core/smart-journey-engine.js";
 
 // Setup error handlers early (before any async operations)
@@ -6959,7 +6959,7 @@ app.get('/api/zone/:id', async (req, res) => {
 });
 
 /* =========================================================
-   V13 ZONE ENDPOINTS - New UI/UX with Smart Journey Engine
+   CCDASH RENDERER ENDPOINTS - New UI/UX with Smart Journey Engine
    ========================================================= */
 
 /**
@@ -7009,7 +7009,7 @@ async function buildV13DisplayData() {
   };
 }
 
-// V13: Simple diagnostic endpoint (no imports required)
+// CCDash: Simple diagnostic endpoint (no imports required)
 app.get('/api/v13/ping', (req, res) => {
   res.json({ 
     pong: true, 
@@ -7019,86 +7019,86 @@ app.get('/api/v13/ping', (req, res) => {
   });
 });
 
-// V13: Get changed zones using Smart Journey Engine
+// CCDash: Get changed zones using Smart Journey Engine
 app.get('/api/v13/zones/changed', async (req, res) => {
   try {
     const forceAll = req.query.force === 'true';
     const data = await buildV13DisplayData();
-    const changed = getChangedZonesV13(data, forceAll);
+    const changed = getChangedZonesCCDash(data, forceAll);
     res.json({ 
       timestamp: new Date().toISOString(), 
       changed,
-      version: 'v13',
+      version: 'ccdash',
       smartJourney: !!global.smartJourneyEngine
     });
   } catch (e) { 
-    console.error('V13 zones/changed error:', e);
+    console.error('CCDash zones/changed error:', e);
     res.status(500).json({ error: e.message }); 
   }
 });
 
-// V13: Get single zone BMP
+// CCDash: Get single zone BMP
 app.get('/api/v13/zone/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const prefs = preferences.get();
     const data = await buildV13DisplayData();
     
-    const bmp = renderSingleZoneV13(id, data, prefs);
-    if (!bmp) return res.status(404).json({ error: 'Zone not found', available: getActiveZonesV13(data) });
+    const bmp = renderSingleZoneCCDash(id, data, prefs);
+    if (!bmp) return res.status(404).json({ error: 'Zone not found', available: getActiveZonesCCDash(data) });
     
-    const zoneDef = getZoneDefV13(id, data);
+    const zoneDef = getZoneDefCCDash(id, data);
     res.set({ 
       'Content-Type': 'application/octet-stream', 
       'X-Zone-X': zoneDef.x, 
       'X-Zone-Y': zoneDef.y, 
       'X-Zone-Width': zoneDef.w, 
       'X-Zone-Height': zoneDef.h,
-      'X-Renderer-Version': 'v13'
+      'X-Renderer-Version': 'ccdash'
     });
     res.send(bmp);
   } catch (e) { 
-    console.error('V13 zone render error:', e);
+    console.error('CCDash zone render error:', e);
     res.status(500).json({ error: e.message }); 
   }
 });
 
-// V13: List all active zones
+// CCDash: List all active zones
 app.get('/api/v13/zones/list', async (req, res) => {
   try {
     const data = await buildV13DisplayData();
-    const zones = getActiveZonesV13(data);
+    const zones = getActiveZonesCCDash(data);
     const definitions = {};
     for (const zoneId of zones) {
-      definitions[zoneId] = getZoneDefV13(zoneId, data);
+      definitions[zoneId] = getZoneDefCCDash(zoneId, data);
     }
-    res.json({ zones, definitions, version: 'v13' });
+    res.json({ zones, definitions, version: 'ccdash' });
   } catch (e) { 
     res.status(500).json({ error: e.message }); 
   }
 });
 
-// V13: Full screen PNG preview (for debugging/simulator)
+// CCDash: Full screen PNG preview (for debugging/simulator)
 app.get('/api/v13/screen', async (req, res) => {
   try {
     const prefs = preferences.get();
     const data = await buildV13DisplayData();
-    const png = renderFullScreenV13(data, prefs);
-    res.set({ 'Content-Type': 'image/png', 'X-Renderer-Version': 'v13' });
+    const png = renderFullScreenCCDash(data, prefs);
+    res.set({ 'Content-Type': 'image/png', 'X-Renderer-Version': 'ccdash' });
     res.send(png);
   } catch (e) {
-    console.error('V13 screen render error:', e);
+    console.error('CCDash screen render error:', e);
     res.status(500).json({ error: e.message });
   }
 });
 
-// V13: Get journey data as JSON
+// CCDash: Get journey data as JSON
 app.get('/api/v13/journey', async (req, res) => {
   try {
     const data = await buildV13DisplayData();
     res.json({
       success: true,
-      version: 'v13',
+      version: 'ccdash',
       journey: {
         location: data.location,
         destination: data.destination,
@@ -7124,13 +7124,13 @@ app.get('/api/v13/journey', async (req, res) => {
   }
 });
 
-// V13: Reset zone cache
+// CCDash: Reset zone cache
 app.post('/api/v13/zones/reset', (req, res) => {
-  clearZoneCacheV13();
-  res.json({ success: true, message: 'V13 zone cache cleared' });
+  clearZoneCacheCCDash();
+  res.json({ success: true, message: 'CCDash zone cache cleared' });
 });
 
-// V13: Get alternative routes
+// CCDash: Get alternative routes
 app.get('/api/v13/alternatives', (req, res) => {
   try {
     const alternatives = global.smartJourneyEngine?.getAlternativeRoutes() || [];
@@ -7144,7 +7144,7 @@ app.get('/api/v13/alternatives', (req, res) => {
   }
 });
 
-// V13: Select alternative route
+// CCDash: Select alternative route
 app.post('/api/v13/select-route', async (req, res) => {
   try {
     const { routeId } = req.body;
@@ -7153,7 +7153,7 @@ app.post('/api/v13/select-route', async (req, res) => {
     const selected = await global.smartJourneyEngine?.selectAlternativeRoute(routeId);
     if (!selected) return res.status(404).json({ error: 'Route not found' });
     
-    clearZoneCacheV13(); // Clear cache to force re-render
+    clearZoneCacheCCDash(); // Clear cache to force re-render
     res.json({ success: true, selected });
   } catch (e) {
     res.status(500).json({ error: e.message });
