@@ -20,9 +20,46 @@ import path from 'path';
 let liveDash = null;
 
 /**
- * Load journey configuration
+ * Decode config token from webhook URL
  */
-async function loadJourneyConfig() {
+function decodeConfigToken(token) {
+  try {
+    const json = Buffer.from(token, 'base64url').toString('utf8');
+    return JSON.parse(json);
+  } catch (error) {
+    console.error('Error decoding config token:', error);
+    return null;
+  }
+}
+
+/**
+ * Load journey configuration from config token or filesystem fallback
+ */
+async function loadJourneyConfig(configToken = null) {
+  // First try config token (for Vercel serverless)
+  if (configToken) {
+    const minified = decodeConfigToken(configToken);
+    if (minified) {
+      console.log('LiveDash: Using config from token');
+      return {
+        homeAddress: minified.a?.home,
+        homeLocation: minified.l?.home,
+        workAddress: minified.a?.work,
+        workLocation: minified.l?.work,
+        cafeLocation: minified.cf || minified.l?.cafe,
+        targetArrival: minified.t || '09:00',
+        preferCoffee: minified.c !== false,
+        walkToWork: 5,
+        homeToCafe: 3,
+        makeCoffee: 4,
+        cafeToTransit: 2,
+        preferredRoute: minified.j || null,
+        apiMode: minified.m || 'cached'
+      };
+    }
+  }
+  
+  // Fallback to filesystem (for self-hosted)
   try {
     const configPath = path.join(process.cwd(), 'config', 'angus-journey.json');
     const data = await fs.readFile(configPath, 'utf8');
@@ -51,9 +88,19 @@ async function loadJourneyConfig() {
 }
 
 /**
- * Initialize LiveDash
+ * Initialize LiveDash with config token support
  */
-async function getLiveDash() {
+async function getLiveDash(configToken = null) {
+  // For serverless, we need to create a new instance each time with token config
+  // because there's no persistent memory between requests
+  if (configToken) {
+    const preferences = await loadJourneyConfig(configToken);
+    const instance = new LiveDash();
+    await instance.initialize(preferences);
+    return instance;
+  }
+  
+  // For self-hosted, use singleton
   if (!liveDash) {
     const preferences = await loadJourneyConfig();
     liveDash = new LiveDash();
@@ -75,7 +122,7 @@ export default async function handler(req, res) {
   }
   
   try {
-    const { device = 'trmnl-og', format = 'png', refresh = 'false' } = req.query;
+    const { device = 'trmnl-og', format = 'png', refresh = 'false', token = null } = req.query;
     
     // Special case: list devices
     if (device === 'list' || format === 'devices') {
@@ -94,8 +141,8 @@ export default async function handler(req, res) {
       });
     }
     
-    // Get LiveDash instance
-    const dash = await getLiveDash();
+    // Get LiveDash instance (pass config token for serverless mode)
+    const dash = await getLiveDash(token);
     dash.setDevice(device);
     
     // JSON format - return data only
