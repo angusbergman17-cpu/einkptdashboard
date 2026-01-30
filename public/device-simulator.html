@@ -116,7 +116,7 @@
                 
                 <div class="section">
                     <h3>🌐 Server Config</h3>
-                    <input type="text" id="server-url" value="https://einkptdashboard.vercel.app">
+                    <input type="text" id="server-url" placeholder="Server URL">
                     <select id="demo-mode" onchange="markAllDirty()">
                         <option value="">Live Data</option>
                         <option value="normal">Demo: Normal Commute</option>
@@ -327,7 +327,7 @@
             ctx.fillText('   Password: transport123', 100, 170);
             ctx.fillText('2. Open browser: 192.168.4.1', 100, 200);
             ctx.fillText('3. Select your WiFi and enter password', 100, 230);
-            ctx.fillText('4. Server: einkptdashboard.vercel.app', 100, 260);
+            ctx.fillText('4. Server: ' + window.location.host, 100, 260);
             ctx.fillText('5. Save and wait for dashboard', 100, 290);
             
             ctx.textAlign = 'center';
@@ -380,7 +380,7 @@
             ctx.font = '12px monospace';
             ctx.fillText('• Select your home WiFi network', 200, 360);
             ctx.fillText('• Enter your WiFi password', 200, 380);
-            ctx.fillText('• Server URL: einkptdashboard.vercel.app', 200, 400);
+            ctx.fillText('• Server URL: ' + window.location.host, 200, 400);
             ctx.fillText('• Click Save and wait for dashboard', 200, 420);
             
             ctx.textAlign = 'center';
@@ -421,7 +421,7 @@
             ctx.font = '14px monospace';
             ctx.textAlign = 'left';
             ctx.fillText('✓ WiFi: Connected (192.168.1.42)', 170, 290);
-            ctx.fillText('✓ Server: einkptdashboard.vercel.app', 170, 315);
+            ctx.fillText('✓ Server: ' + window.location.host, 170, 315);
             ctx.fillText('✓ Home: 42 Brunswick St, Fitzroy', 170, 340);
             ctx.fillText('✓ Work: 200 Bourke St, Melbourne', 170, 365);
             ctx.fillText('✓ Cafe: Industry Beans, Rose St', 170, 390);
@@ -814,8 +814,12 @@
         }
         
         // ========== INIT ==========
+        // Set server URL to current origin (turnkey deployment support)
+        document.getElementById('server-url').value = window.location.origin;
+        
         initZones();
         log('Simulator ready');
+        log('Server: ' + window.location.origin);
         log('Firmware emulation: v' + FIRMWARE_VERSION);
         log('Click "Boot Device" to start');
     </script>

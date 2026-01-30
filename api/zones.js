@@ -250,7 +250,7 @@ export default async function handler(req, res) {
         res.setHeader('Cache-Control', 'no-cache');
         return res.status(200).json({
           setup_required: true,
-          message: 'Complete setup at einkptdashboard.vercel.app'
+          message: 'Complete setup at your-server/setup-wizard.html'
         });
       }
       
@@ -353,7 +353,7 @@ export default async function handler(req, res) {
       res.setHeader('Cache-Control', 'no-cache');
       return res.status(200).json({
         setup_required: true,
-        message: 'Please complete setup at einkptdashboard.vercel.app',
+        message: 'Please complete setup at your-server/setup-wizard.html',
         timestamp: new Date().toISOString()
       });
     }

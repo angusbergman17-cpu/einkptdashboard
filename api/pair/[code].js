@@ -113,9 +113,12 @@ export default async function handler(req, res) {
         m: config.apiMode || 'cached'
       };
       const token = Buffer.from(JSON.stringify(minified)).toString('base64url');
-      const baseUrl = process.env.VERCEL_URL 
-        ? `https://${process.env.VERCEL_URL}`
-        : 'https://einkptdashboard.vercel.app';
+      // Dynamically determine base URL from request or environment
+      const host = req.headers.host || req.headers['x-forwarded-host'];
+      const protocol = req.headers['x-forwarded-proto'] || 'https';
+      const baseUrl = host 
+        ? `${protocol}://${host}`
+        : (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : `${protocol}://${req.headers.host}`);
       finalWebhookUrl = `${baseUrl}/api/device/${token}`;
     }
 
