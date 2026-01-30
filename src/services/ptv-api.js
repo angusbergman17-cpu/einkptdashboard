@@ -67,9 +67,14 @@ function getMelbourneTime() {
  * Get departures for a stop
  * @param {number} stopId - PTV stop ID
  * @param {number} routeType - 0=train, 1=tram, 2=bus
+ * @param {Object} options - Optional config { apiKey, devId }
  * @returns {Array} - Array of departure objects with minutes, destination, platform
  */
-export async function getDepartures(stopId, routeType) {
+export async function getDepartures(stopId, routeType, options = {}) {
+  // Allow API key to be passed directly (Zero-Config compliance)
+  if (options.apiKey) {
+    setApiKey(options.apiKey, options.devId);
+  }
   const url = signUrl(`/v3/departures/route_type/${routeType}/stop/${stopId}?max_results=5`);
   
   if (!url) {

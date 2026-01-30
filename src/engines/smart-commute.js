@@ -528,10 +528,13 @@ export class SmartCommute {
         const trainStopId = this.preferences.trainStopId || 1071; // South Yarra default
         const tramStopId = this.preferences.tramStopId || 2500;   // Chapel St default
         
+        // Pass API key directly to each call (Zero-Config: no env vars)
+        const apiOptions = { apiKey: this.apiKeys.transitKey };
+        
         const [trains, trams, buses] = await Promise.all([
-          ptvApi.getDepartures(trainStopId, 0), // 0 = train
-          ptvApi.getDepartures(tramStopId, 1),  // 1 = tram
-          Promise.resolve([])                     // 2 = bus (skip for now)
+          ptvApi.getDepartures(trainStopId, 0, apiOptions), // 0 = train
+          ptvApi.getDepartures(tramStopId, 1, apiOptions),  // 1 = tram
+          Promise.resolve([])                                 // 2 = bus (skip for now)
         ]);
         
         return {
