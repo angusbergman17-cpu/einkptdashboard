@@ -1,6 +1,6 @@
 # DEVELOPMENT-RULES.md Gap Analysis
 
-**Comparison:** v1.1 (current) vs v3.0 (old PTV-TRMNL-NEW)  
+**Comparison:** v1.1 (current) vs v3.0 (old Commute Compute-NEW)  
 **Date:** 2025-01-29  
 **Purpose:** Identify all items present in v3.0 but missing from v1.1
 

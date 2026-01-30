@@ -1,4 +1,4 @@
-# PTV-TRMNL Custom Firmware
+# Commute Compute Custom Firmware
 
 Custom firmware for TRMNL e-ink devices with **partial refresh support** for faster updates.
 
@@ -77,7 +77,7 @@ pio run
 
 On first boot (or after reset):
 
-1. Device creates WiFi hotspot: **PTV-TRMNL-Setup**
+1. Device creates WiFi hotspot: **Commute Compute-Setup**
 2. Connect to it with password: **transport123**
 3. Browser opens automatically (or go to 192.168.4.1)
 4. Select your WiFi network and enter password

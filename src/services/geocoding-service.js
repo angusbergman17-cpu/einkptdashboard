@@ -331,7 +331,7 @@ class GeocodingService {
 
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'PTV-TRMNL/1.0 (Educational; Contact: github.com/angusbergman17-cpu)'
+        'User-Agent': 'Commute Compute/1.0 (Educational; Contact: github.com/angusbergman17-cpu)'
       }
     });
 
@@ -534,7 +534,7 @@ class GeocodingService {
 
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'PTV-TRMNL/1.0 (Educational; Contact: github.com/angusbergman17-cpu)'
+        'User-Agent': 'Commute Compute/1.0 (Educational; Contact: github.com/angusbergman17-cpu)'
       }
     });
 

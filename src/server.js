@@ -1,5 +1,5 @@
 /**
- * PTV-TRMNL Server
+ * Commute Compute Server
  * BYOS (Bring Your Own Server) implementation for TRMNL e-ink display
  * Serves transit data in PIDS format for Australian transit systems
  *
@@ -798,7 +798,7 @@ app.get('/', (req, res) => {
 
 // Health check endpoint (for monitoring/uptime checks)
 app.get('/health', (req, res) => {
-  res.send('✅ PTV-TRMNL service running');
+  res.send('✅ Commute Compute service running');
 });
 
 // Keep-alive endpoint (for cron pings to prevent cold starts)
@@ -963,7 +963,7 @@ app.get('/api/attributions', (req, res) => {
 
     // Software attribution (always shown)
     attributions.push({
-      name: 'PTV-TRMNL',
+      name: 'Commute Compute',
       text: 'Created by Angus Bergman',
       license: 'CC BY-NC 4.0',
       required: true,
@@ -1224,10 +1224,10 @@ app.post('/api/feedback', async (req, res) => {
     if (emailTransporter) {
       try {
         await emailTransporter.sendMail({
-          from: `"PTV-TRMNL System" <${process.env.SMTP_USER}>`,
+          from: `"Commute Compute System" <${process.env.SMTP_USER}>`,
           to: process.env.FEEDBACK_EMAIL || 'angusbergman17@gmail.com',
-          subject: `PTV-TRMNL Feedback: ${type}`,
-          text: `New feedback received from PTV-TRMNL system:
+          subject: `Commute Compute Feedback: ${type}`,
+          text: `New feedback received from Commute Compute system:
 
 From: ${feedbackLog.from}
 Email: ${feedbackLog.email}
@@ -1238,10 +1238,10 @@ Message:
 ${feedbackLog.message}
 
 ---
-Sent via PTV-TRMNL Admin Panel`,
+Sent via Commute Compute Admin Panel`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #667eea;">New PTV-TRMNL Feedback</h2>
+              <h2 style="color: #667eea;">New Commute Compute Feedback</h2>
               <div style="background: #f7fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
                 <p><strong>From:</strong> ${feedbackLog.from}</p>
                 <p><strong>Email:</strong> ${feedbackLog.email}</p>
@@ -1253,7 +1253,7 @@ Sent via PTV-TRMNL Admin Panel`,
                 <p style="white-space: pre-wrap;">${feedbackLog.message}</p>
               </div>
               <p style="color: #718096; font-size: 12px; margin-top: 20px;">
-                Sent via PTV-TRMNL Admin Panel
+                Sent via Commute Compute Admin Panel
               </p>
             </div>
           `
@@ -1304,7 +1304,7 @@ Sent via PTV-TRMNL Admin Panel`,
 ${feedbackLog.message}
 
 ---
-*Submitted via PTV-TRMNL Feedback System*`;
+*Submitted via Commute Compute Feedback System*`;
 
         const issueResponse = await fetch('https://api.github.com/repos/angusbergman17-cpu/einkptdashboard/issues', {
           method: 'POST',
@@ -4256,7 +4256,7 @@ app.get('/admin/preferences/export', (req, res) => {
     const json = preferences.export();
 
     res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Content-Disposition', 'attachment; filename="ptv-trmnl-preferences.json"');
+    res.setHeader('Content-Disposition', 'attachment; filename="commute-compute-preferences.json"');
     res.send(json);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -4364,7 +4364,7 @@ app.get('/admin/address/search', async (req, res) => {
           const url = `https://nominatim.openstreetmap.org/search?format=json&q=${nominatimQuery}&countrycodes=au&limit=5&addressdetails=1`;
 
           const response = await fetch(url, {
-            headers: { 'User-Agent': 'PTV-TRMNL/2.5 (Smart Transit System)' }
+            headers: { 'User-Agent': 'Commute Compute/2.5 (Smart Transit System)' }
           });
 
           if (!response.ok) {
@@ -5302,7 +5302,7 @@ app.get('/admin/dashboard-preview', async (req, res) => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PTV-TRMNL Dashboard Preview</title>
+  <title>Commute Compute Dashboard Preview</title>
   <style>
     body {
       margin: 0;
@@ -5413,7 +5413,7 @@ app.get('/admin/dashboard-preview', async (req, res) => {
 </head>
 <body>
   <div class="container">
-    <h1>PTV-TRMNL Dashboard Preview</h1>
+    <h1>Commute Compute Dashboard Preview</h1>
     <p>Live visualization of 800×480 e-ink display</p>
 
     <div class="dashboard">
@@ -5682,7 +5682,7 @@ app.get('/admin/live-display', async (req, res) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Device Display - PTV-TRMNL</title>
+    <title>Live Device Display - Commute Compute</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -6456,7 +6456,7 @@ app.get('/preview', requireConfiguration, (req, res) => {
     <!DOCTYPE html>
     <html>
     <head>
-      <title>PTV-TRMNL E-ink Preview</title>
+      <title>Commute Compute E-ink Preview</title>
       <meta charset="UTF-8">
       <meta http-equiv="refresh" content="20">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7171,7 +7171,7 @@ const HOST = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
 
 // Start server and capture instance for graceful shutdown (only for local/Render)
 const server = app.listen(PORT, async () => {
-  console.log(`🚀 PTV-TRMNL server listening on port ${PORT}`);
+  console.log(`🚀 Commute Compute server listening on port ${PORT}`);
   console.log(`📍 Preview: ${HOST}/preview`);
   console.log(`🔗 TRMNL endpoint: ${HOST}/api/screen`);
   console.log(`💚 Keep-alive: ${HOST}/api/keepalive`);

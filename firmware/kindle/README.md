@@ -1,4 +1,4 @@
-# PTV-TRMNL Kindle Firmware
+# Commute Compute Kindle Firmware
 
 **Version:** 1.0.0
 **Requires:** WinterBreak Jailbreak + KUAL
@@ -55,42 +55,42 @@
 
 1. Connect your Kindle via USB
 2. Navigate to `/mnt/us/extensions/`
-3. Create folder: `ptv-trmnl`
+3. Create folder: `commute-compute`
 4. Copy the appropriate files for your device:
 
 **For Kindle Paperwhite 3:**
 ```bash
-cp common/* /mnt/us/extensions/ptv-trmnl/
-cp kindle-pw3/device-config.sh /mnt/us/extensions/ptv-trmnl/
+cp common/* /mnt/us/extensions/commute-compute/
+cp kindle-pw3/device-config.sh /mnt/us/extensions/commute-compute/
 ```
 
 **For Kindle Paperwhite 4:**
 ```bash
-cp common/* /mnt/us/extensions/ptv-trmnl/
-cp kindle-pw4/device-config.sh /mnt/us/extensions/ptv-trmnl/
+cp common/* /mnt/us/extensions/commute-compute/
+cp kindle-pw4/device-config.sh /mnt/us/extensions/commute-compute/
 ```
 
 **For Kindle Paperwhite 5:**
 ```bash
-cp common/* /mnt/us/extensions/ptv-trmnl/
-cp kindle-pw5/device-config.sh /mnt/us/extensions/ptv-trmnl/
+cp common/* /mnt/us/extensions/commute-compute/
+cp kindle-pw5/device-config.sh /mnt/us/extensions/commute-compute/
 ```
 
 **For Kindle Basic (10th gen):**
 ```bash
-cp common/* /mnt/us/extensions/ptv-trmnl/
-cp kindle-basic-10/device-config.sh /mnt/us/extensions/ptv-trmnl/
+cp common/* /mnt/us/extensions/commute-compute/
+cp kindle-basic-10/device-config.sh /mnt/us/extensions/commute-compute/
 ```
 
 **For Kindle (11th gen):**
 ```bash
-cp common/* /mnt/us/extensions/ptv-trmnl/
-cp kindle-11/device-config.sh /mnt/us/extensions/ptv-trmnl/
+cp common/* /mnt/us/extensions/commute-compute/
+cp kindle-11/device-config.sh /mnt/us/extensions/commute-compute/
 ```
 
 5. Safely eject Kindle
 6. Open KUAL on your Kindle
-7. Select "PTV-TRMNL" > "Start Dashboard"
+7. Select "Commute Compute" > "Start Dashboard"
 
 ---
 
@@ -98,11 +98,11 @@ cp kindle-11/device-config.sh /mnt/us/extensions/ptv-trmnl/
 
 ### Server URL
 
-Create or edit `/mnt/us/extensions/ptv-trmnl/config.sh`:
+Create or edit `/mnt/us/extensions/commute-compute/config.sh`:
 
 ```bash
 #!/bin/sh
-# Custom PTV-TRMNL configuration
+# Custom Commute Compute configuration
 
 # Your server URL (change this!)
 export PTV_TRMNL_SERVER="https://your-server.vercel.app"
@@ -113,7 +113,7 @@ export PTV_TRMNL_REFRESH=900
 
 ### Getting Your Server URL
 
-1. Deploy PTV-TRMNL to Render.com or your own server
+1. Deploy Commute Compute to Render.com or your own server
 2. Complete the setup wizard in the admin panel
 3. Copy the server URL (e.g., `https://your-server-name.vercel.app`)
 
@@ -124,7 +124,7 @@ export PTV_TRMNL_REFRESH=900
 ### From KUAL Menu
 
 1. Open KUAL (appears as a book in your library)
-2. Navigate to "PTV-TRMNL"
+2. Navigate to "Commute Compute"
 3. Select an option:
    - **Start Dashboard**: Begin automatic updates
    - **Stop Dashboard**: Stop the background service
@@ -138,16 +138,16 @@ If you have SSH access to your Kindle:
 
 ```bash
 # Start dashboard
-/mnt/us/extensions/ptv-trmnl/ptv-trmnl-launcher.sh start
+/mnt/us/extensions/commute-compute/commute-compute-launcher.sh start
 
 # Stop dashboard
-/mnt/us/extensions/ptv-trmnl/ptv-trmnl-launcher.sh stop
+/mnt/us/extensions/commute-compute/commute-compute-launcher.sh stop
 
 # Manual refresh
-/mnt/us/extensions/ptv-trmnl/ptv-trmnl-launcher.sh once
+/mnt/us/extensions/commute-compute/commute-compute-launcher.sh once
 
 # Check status
-/mnt/us/extensions/ptv-trmnl/ptv-trmnl-launcher.sh status
+/mnt/us/extensions/commute-compute/commute-compute-launcher.sh status
 ```
 
 ---
@@ -158,7 +158,7 @@ If you have SSH access to your Kindle:
 
 1. **Check WiFi**: Ensure WiFi is enabled and connected
 2. **Check Server**: Verify server URL is correct in config.sh
-3. **Check Logs**: View `/var/tmp/ptv-trmnl/ptv-trmnl.log`
+3. **Check Logs**: View `/var/tmp/commute-compute/commute-compute.log`
 
 ### Screen Ghosting
 
@@ -180,15 +180,15 @@ If your Kindle updates automatically and loses the jailbreak:
 
 1. The hotfix should prevent this
 2. If it happens, you may need to re-jailbreak
-3. Your PTV-TRMNL files will still be on the device
+3. Your Commute Compute files will still be on the device
 
 ---
 
 ## File Structure
 
 ```
-/mnt/us/extensions/ptv-trmnl/
-├── ptv-trmnl-launcher.sh   # Main launcher script
+/mnt/us/extensions/commute-compute/
+├── commute-compute-launcher.sh   # Main launcher script
 ├── menu.json               # KUAL menu configuration
 ├── configure.sh            # Configuration helper
 ├── device-config.sh        # Device-specific settings
@@ -232,4 +232,4 @@ See LICENSE file for full terms.
 ---
 
 **Last Updated:** 2026-01-27
-**Compatible with:** PTV-TRMNL Server v2.5.2+
+**Compatible with:** Commute Compute Server v2.5.2+

@@ -41,11 +41,11 @@ curl -H "KeyID: your-api-key-here" \
 - **Signature**: HMAC-SHA1 signature required for every request
 - **Complexity**: High - requires URL signing
 
-**Note**: PTV-TRMNL currently uses PTV Timetable API v3, which requires both Developer ID and API Key with HMAC signature.
+**Note**: Commute Compute currently uses PTV Timetable API v3, which requires both Developer ID and API Key with HMAC signature.
 
 ---
 
-## Step 3: Configure PTV-TRMNL
+## Step 3: Configure Commute Compute
 
 ### In the Admin Panel Setup Wizard (Step 4: API Credentials)
 
@@ -59,7 +59,7 @@ curl -H "KeyID: your-api-key-here" \
 **Important Terminology**:
 - **OpenData Portal** uses: "API Key"
 - **PTV Timetable API v3** uses: "Developer ID" + "API Key"
-- **PTV-TRMNL Admin Panel** labels: "API Key" (for Dev ID) + "API Token" (for API Key)
+- **Commute Compute Admin Panel** labels: "API Key" (for Dev ID) + "API Token" (for API Key)
 
 ---
 
@@ -120,9 +120,9 @@ print(fileobj.read())
 
 The PTV Timetable API v3 requires HMAC-SHA1 signature for every request.
 
-### How PTV-TRMNL Handles This
+### How Commute Compute Handles This
 
-The PTV-TRMNL server automatically calculates the HMAC signature for you. You just need to provide:
+The Commute Compute server automatically calculates the HMAC signature for you. You just need to provide:
 
 1. **Developer ID** (entered as "API Key" in admin panel)
 2. **API Key** (entered as "API Token" in admin panel)
@@ -157,7 +157,7 @@ function signRequest(url, apiKey) {
 
 ### "Rate Limit Exceeded"
 - GTFS Realtime has strict rate limits (24 calls/60s for trains)
-- PTV-TRMNL caches data to avoid hitting rate limits
+- Commute Compute caches data to avoid hitting rate limits
 - Default cache: 2 minutes
 
 ### "Signature Invalid"
@@ -169,7 +169,7 @@ function signRequest(url, apiKey) {
 
 ## Testing Your API Credentials
 
-Once you've configured your credentials in PTV-TRMNL:
+Once you've configured your credentials in Commute Compute:
 
 1. Go to **Live Data** tab in admin panel
 2. Check the **API Status & Configuration** card
@@ -217,7 +217,7 @@ For Victoria users:
 
 1. ✅ Register at https://opendata.transport.vic.gov.au
 2. ✅ Get your API Key from account dashboard
-3. ✅ In PTV-TRMNL admin panel:
+3. ✅ In Commute Compute admin panel:
    - **API Key** field = Your Developer ID
    - **API Token** field = Your API Key
 4. ✅ Server handles HMAC signature automatically
@@ -228,4 +228,4 @@ For Victoria users:
 ---
 
 **Guide Created**: 2026-01-25
-**PTV-TRMNL Version**: v2.4.0+
+**Commute Compute Version**: v2.4.0+

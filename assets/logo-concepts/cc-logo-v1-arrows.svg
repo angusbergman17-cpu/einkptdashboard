@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="200" height="200" fill="#0f172a"/>
+  
+  <!-- CC Logo with arrow-styled ends suggesting travel/direction -->
+  
+  <!-- Outer C - White with arrow tips -->
+  <path d="
+    M 140 55
+    L 150 50
+    L 150 60
+    L 140 55
+    L 85 55
+    A 45 45 0 1 0 85 145
+    L 140 145
+    L 150 140
+    L 150 150
+    L 140 145
+    L 85 145
+    A 60 60 0 1 1 85 40
+    L 140 40
+    L 140 55
+    Z
+  " fill="#f1f5f9"/>
+  
+  <!-- Inner C - Teal/Green with arrow tip -->
+  <path d="
+    M 145 75
+    L 155 70
+    L 155 80
+    L 145 75
+    L 95 75
+    A 25 25 0 1 0 95 125
+    L 145 125
+    L 155 120
+    L 155 130
+    L 145 125
+    L 95 125
+    A 40 40 0 1 1 95 60
+    L 145 60
+    L 145 75
+    Z
+  " fill="#10b981"/>
+</svg>

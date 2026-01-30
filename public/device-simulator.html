@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PTV-TRMNL Firmware Simulator v6.0</title>
+    <title>Commute Compute Firmware Simulator v6.0</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #1a1a2e; color: #eee; min-height: 100vh; padding: 20px; }
@@ -54,7 +54,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>🚃 PTV-TRMNL Firmware Simulator v6.0</h1>
+            <h1>🚃 Commute Compute Firmware Simulator v6.0</h1>
             <p>Accurate firmware emulation - same zone fetching, BMP rendering, refresh timing & memory constraints</p>
         </header>
         
@@ -78,7 +78,7 @@
                 <h2>⚙️ Firmware Controls</h2>
                 
                 <div class="firmware-info">
-                    <div><strong>=== PTV-TRMNL v6.0 ===</strong></div>
+                    <div><strong>=== Commute Compute v6.0 ===</strong></div>
                     <div>ESP32-C3 • 320KB RAM • 4MB Flash</div>
                     <div>bb_epaper 2.0.6 • WiFiManager 2.0.17</div>
                 </div>
@@ -243,7 +243,7 @@
             ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
             
             log('');
-            log('=== PTV-TRMNL v' + FIRMWARE_VERSION + ' ===', 'ok');
+            log('=== Commute Compute v' + FIRMWARE_VERSION + ' ===', 'ok');
             setState('BOOT');
             
             // Simulate boot sequence
@@ -302,7 +302,7 @@
             ctx.fillStyle = '#fff';
             ctx.font = 'bold 16px monospace';
             ctx.textAlign = 'center';
-            ctx.fillText('PTV-TRMNL SMART TRANSIT DISPLAY', 400, 25);
+            ctx.fillText('Commute Compute SMART TRANSIT DISPLAY', 400, 25);
             ctx.font = '12px monospace';
             ctx.fillText('v' + FIRMWARE_VERSION, 400, 45);
             
@@ -317,7 +317,7 @@
             
             ctx.font = '12px monospace';
             ctx.textAlign = 'left';
-            ctx.fillText('1. Connect to WiFi: PTV-TRMNL-Setup', 100, 150);
+            ctx.fillText('1. Connect to WiFi: Commute Compute-Setup', 100, 150);
             ctx.fillText('   Password: transport123', 100, 170);
             ctx.fillText('2. Open browser: 192.168.4.1', 100, 200);
             ctx.fillText('3. Select your WiFi and enter password', 100, 230);
@@ -342,7 +342,7 @@
             ctx.fillStyle = '#fff';
             ctx.font = 'bold 16px monospace';
             ctx.textAlign = 'center';
-            ctx.fillText('PTV-TRMNL SMART TRANSIT DISPLAY', 400, 25);
+            ctx.fillText('Commute Compute SMART TRANSIT DISPLAY', 400, 25);
             ctx.font = '12px monospace';
             ctx.fillText('WiFi Setup Mode', 400, 45);
             
@@ -359,7 +359,7 @@
             ctx.fillText('Connect to this network:', 400, 160);
             
             ctx.font = 'bold 20px monospace';
-            ctx.fillText('PTV-TRMNL-Setup', 400, 195);
+            ctx.fillText('Commute Compute-Setup', 400, 195);
             
             ctx.font = '14px monospace';
             ctx.fillText('Password: transport123', 400, 230);
@@ -395,7 +395,7 @@
             ctx.fillStyle = '#fff';
             ctx.font = 'bold 16px monospace';
             ctx.textAlign = 'center';
-            ctx.fillText('PTV-TRMNL SMART TRANSIT DISPLAY', 400, 25);
+            ctx.fillText('Commute Compute SMART TRANSIT DISPLAY', 400, 25);
             ctx.font = '12px monospace';
             ctx.fillText('v' + FIRMWARE_VERSION + ' • Setup Complete', 400, 45);
             

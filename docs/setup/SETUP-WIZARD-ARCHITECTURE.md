@@ -22,7 +22,7 @@
 
 ## 1. Overview
 
-The Setup Wizard configures PTV-TRMNL without requiring any server-side storage. All configuration is encoded into a **webhook URL token** that contains everything needed to render the dashboard.
+The Setup Wizard configures Commute Compute without requiring any server-side storage. All configuration is encoded into a **webhook URL token** that contains everything needed to render the dashboard.
 
 ### Design Principles
 

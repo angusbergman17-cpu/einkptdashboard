@@ -199,7 +199,7 @@ build_flags =
 
 ### Build Results
 
-**Original Firmware (PTV-TRMNL):**
+**Original Firmware (Commute Compute):**
 ```
 Firmware Size: 1,183,488 bytes (1.13 MB)
 Compressed: 676,698 bytes (57% compression)
@@ -346,7 +346,7 @@ Status: PASS
 ### Current State: ✅ OPERATIONAL
 
 ```
-Firmware: PTV-TRMNL Custom (v1.0)
+Firmware: Commute Compute Custom (v1.0)
 Size: 1.13MB
 Upload: Successful
 Configuration: Corrected

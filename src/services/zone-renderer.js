@@ -1,6 +1,6 @@
 /**
  * Zone Renderer - V10 Smart Journey Dashboard
- * Matches PTV-TRMNL v10 Design Spec EXACTLY
+ * Matches Commute Compute v10 Design Spec EXACTLY
  * 
  * Layout (800×480):
  * - Header: 0-94px

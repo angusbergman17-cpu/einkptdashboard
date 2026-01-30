@@ -1,4 +1,4 @@
-# Contributing to PTV-TRMNL
+# Contributing to Commute Compute
 
 Thank you for your interest in contributing! This project welcomes community contributions.
 
@@ -84,4 +84,4 @@ Licensed under CC BY-NC 4.0
 
 ---
 
-*Thank you for helping make PTV-TRMNL better!*
+*Thank you for helping make Commute Compute better!*

@@ -187,7 +187,7 @@ router.get('/dashboard', identifyDevice, withTimeout(20000), async (req, res) =>
 <!DOCTYPE html>
 <html>
 <head>
-  <title>PTV-TRMNL Dashboard Preview</title>
+  <title>Commute Compute Dashboard Preview</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=${deviceConfig.width}, height=${deviceConfig.height}">
   <style>

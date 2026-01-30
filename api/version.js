@@ -18,7 +18,7 @@ export default async function handler(req, res) {
     date: new Date().toISOString().split('T')[0],
     system: {
       version: '2.5.0',
-      name: 'PTV-TRMNL'
+      name: 'Commute Compute'
     },
     components: {
       setupWizard: { version: 'v1.5.0' },

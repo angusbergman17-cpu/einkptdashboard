@@ -1,4 +1,4 @@
-# PTV-TRMNL Boot Sequence and Initialization Protocol
+# Commute Compute Boot Sequence and Initialization Protocol
 
 **Version**: v5.15
 **Last Updated**: 2026-01-27

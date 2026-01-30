@@ -1,7 +1,7 @@
 {
-  "name": "einkptdashboard",
-  "version": "2.8.0",
-  "description": "Smart Transit Dashboard for TRMNL e-ink display",
+  "name": "commute-compute",
+  "version": "3.0.0",
+  "description": "Commute Compute System - Smart Transit Dashboard for e-ink displays",
   "type": "module",
   "main": "src/server.js",
   "engines": {

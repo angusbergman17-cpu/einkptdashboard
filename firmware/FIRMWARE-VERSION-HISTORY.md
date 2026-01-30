@@ -1,4 +1,4 @@
-# PTV-TRMNL Firmware Version History
+# Commute Compute Firmware Version History
 
 **Copyright (c) 2026 Angus Bergman**
 **Licensed under CC BY-NC 4.0**

@@ -79,7 +79,7 @@ export function renderTestPattern() {
   ctx.font = 'bold 48px sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('PTV-TRMNL TEST', WIDTH / 2, HEIGHT / 2);
+  ctx.fillText('Commute Compute TEST', WIDTH / 2, HEIGHT / 2);
   return createBMP(canvasTo1Bit(canvas));
 }
 
@@ -103,7 +103,7 @@ export function renderDashboard(data, prefs = {}) {
   });
   ctx.fillRect(0, HEIGHT - 35, WIDTH, 35);
   ctx.fillStyle = '#FFFFFF';
-  ctx.fillText('PTV-TRMNL v5.28', 680, HEIGHT - 10);
+  ctx.fillText('Commute Compute v5.28', 680, HEIGHT - 10);
   return createBMP(canvasTo1Bit(canvas));
 }
 

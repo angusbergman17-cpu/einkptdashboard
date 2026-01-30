@@ -1,4 +1,4 @@
-# PTV-TRMNL Setup Wizard
+# Commute Compute Setup Wizard
 
 Cross-platform tool for device firmware flashing and deployment setup.
 
@@ -9,7 +9,7 @@ Licensed under CC BY-NC 4.0 (Creative Commons Attribution-NonCommercial 4.0 Inte
 
 ## Overview
 
-The PTV-TRMNL Setup Wizard guides you through the complete setup process:
+The Commute Compute Setup Wizard guides you through the complete setup process:
 1. ✅ Device selection (TRMNL OG, Kindle variants)
 2. ✅ GitHub repository fork
 3. ✅ Render deployment
@@ -122,7 +122,7 @@ chmod +x setup-wizard.js
 $ node setup-wizard.js
 
 ╔═══════════════════════════════════════════════╗
-║  PTV-TRMNL Setup Wizard v3.0.0                ║
+║  Commute Compute Setup Wizard v3.0.0                ║
 ║  Copyright © 2026 Angus Bergman               ║
 ╚═══════════════════════════════════════════════╝
 

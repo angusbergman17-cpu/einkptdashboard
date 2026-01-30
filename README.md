@@ -1,11 +1,11 @@
-# PTV-TRMNL
+# Commute Compute
 
 ### Smart Transit Display for Australian Public Transport
 
 ![License](https://img.shields.io/badge/license-CC%20BY--NC%204.0-blue)
 ![Version](https://img.shields.io/badge/version-1.0.0-green)
 ![Platform](https://img.shields.io/badge/platform-TRMNL%20%7C%20Kindle-orange)
-![Spec](https://img.shields.io/badge/spec-V10%20Dashboard-purple)
+![Spec](https://img.shields.io/badge/spec-CCDash%20V10-purple)
 ![Firmware](https://img.shields.io/badge/firmware-v5.10-blue)
 ![Anti-Brick](https://img.shields.io/badge/Anti--Brick-12%2F12%20✓-brightgreen)
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/angusbergman17-cpu/einkptdashboard)
@@ -20,7 +20,7 @@
 - ☕ **Smart Coffee Decision** — Calculates if you have time to stop for coffee (including coffee-at-interchange)
 - 🗺️ **Multi-Leg Journeys** — Walk → Coffee → Tram → Train → Walk with accurate timing
 - 🧠 **SmartCommute Engine** — Auto-detects optimal routes across Australia
-- 📱 **LiveDash Multi-Device** — Renders for TRMNL, Kindle, and web preview
+- 📱 **CC LiveDash Multi-Device** — Renders for TRMNL, Kindle, and web preview
 - 🌤️ **Weather Integration** — BOM weather data at a glance
 - 🖥️ **E-Ink Optimized** — 1-bit BMP rendering with 20-second partial refresh
 - 🔒 **100% Self-Hosted** — Your data, your server, your API keys
@@ -31,7 +31,7 @@
 
 ## 🏗️ Architecture
 
-PTV-TRMNL uses a **fully self-hosted distribution model** — each user deploys their own complete stack.
+Commute Compute uses a **fully self-hosted distribution model** — each user deploys their own complete stack.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -84,7 +84,7 @@ PTV-TRMNL uses a **fully self-hosted distribution model** — each user deploys 
 
 1. Click the button above
 2. Sign in with GitHub
-3. Name your project (e.g., `ptv-trmnl-yourname`)
+3. Name your project (e.g., `commute-compute-yourname`)
 4. Click **Deploy**
 5. Wait ~60 seconds
 
@@ -107,7 +107,7 @@ The **Setup Wizard** guides you through:
 
 ### Step 3: Flash Custom Firmware
 
-**⚠️ TRMNL devices require custom PTV-TRMNL firmware.**
+**⚠️ TRMNL devices require custom Commute Compute firmware.**
 
 See [DEVELOPMENT-RULES.md Section 5](DEVELOPMENT-RULES.md#-section-5-custom-firmware-requirement) for flashing instructions.
 
@@ -219,7 +219,7 @@ See [LICENSE](LICENSE) for full terms.
 
 ## 🙏 Attribution
 
-PTV-TRMNL uses data from:
+Commute Compute uses data from:
 
 - **Transport Victoria** — GTFS-RT data via OpenData API
 - **Bureau of Meteorology** — Weather data
@@ -229,7 +229,7 @@ PTV-TRMNL uses data from:
 
 ## 💖 Support
 
-If PTV-TRMNL helps you catch your train on time:
+If Commute Compute helps you catch your train on time:
 
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/angusbergman)
 

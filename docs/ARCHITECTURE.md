@@ -1,9 +1,9 @@
-# PTV-TRMNL System Architecture
+# Commute Compute System Architecture
 
-**Version:** 2.1  
-**Last Updated:** 2026-01-29  
+**Version:** 3.0  
+**Last Updated:** 2026-01-30  
 **Status:** Active  
-**Specification:** V10 Dashboard (LOCKED)
+**Specification:** CCDash V10 (LOCKED)
 
 ---
 
@@ -20,7 +20,7 @@
 9. [Security Model](#9-security-model)
 10. [Deployment Architecture](#10-deployment-architecture)
 11. [SmartCommute Engine](#11-smartcommute-engine) *(New in v2.1)*
-12. [LiveDash Multi-Device Renderer](#12-livedash-multi-device-renderer) *(New in v2.1)*
+12. [CC LiveDash Multi-Device Renderer](#12-cc-livedash-multi-device-renderer) *(New in v2.1)*
 13. [CoffeeDecision Patterns](#13-coffeedecision-patterns) *(New in v2.1)*
 14. [Setup Wizard & Free-Tier Architecture](#14-setup-wizard--free-tier-architecture) *(New in v2.2)*
 
@@ -28,7 +28,7 @@
 
 ## 1. Overview
 
-PTV-TRMNL is a **fully self-hosted smart transit display system** for Australian public transport. Each user deploys their own complete stack with zero external dependencies.
+Commute Compute is a **fully self-hosted smart transit display system** for Australian public transport. Each user deploys their own complete stack with zero external dependencies.
 
 ### Core Principles
 
@@ -78,7 +78,7 @@ PTV-TRMNL is a **fully self-hosted smart transit display system** for Australian
 │   ┌─────────────────────────────────────────────────────────────────┐   │
 │   │                     USER'S DEVICE                                │   │
 │   │  ┌─────────────────────────────────────────────────────────┐    │   │
-│   │  │  Custom PTV-TRMNL Firmware (NOT usetrmnl firmware)      │    │   │
+│   │  │  Custom Commute Compute Firmware (NOT usetrmnl firmware)      │    │   │
 │   │  │  - Fetches from user's Vercel URL only                  │    │   │
 │   │  │  - Receives 1-bit BMP zones                             │    │   │
 │   │  │  - 20-second partial refresh cycle                      │    │   │
@@ -456,7 +456,7 @@ function sanitize(str) {
 | `/api/zones` | Zone data for TRMNL |
 | `/api/screen` | PNG for TRMNL webhook |
 | `/api/kindle/image` | PNG for Kindle devices |
-| `/api/livedash` | LiveDash multi-device renderer |
+| `/api/livedash` | CC LiveDash multi-device renderer |
 | `/api/setup-status` | Setup completion check |
 | `/api/status` | Server health check |
 
@@ -502,13 +502,13 @@ SmartCommute integrates with:
 
 ---
 
-## 12. LiveDash Multi-Device Renderer
+## 12. CC LiveDash Multi-Device Renderer
 
 *Added in v2.1 (January 2026)*
 
 ### 12.1 Overview
 
-LiveDash is a unified rendering endpoint that serves dashboard images to multiple device types from a single API.
+CC LiveDash is a unified rendering endpoint that serves dashboard images to multiple device types from a single API.
 
 ### 12.2 Supported Devices
 
@@ -658,5 +658,5 @@ Encode in URL token  →     • cafe business hours
 
 ---
 
-**Document Version:** 2.2  
-**Copyright (c) 2025-2026 Angus Bergman — CC BY-NC 4.0**
+**Document Version:** 3.0  
+**Copyright (c) 2025-2026 Commute Compute System by Angus Bergman — CC BY-NC 4.0**

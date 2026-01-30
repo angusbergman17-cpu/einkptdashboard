@@ -1,4 +1,4 @@
-# PTV-TRMNL UI/UX Redesign Task List
+# Commute Compute UI/UX Redesign Task List
 
 **Created:** 2026-01-29  
 **Status:** ✅ COMPLETE  

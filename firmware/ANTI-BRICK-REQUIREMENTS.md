@@ -392,7 +392,7 @@ void initDisplay() {
 ```cpp
 // ✅ ALWAYS: Log key events
 Serial.begin(115200);
-Serial.println("=== PTV-TRMNL Starting ===");
+Serial.println("=== Commute Compute Starting ===");
 
 Serial.println("Initializing display...");
 initDisplay();

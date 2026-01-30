@@ -1,4 +1,4 @@
-# PTV-TRMNL Production Audit Report
+# Commute Compute Production Audit Report
 
 **Date**: 2026-01-29  
 **Auditor**: Claude (Automated)  
@@ -28,7 +28,7 @@ The system is production-ready with minor issues that don't block usability. Add
 
 ### ✅ PASS: Landing page loads (/ route)
 - **Status**: 200 OK
-- **Response**: "✅ PTV-TRMNL service running"
+- **Response**: "✅ Commute Compute service running"
 - **Notes**: Landing page correctly detects setup status
 
 ### ✅ PASS: Setup detection works
@@ -38,12 +38,12 @@ The system is production-ready with minor issues that don't block usability. Add
 ### ✅ PASS: Admin wizard loads (/admin)
 - **Status**: 200 OK
 - **Content**: 7-step setup wizard with location finding, transit configuration
-- **Title**: "PTV-TRMNL Smart Setup & Dashboard"
+- **Title**: "Commute Compute Smart Setup & Dashboard"
 
 ### ✅ PASS: Advanced admin loads (/admin/simple)
 - **Status**: 200 OK
 - **Content**: Full admin panel with device selection, API settings, preferences
-- **Title**: "PTV-TRMNL Admin"
+- **Title**: "Commute Compute Admin"
 
 ### ✅ PASS: Simulator loads (/simulator.html)
 - **Status**: 200 OK
@@ -298,7 +298,7 @@ None identified.
 2. Document accessibility improvements as known issue
 
 **Release Notes Suggestion**:
-> PTV-TRMNL v2.8.0 is ready for public release. Known limitations: Accessibility improvements are planned for v2.9.0.
+> Commute Compute v2.8.0 is ready for public release. Known limitations: Accessibility improvements are planned for v2.9.0.
 
 ---
 

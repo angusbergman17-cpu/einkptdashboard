@@ -1,6 +1,6 @@
-# PTV-TRMNL Complete Setup Guide
+# Commute Compute Complete Setup Guide
 
-**Welcome to PTV-TRMNL!** This guide will take you from zero to a working transit dashboard in under 30 minutes.
+**Welcome to Commute Compute!** This guide will take you from zero to a working transit dashboard in under 30 minutes.
 
 ---
 
@@ -51,7 +51,7 @@ Or manually:
 3. Connect your GitHub account
 4. Select your forked `einkptdashboard` repository
 5. Configure:
-   - **Name**: `ptv-trmnl` (or your choice)
+   - **Name**: `commute-compute` (or your choice)
    - **Environment**: `Node`
    - **Build Command**: `npm install --no-audit --no-fund`
    - **Start Command**: `node src/server.js`
@@ -100,7 +100,7 @@ pio run --target upload
 ### 4. Configure Your Device
 
 1. **Power on your TRMNL device**
-2. **Connect to WiFi hotspot**: `PTV-TRMNL-Setup` (password: `transport123`)
+2. **Connect to WiFi hotspot**: `Commute Compute-Setup` (password: `transport123`)
 3. **Browser opens automatically** (or go to `192.168.4.1`)
 4. **Select your WiFi network** and enter password
 5. **Device reboots** and connects to your network
@@ -149,7 +149,7 @@ SMTP_PASS=your-app-password
 
 ### Step 2: Understanding State Support
 
-PTV-TRMNL works in **all 8 Australian states** out of the box:
+Commute Compute works in **all 8 Australian states** out of the box:
 
 | State | Transit Modes | Data Source |
 |-------|---------------|-------------|
@@ -181,7 +181,7 @@ Before flashing, update `firmware/include/config.h`:
 #define FULL_REFRESH_INTERVAL 300000      // 5 minutes (full redraw)
 
 // WiFi setup (change if desired)
-#define WIFI_AP_NAME "PTV-TRMNL-Setup"
+#define WIFI_AP_NAME "Commute Compute-Setup"
 #define WIFI_AP_PASSWORD "transport123"
 ```
 
@@ -303,7 +303,7 @@ cd firmware
 pio device monitor --baud 115200
 
 # You should see:
-=== PTV-TRMNL BOOT ===
+=== Commute Compute BOOT ===
 Reset reason: POWER ON
 Display initialized
 WiFi connected!
@@ -646,7 +646,7 @@ See [LICENSE](LICENSE) for full details.
 
 ## Support This Project
 
-If PTV-TRMNL helps you never miss your train, consider supporting development:
+If Commute Compute helps you never miss your train, consider supporting development:
 
 **☕ [Buy Me a Coffee](https://buymeacoffee.com/angusbergman)** - One-time support
 
@@ -661,6 +661,6 @@ Every contribution is deeply appreciated!
 
 ---
 
-**🎉 Congratulations!** You now have a working PTV-TRMNL transit dashboard!
+**🎉 Congratulations!** You now have a working Commute Compute transit dashboard!
 
 Enjoy never missing your train again! 🚊☕

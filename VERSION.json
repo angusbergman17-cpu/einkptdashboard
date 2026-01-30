@@ -1,9 +1,9 @@
 {
   "system": {
-    "version": "1.0.0",
-    "name": "PTV-TRMNL Smart Transit Display System",
-    "releaseDate": "2026-01-27",
-    "codename": "Foundation"
+    "version": "3.0.0",
+    "name": "Commute Compute System",
+    "releaseDate": "2026-01-30",
+    "codename": "Rebrand"
   },
   "components": {
     "adminPanel": {
@@ -75,6 +75,17 @@
     }
   },
   "changelog": [
+    {
+      "version": "3.0.0",
+      "date": "2026-01-30",
+      "changes": [
+        "REBRAND: Commute Compute → Commute Compute System",
+        "Added Section 0 (Naming Conventions) to DEVELOPMENT-RULES.md",
+        "Updated all internal references: CCDash V10, CC LiveDash",
+        "SmartCommute engine name retained",
+        "Updated localStorage keys: commute-compute-* → cc-*"
+      ]
+    },
     {
       "version": "1.0.0",
       "date": "2026-01-27",

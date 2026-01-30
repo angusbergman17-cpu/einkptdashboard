@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="400" height="400" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="400" fill="#0f172a"/>
+  
+  <!-- 
+    Minimal CC - transport reference via offset/stagger
+    Inner C extends further right, suggesting forward motion
+    Like carriages of a train
+  -->
+  
+  <!-- Outer C - White -->
+  <path d="
+    M 150 100
+    A 100 100 0 1 0 150 300
+    L 260 300
+    L 260 260
+    L 150 260
+    A 60 60 0 1 1 150 140
+    L 260 140
+    L 260 100
+    Z
+  " fill="#f1f5f9"/>
+  
+  <!-- Inner C - Emerald, extends 30px further right -->
+  <path d="
+    M 170 160
+    A 40 40 0 1 0 170 240
+    L 300 240
+    L 300 200
+    L 170 200
+    A 0 0 0 1 1 170 200
+    L 300 200
+    L 300 160
+    Z
+  " fill="#10b981"/>
+</svg>

@@ -10,7 +10,7 @@
  */
 
 /**
- * Device State Manager - PTV-TRMNL
+ * Device State Manager - Commute Compute
  * 
  * Tracks what the device is displaying, prevents crashes, and enables debugging.
  * Provides verifiable proof of display state via content hashing.

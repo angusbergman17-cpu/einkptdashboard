@@ -324,7 +324,7 @@ class RoutePlanner {
 
       const response = await fetch(url, {
         headers: {
-          'User-Agent': 'PTV-TRMNL/1.0 (Educational Project)'
+          'User-Agent': 'Commute Compute/1.0 (Educational Project)'
         }
       });
 

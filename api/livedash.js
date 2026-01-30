@@ -198,7 +198,7 @@ function generateHtmlPreview(device, config) {
   return `<!DOCTYPE html>
 <html lang="en">
 <!--
-    PTV-TRMNL LiveDash - Smart Transit Display
+    Commute Compute LiveDash - Smart Transit Display
     Copyright (c) 2025-2026 Angus Bergman
     Licensed under CC BY-NC 4.0
     https://creativecommons.org/licenses/by-nc/4.0/
@@ -207,7 +207,7 @@ function generateHtmlPreview(device, config) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Live transit dashboard preview for ${config.name}">
-    <title>LiveDash - ${config.name} | PTV-TRMNL</title>
+    <title>LiveDash - ${config.name} | Commute Compute</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚃</text></svg>">
     <style>
         :root {
@@ -467,7 +467,7 @@ function generateHtmlPreview(device, config) {
     <header class="header">
         <a href="/" class="brand">
             <span>🚃</span>
-            <span>PTV-TRMNL</span>
+            <span>Commute Compute</span>
         </a>
         <nav class="nav-links">
             <a href="/" class="nav-link">Home</a>
@@ -520,7 +520,7 @@ function generateHtmlPreview(device, config) {
         <div class="footer-legal">
             © 2025-2026 <a href="https://github.com/angusbergman17-cpu" target="_blank" rel="noopener">Angus Bergman</a> •
             <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">CC BY-NC 4.0</a> •
-            PTV-TRMNL v2.8
+            Commute Compute v2.8
         </div>
     </footer>
     

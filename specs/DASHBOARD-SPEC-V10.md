@@ -1,4 +1,4 @@
-# PTV-TRMNL Dashboard Specification v10
+# Commute Compute Dashboard Specification v10
 
 **Status:** 🔒 LOCKED  
 **Last Updated:** 2026-01-28  

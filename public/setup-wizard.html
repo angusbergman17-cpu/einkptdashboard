@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <!--
-    PTV-TRMNL Setup Wizard - Intelligent Configuration
+    Commute Compute Setup Wizard - Intelligent Configuration
     Copyright (c) 2026 Angus Bergman
     Licensed under CC BY-NC 4.0
     https://creativecommons.org/licenses/by-nc/4.0/
@@ -9,7 +9,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Setup Wizard - PTV-TRMNL</title>
+    <title>Setup Wizard - Commute Compute</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -278,7 +278,7 @@
     <div class="container">
         <div class="wizard-card">
             <div class="wizard-header">
-                <h1>🚊 Welcome to PTV-TRMNL</h1>
+                <h1>🚊 Welcome to Commute Compute</h1>
                 <p>Let's set up your intelligent transit display in just a few steps</p>
             </div>
 
@@ -536,7 +536,7 @@
             <div style="font-size: 12px;">
                 © 2025-2026 <a href="https://github.com/angusbergman17-cpu" target="_blank" rel="noopener" style="color: #94a3b8;">Angus Bergman</a> •
                 <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener" style="color: #94a3b8;">CC BY-NC 4.0</a> •
-                PTV-TRMNL <span id="footer-version">v2.8</span>
+                Commute Compute <span id="footer-version">v2.8</span>
             </div>
         </div>
     </footer>
@@ -625,8 +625,8 @@
                 autocompleteDebounce = setTimeout(async () => {
                     try {
                         // Get Google key from localStorage if validated
-                        const googleKey = localStorage.getItem('ptv_google_places_key');
-                        const googleValidated = localStorage.getItem('ptv_google_places_validated') === 'true';
+                        const googleKey = localStorage.getItem('cc_google_places_key');
+                        const googleValidated = localStorage.getItem('cc_google_places_validated') === 'true';
                         
                         let url = `/api/address-search?q=${encodeURIComponent(query)}`;
                         if (googleKey && googleValidated) {
@@ -704,8 +704,8 @@
 
                 if (result.success && result.saved) {
                     // Store validated key in localStorage for use in address searches
-                    localStorage.setItem('ptv_google_places_key', apiKey);
-                    localStorage.setItem('ptv_google_places_validated', 'true');
+                    localStorage.setItem('cc_google_places_key', apiKey);
+                    localStorage.setItem('cc_google_places_validated', 'true');
                     console.log('✅ Google key saved to localStorage for address searches');
                     
                     status.style.color = '#48bb78';
@@ -900,8 +900,8 @@
 
                 if (result.success && result.testResult?.success) {
                     // Store in localStorage like Google key
-                    localStorage.setItem('ptv_transit_api_key', apiKey);
-                    localStorage.setItem('ptv_transit_api_validated', 'true');
+                    localStorage.setItem('cc_transit_api_key', apiKey);
+                    localStorage.setItem('cc_transit_api_validated', 'true');
                     localStorage.setItem('ptv_transit_state', selectedAuthority);
                     
                     status.innerHTML = `<span style="color: #48bb78;">✅ API key saved and validated! Real-time data enabled.</span>`;
@@ -927,8 +927,8 @@
             const nextBtn = document.getElementById('step-4-next-btn');
             
             // Clear any stored transit key
-            localStorage.removeItem('ptv_transit_api_key');
-            localStorage.removeItem('ptv_transit_api_validated');
+            localStorage.removeItem('cc_transit_api_key');
+            localStorage.removeItem('cc_transit_api_validated');
             localStorage.setItem('ptv_transit_fallback', 'timetable');
             localStorage.setItem('ptv_transit_state', selectedAuthority);
             
@@ -965,7 +965,7 @@
                     arrivalTime: arrivalTime,
                     includeCoffee: document.getElementById('include-coffee').checked,
                     credentials: {
-                        apiKey: document.getElementById('api-key')?.value || localStorage.getItem('ptv_transit_api_key') || ''
+                        apiKey: document.getElementById('api-key')?.value || localStorage.getItem('cc_transit_api_key') || ''
                     }
                 };
 
@@ -1049,9 +1049,9 @@
                     let webhookHtml = '';
                     if (webhookResult.success) {
                         // Store config in localStorage for admin page to read
-                        localStorage.setItem('ptv-trmnl-config', JSON.stringify(fullConfig));
-                        localStorage.setItem('ptv-trmnl-webhook-url', webhookResult.webhookUrl);
-                        localStorage.setItem('ptv-trmnl-configured', 'true');
+                        localStorage.setItem('cc-config', JSON.stringify(fullConfig));
+                        localStorage.setItem('commute-compute-webhook-url', webhookResult.webhookUrl);
+                        localStorage.setItem('cc-configured', 'true');
                         
                         // Extract token from webhook URL for passing to admin
                         const webhookToken = webhookResult.webhookUrl.split('/api/device/')[1] || '';

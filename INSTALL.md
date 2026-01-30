@@ -1,4 +1,4 @@
-# PTV-TRMNL Installation Guide
+# Commute Compute Installation Guide
 **Complete Deployment Guide: GitHub → Render → TRMNL Device**
 
 ---
@@ -49,7 +49,7 @@ If you prefer to set up manually or the wizard doesn't work for your platform, f
 
 ## Overview
 
-PTV-TRMNL is a smart transit display system that shows your daily commute on a TRMNL e-ink display. This guide will walk you through:
+Commute Compute is a smart transit display system that shows your daily commute on a TRMNL e-ink display. This guide will walk you through:
 
 1. **Forking** the code to your own GitHub account
 2. **Deploying** to Render (free hosting)
@@ -121,7 +121,7 @@ npm install
 **Important**: Free tier services sleep after 15 minutes of inactivity.
 
 - **Cold Start**: Takes ~15 seconds to wake up on first request
-- **Memory Limit**: 512 MB (PTV-TRMNL uses ~200 MB)
+- **Memory Limit**: 512 MB (Commute Compute uses ~200 MB)
 - **Auto-Sleep**: After 15 minutes without requests
 - **Best For**: Personal use, hobby projects
 
@@ -146,7 +146,7 @@ npm install
 
 | Setting | Value |
 |---------|-------|
-| **Name** | `ptv-trmnl` (or choose your own) |
+| **Name** | `commute-compute` (or choose your own) |
 | **Region** | Select closest to Australia (e.g., Singapore) |
 | **Branch** | `main` |
 | **Root Directory** | (leave blank) |
@@ -822,7 +822,7 @@ Render will automatically redeploy when you push changes.
 
 You now have:
 
-✅ Your own PTV-TRMNL server running on Render
+✅ Your own Commute Compute server running on Render
 ✅ Journey configured with your addresses
 ✅ TRMNL device showing live transit data
 ✅ Auto-updating every 2 minutes (server) and 15 minutes (device)
@@ -852,7 +852,7 @@ You now have:
 
 ## ☕ Support Development
 
-This project is developed and maintained by Angus Bergman in free time. If you find PTV-TRMNL useful and want to support ongoing development:
+This project is developed and maintained by Angus Bergman in free time. If you find Commute Compute useful and want to support ongoing development:
 
 **[☕ Buy me a coffee](https://www.buymeacoffee.com/angusbergman)** | **[💙 Sponsor on GitHub](https://github.com/sponsors/angusbergman17-cpu)**
 
@@ -864,7 +864,7 @@ Your support helps with:
 - GTFS data updates and maintenance
 - API credits for development environments
 
-Every contribution, no matter the size, is deeply appreciated and motivates continued development. Thank you for using PTV-TRMNL! 🙏
+Every contribution, no matter the size, is deeply appreciated and motivates continued development. Thank you for using Commute Compute! 🙏
 
 ---
 

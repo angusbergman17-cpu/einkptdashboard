@@ -1,11 +1,49 @@
-# PTV-TRMNL Development Rules
+# Commute Compute Development Rules
 
 **MANDATORY COMPLIANCE DOCUMENT**  
-**Version:** 1.5  
-**Last Updated:** 2026-01-29  
-**Copyright (c) 2026 Angus Bergman — Licensed under CC BY-NC 4.0**
+**Version:** 1.6  
+**Last Updated:** 2026-01-30  
+**Copyright (c) 2026 Commute Compute System by Angus Bergman — Licensed under CC BY-NC 4.0**
 
-These rules govern all development on PTV-TRMNL. Compliance is mandatory.
+These rules govern all development on Commute Compute. Compliance is mandatory.
+
+---
+
+## 🏷️ Section 0: Naming Conventions
+
+### 0.1 Official Names
+
+| Component | Full Name | Short Name | Usage |
+|-----------|-----------|------------|-------|
+| **System** | Commute Compute System | Commute Compute / CC | General references |
+| **Repository** | CommuteCompute | — | GitHub repo (will be renamed) |
+| **Dashboard Renderer** | CCDash V10 | CCDash | Dashboard rendering references |
+| **Multi-Device Renderer** | CC LiveDash | LiveDash | LiveDash endpoint/service |
+| **Journey Engine** | SmartCommute | SmartCommute | KEEP as-is (journey + coffee calculations) |
+
+### 0.2 Code Naming
+
+| Context | Pattern | Example |
+|---------|---------|---------|
+| CSS classes | `cc-*` | `cc-header`, `cc-journey-leg` |
+| HTML IDs | `cc-*` | `cc-config-panel` |
+| localStorage keys | `cc-*` | `cc-config`, `cc-onboarding-completed` |
+| Variables | `cc*` or descriptive | `ccConfig`, `dashboardState` |
+
+### 0.3 Legacy References
+
+The system was previously known as "Commute Compute". Update any remaining references:
+
+| Old | New |
+|-----|-----|
+| Commute Compute | Commute Compute |
+| commute-compute | commute-compute |
+| commutecompute | commutecompute |
+| commute-compute-config | cc-config |
+| V10 Dashboard | CCDash V10 |
+| LiveDash (standalone) | CC LiveDash |
+
+**Note:** "SmartCommute" is retained as the journey calculation engine name.
 
 ---
 
@@ -15,6 +53,7 @@ These rules govern all development on PTV-TRMNL. Compliance is mandatory.
 
 | # | Section | Priority | Description |
 |---|---------|----------|-------------|
+| 0 | [Naming Conventions](#-section-0-naming-conventions) | 🔴 CRITICAL | Official names, code patterns, legacy references |
 | 1 | [Absolute Prohibitions — PTV API](#-section-1-absolute-prohibitions--ptv-api-naming--exclusions) | 🔴 CRITICAL | Forbidden terms, legacy API prohibition, anti-brick rules |
 | 2 | [TRMNL/usetrmnl Prohibition](#-section-2-trmluseusetrmnl-prohibition) | 🔴 CRITICAL | Express prohibition on third-party TRMNL dependencies |
 | 3 | [Zero-Config Serverless Architecture](#-section-3-zero-config-serverless-architecture) | 🔴 CRITICAL | Config token system, no .env files |
@@ -226,6 +265,7 @@ These rules govern all development on PTV-TRMNL. Compliance is mandatory.
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.6 | 2026-01-30 | Angus Bergman | **REBRAND**: Commute Compute → Commute Compute System. Added Section 0 (Naming Conventions). Updated all references: CCDash V10, CC LiveDash. SmartCommute engine name retained. |
 | 1.5 | 2026-01-29 | Angus Bergman | Added: API Key Validation requirements (17.2) — mandatory validation for all API keys entered via admin panel including format checks, live testing, and user feedback requirements |
 | 1.4 | 2026-01-29 | Angus Bergman | Added: console.log forbidden term (1.1), 12-hour time code pattern (12.2), file naming consistency (13.5), forbidden terms grep verification (14.1.1) |
 | 1.3 | 2025-01-29 | Angus Bergman | Added full document index with version control |
@@ -235,9 +275,7 @@ These rules govern all development on PTV-TRMNL. Compliance is mandatory.
 
 ### Migration Notes
 
-This document consolidates and supersedes:
-- `PTV-TRMNL-NEW/DEVELOPMENT-RULES.md` (v3.0)
-- `ptv-trmnl-work/DEVELOPMENT-RULES.md` (v3.0)
+This document consolidates and supersedes legacy versions. As of v1.6, the system is rebranded from "Commute Compute" to "Commute Compute System".
 
 All rules from previous versions have been incorporated. The canonical source is now:
 - **Repository:** `einkptdashboard`
@@ -363,7 +401,7 @@ void loop() {
 
 ### 2.1 Express Prohibition on TRMNL Services
 
-**🚨 ABSOLUTE PROHIBITION**: No part of the PTV-TRMNL system may point to, use, depend on, or communicate with TRMNL or usetrmnl's servers, firmware, systems, or services.
+**🚨 ABSOLUTE PROHIBITION**: No part of the Commute Compute system may point to, use, depend on, or communicate with TRMNL or usetrmnl's servers, firmware, systems, or services.
 
 **Forbidden:**
 | Prohibited | Reason |
@@ -375,7 +413,7 @@ void loop() {
 | TRMNL plugin system | Tied to their ecosystem |
 | Any `api.usetrmnl.com` endpoints | Third-party infrastructure |
 
-**WHY**: PTV-TRMNL is a fully self-hosted, independent system. Users must own their complete stack with no external dependencies on commercial services.
+**WHY**: Commute Compute is a fully self-hosted, independent system. Users must own their complete stack with no external dependencies on commercial services.
 
 ### 2.2 Required Independence
 
@@ -390,9 +428,9 @@ const API_URL = process.env.VERCEL_URL || 'https://your-deployment.vercel.app';
 
 ### 2.3 Firmware Independence
 
-The TRMNL hardware device **MUST** run custom PTV-TRMNL firmware that:
+The TRMNL hardware device **MUST** run custom Commute Compute firmware that:
 - ✅ Connects ONLY to the user's self-hosted Vercel deployment
-- ✅ Uses the PTV-TRMNL API endpoints (`/api/zones`, `/api/screen`)
+- ✅ Uses the Commute Compute API endpoints (`/api/zones`, `/api/screen`)
 - ❌ Never contacts usetrmnl.com or any TRMNL cloud services
 - ❌ Never uses TRMNL's OTA update mechanism
 
@@ -535,7 +573,7 @@ TZ=Australia/Melbourne
 
 ### 5.1 TRMNL Hardware Specifications
 
-PTV-TRMNL is designed for TRMNL e-ink display hardware with custom firmware.
+Commute Compute is designed for TRMNL e-ink display hardware with custom firmware.
 
 **TRMNL OG Hardware:**
 | Component | Specification |
@@ -549,7 +587,7 @@ PTV-TRMNL is designed for TRMNL e-ink display hardware with custom firmware.
 
 ### 5.2 Custom Firmware Requirements
 
-**🔴 MANDATORY**: TRMNL devices MUST be flashed with custom PTV-TRMNL firmware.
+**🔴 MANDATORY**: TRMNL devices MUST be flashed with custom Commute Compute firmware.
 
 **Firmware Must:**
 - [ ] Connect to user's self-hosted server URL (configured via setup portal)
@@ -651,7 +689,7 @@ bbep.setBuffer(customBuf); // BROKEN
 
 ### 6.1 Supported Kindle Models
 
-PTV-TRMNL supports jailbroken Kindle devices as alternative display hardware.
+Commute Compute supports jailbroken Kindle devices as alternative display hardware.
 
 **Compatible Models:**
 | Model | Codename | Resolution | Status |
@@ -699,7 +737,7 @@ After jailbreaking, install the kindle-dash package:
 mkdir -p /mnt/us/dashboard
 cd /mnt/us/dashboard
 
-# Configure to fetch from your PTV-TRMNL server
+# Configure to fetch from your Commute Compute server
 # Edit local/fetch-dashboard.sh:
 IMAGE_URL="https://your-deployment.vercel.app/api/kindle/image"
 ```
@@ -1753,4 +1791,4 @@ curl -s ... | head -c 1  # Should be "{" not "<"
 
 ---
 
-*This document is the single source of truth for PTV-TRMNL development. All contributors must read and comply with these rules.*
+*This document is the single source of truth for Commute Compute development. All contributors must read and comply with these rules.*

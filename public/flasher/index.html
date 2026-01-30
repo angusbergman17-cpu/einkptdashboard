@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PTV-TRMNL Web Flasher</title>
+  <title>Commute Compute Web Flasher</title>
   <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -34,7 +34,7 @@
 </head>
 <body>
   <div class="container">
-    <h1>🚃 PTV-TRMNL</h1>
+    <h1>🚃 Commute Compute</h1>
     <p class="subtitle">Smart Transit Display - Web Flasher</p>
     
     <div class="card">
@@ -64,7 +64,7 @@
       <p style="margin-bottom: 25px;"><small>Works in Chrome, Edge, and Opera browsers.</small></p>
       
       <esp-web-install-button manifest="/flasher/manifest.json">
-        <button slot="activate">🔌 Install PTV-TRMNL Firmware</button>
+        <button slot="activate">🔌 Install Commute Compute Firmware</button>
         <span slot="unsupported">Your browser doesn't support Web Serial. Try Chrome or Edge.</span>
         <span slot="not-allowed">Serial access not allowed. Check browser permissions.</span>
       </esp-web-install-button>
@@ -79,7 +79,7 @@
       <h2>After Flashing</h2>
       <ol class="steps">
         <li>Device shows welcome screen with setup instructions</li>
-        <li>Connect to WiFi network: <strong>PTV-TRMNL-Setup</strong></li>
+        <li>Connect to WiFi network: <strong>Commute Compute-Setup</strong></li>
         <li>Open browser: <strong>192.168.4.1</strong></li>
         <li>Enter your WiFi credentials and server URL</li>
         <li>Visit your server's <strong>/setup</strong> page to configure stops</li>
@@ -88,7 +88,7 @@
     
     <div class="card">
       <h2>Need a Server?</h2>
-      <p>Deploy your own PTV-TRMNL server in one click:</p>
+      <p>Deploy your own Commute Compute server in one click:</p>
       <p style="margin-top: 15px;">
         <a href="https://vercel.com/new/clone?repository-url=https://github.com/angusbergman17-cpu/einkptdashboard" target="_blank">
           <img src="https://vercel.com/button" alt="Deploy with Vercel" />

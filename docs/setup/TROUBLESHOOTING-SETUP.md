@@ -1,5 +1,5 @@
 # Troubleshooting Setup Issues
-**For PTV-TRMNL v2.5.2+**
+**For Commute Compute v2.5.2+**
 **Date**: 2026-01-25
 
 ---

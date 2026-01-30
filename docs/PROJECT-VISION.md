@@ -1,4 +1,4 @@
-# PTV-TRMNL Project Vision & Roadmap
+# Commute Compute Project Vision & Roadmap
 
 **Version:** 1.0  
 **Last Updated:** 2025-01-29  
@@ -9,7 +9,7 @@
 
 ## Vision Statement
 
-**PTV-TRMNL aims to be the definitive open-source smart transit display for Australian public transport** — empowering commuters with real-time journey information on beautiful e-ink displays, while maintaining complete privacy and user control.
+**Commute Compute aims to be the definitive open-source smart transit display for Australian public transport** — empowering commuters with real-time journey information on beautiful e-ink displays, while maintaining complete privacy and user control.
 
 ---
 
@@ -279,7 +279,7 @@ Things we explicitly **will not** pursue:
 
 ## Conclusion
 
-PTV-TRMNL represents a commitment to privacy-respecting, user-empowering technology. By keeping everything self-hosted and open-source, we ensure that users truly own their smart transit experience — no strings attached.
+Commute Compute represents a commitment to privacy-respecting, user-empowering technology. By keeping everything self-hosted and open-source, we ensure that users truly own their smart transit experience — no strings attached.
 
 The project succeeds when a Melbourne commuter can glance at their e-ink display, see "LEAVE NOW — Coffee included", and walk out the door knowing they'll catch their train on time.
 

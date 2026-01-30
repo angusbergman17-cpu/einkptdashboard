@@ -596,7 +596,7 @@ class V11DashboardRenderer {
     ctx.font = `${Math.floor(fonts.footer * 0.6)}px sans-serif`;
     ctx.fillStyle = '#888888';
     ctx.textAlign = 'right';
-    ctx.fillText('PTV-TRMNL v11', config.width - 10, zone.y + zone.h - 5);
+    ctx.fillText('Commute Compute v11', config.width - 10, zone.y + zone.h - 5);
     ctx.textAlign = 'left';
     ctx.fillStyle = '#000000';
   }

@@ -1,6 +1,6 @@
 # Attribution
 
-PTV-TRMNL uses data and services from the following providers:
+Commute Compute uses data and services from the following providers:
 
 ## Transport Data
 

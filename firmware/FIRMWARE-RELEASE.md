@@ -1,4 +1,4 @@
-# PTV-TRMNL Firmware Releases
+# Commute Compute Firmware Releases
 
 ## Current Stable: v1.0.0-stable
 

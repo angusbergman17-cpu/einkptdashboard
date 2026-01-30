@@ -1,6 +1,6 @@
 # E-ink Display Refresh Guide
 
-**For PTV-TRMNL Custom Firmware**
+**For Commute Compute Custom Firmware**
 
 ---
 
@@ -328,5 +328,5 @@ screen /dev/cu.usbmodem* 115200
 ---
 
 **Last Updated:** 2026-01-26
-**Applies To:** PTV-TRMNL v3.0+
+**Applies To:** Commute Compute v3.0+
 **Firmware Version:** All versions with partial refresh support

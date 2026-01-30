@@ -1,5 +1,5 @@
 # Device Compatibility Guide
-**Supported E-ink Displays for PTV-TRMNL**
+**Supported E-ink Displays for Commute Compute**
 
 Last Updated: 2026-01-29
 
@@ -7,7 +7,7 @@ Last Updated: 2026-01-29
 
 ## Overview
 
-PTV-TRMNL supports multiple e-ink display devices. This guide helps you:
+Commute Compute supports multiple e-ink display devices. This guide helps you:
 1. Choose the right device for your needs
 2. Verify compatibility with your hardware
 3. Configure the server for your specific device
@@ -299,7 +299,7 @@ const INKPLATE_10 = {
 
 ## Server-Side Device Detection
 
-PTV-TRMNL automatically adapts to different devices.
+Commute Compute automatically adapts to different devices.
 
 ### Auto-Detection System
 
@@ -360,7 +360,7 @@ DEVICE_HEIGHT=480
 4. Enter device setup code (shown on screen)
 5. Device registers automatically
 
-### 3. Add PTV-TRMNL Plugin
+### 3. Add Commute Compute Plugin
 
 1. In TRMNL dashboard, navigate to **Plugins**
 2. Click **Custom API**
@@ -768,7 +768,7 @@ A: Yes! Jailbreak doesn't remove Amazon functionality. You can switch between tr
 **Q: Which Kindle should I buy used?**
 A: Kindle Paperwhite 3 or 4 ($50-80 used) offers best value. Avoid Kindle Fire (it's a tablet, not e-ink).
 
-**Q: Does PTV-TRMNL work with Kobo devices?**
+**Q: Does Commute Compute work with Kobo devices?**
 A: Experimentally. Kobo uses different software. Community members have had success but it requires custom work.
 
 **Q: Can I use an old e-reader I found?**

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="200" height="200" fill="#0f172a"/>
+  
+  <!-- CC Logo - Cleaner version with subtle arrow ends -->
+  
+  <!-- Outer C - White -->
+  <path d="
+    M 140 48 L 80 48 
+    A 52 52 0 1 0 80 152 
+    L 140 152
+    L 140 138
+    L 80 138
+    A 38 38 0 1 1 80 62
+    L 140 62
+    Z
+  " fill="#f1f5f9"/>
+  
+  <!-- Arrow tip on outer C top -->
+  <polygon points="140,48 152,42 152,54" fill="#f1f5f9"/>
+  <!-- Arrow tip on outer C bottom -->
+  <polygon points="140,152 152,146 152,158" fill="#f1f5f9"/>
+  
+  <!-- Inner C - Teal -->
+  <path d="
+    M 145 72 L 90 72
+    A 28 28 0 1 0 90 128
+    L 145 128
+    L 145 114
+    L 90 114
+    A 14 14 0 1 1 90 86
+    L 145 86
+    Z
+  " fill="#10b981"/>
+  
+  <!-- Arrow tip on inner C top -->
+  <polygon points="145,72 157,66 157,78" fill="#10b981"/>
+  <!-- Arrow tip on inner C bottom -->
+  <polygon points="145,128 157,122 157,134" fill="#10b981"/>
+  
+  <!-- Subtle motion lines (like speed lines) -->
+  <line x1="25" y1="85" x2="45" y2="85" stroke="#10b981" stroke-width="2" opacity="0.4"/>
+  <line x1="20" y1="100" x2="50" y2="100" stroke="#f1f5f9" stroke-width="2" opacity="0.3"/>
+  <line x1="25" y1="115" x2="45" y2="115" stroke="#10b981" stroke-width="2" opacity="0.4"/>
+</svg>

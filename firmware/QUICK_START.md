@@ -1,4 +1,4 @@
-# PTV-TRMNL Quick Start Guide
+# Commute Compute Quick Start Guide
 
 ## Your Device is Ready! 🎉
 
@@ -16,7 +16,7 @@ Your TRMNL device has been flashed with custom firmware and is ready to connect 
 
 ## Step 2: WiFi Setup
 
-1. **Look for WiFi network:** `PTV-TRMNL-Setup`
+1. **Look for WiFi network:** `Commute Compute-Setup`
 2. **Connect** using password: `transport123`
 3. **Browser opens automatically** (or go to `192.168.4.1`)
 4. **Select your WiFi** network from the list
@@ -41,7 +41,7 @@ Your TRMNL device has been flashed with custom firmware and is ready to connect 
 ## What You Should See
 
 ### On First Boot:
-- Device creates `PTV-TRMNL-Setup` WiFi hotspot
+- Device creates `Commute Compute-Setup` WiFi hotspot
 - Display shows setup instructions
 
 ### After WiFi Setup:
@@ -67,7 +67,7 @@ pio device monitor --baud 115200
 
 You should see:
 ```
-=== PTV-TRMNL BOOT ===
+=== Commute Compute BOOT ===
 Reset reason: POWER ON
 Free heap: 280000 bytes
 Display initialized

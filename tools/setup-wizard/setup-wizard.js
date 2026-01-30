@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * PTV-TRMNL Setup Wizard
+ * Commute Compute Setup Wizard
  * Cross-platform tool for device firmware flashing and deployment setup
  *
  * Copyright (c) 2026 Angus Bergman
@@ -124,7 +124,7 @@ class SetupWizard {
   logBanner() {
     console.clear();
     this.log('\n╔═══════════════════════════════════════════════╗', 'cyan');
-    this.log('║  PTV-TRMNL Setup Wizard v3.0.0                ║', 'cyan');
+    this.log('║  Commute Compute Setup Wizard v3.0.0                ║', 'cyan');
     this.log('║  Copyright © 2026 Angus Bergman               ║', 'cyan');
     this.log('╚═══════════════════════════════════════════════╝\n', 'cyan');
   }
@@ -264,7 +264,7 @@ class SetupWizard {
     this.log('4. Connect your GitHub account if not already connected', 'cyan');
     this.log('5. Select your forked einkptdashboard repository', 'cyan');
     this.log('6. Configure:', 'cyan');
-    this.log('   - Name: ptv-trmnl-[your-name]', 'cyan');
+    this.log('   - Name: commute-compute-[your-name]', 'cyan');
     this.log('   - Region: Choose closest to you', 'cyan');
     this.log('   - Branch: main', 'cyan');
     this.log('   - Build Command: npm install', 'cyan');
@@ -274,7 +274,7 @@ class SetupWizard {
 
     await this.question('Press Enter when your Render deployment is complete...');
 
-    const url = await this.question('\nEnter your Render URL (e.g., https://ptv-trmnl-yourname.vercel.app): ');
+    const url = await this.question('\nEnter your Render URL (e.g., https://commute-compute-yourname.vercel.app): ');
     this.log(`✅ Render URL saved: ${url}`, 'green');
 
     return { url: url.trim() };
@@ -286,7 +286,7 @@ class SetupWizard {
 
     this.log('Add these environment variables in Render:\n', 'yellow');
     this.log('1. Go to your Render dashboard', 'cyan');
-    this.log('2. Select your PTV-TRMNL service', 'cyan');
+    this.log('2. Select your Commute Compute service', 'cyan');
     this.log('3. Click "Environment" tab', 'cyan');
     this.log('4. Add the following variables:\n', 'cyan');
 
@@ -435,7 +435,7 @@ class SetupWizard {
     this.log('\n✅ Setup Complete!', 'green');
     this.log('═══════════════════\n', 'green');
 
-    this.log('Your PTV-TRMNL is configured with:', 'cyan');
+    this.log('Your Commute Compute is configured with:', 'cyan');
     this.log(`   📱 Device: ${config.device.name}`, 'cyan');
     this.log(`   🌐 Server: ${config.renderUrl}`, 'cyan');
     this.log(`   📏 Resolution: ${config.device.resolution.width}×${config.device.resolution.height}`, 'cyan');
@@ -452,7 +452,7 @@ class SetupWizard {
     this.log('   - Documentation: Check docs/ folder in repository', 'cyan');
     this.log('   - Support: Open an issue on GitHub\n', 'cyan');
 
-    this.log('Thank you for using PTV-TRMNL! 🎉\n', 'green');
+    this.log('Thank you for using Commute Compute! 🎉\n', 'green');
   }
 
   async run() {

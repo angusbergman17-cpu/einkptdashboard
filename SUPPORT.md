@@ -1,6 +1,6 @@
-# Supporting PTV-TRMNL
+# Supporting Commute Compute
 
-Thank you for considering supporting PTV-TRMNL! This project is developed and maintained by **Angus Bergman** as a passion project to make Australian public transport more accessible.
+Thank you for considering supporting Commute Compute! This project is developed and maintained by **Angus Bergman** as a passion project to make Australian public transport more accessible.
 
 ---
 
@@ -56,9 +56,9 @@ This is a **non-commercial, open-source project**. All donations go directly tow
 
 ## 🙏 Thank You
 
-Every contribution, whether financial or otherwise, helps make PTV-TRMNL better for everyone. 
+Every contribution, whether financial or otherwise, helps make Commute Compute better for everyone. 
 
-If you're using PTV-TRMNL for your daily commute and finding it useful, even a small token of appreciation means the world.
+If you're using Commute Compute for your daily commute and finding it useful, even a small token of appreciation means the world.
 
 **Built with ❤️ in Melbourne, Australia**
 

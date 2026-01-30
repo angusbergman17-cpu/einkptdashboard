@@ -1,6 +1,6 @@
 # End-to-End Testing Checklist
 **Date**: 2026-01-26
-**System**: PTV-TRMNL v3.0.0
+**System**: Commute Compute v3.0.0
 **Status**: ✅ Ready for Testing
 
 ---
@@ -20,7 +20,7 @@
 ✅ User preferences loaded
 ✅ Multi-tier geocoding service initialized
 ✅ Decision logger initialized
-🚀 PTV-TRMNL server listening on port 3000
+🚀 Commute Compute server listening on port 3000
 ```
 
 ---

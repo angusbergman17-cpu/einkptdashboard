@@ -1,4 +1,4 @@
-# 🚆 Complete Beginner's Guide to PTV-TRMNL
+# 🚆 Complete Beginner's Guide to Commute Compute
 ## Your Personal Melbourne Transit Display - Made Easy!
 
 **Hello!** 👋 Welcome to your journey of creating your own personalized Melbourne public transport display. This guide will walk you through every single step, from opening the box to seeing live train times on your display.
@@ -104,7 +104,7 @@ Don't worry - we'll do these one at a time, and you can take breaks!
 3. **Create a new project:**
    - Click "Select a project" at the top
    - Click "New Project"
-   - Name it: "ptv-trmnl"
+   - Name it: "commute-compute"
    - Click "Create"
 
 4. **Enable Places API:**
@@ -182,7 +182,7 @@ Don't worry - we'll do these one at a time, and you can take breaks!
 
    Fill in these fields exactly as shown:
 
-   - **Name:** `ptv-trmnl` (or any name you like)
+   - **Name:** `commute-compute` (or any name you like)
    - **Region:** Choose closest to Melbourne (Singapore or Sydney)
    - **Branch:** `main`
    - **Root Directory:** Leave blank

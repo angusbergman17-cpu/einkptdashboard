@@ -1,5 +1,5 @@
 # Victorian Transport - GTFS Realtime API Protocol
-**For PTV-TRMNL Users in Victoria**
+**For Commute Compute Users in Victoria**
 **Date**: 2026-01-25
 **Status**: 🚂 OFFICIAL PROTOCOL FOR VICTORIAN USERS
 
@@ -302,10 +302,10 @@ function isTripCancelled(tripUpdate) {
 
 ---
 
-## 🔗 Integration with PTV-TRMNL
+## 🔗 Integration with Commute Compute
 
 ### Current Setup
-PTV-TRMNL currently uses:
+Commute Compute currently uses:
 - **PTV Timetable API v3** for scheduled departures
 - **HMAC-SHA1 authentication** with Developer ID + API Key
 
@@ -319,7 +319,7 @@ This new endpoint provides:
 
 ```
 ┌─────────────────────────────────────────────┐
-│         PTV-TRMNL System                    │
+│         Commute Compute System                    │
 ├─────────────────────────────────────────────┤
 │                                             │
 │  1. PTV Timetable API v3 (HMAC)            │
@@ -340,7 +340,7 @@ This new endpoint provides:
 └─────────────────────────────────────────────┘
 ```
 
-### Configuration in PTV-TRMNL
+### Configuration in Commute Compute
 
 **New environment variable needed**:
 ```env
@@ -503,7 +503,7 @@ function getCombinedTripInfo(tripId, apiKey) {
 - [ ] Test connection with sample code
 - [ ] Verify response decoding works
 
-### Integration with PTV-TRMNL
+### Integration with Commute Compute
 - [ ] Add `VICTORIA_GTFS_REALTIME_KEY` to .env
 - [ ] Update admin page to show GTFS viewer (Victorian users only)
 - [ ] Implement real-time delay display
@@ -576,7 +576,7 @@ app.get('/api/victoria/realtime', async (req, res) => {
 ### Technical Issues
 - **OpenData Support**: Via portal contact form
 - **GTFS Specification**: Google GTFS Realtime community
-- **PTV-TRMNL Issues**: GitHub repository
+- **Commute Compute Issues**: GitHub repository
 
 ### Related Documents
 - **PTV Timetable API**: See `OPENDATA-VIC-API-GUIDE.md`
@@ -587,7 +587,7 @@ app.get('/api/victoria/realtime', async (req, res) => {
 
 **Protocol Version**: 1.0
 **Last Updated**: 2026-01-25
-**Applies To**: PTV-TRMNL v2.5.1+
+**Applies To**: Commute Compute v2.5.1+
 **Region**: Victoria, Australia Only
 
 **Status**: ✅ VERIFIED & PRODUCTION READY

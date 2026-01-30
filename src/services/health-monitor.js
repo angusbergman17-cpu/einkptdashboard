@@ -274,7 +274,7 @@ class HealthMonitor {
     try {
       const response = await fetch(source.url, {
         headers: {
-          'User-Agent': 'PTV-TRMNL-Health-Monitor'
+          'User-Agent': 'Commute Compute-Health-Monitor'
         },
         timeout: 5000
       });

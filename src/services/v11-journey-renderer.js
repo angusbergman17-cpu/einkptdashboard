@@ -625,7 +625,7 @@ class V11JourneyRenderer {
     // Version (bottom left, small)
     ctx.font = '10px sans-serif';
     ctx.fillStyle = COLORS.GRAY;
-    ctx.fillText(`PTV-TRMNL v5.21 • © 2026 Angus Bergman`, LAYOUT.PADDING_LEFT, y + 32);
+    ctx.fillText(`Commute Compute v5.21 • © 2026 Angus Bergman`, LAYOUT.PADDING_LEFT, y + 32);
     ctx.fillStyle = COLORS.BLACK;
 
     // Arrival time (right)

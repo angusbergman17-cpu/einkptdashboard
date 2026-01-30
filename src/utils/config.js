@@ -1,5 +1,5 @@
 /**
- * Configuration for PTV-TRMNL
+ * Configuration for Commute Compute
  * Station preferences, route definitions, and API settings
  *
  * NOTE: This is a template configuration.

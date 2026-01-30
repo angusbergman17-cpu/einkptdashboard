@@ -25,7 +25,7 @@ Displayed when device has no WiFi credentials.
 
 ```
 ┌───────────────────────────────────────────────────────────────┐
-│  PTV-TRMNL v5.15                                              │
+│  Commute Compute v5.15                                              │
 ├───────────────────────────────────────────────────────────────┤
 │                                                               │
 │                    WiFi Setup Required                        │
@@ -33,7 +33,7 @@ Displayed when device has no WiFi credentials.
 │                                                               │
 │         Connect to WiFi network:                              │
 │                                                               │
-│              "PTV-TRMNL-Setup"                                │
+│              "Commute Compute-Setup"                                │
 │                                                               │
 │         Then open in browser:                                 │
 │                                                               │
@@ -58,7 +58,7 @@ Displayed while device connects to saved WiFi network.
 
 ```
 ┌───────────────────────────────────────────────────────────────┐
-│  PTV-TRMNL v5.15                                              │
+│  Commute Compute v5.15                                              │
 ├───────────────────────────────────────────────────────────────┤
 │                                                               │
 │                                                               │
@@ -86,7 +86,7 @@ Displayed when WiFi is connected but server setup not complete.
 
 ```
 ┌───────────────────────────────────────────────────────────────┐
-│  PTV-TRMNL v5.15                           Connected ✓        │
+│  Commute Compute v5.15                           Connected ✓        │
 ├───────────────────────────────────────────────────────────────┤
 │                                                               │
 │                                                               │
@@ -118,7 +118,7 @@ Displayed when fetching initial transit data from server.
 
 ```
 ┌───────────────────────────────────────────────────────────────┐
-│  PTV-TRMNL v5.15                           Connected ✓        │
+│  Commute Compute v5.15                           Connected ✓        │
 ├───────────────────────────────────┬───────────────────────────┤
 │                                   │  Loading...               │
 │                                   │  ═══════════              │
@@ -146,7 +146,7 @@ Displayed after successful setup - transitions to normal dashboard display.
 
 ```
 ┌───────────────────────────────────────────────────────────────┐
-│  PTV-TRMNL v5.15                           08:05 Mon 28 Jan   │
+│  Commute Compute v5.15                           08:05 Mon 28 Jan   │
 ├───────────────────────────────────────────────────────────────┤
 │                                                               │
 │  Setup Complete! ✓                                            │
@@ -169,7 +169,7 @@ Then immediately transitions to normal dashboard display.
 
 ```
 ┌───────────────────────────────────────────────────────────────┐
-│  PTV-TRMNL v5.15                                              │
+│  Commute Compute v5.15                                              │
 ├───────────────────────────────────────────────────────────────┤
 │                                                               │
 │                    WiFi Connection Failed                     │
@@ -192,7 +192,7 @@ Then immediately transitions to normal dashboard display.
 
 ```
 ┌───────────────────────────────────────────────────────────────┐
-│  PTV-TRMNL v5.15                           Connected ✓        │
+│  Commute Compute v5.15                           Connected ✓        │
 ├───────────────────────────────────────────────────────────────┤
 │                                                               │
 │                    Server Unreachable                         │

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="400" height="400" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="400" fill="#0f172a"/>
+  
+  <!-- 
+    Pure recreation of original
+    Transport hint: inner C extends 15px further = forward momentum
+  -->
+  
+  <!-- Outer C - White -->
+  <path d="
+    M 265 100 
+    L 155 100
+    C 70 100, 70 200, 70 200
+    C 70 200, 70 300, 155 300
+    L 265 300
+    L 265 260
+    L 155 260
+    C 110 260, 110 200, 110 200
+    C 110 200, 110 140, 155 140
+    L 265 140
+    Z
+  " fill="#f1f5f9"/>
+  
+  <!-- Inner C - Emerald (extends 15px further right) -->
+  <path d="
+    M 280 155
+    L 175 155
+    C 125 155, 125 200, 125 200
+    C 125 200, 125 245, 175 245
+    L 280 245
+    L 280 210
+    L 175 210
+    C 160 210, 160 200, 160 200
+    C 160 200, 160 190, 175 190
+    L 280 190
+    Z
+  " fill="#10b981"/>
+</svg>
