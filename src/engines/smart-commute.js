@@ -209,6 +209,10 @@ export class SmartCommute {
       console.log('⚠️ No API keys configured - using fallback timetables');
     } else {
       console.log('✅ API keys detected - live data enabled');
+      // Per Dev Rules Section 3: Zero-Config - pass API key to ptv-api module
+      if (this.state === 'VIC' && this.apiKeys.transitKey) {
+        ptvApi.setApiKey(this.apiKeys.transitKey);
+      }
     }
     
     // 3. Initialize route recommender

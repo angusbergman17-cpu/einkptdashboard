@@ -12,23 +12,47 @@
 import crypto from 'crypto';
 
 // Transport Victoria OpenData API Configuration
-// Per Development Rules Section 1.1 - use ODATA_API_KEY only
+// Per Development Rules Section 3 - Zero-Config: API keys come from user config, not env vars
 const API_BASE = 'https://api-opendata.ptv.vic.gov.au';
-const DEV_ID = process.env.ODATA_DEV_ID || process.env.ODATA_API_KEY;
-const API_KEY = process.env.ODATA_API_KEY || process.env.ODATA_TOKEN;
 
 // Melbourne coordinates (default)
 const MELBOURNE_LAT = -37.8136;
 const MELBOURNE_LON = 144.9631;
+
+// Runtime API key storage (set via setApiKey())
+let runtimeApiKey = null;
+let runtimeDevId = null;
+
+/**
+ * Set API key at runtime (from user config token)
+ * Per Development Rules Section 3: Zero-Config - users never edit env files
+ */
+export function setApiKey(apiKey, devId = null) {
+  runtimeApiKey = apiKey;
+  runtimeDevId = devId || apiKey; // Use same key as devId if not provided
+}
+
+/**
+ * Get current API key (runtime takes precedence)
+ */
+function getApiKey() {
+  return runtimeApiKey || process.env.ODATA_API_KEY || process.env.ODATA_TOKEN;
+}
+
+function getDevId() {
+  return runtimeDevId || process.env.ODATA_DEV_ID || getApiKey();
+}
 
 /**
  * Sign URL for Transport Victoria OpenData API authentication
  * Note: Legacy compatibility function using HMAC signing
  */
 function signUrl(path) {
-  if (!DEV_ID || !API_KEY) return null;
-  const fullPath = path + (path.includes('?') ? '&' : '?') + `devid=${DEV_ID}`;
-  const signature = crypto.createHmac('sha1', API_KEY).update(fullPath).digest('hex').toUpperCase();
+  const devId = getDevId();
+  const apiKey = getApiKey();
+  if (!devId || !apiKey) return null;
+  const fullPath = path + (path.includes('?') ? '&' : '?') + `devid=${devId}`;
+  const signature = crypto.createHmac('sha1', apiKey).update(fullPath).digest('hex').toUpperCase();
   return `${API_BASE}${fullPath}&signature=${signature}`;
 }
 
