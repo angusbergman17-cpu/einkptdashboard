@@ -19,7 +19,7 @@
 #define ZONE_DATA_MAX_LEN 8000
 // Override config.h version
 #undef FIRMWARE_VERSION
-#define FIRMWARE_VERSION "6.4-factory-reset"
+#define FIRMWARE_VERSION "6.6-hardcoded"
 
 // Default server for pairing API
 #define DEFAULT_SERVER "https://einkptdashboard.vercel.app"
@@ -92,14 +92,7 @@ void setup() {
     initZoneBuffers();
     initDisplay();
     
-    // FACTORY RESET: Clear all saved settings
-    Serial.println("FACTORY RESET - clearing all settings...");
-    preferences.begin("cc-device", false);
-    preferences.clear();
-    preferences.end();
-    webhookUrl[0] = '\0';
-    devicePaired = false;
-    Serial.println("Settings cleared!");
+    // Skip factory reset - using hardcoded webhook URL
     
     // GHOST BUSTER: Full screen clear cycle to remove artifacts
     Serial.println("Clearing e-ink ghosting...");
@@ -369,12 +362,10 @@ void showErrorScreen(const char* error) {
 }
 
 void loadSettings() {
-    preferences.begin("cc-device", true);
-    String url = preferences.getString("webhookUrl", "");
-    url.toCharArray(webhookUrl, sizeof(webhookUrl));
-    preferences.end();
-    devicePaired = strlen(webhookUrl) > 0;
-    Serial.printf("Webhook: %s\n", devicePaired ? webhookUrl : "(not paired)");
+    // HARDCODED - bypass NVS to avoid corruption issues
+    strncpy(webhookUrl, "https://einkptdashboard.vercel.app", sizeof(webhookUrl) - 1);
+    devicePaired = true;
+    Serial.printf("Webhook: %s (hardcoded)\n", webhookUrl);
 }
 
 void saveSettings() {
