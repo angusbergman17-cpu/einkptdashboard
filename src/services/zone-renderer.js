@@ -9,7 +9,7 @@
  * - Journey legs: 132-440px
  * - Footer: 448-480px (black)
  * 
- * Copyright (c) 2026 Angus Bergman
+ * Copyright (c) 2025 Angus Bergman
  * Licensed under CC BY-NC 4.0
  */
 

@@ -4,7 +4,7 @@
  * Supports multi-modal routes (tram → train, etc.)
  * Integrates with Coffee Decision Engine and live transit data
  *
- * Copyright (c) 2026 Angus Bergman
+ * Copyright (c) 2025 Angus Bergman
  * Licensed under CC BY-NC 4.0
  */
 

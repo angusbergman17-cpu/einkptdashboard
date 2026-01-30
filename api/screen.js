@@ -6,7 +6,7 @@
  * Data Flow (per DEVELOPMENT-RULES.md v3):
  * User Config → Data Sources → Engines → Data Model → Renderer
  * 
- * Copyright (c) 2026 Angus Bergman
+ * Copyright (c) 2025 Angus Bergman
  * Licensed under CC BY-NC 4.0
  */
 

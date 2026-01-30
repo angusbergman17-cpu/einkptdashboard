@@ -2,7 +2,7 @@
  * /api/status - System Status Endpoint
  * Returns current system status for dashboard display.
  * 
- * Copyright (c) 2026 Angus Bergman
+ * Copyright (c) 2025 Angus Bergman
  * Licensed under CC BY-NC 4.0
  */
 

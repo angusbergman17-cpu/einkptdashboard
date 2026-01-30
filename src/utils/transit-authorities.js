@@ -2,7 +2,7 @@
  * Australian Transit Authorities Configuration
  * Supports all states and territories
  *
- * Copyright (c) 2026 Angus Bergman
+ * Copyright (c) 2025 Angus Bergman
  * Licensed under CC BY-NC 4.0 (Creative Commons Attribution-NonCommercial 4.0 International License)
  * https://creativecommons.org/licenses/by-nc/4.0/
  */
