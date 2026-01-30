@@ -25,6 +25,11 @@
                     "name": "Status",
                     "priority": 4,
                     "action": "./commute-compute-launcher.sh status"
+                },
+                {
+                    "name": "Configure",
+                    "priority": 5,
+                    "action": "./commute-compute-launcher.sh configure"
                 }
             ]
         }

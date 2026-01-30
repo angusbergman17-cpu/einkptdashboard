@@ -1,121 +1,109 @@
 #!/bin/bash
 #
-# PTV-TRMNL Kindle Firmware Packager
-# Creates distributable ZIP packages for each Kindle device
+# Commute Compute Kindle Firmware Packager
+# Creates distribution packages for each Kindle model
 #
-# Usage: ./package-firmware.sh [output-dir]
+# Usage: ./package-firmware.sh [device]
+#        ./package-firmware.sh all
+#
+# Copyright (c) 2026 Angus Bergman - CC BY-NC 4.0
 #
 
-set -e
-
+VERSION="2.0.0"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-OUTPUT_DIR="${1:-$SCRIPT_DIR/dist}"
-VERSION="1.0.0"
+OUTPUT_DIR="$SCRIPT_DIR/dist"
 
-echo "=== PTV-TRMNL Kindle Firmware Packager ==="
-echo "Version: $VERSION"
-echo "Output: $OUTPUT_DIR"
-echo ""
+DEVICES="kindle-pw3 kindle-pw4 kindle-pw5 kindle-basic-10 kindle-11"
 
-# Create output directory
-mkdir -p "$OUTPUT_DIR"
-
-# Device configurations
-DEVICES=(
-    "kindle-pw3:Kindle_Paperwhite_3"
-    "kindle-pw4:Kindle_Paperwhite_4"
-    "kindle-pw5:Kindle_Paperwhite_5"
-    "kindle-basic-10:Kindle_Basic_10th"
-    "kindle-11:Kindle_11th"
-)
-
-for device_entry in "${DEVICES[@]}"; do
-    device_id="${device_entry%%:*}"
-    device_name="${device_entry##*:}"
-
-    echo "Packaging: $device_name ($device_id)"
-
-    # Create temporary directory
-    temp_dir=$(mktemp -d)
-    package_dir="$temp_dir/ptv-trmnl"
-    mkdir -p "$package_dir"
-
+package_device() {
+    local device="$1"
+    local device_dir="$SCRIPT_DIR/$device"
+    
+    if [ ! -d "$device_dir" ]; then
+        echo "Error: Device directory not found: $device_dir"
+        return 1
+    fi
+    
+    echo "Packaging: $device"
+    
+    # Create temp directory
+    local tmp_dir=$(mktemp -d)
+    local pkg_dir="$tmp_dir/commute-compute"
+    mkdir -p "$pkg_dir"
+    
     # Copy common files
-    cp "$SCRIPT_DIR/common/ptv-trmnl-launcher.sh" "$package_dir/"
-    cp "$SCRIPT_DIR/common/menu.json" "$package_dir/"
-    cp "$SCRIPT_DIR/common/configure.sh" "$package_dir/"
-
+    cp "$SCRIPT_DIR/common/"* "$pkg_dir/"
+    
     # Copy device-specific config
-    cp "$SCRIPT_DIR/$device_id/device-config.sh" "$package_dir/"
-
-    # Create sample config file
-    cat > "$package_dir/config.sh.example" << 'EOF'
-#!/bin/sh
-# PTV-TRMNL Configuration
-# Rename this file to config.sh and edit the values
-
-# Your PTV-TRMNL server URL
-export PTV_TRMNL_SERVER="https://ptv-trmnl-new.onrender.com"
-
-# Refresh interval in seconds (default: 900 = 15 minutes)
-export PTV_TRMNL_REFRESH=900
-EOF
-
-    # Create device-specific README
-    cat > "$package_dir/README.txt" << EOF
-PTV-TRMNL Kindle Firmware
-Device: $device_name
+    cp "$device_dir/device-config.sh" "$pkg_dir/"
+    
+    # Ensure scripts are executable
+    chmod +x "$pkg_dir/"*.sh
+    
+    # Create version file
+    cat > "$pkg_dir/VERSION" << EOF
+Commute Compute Kindle Firmware
 Version: $VERSION
-
-INSTALLATION:
-1. Connect Kindle via USB
-2. Copy the 'ptv-trmnl' folder to /mnt/us/extensions/
-3. Safely eject Kindle
-4. Open KUAL and select "PTV-TRMNL"
-
-CONFIGURATION:
-1. Rename config.sh.example to config.sh
-2. Edit config.sh with your server URL
-3. Restart PTV-TRMNL from KUAL
-
-For detailed instructions, see the full documentation at:
-https://github.com/angusbergman17-cpu/PTV-TRMNL-NEW/tree/main/firmware/kindle
+Device: $device
+Built: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+Firmware Compat: TRMNL v6.0
 EOF
-
-    # Make scripts executable
-    chmod +x "$package_dir/"*.sh
-
-    # Create ZIP package
-    zip_file="$OUTPUT_DIR/ptv-trmnl-${device_id}-v${VERSION}.zip"
-    (cd "$temp_dir" && zip -r "$zip_file" ptv-trmnl)
-
+    
+    # Create tarball
+    mkdir -p "$OUTPUT_DIR"
+    local tarball="$OUTPUT_DIR/commute-compute-${device}-v${VERSION}.tar.gz"
+    tar -czf "$tarball" -C "$tmp_dir" commute-compute
+    
     # Cleanup
-    rm -rf "$temp_dir"
+    rm -rf "$tmp_dir"
+    
+    echo "  Created: $tarball"
+    echo "  Size: $(du -h "$tarball" | cut -f1)"
+}
 
-    echo "  Created: $zip_file"
-done
+package_all() {
+    echo "=== Packaging All Kindle Devices ==="
+    echo ""
+    
+    for device in $DEVICES; do
+        package_device "$device"
+        echo ""
+    done
+    
+    echo "=== All packages created in $OUTPUT_DIR ==="
+    ls -la "$OUTPUT_DIR"
+}
 
-# Create combined package with all devices
-echo ""
-echo "Creating combined package..."
-temp_dir=$(mktemp -d)
-combined_dir="$temp_dir/ptv-trmnl-all-devices"
-mkdir -p "$combined_dir"
+show_help() {
+    echo "Commute Compute Kindle Firmware Packager v$VERSION"
+    echo ""
+    echo "Usage: $0 [device|all]"
+    echo ""
+    echo "Devices:"
+    for d in $DEVICES; do
+        echo "  $d"
+    done
+    echo ""
+    echo "Examples:"
+    echo "  $0 kindle-pw5      # Package for Paperwhite 5"
+    echo "  $0 all             # Package all devices"
+}
 
-# Copy common files
-cp -r "$SCRIPT_DIR/common" "$combined_dir/"
-for device_entry in "${DEVICES[@]}"; do
-    device_id="${device_entry%%:*}"
-    cp -r "$SCRIPT_DIR/$device_id" "$combined_dir/"
-done
-cp "$SCRIPT_DIR/README.md" "$combined_dir/"
-
-zip_file="$OUTPUT_DIR/ptv-trmnl-kindle-all-v${VERSION}.zip"
-(cd "$temp_dir" && zip -r "$zip_file" ptv-trmnl-all-devices)
-rm -rf "$temp_dir"
-echo "  Created: $zip_file"
-
-echo ""
-echo "=== Packaging Complete ==="
-echo "Output directory: $OUTPUT_DIR"
-ls -la "$OUTPUT_DIR"/*.zip
+# Main
+case "$1" in
+    all)
+        package_all
+        ;;
+    kindle-pw3|kindle-pw4|kindle-pw5|kindle-basic-10|kindle-11)
+        package_device "$1"
+        ;;
+    help|--help|-h|"")
+        show_help
+        ;;
+    *)
+        echo "Unknown device: $1"
+        echo ""
+        show_help
+        exit 1
+        ;;
+esac

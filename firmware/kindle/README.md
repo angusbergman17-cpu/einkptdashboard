@@ -1,7 +1,22 @@
 # Commute Compute Kindle Firmware
 
-**Version:** 1.0.0
+**Version:** 2.0.0  
+**Firmware Compatibility:** TRMNL v6.0  
 **Requires:** WinterBreak Jailbreak + KUAL
+
+---
+
+## Features (Ported from TRMNL v6.0)
+
+| Feature | Description |
+|---------|-------------|
+| State Machine | Robust state management matching TRMNL firmware |
+| Exponential Backoff | Smart error recovery with increasing delays |
+| Setup Detection | Automatic setup required screen when not configured |
+| BYOS Support | Full TRMNL BYOS webhook URL compatibility |
+| Zone Rendering | Compatible with server-side zone-based updates |
+| Partial/Full Refresh | Battery-optimized refresh strategy |
+| Legacy Support | Backwards compatible with old config variables |
 
 ---
 
@@ -58,64 +73,72 @@
 3. Create folder: `commute-compute`
 4. Copy the appropriate files for your device:
 
-**For Kindle Paperwhite 3:**
-```bash
-cp common/* /mnt/us/extensions/commute-compute/
-cp kindle-pw3/device-config.sh /mnt/us/extensions/commute-compute/
-```
-
-**For Kindle Paperwhite 4:**
-```bash
-cp common/* /mnt/us/extensions/commute-compute/
-cp kindle-pw4/device-config.sh /mnt/us/extensions/commute-compute/
-```
-
 **For Kindle Paperwhite 5:**
 ```bash
 cp common/* /mnt/us/extensions/commute-compute/
 cp kindle-pw5/device-config.sh /mnt/us/extensions/commute-compute/
+chmod +x /mnt/us/extensions/commute-compute/*.sh
 ```
 
-**For Kindle Basic (10th gen):**
-```bash
-cp common/* /mnt/us/extensions/commute-compute/
-cp kindle-basic-10/device-config.sh /mnt/us/extensions/commute-compute/
-```
-
-**For Kindle (11th gen):**
-```bash
-cp common/* /mnt/us/extensions/commute-compute/
-cp kindle-11/device-config.sh /mnt/us/extensions/commute-compute/
-```
+**For other devices, replace `kindle-pw5` with your device folder.**
 
 5. Safely eject Kindle
 6. Open KUAL on your Kindle
-7. Select "Commute Compute" > "Start Dashboard"
+7. Select "Commute Compute" > "Configure" to set up
+8. Select "Commute Compute" > "Start Dashboard"
+
+### Using Package Script
+
+```bash
+# Build package for Kindle Paperwhite 5
+./package-firmware.sh kindle-pw5
+
+# Output: commute-compute-kindle-pw5.tar.gz
+# Extract this to /mnt/us/extensions/ on your Kindle
+```
 
 ---
 
 ## Configuration
 
-### Server URL
+### Method 1: BYOS Webhook URL (Recommended)
 
-Create or edit `/mnt/us/extensions/commute-compute/config.sh`:
+1. Complete setup at: https://einkptdashboard.vercel.app/setup-wizard.html
+2. Copy your personal webhook URL from the completion screen
+3. Edit `/mnt/us/extensions/commute-compute/config.sh`:
 
 ```bash
 #!/bin/sh
-# Custom Commute Compute configuration
-
-# Your server URL (change this!)
-export PTV_TRMNL_SERVER="https://your-server.vercel.app"
-
-# Refresh interval in seconds (default: 900 = 15 minutes)
-export PTV_TRMNL_REFRESH=900
+# Your personal webhook URL from setup wizard
+export CC_WEBHOOK_URL="https://einkptdashboard.vercel.app/api/device/eyJ..."
+export CC_REFRESH=60
 ```
 
-### Getting Your Server URL
+### Method 2: Direct Server (Requires Server Config)
 
-1. Deploy Commute Compute to Render.com or your own server
-2. Complete the setup wizard in the admin panel
-3. Copy the server URL (e.g., `https://your-server-name.vercel.app`)
+```bash
+#!/bin/sh
+export CC_SERVER="https://your-server.vercel.app"
+export CC_REFRESH=60
+```
+
+### Configuration Options
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `CC_SERVER` | `https://einkptdashboard.vercel.app` | Server base URL |
+| `CC_WEBHOOK_URL` | (none) | BYOS webhook URL (overrides server) |
+| `CC_REFRESH` | `60` | Refresh interval in seconds |
+| `CC_FULL_REFRESH_INTERVAL` | `15` | Full refresh every N updates |
+| `CC_HTTP_TIMEOUT` | `30` | HTTP request timeout |
+| `CC_DEBUG` | `0` | Enable verbose logging (1=on) |
+
+### Legacy Variable Support
+
+For backwards compatibility, these old variables are still supported:
+- `PTV_TRMNL_SERVER` → `CC_SERVER`
+- `PTV_TRMNL_REFRESH` → `CC_REFRESH`
+- `PTV_TRMNL_WEBHOOK_URL` → `CC_WEBHOOK_URL`
 
 ---
 
@@ -129,12 +152,10 @@ export PTV_TRMNL_REFRESH=900
    - **Start Dashboard**: Begin automatic updates
    - **Stop Dashboard**: Stop the background service
    - **Refresh Now**: Manually fetch latest data
-   - **Status**: View current configuration
-   - **Configure Server**: View setup instructions
+   - **Status**: View current status and logs
+   - **Configure**: Show setup instructions
 
 ### Command Line (SSH)
-
-If you have SSH access to your Kindle:
 
 ```bash
 # Start dashboard
@@ -148,39 +169,100 @@ If you have SSH access to your Kindle:
 
 # Check status
 /mnt/us/extensions/commute-compute/commute-compute-launcher.sh status
+
+# Show configuration help
+/mnt/us/extensions/commute-compute/commute-compute-launcher.sh configure
 ```
+
+---
+
+## State Machine (v2.0)
+
+The Kindle firmware now uses a state machine architecture matching TRMNL v6:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    STATE MACHINE                             │
+│                                                              │
+│   INIT → WIFI_CONNECT → FETCH → RENDER → IDLE              │
+│              │             │                │                │
+│              └── ERROR ←───┴────────────────┘                │
+│              │                                               │
+│              └── SETUP_REQUIRED                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+| State | Description |
+|-------|-------------|
+| `init` | Initial startup |
+| `wifi_connect` | Connecting to WiFi |
+| `fetch` | Fetching dashboard from server |
+| `render` | Displaying on e-ink screen |
+| `idle` | Sleeping between updates |
+| `error` | Error recovery with backoff |
+| `setup_required` | Setup wizard needed |
 
 ---
 
 ## Troubleshooting
 
-### Dashboard Not Updating
+### Dashboard Shows "Setup Required"
 
-1. **Check WiFi**: Ensure WiFi is enabled and connected
-2. **Check Server**: Verify server URL is correct in config.sh
-3. **Check Logs**: View `/var/tmp/commute-compute/commute-compute.log`
+1. Complete the setup wizard at your server URL
+2. Copy the webhook URL to your config.sh
+3. Restart the dashboard
+
+### Connection Errors with Exponential Backoff
+
+The firmware automatically retries with increasing delays:
+- 1st error: 30s delay
+- 2nd error: 60s delay
+- 3rd error: 120s delay
+- 4th error: 240s delay
+- 5th+ error: 30min delay (max backoff)
+
+Check `/var/tmp/commute-compute/commute-compute.log` for details.
 
 ### Screen Ghosting
 
-E-ink displays can show ghosting (remnants of previous images). The launcher performs periodic full refreshes to clear this. If ghosting persists:
-
-1. Edit `device-config.sh`
-2. Reduce `PTV_TRMNL_FULL_REFRESH_INTERVAL` (e.g., from 10 to 5)
+E-ink displays can show ghosting. The launcher performs periodic full refreshes.
+Adjust in config.sh:
+```bash
+export CC_FULL_REFRESH_INTERVAL=10  # More frequent (default: 15)
+```
 
 ### Battery Drain
 
-The launcher disables WiFi between updates to save power. If battery drain is excessive:
+WiFi is automatically disabled between updates. To reduce drain further:
+```bash
+export CC_REFRESH=300  # 5 minutes instead of 60 seconds
+```
 
-1. Increase refresh interval in `config.sh`
-2. Recommended minimum: 900 seconds (15 minutes)
+---
 
-### Jailbreak Lost After Update
+## API Integration
 
-If your Kindle updates automatically and loses the jailbreak:
+### BYOS Webhook (Recommended)
 
-1. The hotfix should prevent this
-2. If it happens, you may need to re-jailbreak
-3. Your Commute Compute files will still be on the device
+```
+GET /api/device/{token}
+
+Response: PNG image optimized for device resolution
+Headers:
+  X-Device-Mac: MAC address
+  X-Device-Model: Device model
+  X-Device-Resolution: Display resolution
+  X-Firmware-Version: 2.0.0
+```
+
+### LiveDash Endpoint
+
+```
+GET /api/livedash?device={model}&resolution={res}&mac={mac}
+
+Response: PNG image
+Supported devices: kindle-pw3, kindle-pw4, kindle-pw5, kindle-basic-10, kindle-11
+```
 
 ---
 
@@ -188,29 +270,30 @@ If your Kindle updates automatically and loses the jailbreak:
 
 ```
 /mnt/us/extensions/commute-compute/
-├── commute-compute-launcher.sh   # Main launcher script
-├── menu.json               # KUAL menu configuration
-├── configure.sh            # Configuration helper
-├── device-config.sh        # Device-specific settings
-└── config.sh               # User configuration (create this)
+├── commute-compute-launcher.sh   # Main launcher (v2.0)
+├── menu.json                     # KUAL menu
+├── configure.sh                  # Config helper
+├── device-config.sh              # Device-specific settings
+└── config.sh                     # User config (create this)
+
+/var/tmp/commute-compute/
+├── state.json                    # State machine state
+├── daemon.pid                    # PID file
+├── commute-compute.log           # Log file
+└── dashboard.png                 # Current dashboard image
 ```
 
 ---
 
-## API Integration
+## TRMNL BYOS Compatibility
 
-The Kindle firmware fetches from:
+This firmware is fully compatible with TRMNL's BYOS (Bring Your Own Server) system:
 
-```
-GET /api/kindle/image?model={device}&mac={mac_address}
-```
-
-**Response:** HTML content optimized for Kindle display
-
-**Headers:**
-- `X-Device-Mac`: Kindle MAC address
-- `X-Device-Model`: Device model identifier
-- `X-Device-Resolution`: Display resolution
+- ✅ Webhook URL with embedded config token
+- ✅ Same API endpoints (`/api/device/{token}`)
+- ✅ Same header format
+- ✅ Setup required detection
+- ✅ Error handling patterns
 
 ---
 
@@ -219,17 +302,21 @@ GET /api/kindle/image?model={device}&mac={mac_address}
 - **MobileRead Forums**: https://www.mobileread.com/forums/
 - **WinterBreak Jailbreak**: Search MobileRead for latest version
 - **KUAL**: https://www.mobileread.com/forums/showthread.php?t=203326
-- **TRMNL Kindle**: https://github.com/usetrmnl/trmnl-kindle
+- **Commute Compute**: https://github.com/angusbergman17-cpu/einkptdashboard
+
+---
+
+## Version History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 2.0.0 | 2026-01-30 | State machine architecture, BYOS support, exponential backoff |
+| 1.0.0 | 2026-01-27 | Initial release |
 
 ---
 
 ## License
 
-Copyright (c) 2026 Angus Bergman
-Licensed under CC BY-NC 4.0 (Creative Commons Attribution-NonCommercial 4.0)
+Copyright (c) 2026 Angus Bergman  
+Licensed under CC BY-NC 4.0 (Creative Commons Attribution-NonCommercial 4.0)  
 See LICENSE file for full terms.
-
----
-
-**Last Updated:** 2026-01-27
-**Compatible with:** Commute Compute Server v2.5.2+
