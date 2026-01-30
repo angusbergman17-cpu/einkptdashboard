@@ -109,28 +109,8 @@ void connectWiFi() {
     delay(1500);
 }
 
-// Simple base64 decode
-int b64_decode(const char* input, uint8_t* output, int maxLen) {
-    static const char b64chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    int len = strlen(input);
-    int outLen = 0;
-    uint32_t val = 0;
-    int valb = -8;
-    
-    for (int i = 0; i < len && outLen < maxLen; i++) {
-        char c = input[i];
-        if (c == '=') break;
-        const char* p = strchr(b64chars, c);
-        if (!p) continue;
-        val = (val << 6) | (p - b64chars);
-        valb += 6;
-        if (valb >= 0) {
-            output[outLen++] = (val >> valb) & 0xFF;
-            valb -= 8;
-        }
-    }
-    return outLen;
-}
+// Use the same base64 library as main.cpp
+#include "base64.hpp"
 
 bool fetchAndDrawZones() {
     Serial.println("Fetching zones from API...");
@@ -199,12 +179,18 @@ bool fetchAndDrawZones() {
         if (zone.changed || !initialDrawDone) {
             const char* b64Data = zoneInfo["data"];
             if (b64Data) {
-                int dataLen = b64_decode(b64Data, zoneBmpBuffer, ZONE_BMP_MAX_SIZE);
-                if (dataLen > 0) {
-                    // Draw BMP to display buffer
-                    bbep.drawBMP(zoneBmpBuffer, dataLen, zone.x, zone.y, DRAW_TO_RAM);
-                    anyChanged = true;
-                    Serial.printf("Drew zone %s at (%d,%d) %dx%d\n", zone.id, zone.x, zone.y, zone.w, zone.h);
+                size_t len = strlen(b64Data);
+                size_t dec = decode_base64_length((unsigned char*)b64Data, len);
+                if (dec <= ZONE_BMP_MAX_SIZE) {
+                    decode_base64((unsigned char*)b64Data, len, zoneBmpBuffer);
+                    // Verify BMP header
+                    if (zoneBmpBuffer[0] == 'B' && zoneBmpBuffer[1] == 'M') {
+                        int result = bbep.loadBMP(zoneBmpBuffer, zone.x, zone.y, BBEP_BLACK, BBEP_WHITE);
+                        if (result == BBEP_SUCCESS) {
+                            anyChanged = true;
+                            Serial.printf("Drew zone %s at (%d,%d) %dx%d\n", zone.id, zone.x, zone.y, zone.w, zone.h);
+                        }
+                    }
                 }
             }
         }
