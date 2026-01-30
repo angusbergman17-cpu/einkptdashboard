@@ -133,6 +133,7 @@ The system was previously known as "Commute Compute". Update any remaining refer
 - 5.2 Custom Firmware Requirements
 - 5.3 Flashing Procedure
 - 5.4 Critical bb_epaper ESP32-C3 Findings (2026-01-29)
+- 5.5 ESP32-C3 Troubleshooting Guide (2026-01-30)
 </details>
 
 <details>
@@ -686,6 +687,95 @@ bbep.setBuffer(customBuf); // BROKEN
 | bb_epaper + NO allocBuffer | ✅ WORKING |
 | FONT_12x16 | ❌ Rotated 90° |
 | FONT_8x8 | ✅ Correct orientation |
+
+### 5.5 ESP32-C3 Troubleshooting Guide (2026-01-30)
+
+**Additional critical findings for TRMNL OG (ESP32-C3) firmware development.**
+
+#### 5.5.1 SPI Hardware Initialization Error
+
+**🔴 ERROR:** `spiAttachMISO(): SPI Does not have default pins on ESP32C3!`
+
+**Cause:** ESP32-C3 doesn't have default MISO pins. The bb_epaper library calls `SPI.begin(SCK, -1, MOSI, -1)` which fails because ESP32-C3 rejects -1 for MISO.
+
+**Solution:** Use **bit-bang mode** (speed=0) to bypass hardware SPI:
+```cpp
+// ✅ WORKING - bit-bang mode
+bbep->initIO(EPD_DC_PIN, EPD_RST_PIN, EPD_BUSY_PIN, EPD_CS_PIN, EPD_MOSI_PIN, EPD_SCK_PIN, 0);
+
+// ❌ BROKEN - hardware SPI crashes on ESP32-C3
+bbep->initIO(EPD_DC_PIN, EPD_RST_PIN, EPD_BUSY_PIN, EPD_CS_PIN, EPD_MOSI_PIN, EPD_SCK_PIN, 8000000);
+```
+
+#### 5.5.2 Static Initialization Crash (Guru Meditation Error)
+
+**🔴 ERROR:** App hangs silently or shows "Guru Meditation Error: Core 0 panic'ed (Instruction access fault)"
+
+**Cause:** Global BBEPAPER object's constructor crashes before setup() runs.
+
+**Solution:** Use pointer and initialize in setup():
+```cpp
+// ✅ WORKING - pointer initialized in setup()
+BBEPAPER* bbep = nullptr;
+
+void setup() {
+    bbep = new BBEPAPER(EP75_800x480);
+    // ...
+}
+
+// ❌ BROKEN - static init crashes
+BBEPAPER bbep(EP75_800x480);  // Constructor runs before setup()!
+```
+
+#### 5.5.3 USB CDC Serial Output Missing
+
+**🔴 ERROR:** No serial output on ESP32-C3 even when firmware appears to run.
+
+**Cause:** Missing USB CDC build flags in platformio.ini.
+
+**Solution:** Add these flags to ALL ESP32-C3 environments:
+```ini
+build_flags =
+    -D ARDUINO_USB_MODE=1
+    -D ARDUINO_USB_CDC_ON_BOOT=1
+```
+
+#### 5.5.4 NVS/Preferences Corruption
+
+**🔴 ERROR:** `getString(): nvs_get_str len fail: serverUrl NOT_FOUND` + crash
+
+**Cause:** WiFiManager reads from NVS in its static constructor before setup() runs. Corrupted NVS causes crash.
+
+**Solution:** Either full chip erase OR explicit NVS init:
+```cpp
+#include <nvs_flash.h>
+
+void setup() {
+    esp_err_t err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        nvs_flash_erase();
+        nvs_flash_init();
+    }
+    // ... rest of setup
+}
+```
+
+**Full chip erase via PlatformIO:**
+```bash
+pio run -e trmnl -t erase && pio run -e trmnl -t upload
+```
+
+#### 5.5.5 ESP32-C3 Troubleshooting Checklist
+
+| Symptom | Likely Cause | Fix |
+|---------|--------------|-----|
+| No serial output | Missing USB CDC flags | Add `-D ARDUINO_USB_MODE=1 -D ARDUINO_USB_CDC_ON_BOOT=1` |
+| `SPI Does not have default pins` | Hardware SPI fails on C3 | Use bit-bang mode (speed=0) |
+| Silent hang before setup() | Static init crash | Use pointers, init in setup() |
+| `nvs_get_str len fail` | NVS corruption | Full chip erase |
+| Guru Meditation Error | Various | Check stack trace, usually static init |
+| Display shows garbage | allocBuffer() called | Remove allocBuffer() calls |
+| Text rotated 90° | FONT_12x16 bug | Use FONT_8x8 only |
 
 ---
 
