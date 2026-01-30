@@ -3776,14 +3776,26 @@
                 if (status) {
                     updateDepartures(status);
                     document.getElementById('data-mode').textContent = status.dataMode === 'Live' ? 'Live Data' : 'Fallback';
+                } else {
+                    // Show "Not configured" state when no status
+                    document.getElementById('train-departures').innerHTML = '<div class="no-data">Complete setup first</div>';
+                    document.getElementById('tram-departures').innerHTML = '<div class="no-data">Complete setup first</div>';
                 }
-                if (weather) updateWeather(weather);
+                if (weather) {
+                    updateWeather(weather);
+                } else {
+                    document.getElementById('weather-display').innerHTML = '<div class="no-data">Weather unavailable</div>';
+                }
                 if (systemStatus) updateSystemStatus(systemStatus);
                 loadJourneySummary();
                 loadCoffeeDecision();
                 loadAutoCalcStatus();
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Error loading data:', error);
+                // Show error state in widgets
+                document.getElementById('train-departures').innerHTML = '<div class="no-data">Unable to load</div>';
+                document.getElementById('tram-departures').innerHTML = '<div class="no-data">Unable to load</div>';
+                document.getElementById('weather-display').innerHTML = '<div class="no-data">Unable to load</div>';
             }
         }
 
