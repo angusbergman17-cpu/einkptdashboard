@@ -33,7 +33,7 @@ const unsigned long REFRESH_INTERVAL = 20000;
 const unsigned long FULL_REFRESH_INTERVAL = 300000;
 unsigned long lastFullRefresh = 0;
 int partialRefreshCount = 0;
-const int MAX_PARTIAL_BEFORE_FULL = 30;
+// MAX_PARTIAL_BEFORE_FULL defined in config.h
 bool wifiConnected = false;
 bool devicePaired = false;
 bool initialDrawDone = false;
