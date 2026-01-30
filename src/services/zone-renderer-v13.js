@@ -17,7 +17,7 @@
  * │ FOOTER: ARRIVE 08:55 at WORK                                       │ 448-480
  * └─────────────────────────────────────────────────────────────────────┘
  *
- * Copyright (c) 2025 Angus Bergman
+ * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
  */
 

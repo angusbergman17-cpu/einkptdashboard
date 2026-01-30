@@ -5,7 +5,7 @@
  * Uses Transport Victoria OpenData API with KeyId header auth
  * Uses Open-Meteo for weather (free, no API key required)
  * 
- * Copyright (c) 2025-2025 Angus Bergman
+ * Copyright (c) 2025-2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
  */
 

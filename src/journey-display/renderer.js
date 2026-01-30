@@ -1,7 +1,7 @@
 /**
  * Journey Display Server-Side Renderer
  * Renders journey display to 800x480 bitmap for e-ink
- * Copyright (c) 2025 Angus Bergman - Licensed under CC BY-NC 4.0
+ * Copyright (c) 2026 Angus Bergman - Licensed under CC BY-NC 4.0
  */
 
 import { createCanvas } from 'canvas';

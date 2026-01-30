@@ -1,7 +1,7 @@
 /**
  * Journey Display Engine
  * Calculates optimal journey with live updates, delays, disruptions, and coffee decisions
- * Copyright (c) 2025 Angus Bergman - Licensed under CC BY-NC 4.0
+ * Copyright (c) 2026 Angus Bergman - Licensed under CC BY-NC 4.0
  */
 
 import { TransportMode, StepStatus, JourneyStatus, UmbrellaConditions, JourneyStep, JourneyDisplay } from './models.js';

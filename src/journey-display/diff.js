@@ -1,6 +1,6 @@
 /**
  * Journey Display Diff System - Region change tracking for partial refresh
- * Copyright (c) 2025 Angus Bergman - Licensed under CC BY-NC 4.0
+ * Copyright (c) 2026 Angus Bergman - Licensed under CC BY-NC 4.0
  */
 
 import crypto from 'crypto';

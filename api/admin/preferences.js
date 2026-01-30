@@ -3,7 +3,7 @@
  * Returns user preferences from config token or defaults.
  * For Vercel serverless where filesystem storage isn't available.
  * 
- * Copyright (c) 2025 Angus Bergman
+ * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
  */
 

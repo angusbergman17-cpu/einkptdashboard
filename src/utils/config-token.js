@@ -3,7 +3,7 @@
  * Encodes/decodes user configuration into URL-safe tokens
  * Enables zero-infrastructure persistence for Vercel serverless
  *
- * Copyright (c) 2025 Angus Bergman
+ * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
  */
 

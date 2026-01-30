@@ -3,7 +3,7 @@
  * For Vercel deployment where there's no persistent file storage.
  * Config is encoded in the webhook URL instead.
  * 
- * Copyright (c) 2025 Angus Bergman
+ * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
  */
 

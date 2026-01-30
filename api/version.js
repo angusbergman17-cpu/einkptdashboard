@@ -1,7 +1,7 @@
 /**
  * /api/version - Version Information Endpoint
  * 
- * Copyright (c) 2025 Angus Bergman
+ * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
  */
 

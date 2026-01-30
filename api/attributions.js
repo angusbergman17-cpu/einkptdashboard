@@ -2,7 +2,7 @@
  * /api/attributions - Data Source Attributions
  * Required for compliance with data source licenses.
  * 
- * Copyright (c) 2025 Angus Bergman
+ * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
  */
 

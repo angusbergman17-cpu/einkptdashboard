@@ -199,7 +199,7 @@ function generateHtmlPreview(device, config) {
 <html lang="en">
 <!--
     PTV-TRMNL LiveDash - Smart Transit Display
-    Copyright (c) 2025-2025 Angus Bergman
+    Copyright (c) 2025-2026 Angus Bergman
     Licensed under CC BY-NC 4.0
     https://creativecommons.org/licenses/by-nc/4.0/
 -->

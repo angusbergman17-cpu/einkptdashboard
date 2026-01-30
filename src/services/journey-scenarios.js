@@ -14,7 +14,7 @@
  * - homebound-friday: Friday treat coffee on way home
  * - weekend-leisure: Weekend trip to park
  * 
- * Copyright (c) 2025 Angus Bergman
+ * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
  */
 

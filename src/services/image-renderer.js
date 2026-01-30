@@ -4,7 +4,7 @@
  * 
  * Output: 800x480 monochrome BMP (1-bit depth)
  * 
- * Copyright (c) 2025 Angus Bergman
+ * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
  */
 

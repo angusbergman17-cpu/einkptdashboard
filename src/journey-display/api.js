@@ -1,6 +1,6 @@
 /**
  * Journey Display API - Express router for journey display endpoints
- * Copyright (c) 2025 Angus Bergman - Licensed under CC BY-NC 4.0
+ * Copyright (c) 2026 Angus Bergman - Licensed under CC BY-NC 4.0
  */
 
 import express from 'express';

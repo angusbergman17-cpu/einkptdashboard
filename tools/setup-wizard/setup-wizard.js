@@ -4,7 +4,7 @@
  * PTV-TRMNL Setup Wizard
  * Cross-platform tool for device firmware flashing and deployment setup
  *
- * Copyright (c) 2025 Angus Bergman
+ * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0 (Creative Commons Attribution-NonCommercial 4.0 International License)
  * https://creativecommons.org/licenses/by-nc/4.0/
  *
@@ -125,7 +125,7 @@ class SetupWizard {
     console.clear();
     this.log('\n╔═══════════════════════════════════════════════╗', 'cyan');
     this.log('║  PTV-TRMNL Setup Wizard v3.0.0                ║', 'cyan');
-    this.log('║  Copyright © 2025 Angus Bergman               ║', 'cyan');
+    this.log('║  Copyright © 2026 Angus Bergman               ║', 'cyan');
     this.log('╚═══════════════════════════════════════════════╝\n', 'cyan');
   }
 

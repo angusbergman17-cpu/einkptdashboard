@@ -3,7 +3,7 @@
  * Fetches business hours and details to cache in webhook URL.
  * This is the ONLY time Google Places is called for cafe data.
  * 
- * Copyright (c) 2025 Angus Bergman
+ * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
  */
 
