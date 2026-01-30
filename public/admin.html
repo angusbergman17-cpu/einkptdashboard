@@ -1505,7 +1505,7 @@
         </a>
         <div class="nav-links-global">
             <a href="/" class="nav-link-global">Dashboard</a>
-            <a href="/admin" class="nav-link-global active">Settings</a>
+            <a href="/admin.html" class="nav-link-global active">Settings</a>
             <a href="/simulator.html" class="nav-link-global">Simulator</a>
         </div>
     </nav>
@@ -1615,7 +1615,7 @@
                     <div class="form-group">
                         <label class="form-label">📱 Select Your Device *</label>
                         <select id="setup-device-select" class="form-input" onchange="updateDeviceInfo()" required>
-                            <option value="trmnl-byos" selected>TRMNL BYOS (7.5" - 800×480 landscape)</option>
+                            <option value="trmnl-byos" selected>CC E-Ink (7.5" - 800×480 landscape)</option>
                             <optgroup label="Kindle Devices (Jailbreak Required)">
                                 <option value="kindle-pw3">Kindle Paperwhite 3 (6" - 1072×1448 portrait)</option>
                                 <option value="kindle-pw4">Kindle Paperwhite 4 (6" - 1072×1448 portrait)</option>
@@ -1625,10 +1625,10 @@
                             </optgroup>
                         </select>
 
-                        <!-- TRMNL Model Selection (OG vs X) - appears only for TRMNL BYOS -->
+                        <!-- Display Model Selection (OG vs X) - appears only for CC E-Ink -->
                         <div id="trmnl-model-selection" style="margin-top: 15px; display: block;">
                             <label class="form-label" style="font-size: 14px; display: block; margin-bottom: 10px;">
-                                ⚠️ CRITICAL: Select Your TRMNL Model *
+                                ⚠️ CRITICAL: Select Your Display Model *
                             </label>
                             <div style="background: rgba(234, 88, 12, 0.1); border: 1px solid rgba(234, 88, 12, 0.3); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
                                 <div style="font-size: 12px; color: rgba(255,255,255,0.9); line-height: 1.6;">
@@ -1639,39 +1639,39 @@
 
                             <div style="display: flex; flex-direction: column; gap: 10px;">
                                 <label style="display: flex; align-items: center; padding: 12px; background: rgba(34, 197, 94, 0.1); border: 2px solid rgba(34, 197, 94, 0.3); border-radius: 8px; cursor: pointer;">
-                                    <input type="radio" name="trmnl-model" value="trmnl-og" checked style="margin-right: 10px; width: 18px; height: 18px;" onclick="hideTRMNLXWarning()">
+                                    <input type="radio" name="trmnl-model" value="trmnl-og" checked style="margin-right: 10px; width: 18px; height: 18px;" onclick="hideDisplayXWarning()">
                                     <div style="flex: 1;">
-                                        <div style="font-weight: 600; font-size: 13px; margin-bottom: 3px;">TRMNL OG (Original)</div>
+                                        <div style="font-weight: 600; font-size: 13px; margin-bottom: 3px;">CC Display OG (Original)</div>
                                         <div style="font-size: 11px; opacity: 0.8;">7.5" display, ESP32 chip</div>
                                     </div>
                                     <span style="background: rgba(34, 197, 94, 0.9); color: white; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;">✅ Compatible</span>
                                 </label>
 
                                 <label style="display: flex; align-items: center; padding: 12px; background: rgba(234, 88, 12, 0.1); border: 2px solid rgba(234, 88, 12, 0.3); border-radius: 8px; cursor: pointer; opacity: 0.7;">
-                                    <input type="radio" name="trmnl-model" value="trmnl-x" style="margin-right: 10px; width: 18px; height: 18px;" onclick="showTRMNLXWarning()">
+                                    <input type="radio" name="trmnl-model" value="trmnl-x" style="margin-right: 10px; width: 18px; height: 18px;" onclick="showDisplayXWarning()">
                                     <div style="flex: 1;">
-                                        <div style="font-weight: 600; font-size: 13px; margin-bottom: 3px;">TRMNL X (Newer Model)</div>
+                                        <div style="font-weight: 600; font-size: 13px; margin-bottom: 3px;">CC Display X (Newer Model)</div>
                                         <div style="font-size: 11px; opacity: 0.8;">Different hardware architecture</div>
                                     </div>
                                     <span style="background: rgba(234, 88, 12, 0.9); color: white; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;">⚠️ Not Compatible</span>
                                 </label>
                             </div>
 
-                            <!-- TRMNL X Warning Box -->
+                            <!-- CC Display X Warning Box -->
                             <div id="trmnl-x-warning" style="display: none; margin-top: 12px; padding: 15px; background: rgba(239, 68, 68, 0.15); border: 2px solid rgba(239, 68, 68, 0.4); border-radius: 8px;">
                                 <div style="font-weight: 600; font-size: 13px; color: rgba(255,255,255,0.95); margin-bottom: 8px;">
-                                    ⚠️ TRMNL X Support Coming Soon
+                                    ⚠️ CC Display X Support Coming Soon
                                 </div>
                                 <div style="font-size: 12px; line-height: 1.6; color: rgba(255,255,255,0.85);">
-                                    The TRMNL X model uses different hardware architecture and is not yet supported.
-                                    Please check back for future updates, or use <strong>TRMNL OG</strong> for now.
+                                    The CC Display X model uses different hardware architecture and is not yet supported.
+                                    Please check back for future updates, or use <strong>CC Display OG</strong> for now.
                                 </div>
                             </div>
                         </div>
 
                         <div id="device-info" style="margin-top: 10px; padding: 12px; background: rgba(99, 102, 241, 0.1); border-radius: 8px; border-left: 3px solid #6366f1;">
                             <div style="font-size: 13px; line-height: 1.7;">
-                                <div style="font-weight: 600; margin-bottom: 5px;">📺 TRMNL BYOS (OG)</div>
+                                <div style="font-weight: 600; margin-bottom: 5px;">📺 CC E-Ink (OG)</div>
                                 <div style="font-size: 12px; opacity: 0.85;">
                                     Resolution: 800×480 pixels<br>
                                     Orientation: Landscape<br>
@@ -2197,7 +2197,7 @@
                             </select>
                         </div>
                         <small style="color: rgba(255,255,255,0.6); font-size: 12px; display: block;">
-                            <span id="display-refresh-note">Minimum: 15 minutes for TRMNL BYOS (e-ink protection)</span>
+                            <span id="display-refresh-note">Minimum: 15 minutes for CC E-Ink (e-ink protection)</span>
                         </small>
                         <div id="display-refresh-estimate" style="margin-top: 8px; padding: 8px; background: rgba(251, 191, 36, 0.1); border-radius: 4px; font-size: 11px; display: none;">
                             📊 Estimated e-ink lifespan: <span id="eink-lifespan"></span> years
@@ -2236,16 +2236,16 @@
                         </small>
                     </div>
 
-                    <!-- TRMNL Webhook (Fixed) -->
+                    <!-- Webhook (Fixed) -->
                     <div style="padding: 15px; background: rgba(99, 102, 241, 0.1); border-radius: 8px; border-left: 3px solid #6366f1;">
                         <div style="font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
-                            <span>📡</span> TRMNL Webhook Interval
+                            <span>📡</span> Webhook Interval
                         </div>
                         <div style="font-size: 14px; opacity: 0.9; margin-bottom: 8px;">
                             <strong>Fixed:</strong> 15 minutes
                         </div>
                         <small style="color: rgba(255,255,255,0.6); font-size: 12px;">
-                            TRMNL BYOS platform enforces 15-minute minimum (cannot be changed)
+                            CC E-Ink platform enforces 15-minute minimum (cannot be changed)
                         </small>
                     </div>
                 </div>
@@ -2266,8 +2266,8 @@
                         <h2>Display Settings</h2>
                     </div>
                     <div class="checkbox-group">
-                        <input type="checkbox" id="use-24-hour" checked>
-                        <label for="use-24-hour">24-hour time</label>
+                        <input type="checkbox" id="use-24-hour">
+                        <label for="use-24-hour">24-hour time (default: 12-hour)</label>
                     </div>
                     <div class="checkbox-group">
                         <input type="checkbox" id="show-walking-times" checked>
@@ -2300,7 +2300,7 @@
                     The Commute Compute system consists of a Node.js backend server that orchestrates real-time transit data collection,
                     journey planning, and intelligent decision-making. The server interfaces with multiple external APIs (Google Maps,
                     OpenWeather, PTV/TfNSW APIs) to gather live departure data, weather conditions, and optimal route information.
-                    This data is processed and rendered into an e-ink optimized image that's delivered to your TRMNL device.
+                    This data is processed and rendered into an e-ink optimized image that's delivered to your e-ink device.
                 </p>
 
                 <div class="arch-viz-container">
@@ -2326,7 +2326,7 @@
                     <h2>Complete System Architecture Map</h2>
                 </div>
                 <p style="margin-bottom: 15px; opacity: 0.9; font-size: 14px;">
-                    Visual mind map showing data flow from setup wizard through server to TRMNL device
+                    Visual mind map showing data flow from setup wizard through server to e-ink device
                 </p>
                 <button class="btn btn-primary btn-block" onclick="toggleSystemArchitecture()" id="arch-toggle-btn" style="margin-bottom: 15px; font-size: 16px; font-weight: 600;">
                     <span style="font-size: 20px;">🔍</span> Show Full Architecture Map
@@ -2511,7 +2511,7 @@
                             ↓<br>
                             Journey Status API + Delay Detection<br>
                             ↓<br>
-                            Display Module → Your TRMNL Device
+                            Display Module → Your e-ink Device
                         </div>
                         <div style="padding: 12px; background: rgba(236, 72, 153, 0.1); border-radius: 6px; margin-top: 10px;">
                             <div style="margin-bottom: 8px;"><strong>Key Communication Methods:</strong></div>
@@ -2753,7 +2753,7 @@
                     <div style="font-weight: 600; margin-bottom: 10px; font-size: 13px;">💝 Your support helps with:</div>
                     <ul style="margin: 0; padding-left: 20px; font-size: 12px; opacity: 0.9; line-height: 2;">
                         <li>Server costs for testing and development</li>
-                        <li>TRMNL devices for compatibility testing</li>
+                        <li>e-ink devices for compatibility testing</li>
                         <li>Time spent on bug fixes and new features</li>
                         <li>Documentation and user support</li>
                         <li>GTFS data updates and maintenance</li>
@@ -3021,7 +3021,7 @@
          *    - Circuit breakers for APIs
          *    - Graceful degradation
          *
-         * 5. TRMNL BYOS COMPLIANCE (Section P):
+         * 5. CC E-Ink COMPLIANCE (Section P):
          *    - 7.5" e-ink display (800x480 or 480x800)
          *    - BYOS webhook format required
          *    - Respect e-ink refresh limits
@@ -5937,7 +5937,7 @@
                             <div style="font-weight: 700; margin-bottom: 10px; font-size: 14px; text-align: center;">📱 OUTPUT LAYER</div>
                             <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
                                 <div style="padding: 10px 15px; background: rgba(64, 220, 165, 0.3); border-radius: 6px; font-weight: 600;">
-                                    TRMNL Display
+                                    CC Display
                                 </div>
                                 <div style="padding: 10px 15px; background: rgba(72, 187, 120, 0.3); border-radius: 6px; font-weight: 600;">
                                     Journey Visualizer
@@ -6092,7 +6092,7 @@
             const trmnlModelSelection = document.getElementById('trmnl-model-selection');
             const selectedDevice = deviceSelect.value;
 
-            // Show/hide TRMNL model selection based on device type
+            // Show/hide display model selection based on device type
             if (selectedDevice === 'trmnl-byos') {
                 trmnlModelSelection.style.display = 'block';
             } else {
@@ -6101,7 +6101,7 @@
 
             const deviceSpecs = {
                 'trmnl-byos': {
-                    name: 'TRMNL BYOS (OG)',
+                    name: 'CC E-Ink (OG)',
                     resolution: '800×480 pixels',
                     orientation: 'Landscape',
                     display: '7.5" E-ink',
@@ -6188,7 +6188,7 @@
                         </div>
                         <div style="font-size: 11px; opacity: 0.9; line-height: 1.5;">
                             Requires Kindle firmware 5.18.0 or earlier.<br>
-                            Install KUAL + TRMNL extension after jailbreak.<br>
+                            Install KUAL + CC extension after jailbreak.<br>
                             <a href="https://github.com/angusbergman17-cpu/einkptdashboard/tree/main/firmware/kindle"
                                target="_blank" style="color: #818cf8; text-decoration: underline;">
                                View Installation Guide →
@@ -6202,12 +6202,12 @@
             deviceInfo.innerHTML = infoHTML;
         }
 
-        function showTRMNLXWarning() {
+        function showDisplayXWarning() {
             const trmnlXWarning = document.getElementById('trmnl-x-warning');
             trmnlXWarning.style.display = 'block';
         }
 
-        function hideTRMNLXWarning() {
+        function hideDisplayXWarning() {
             const trmnlXWarning = document.getElementById('trmnl-x-warning');
             trmnlXWarning.style.display = 'none';
         }
@@ -6221,16 +6221,16 @@
             const selectedDevice = document.getElementById('setup-device-select').value;
             console.log(`📱 Selected device: ${selectedDevice}`);
 
-            // Get TRMNL model selection if TRMNL BYOS is selected
+            // Get display model selection if CC E-Ink is selected
             let trmnlModel = null;
             if (selectedDevice === 'trmnl-byos') {
                 const trmnlModelRadio = document.querySelector('input[name="trmnl-model"]:checked');
                 trmnlModel = trmnlModelRadio ? trmnlModelRadio.value : 'trmnl-og';
-                console.log(`📱 TRMNL Model: ${trmnlModel}`);
+                console.log(`📱 Display Model: ${trmnlModel}`);
 
-                // Validate TRMNL X is not selected (not yet compatible)
+                // Validate CC Display X is not selected (not yet compatible)
                 if (trmnlModel === 'trmnl-x') {
-                    showMessage('setup-message', '❌ TRMNL X is not yet compatible. Please select TRMNL OG or use a different device.', 'error');
+                    showMessage('setup-message', '❌ CC Display X is not yet compatible. Please select CC Display OG or use a different device.', 'error');
                     return;
                 }
             }
