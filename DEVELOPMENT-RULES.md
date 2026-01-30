@@ -1510,6 +1510,8 @@ The following are **unregistered trademarks (™)** owned by **Angus Bergman**, 
 
 **License Disclaimer:** Use of the Commute Compute System™ and all associated trademarks and intellectual property is granted solely pursuant to the **CC BY-NC 4.0** license. No ownership rights are transferred. Commercial use prohibited without written permission. See **LEGAL.md** for full terms.
 
+**Third-Party Exclusion:** Copyright claims apply to original work only. Third-party content (Transport Victoria, BoM, OpenStreetMap, npm dependencies) remains property of respective owners under their original licenses. See **LEGAL.md** Section "Third-Party Content Exclusion".
+
 ### 20.3 Firmware Naming Convention
 
 All custom firmware MUST use the **CCFirm** prefix:

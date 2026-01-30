@@ -46,6 +46,31 @@ By using, copying, modifying, or distributing any part of this system, you ackno
 
 For commercial licensing inquiries or permissions beyond the scope of CC BY-NC 4.0, contact the copyright owner.
 
+### Third-Party Content Exclusion
+
+**IMPORTANT:** The copyright claims of Angus Bergman apply exclusively to original work created for the Commute Compute System™. The following third-party content is expressly **excluded** from these copyright claims and remains the intellectual property of their respective owners:
+
+| Source | Copyright Owner | License |
+|--------|-----------------|---------|
+| Transit Data | Transport Victoria / State of Victoria | CC BY 4.0 |
+| Weather Data | Bureau of Meteorology / Commonwealth of Australia | CC BY 3.0 AU |
+| Geocoding Data | OpenStreetMap Contributors | ODbL |
+| Node.js Dependencies | Various Authors | MIT, Apache, ISC, etc. |
+| ESP-IDF / Arduino | Espressif Systems | Apache 2.0 |
+| PlatformIO Libraries | Various Authors | As specified per library |
+
+These third-party components are incorporated under their respective licenses and are not claimed as original work of Angus Bergman. Users must comply with the attribution and license requirements of each third-party source independently.
+
+**Attribution Requirements for Third-Party Data:**
+
+When using or displaying data from the Commute Compute System™, the following attributions must be maintained:
+
+1. "Transit data from Transport Victoria OpenData, licensed under CC BY 4.0"
+2. "Weather data © Commonwealth of Australia, Bureau of Meteorology"
+3. "Map data © OpenStreetMap contributors, licensed under ODbL"
+
+Removal or alteration of third-party attributions is prohibited.
+
 ### Firmware Naming Convention
 
 All custom firmware uses the **CCFirm** prefix:
