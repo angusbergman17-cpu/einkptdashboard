@@ -31,7 +31,7 @@
 // CONFIGURATION
 // ============================================================================
 
-#define FIRMWARE_VERSION "6.2"
+#define FIRMWARE_VERSION "6.2.1"
 #define SCREEN_W 800
 #define SCREEN_H 480
 #define ZONE_BUFFER_SIZE 40000  // Needs to fit legs zone (~32KB)
@@ -201,9 +201,14 @@ void setup() {
     showBootScreen();
     delay(2500);  // Show for 2.5 seconds
     
-    // Screen 2: WiFi Setup screen
-    Serial.println("→ Displaying setup screen...");
-    showWiFiSetupScreen();
+    // Screen 2: WiFi Setup screen - SKIP if already configured
+    // (Workaround for bb_epaper crash on second screen draw)
+    if (strlen(serverUrl) == 0 || strstr(serverUrl, "http") == nullptr) {
+        Serial.println("→ Displaying setup screen...");
+        showWiFiSetupScreen();
+    } else {
+        Serial.println("→ Already configured, skipping setup screen");
+    }
     
     // Now proceed to WiFi init
     currentState = STATE_WIFI_CONNECT;
