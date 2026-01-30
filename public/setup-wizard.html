@@ -933,8 +933,8 @@
                 
                 lastStep = 'fetching setup/complete';
                 
-                // Save configuration
-                const response = await fetch(baseUrl + '/admin/setup/complete', {
+                // Save configuration (use /api path for Vercel serverless)
+                const response = await fetch(baseUrl + '/api/admin/setup-complete', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(config)
@@ -962,7 +962,7 @@
                     };
                     
                     lastStep = 'fetching generate-webhook';
-                    const webhookResponse = await fetch(baseUrl + '/admin/generate-webhook', { 
+                    const webhookResponse = await fetch(baseUrl + '/api/admin/generate-webhook', { 
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ config: fullConfig })
