@@ -1126,13 +1126,25 @@
                             ${webhookHtml}
                             
                             <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
-                                <p style="color: #64748b; font-size: 12px; margin-bottom: 10px;">No display? You can still use the web dashboard:</p>
-                                <button type="button" class="btn" onclick="window.location.href='/admin.html'" style="width: 100%; background: rgba(79, 178, 142, 0.3); border: 1px solid #4fb28e;">Go to Dashboard →</button>
+                                <p style="color: #a3b8d0; font-size: 13px; margin-bottom: 10px;">Redirecting to dashboard in <span id="redirect-countdown">5</span> seconds...</p>
+                                <button type="button" class="btn" onclick="window.location.href='/admin.html'" style="width: 100%; background: #4fb28e; border: none; color: #1a2744;">Go to Dashboard Now →</button>
                             </div>
                         </div>
                     `;
+                    
+                    // Auto-redirect countdown
+                    let countdown = 5;
+                    const countdownEl = document.getElementById('redirect-countdown');
+                    const countdownInterval = setInterval(() => {
+                        countdown--;
+                        if (countdownEl) countdownEl.textContent = countdown;
+                        if (countdown <= 0) {
+                            clearInterval(countdownInterval);
+                            window.location.href = '/admin.html';
+                        }
+                    }, 1000);
                 } else {
-                    alert('Setup failed: ' + result.error);
+                    alert('Setup failed: ' + (result.error || 'Unknown error'));
                 }
             } catch (e) {
                 console.error('Setup error:', e);
