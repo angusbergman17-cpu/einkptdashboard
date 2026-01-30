@@ -421,12 +421,11 @@ void loop() {
         
         // ----------------------------------------------------------------
         case STATE_SETUP_REQUIRED:
-            Serial.println("→ STATE: Setup Required");
-            showSetupRequiredScreen();
-            
-            // Check again after 30 seconds
-            delay(30000);
-            currentState = STATE_FETCH_ZONES;
+            Serial.println("→ STATE: Setup Required - entering pairing mode");
+            // Trigger pairing mode instead of just showing setup screen
+            pairingMode = true;
+            pairingStartTime = millis();
+            currentState = STATE_PAIRING;
             break;
         
         // ----------------------------------------------------------------
