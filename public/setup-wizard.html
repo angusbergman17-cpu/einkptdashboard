@@ -16,12 +16,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Setup Wizard - Commute Compute</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #0f172a;
+            font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #1a2744;
             min-height: 100vh;
             color: #f1f5f9;
             padding: 20px;
@@ -33,8 +36,9 @@
         }
 
         .wizard-card {
-            background: #1e293b;
-            border: 1px solid #334155;
+            background: #2a3d5f;
+            border: 1px solid #3d5278;
+            border-radius: 4px;
             padding: 36px;
             margin: 20px 0;
             color: #f1f5f9;
@@ -67,8 +71,9 @@
         .step {
             width: 32px;
             height: 32px;
-            background: #334155;
-            color: #64748b;
+            background: #3d5278;
+            border-radius: 4px;
+            color: #7a8fa8;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -79,12 +84,12 @@
 
         .step.active {
             background: #4fb28e;
-            color: #0f172a;
+            color: #1a2744;
         }
 
         .step.completed {
             background: #22c55e;
-            color: #0f172a;
+            color: #1a2744;
         }
 
         .step-content {
@@ -115,9 +120,11 @@
         .form-input {
             width: 100%;
             padding: 10px 14px;
-            border: 1px solid #334155;
-            background: #0f172a;
+            border: 1px solid #3d5278;
+            border-radius: 4px;
+            background: #1a2744;
             color: #f1f5f9;
+            font-family: 'Space Grotesk', sans-serif;
             font-size: 15px;
             transition: border-color 0.15s;
         }
@@ -129,9 +136,11 @@
 
         .btn {
             background: #4fb28e;
-            color: #0f172a;
+            color: #1a2744;
             border: none;
+            border-radius: 4px;
             padding: 12px 28px;
+            font-family: 'Space Grotesk', sans-serif;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
@@ -144,11 +153,11 @@
         }
 
         .btn-secondary {
-            background: #334155;
+            background: #3d5278;
         }
 
         .btn-secondary:hover {
-            background: #475569;
+            background: #4a6291;
         }
 
         .btn-row {
@@ -158,17 +167,19 @@
         }
 
         .info-box {
-            background: #0f172a;
+            background: #243352;
             border-left: 3px solid #0ea5e9;
+            border-radius: 4px;
             padding: 14px 16px;
             margin: 16px 0;
-            color: #94a3b8;
+            color: #a3b8d0;
             font-size: 13px;
         }
 
         .success-box {
             background: #166534;
             border-left: 3px solid #22c55e;
+            border-radius: 4px;
             padding: 16px;
             margin: 16px 0;
             text-align: center;
@@ -176,12 +187,13 @@
         }
 
         .authority-card {
-            background: #0f172a;
-            border: 1px solid #334155;
+            background: #243352;
+            border: 1px solid #3d5278;
+            border-radius: 4px;
             padding: 16px 20px;
             margin: 12px 0;
             cursor: pointer;
-            transition: border-color 0.15s;
+            transition: border-color 0.15s, background 0.15s;
         }
 
         .authority-card:hover {
@@ -190,7 +202,7 @@
 
         .authority-card.selected {
             border-color: #4fb28e;
-            background: #1e293b;
+            background: #2a3d5f;
         }
 
         .authority-name {

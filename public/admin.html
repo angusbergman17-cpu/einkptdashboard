@@ -16,12 +16,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Commute Compute Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #0f172a;
+            font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #1a2744;
             min-height: 100vh;
             color: #f1f5f9;
             padding: 20px;
@@ -38,8 +41,9 @@
             text-align: center;
             margin-bottom: 24px;
             padding: 20px;
-            background: #1e293b;
-            border: 1px solid #334155;
+            background: #2a3d5f;
+            border: 1px solid #3d5278;
+            border-radius: 4px;
         }
 
         .header h1 {
@@ -133,9 +137,10 @@
 
         /* Cards */
         .card {
-            background: #1e293b;
+            background: #2a3d5f;
             padding: 24px;
-            border: 1px solid #334155;
+            border: 1px solid #3d5278;
+            border-radius: 4px;
         }
 
         .card-header {
@@ -144,7 +149,7 @@
             gap: 10px;
             margin-bottom: 14px;
             padding-bottom: 10px;
-            border-bottom: 1px solid #334155;
+            border-bottom: 1px solid #3d5278;
         }
 
         .card-header h2 {
@@ -230,9 +235,11 @@
         .form-input {
             width: 100%;
             padding: 10px 14px;
-            border: 1px solid #334155;
-            background: #0f172a;
+            border: 1px solid #3d5278;
+            border-radius: 4px;
+            background: #1a2744;
             color: #f1f5f9;
+            font-family: 'Space Grotesk', sans-serif;
             font-size: 14px;
             transition: border-color 0.15s;
         }
@@ -243,7 +250,7 @@
         }
 
         .form-input::placeholder {
-            color: #64748b;
+            color: #7a8fa8;
         }
 
         .form-row {
@@ -1496,7 +1503,7 @@
     <!-- Global Navigation -->
     <nav class="global-nav">
         <a href="/" class="nav-brand">
-            <img src="/assets/brand/cc-logo-128.png" alt="CC" style="height: 32px; width: auto; margin-right: 8px;">
+            <img src="/assets/brand/cc-logo-128.png" alt="CC" style="height: 44px; width: auto; margin-right: 10px;">
             <span>Commute Compute</span>
         </a>
         <div class="nav-links-global">
