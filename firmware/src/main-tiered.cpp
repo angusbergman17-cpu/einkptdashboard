@@ -31,6 +31,8 @@
 #define ZONE_BMP_MAX_SIZE 20000
 #define ZONE_ID_MAX_LEN 32
 #define ZONE_DATA_MAX_LEN 8000
+// Override config.h version
+#undef FIRMWARE_VERSION
 #define FIRMWARE_VERSION "7.0-tiered"
 
 // Default server
@@ -38,11 +40,21 @@
 #define PAIRING_POLL_INTERVAL 5000
 #define PAIRING_TIMEOUT 600000
 
-// Tiered refresh intervals (milliseconds)
-#define TIER1_INTERVAL 60000      // 1 minute - time-critical
-#define TIER2_INTERVAL 120000     // 2 minutes - content (only if changed)
-#define TIER3_INTERVAL 300000     // 5 minutes - static
-#define FULL_REFRESH_INTERVAL 600000  // 10 minutes
+// Tiered refresh intervals (milliseconds) - use config.h values if available
+#ifndef TIER1_REFRESH_INTERVAL
+#define TIER1_REFRESH_INTERVAL 60000
+#endif
+#ifndef TIER2_REFRESH_INTERVAL
+#define TIER2_REFRESH_INTERVAL 120000
+#endif
+#ifndef TIER3_REFRESH_INTERVAL
+#define TIER3_REFRESH_INTERVAL 300000
+#endif
+
+#define TIER1_INTERVAL TIER1_REFRESH_INTERVAL
+#define TIER2_INTERVAL TIER2_REFRESH_INTERVAL
+#define TIER3_INTERVAL TIER3_REFRESH_INTERVAL
+#define FULL_REFRESH_INTERVAL DEFAULT_FULL_REFRESH
 
 BBEPAPER bbep(EP75_800x480);
 Preferences preferences;
@@ -55,7 +67,6 @@ unsigned long lastTier2Refresh = 0;
 unsigned long lastTier3Refresh = 0;
 unsigned long lastFullRefresh = 0;
 int partialRefreshCount = 0;
-const int MAX_PARTIAL_BEFORE_FULL = 30;
 
 bool wifiConnected = false;
 bool devicePaired = false;
