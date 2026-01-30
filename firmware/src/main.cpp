@@ -25,7 +25,8 @@
 #define PAIRING_POLL_INTERVAL 5000  // 5 seconds
 #define PAIRING_TIMEOUT 600000       // 10 minutes
 
-BBEPAPER bbep(EP75_800x480);
+// Use pointer to avoid static init issues
+BBEPAPER* bbep = nullptr;
 Preferences preferences;
 char webhookUrl[256] = "";
 char pairingCode[8] = "";
@@ -82,7 +83,6 @@ void setup() {
     Serial.println("\n=== Commute Compute v" FIRMWARE_VERSION " ===");
     
     // Initialize NVS explicitly before any library uses it
-    // This prevents crashes from corrupted NVS
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         Serial.println("NVS corrupted, erasing...");
@@ -90,6 +90,10 @@ void setup() {
         nvs_flash_init();
     }
     Serial.println("NVS initialized");
+    
+    // Create display object here to avoid static init issues
+    bbep = new BBEPAPER(EP75_800x480);
+    Serial.println("Display object created");
     
     loadSettings();
     
@@ -219,48 +223,48 @@ void generatePairingCode() {
 }
 
 void showPairingScreen() {
-    bbep.fillScreen(BBEP_WHITE);
-    bbep.setFont(FONT_8x8);
-    bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
+    bbep->fillScreen(BBEP_WHITE);
+    bbep->setFont(FONT_8x8);
+    bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
     
     // Header
-    bbep.fillRect(0, 0, 800, 60, BBEP_BLACK);
-    bbep.setTextColor(BBEP_WHITE, BBEP_BLACK);
-    bbep.setCursor(180, 15); bbep.print("COMMUTE COMPUTE SMART DISPLAY");
-    bbep.setCursor(320, 38); bbep.print("v" FIRMWARE_VERSION);
-    bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
+    bbep->fillRect(0, 0, 800, 60, BBEP_BLACK);
+    bbep->setTextColor(BBEP_WHITE, BBEP_BLACK);
+    bbep->setCursor(180, 15); bbep->print("COMMUTE COMPUTE SMART DISPLAY");
+    bbep->setCursor(320, 38); bbep->print("v" FIRMWARE_VERSION);
+    bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
     
     // Main box
-    bbep.drawRect(100, 90, 600, 260, BBEP_BLACK);
-    bbep.drawRect(101, 91, 598, 258, BBEP_BLACK);
+    bbep->drawRect(100, 90, 600, 260, BBEP_BLACK);
+    bbep->drawRect(101, 91, 598, 258, BBEP_BLACK);
     
     // Instructions
-    bbep.setCursor(280, 110); bbep.print("DEVICE SETUP");
+    bbep->setCursor(280, 110); bbep->print("DEVICE SETUP");
     
-    bbep.setCursor(140, 150); bbep.print("1. On your phone/computer, go to:");
-    bbep.setCursor(180, 180); bbep.print("einkptdashboard.vercel.app/setup-wizard.html");
+    bbep->setCursor(140, 150); bbep->print("1. On your phone/computer, go to:");
+    bbep->setCursor(180, 180); bbep->print("einkptdashboard.vercel.app/setup-wizard.html");
     
-    bbep.setCursor(140, 220); bbep.print("2. Complete the setup wizard");
+    bbep->setCursor(140, 220); bbep->print("2. Complete the setup wizard");
     
-    bbep.setCursor(140, 260); bbep.print("3. Enter this code when prompted:");
+    bbep->setCursor(140, 260); bbep->print("3. Enter this code when prompted:");
     
     // Large pairing code box
-    bbep.fillRect(250, 290, 300, 60, BBEP_BLACK);
-    bbep.setTextColor(BBEP_WHITE, BBEP_BLACK);
-    bbep.setCursor(310, 310);
+    bbep->fillRect(250, 290, 300, 60, BBEP_BLACK);
+    bbep->setTextColor(BBEP_WHITE, BBEP_BLACK);
+    bbep->setCursor(310, 310);
     // Print code with spacing
     for (int i = 0; i < 6; i++) {
-        bbep.print(pairingCode[i]); bbep.print(" ");
+        bbep->print(pairingCode[i]); bbep->print(" ");
     }
-    bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
+    bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
     
     // Footer
-    bbep.fillRect(0, 400, 800, 80, BBEP_BLACK);
-    bbep.setTextColor(BBEP_WHITE, BBEP_BLACK);
-    bbep.setCursor(200, 420); bbep.print("Waiting for setup to complete...");
-    bbep.setCursor(250, 450); bbep.print("(c) 2026 Angus Bergman");
+    bbep->fillRect(0, 400, 800, 80, BBEP_BLACK);
+    bbep->setTextColor(BBEP_WHITE, BBEP_BLACK);
+    bbep->setCursor(200, 420); bbep->print("Waiting for setup to complete...");
+    bbep->setCursor(250, 450); bbep->print("(c) 2026 Angus Bergman");
     
-    bbep.refresh(REFRESH_FULL, true);
+    bbep->refresh(REFRESH_FULL, true);
     lastFullRefresh = millis();
 }
 
@@ -313,46 +317,46 @@ bool pollPairingServer() {
 }
 
 void showConnectingScreen() {
-    bbep.fillScreen(BBEP_WHITE);
-    bbep.setFont(FONT_8x8);
-    bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
+    bbep->fillScreen(BBEP_WHITE);
+    bbep->setFont(FONT_8x8);
+    bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
     
-    bbep.fillRect(0, 0, 800, 50, BBEP_BLACK);
-    bbep.setTextColor(BBEP_WHITE, BBEP_BLACK);
-    bbep.setCursor(250, 18); bbep.print("COMMUTE COMPUTE");
-    bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
+    bbep->fillRect(0, 0, 800, 50, BBEP_BLACK);
+    bbep->setTextColor(BBEP_WHITE, BBEP_BLACK);
+    bbep->setCursor(250, 18); bbep->print("COMMUTE COMPUTE");
+    bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
     
-    bbep.drawRect(150, 150, 500, 150, BBEP_BLACK);
-    bbep.setCursor(280, 200); bbep.print("CONNECTING TO WIFI...");
-    bbep.setCursor(200, 250); bbep.print("Network: Connect to PTV-TRMNL-Setup");
+    bbep->drawRect(150, 150, 500, 150, BBEP_BLACK);
+    bbep->setCursor(280, 200); bbep->print("CONNECTING TO WIFI...");
+    bbep->setCursor(200, 250); bbep->print("Network: Connect to PTV-TRMNL-Setup");
     
-    bbep.refresh(REFRESH_FULL, true);
+    bbep->refresh(REFRESH_FULL, true);
 }
 
 void showPairedScreen() {
-    bbep.fillScreen(BBEP_WHITE);
-    bbep.setFont(FONT_8x8);
-    bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
+    bbep->fillScreen(BBEP_WHITE);
+    bbep->setFont(FONT_8x8);
+    bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
     
-    bbep.fillRect(0, 0, 800, 50, BBEP_BLACK);
-    bbep.setTextColor(BBEP_WHITE, BBEP_BLACK);
-    bbep.setCursor(300, 18); bbep.print("COMMUTE COMPUTE");
-    bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
+    bbep->fillRect(0, 0, 800, 50, BBEP_BLACK);
+    bbep->setTextColor(BBEP_WHITE, BBEP_BLACK);
+    bbep->setCursor(300, 18); bbep->print("COMMUTE COMPUTE");
+    bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
     
-    bbep.setCursor(320, 180); bbep.print("PAIRED!");
-    bbep.setCursor(220, 240); bbep.print("Loading your dashboard...");
+    bbep->setCursor(320, 180); bbep->print("PAIRED!");
+    bbep->setCursor(220, 240); bbep->print("Loading your dashboard...");
     
-    bbep.refresh(REFRESH_FULL, true);
+    bbep->refresh(REFRESH_FULL, true);
 }
 
 void showErrorScreen(const char* error) {
-    bbep.fillScreen(BBEP_WHITE);
-    bbep.setFont(FONT_8x8);
-    bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
-    bbep.setCursor(350, 200); bbep.print("ERROR");
-    bbep.setCursor(150, 240); bbep.print(error);
-    bbep.setCursor(280, 300); bbep.print("Retrying...");
-    bbep.refresh(REFRESH_FULL, true);
+    bbep->fillScreen(BBEP_WHITE);
+    bbep->setFont(FONT_8x8);
+    bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
+    bbep->setCursor(350, 200); bbep->print("ERROR");
+    bbep->setCursor(150, 240); bbep->print(error);
+    bbep->setCursor(280, 300); bbep->print("Retrying...");
+    bbep->refresh(REFRESH_FULL, true);
 }
 
 void loadSettings() {
@@ -385,9 +389,9 @@ void connectWiFi() {
 
 void initDisplay() {
     // Use speed=0 for bit-bang mode - hardware SPI fails on ESP32-C3 with custom pins
-    bbep.initIO(EPD_DC_PIN, EPD_RST_PIN, EPD_BUSY_PIN, EPD_CS_PIN, EPD_MOSI_PIN, EPD_SCK_PIN, 0);
-    bbep.setPanelType(EP75_800x480);
-    bbep.setRotation(0);
+    bbep->initIO(EPD_DC_PIN, EPD_RST_PIN, EPD_BUSY_PIN, EPD_CS_PIN, EPD_MOSI_PIN, EPD_SCK_PIN, 0);
+    bbep->setPanelType(EP75_800x480);
+    bbep->setRotation(0);
     // allocBuffer(false) removed - causes ESP32-C3 SPI issues (commit 02f9f27)
     pinMode(PIN_INTERRUPT, INPUT_PULLUP);
 }
@@ -496,23 +500,23 @@ bool decodeAndDrawZone(Zone& zone) {
     
     if (zoneBmpBuffer[0] != 'B' || zoneBmpBuffer[1] != 'M') return false;
     
-    int result = bbep.loadBMP(zoneBmpBuffer, zone.x, zone.y, BBEP_BLACK, BBEP_WHITE);
+    int result = bbep->loadBMP(zoneBmpBuffer, zone.x, zone.y, BBEP_BLACK, BBEP_WHITE);
     return result == BBEP_SUCCESS;
 }
 
 void doFullRefresh() {
-    bbep.refresh(REFRESH_FULL, true);
+    bbep->refresh(REFRESH_FULL, true);
 }
 
 void flashAndRefreshZone(Zone& zone) {
-    bbep.fillRect(zone.x, zone.y, zone.w, zone.h, BBEP_BLACK);
-    bbep.refresh(REFRESH_PARTIAL, true);
+    bbep->fillRect(zone.x, zone.y, zone.w, zone.h, BBEP_BLACK);
+    bbep->refresh(REFRESH_PARTIAL, true);
     delay(150);
     
     if (!decodeAndDrawZone(zone)) {
-        bbep.fillRect(zone.x, zone.y, zone.w, zone.h, BBEP_WHITE);
+        bbep->fillRect(zone.x, zone.y, zone.w, zone.h, BBEP_WHITE);
     }
     
-    bbep.refresh(REFRESH_PARTIAL, true);
+    bbep->refresh(REFRESH_PARTIAL, true);
     partialRefreshCount++;
 }
