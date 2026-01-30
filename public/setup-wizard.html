@@ -1090,20 +1090,43 @@
                         form.style.display = 'none';
                     }
                     
+                    // Store webhook URL for device pairing
+                    window.generatedWebhookUrl = webhookUrl;
+                    window.fullConfig = fullConfig;
+                    
                     document.getElementById('setup-status').innerHTML = `
                         <div class="success-box" style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); padding: 20px; border-radius: 12px;">
                             <h3 style="color: #22c55e; margin-bottom: 10px;">✅ Setup Complete!</h3>
                             <p style="color: #86efac;">Your intelligent transit display is ready.</p>
+                            
+                            <!-- Device Pairing Section -->
+                            <div style="margin-top: 20px; padding: 15px; background: rgba(79, 178, 142, 0.15); border: 2px solid #4fb28e; border-radius: 8px;">
+                                <h4 style="color: #4fb28e; margin-bottom: 10px;">📺 Pair Your Display</h4>
+                                <p style="color: #94a3b8; font-size: 13px; margin-bottom: 12px;">
+                                    Enter the code shown on your CC Display:
+                                </p>
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <input type="text" id="device-code" 
+                                        placeholder="e.g. A7X9K2" 
+                                        maxlength="8"
+                                        style="flex: 1; padding: 12px; font-size: 18px; font-family: monospace; text-transform: uppercase; letter-spacing: 3px; text-align: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(79, 178, 142, 0.5); border-radius: 6px; color: #f1f5f9;"
+                                        oninput="this.value = this.value.toUpperCase()">
+                                    <button type="button" onclick="pairDevice()" 
+                                        style="padding: 12px 20px; background: #4fb28e; border: none; border-radius: 6px; color: #fff; font-weight: 600; cursor: pointer;">
+                                        Pair
+                                    </button>
+                                </div>
+                                <div id="pairing-status" style="margin-top: 10px; font-size: 13px;"></div>
+                            </div>
+                            
                             ${webhookHtml}
-                            <p style="color: #94a3b8; margin-top: 15px; font-size: 13px;">Redirecting to dashboard in 3 seconds...</p>
-                            <button type="button" class="btn" onclick="window.location.href='/admin.html'" style="margin-top: 10px; width: 100%; background: #4fb28e;">Go to Dashboard →</button>
+                            
+                            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+                                <p style="color: #64748b; font-size: 12px; margin-bottom: 10px;">No display? You can still use the web dashboard:</p>
+                                <button type="button" class="btn" onclick="window.location.href='/admin.html'" style="width: 100%; background: rgba(79, 178, 142, 0.3); border: 1px solid #4fb28e;">Go to Dashboard →</button>
+                            </div>
                         </div>
                     `;
-                    
-                    // Auto-redirect after 3 seconds
-                    setTimeout(() => {
-                        window.location.href = '/admin.html';
-                    }, 3000);
                 } else {
                     alert('Setup failed: ' + result.error);
                 }
@@ -1112,6 +1135,52 @@
                 alert('Error at [' + lastStep + ']: ' + e.message);
             }
         };
+
+        // Device pairing function
+        async function pairDevice() {
+            const codeInput = document.getElementById('device-code');
+            const statusDiv = document.getElementById('pairing-status');
+            const code = codeInput.value.trim().toUpperCase();
+            
+            if (!code || code.length < 4) {
+                statusDiv.innerHTML = '<span style="color: #f87171;">Please enter the code from your display</span>';
+                return;
+            }
+            
+            statusDiv.innerHTML = '<span style="color: #4fb28e;">⏳ Pairing...</span>';
+            
+            try {
+                const baseUrl = window.location.origin;
+                const response = await fetch(`${baseUrl}/api/pair/${code}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        webhookUrl: window.generatedWebhookUrl,
+                        config: window.fullConfig
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    statusDiv.innerHTML = `
+                        <div style="color: #22c55e; font-weight: 600;">
+                            ✅ Device paired successfully!
+                        </div>
+                        <p style="color: #94a3b8; font-size: 12px; margin-top: 5px;">
+                            Your display will update within 30 seconds.
+                        </p>
+                    `;
+                    codeInput.disabled = true;
+                } else {
+                    statusDiv.innerHTML = `<span style="color: #f87171;">❌ ${result.error || 'Pairing failed'}</span>`;
+                }
+            } catch (error) {
+                console.error('Pairing error:', error);
+                statusDiv.innerHTML = `<span style="color: #f87171;">❌ Connection error. Try again.</span>`;
+            }
+        }
+        window.pairDevice = pairDevice;
 
         // Load version info
         function loadVersionInfo() {
