@@ -44,12 +44,15 @@ void setup() {
     Serial.println("Drawing test pattern...");
     bbep->fillScreen(BBEP_WHITE);
     
-    bbep->setFont(FONT_12x16);
+    // FONT_8x8 only - FONT_12x16 is rotated 90° on TRMNL OG!
+    bbep->setFont(FONT_8x8);
     bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
-    bbep->setCursor(200, 200);
+    bbep->setCursor(300, 200);
     bbep->print("DISPLAY TEST OK!");
-    bbep->setCursor(200, 240);
+    bbep->setCursor(300, 230);
     bbep->print("E-ink working!");
+    bbep->setCursor(300, 260);
+    bbep->print("Using FONT_8x8 (correct)");
     
     // Draw a border
     bbep->drawRect(10, 10, 780, 460, BBEP_BLACK);
