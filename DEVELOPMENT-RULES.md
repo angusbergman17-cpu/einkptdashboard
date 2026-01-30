@@ -1591,12 +1591,11 @@ After setup wizard is complete:
 
 ### 21.5 Hosting Platform
 
-**Primary**: Render.com (free tier)
-- URL format: `https://[custom-name].onrender.app`
-- Zero-config deployment from forked repo
-- Free tier sufficient for personal use
+**Options** (both free tier):
+1. **Vercel** - URL format: `https://[custom-name].vercel.app`
+2. **Render** - URL format: `https://[custom-name].onrender.app`
 
-**Alternative**: Vercel (also free tier supported)
+Both support zero-config deployment from forked repo. Free tier sufficient for personal use.
 
 ---
 

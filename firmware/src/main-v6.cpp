@@ -70,8 +70,10 @@ static const int ZONE_COUNT = sizeof(ZONES) / sizeof(ZONES[0]);
 
 enum State {
     STATE_INIT,
+    STATE_BOOT,              // New: Show large CC logo on boot
     STATE_WIFI_CONNECT,
     STATE_WIFI_PORTAL,
+    STATE_WAITING_SETUP,     // New: Wait for setup wizard completion
     STATE_PAIRING,
     STATE_FETCH_ZONES,
     STATE_RENDER,
@@ -123,10 +125,12 @@ WiFiManagerParameter customServerUrl("server", "Server URL", "", 120);
 // ============================================================================
 
 void initDisplay();
+void showBootScreen();        // Stage 1: Large CC logo while booting
 void showWelcomeScreen();
 void showPairingScreen();
-void showWiFiSetupScreen();
+void showWiFiSetupScreen();   // Stage 2: Smaller logo + instructions + copyright
 void showConnectingScreen();  // Alias for showWiFiSetupScreen
+void showWaitingSetupScreen(); // Stage 2b: Waiting for setup wizard
 void showConfiguredScreen();
 void showSetupRequiredScreen();
 void showErrorScreen(const char* msg);
@@ -186,8 +190,8 @@ void setup() {
     // Initialize display (quick, non-blocking)
     initDisplay();
     
-    // Set initial state
-    currentState = STATE_WIFI_CONNECT;
+    // Set initial state - start with boot screen (Stage 1)
+    currentState = STATE_BOOT;
     
     Serial.println("✓ Setup complete");
     Serial.println("→ Entering loop() - device ready");
@@ -208,13 +212,26 @@ void loop() {
         // ----------------------------------------------------------------
         case STATE_INIT:
             // Should not reach here, but handle gracefully
-            currentState = STATE_WIFI_CONNECT;
+            currentState = STATE_BOOT;
             break;
         
         // ----------------------------------------------------------------
+        case STATE_BOOT: {
+            // Stage 1: Show large CC logo while booting
+            Serial.println("→ STATE: Boot (Stage 1 - Large Logo)");
+            showBootScreen();
+            
+            // Display for 2-3 seconds then move to WiFi setup
+            delay(2500);
+            currentState = STATE_WIFI_CONNECT;
+            break;
+        }
+        
+        // ----------------------------------------------------------------
         case STATE_WIFI_CONNECT: {
-            Serial.println("→ STATE: WiFi Connect");
-            showConnectingScreen();
+            // Stage 2: WiFi Setup with smaller logo + instructions
+            Serial.println("→ STATE: WiFi Connect (Stage 2 - Setup Screen)");
+            showWiFiSetupScreen();
             
             feedWatchdog();
             
@@ -241,18 +258,17 @@ void loop() {
                 wifiConnected = true;
                 Serial.printf("✓ WiFi connected: %s\n", WiFi.localIP().toString().c_str());
                 
-                // Check if we have a valid webhook URL stored
+                // Check if we have a valid server URL stored
                 if (strlen(serverUrl) > 0 && strstr(serverUrl, "http") != nullptr) {
-                    // Already configured - go to dashboard
-                    showConfiguredScreen();
-                    delay(2000);
-                    currentState = STATE_FETCH_ZONES;
+                    // Have server URL - check if setup wizard is complete
+                    Serial.println("→ Have server URL, checking setup status...");
+                    currentState = STATE_WAITING_SETUP;
                 } else {
-                    // First time setup - enter pairing mode
-                    Serial.println("→ First time setup - entering pairing mode");
-                    currentState = STATE_PAIRING;
-                    pairingMode = true;
-                    pairingStartTime = millis();
+                    // No server URL - stay on WiFi setup screen until configured
+                    // User needs to set URL via WiFi portal
+                    Serial.println("→ No server URL configured - staying on setup screen");
+                    // Re-enter WiFi connect to show portal again
+                    currentState = STATE_WIFI_CONNECT;
                 }
                 consecutiveErrors = 0;
                 initialDrawDone = false;
@@ -261,6 +277,67 @@ void loop() {
                 wifiConnected = false;
                 currentState = STATE_ERROR;
             }
+            break;
+        }
+        
+        // ----------------------------------------------------------------
+        case STATE_WAITING_SETUP: {
+            // Stage 2b: Wait for setup wizard to be completed
+            static unsigned long lastCheckTime = 0;
+            static bool waitingScreenShown = false;
+            
+            feedWatchdog();
+            
+            // Show waiting screen (once)
+            if (!waitingScreenShown) {
+                Serial.println("→ STATE: Waiting for Setup Wizard");
+                showWaitingSetupScreen();
+                waitingScreenShown = true;
+                lastCheckTime = millis();
+            }
+            
+            // Poll server every 5 seconds to check if setup is complete
+            if (millis() - lastCheckTime >= 5000) {
+                lastCheckTime = millis();
+                Serial.println("[SETUP] Checking if setup wizard is complete...");
+                
+                // Check /api/setup-status endpoint
+                WiFiClientSecure* client = new WiFiClientSecure();
+                if (client) {
+                    client->setInsecure();
+                    HTTPClient http;
+                    
+                    String url = String(serverUrl);
+                    if (!url.endsWith("/")) url += "/";
+                    url += "api/setup-status";
+                    url.replace("//api", "/api");
+                    
+                    http.setTimeout(10000);
+                    if (http.begin(*client, url)) {
+                        int httpCode = http.GET();
+                        if (httpCode == 200) {
+                            String response = http.getString();
+                            // Check for "complete":true in response
+                            if (response.indexOf("\"complete\":true") >= 0 || 
+                                response.indexOf("\"configured\":true") >= 0) {
+                                Serial.println("✓ Setup wizard complete!");
+                                waitingScreenShown = false;
+                                showConfiguredScreen();
+                                delay(2000);
+                                currentState = STATE_FETCH_ZONES;
+                            } else {
+                                Serial.println("→ Setup not complete yet, waiting...");
+                            }
+                        } else {
+                            Serial.printf("→ Setup status check: %d\n", httpCode);
+                        }
+                        http.end();
+                    }
+                    delete client;
+                }
+            }
+            
+            delay(100);  // Small delay to prevent tight loop
             break;
         }
         
@@ -469,6 +546,43 @@ void initDisplay() {
     Serial.println("✓ Display initialized");
 }
 
+// ============================================================================
+// Stage 1: Boot Screen - Large CC Logo (centered, no text)
+// ============================================================================
+void showBootScreen() {
+    Serial.println("→ Showing boot screen (large logo)");
+    bbep.fillScreen(BBEP_WHITE);
+    
+    // Draw LARGE CC logo centered on screen
+    // Logo is 150x150, screen is 800x480
+    // Center: x = (800-150)/2 = 325, y = (480-150)/2 = 165
+    int logoX = (800 - CC_LOGO_WIDTH) / 2;
+    int logoY = (480 - CC_LOGO_HEIGHT) / 2 - 30;  // Slightly above center
+    
+    // Draw logo pixel by pixel (0 = black in BMP)
+    for (int row = 0; row < CC_LOGO_HEIGHT; row++) {
+        for (int col = 0; col < CC_LOGO_WIDTH; col++) {
+            int byte_idx = row * CC_LOGO_BYTES_PER_ROW + (col / 8);
+            int bit_idx = 7 - (col % 8);
+            uint8_t byte_val = pgm_read_byte(&CC_LOGO_DATA[byte_idx]);
+            if (!(byte_val & (1 << bit_idx))) {
+                // Draw black where BMP has 0 (logo is black)
+                bbep.drawPixel(logoX + col, logoY + row, BBEP_BLACK);
+            }
+        }
+    }
+    
+    // "COMMUTE COMPUTE" text below logo
+    bbep.setFont(FONT_8x8);
+    bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
+    bbep.setCursor(310, logoY + CC_LOGO_HEIGHT + 20);
+    bbep.print("COMMUTE COMPUTE");
+    
+    bbep.refresh(REFRESH_FULL, true);
+    lastFullRefresh = millis();
+    Serial.println("✓ Boot screen displayed");
+}
+
 void showWelcomeScreen() {
     bbep.fillScreen(BBEP_WHITE);
     bbep.setFont(FONT_8x8);
@@ -511,44 +625,109 @@ void showWelcomeScreen() {
     lastFullRefresh = millis();
 }
 
+// ============================================================================
+// Stage 2: WiFi Setup Screen - Smaller logo + instructions + copyright
+// ============================================================================
 void showWiFiSetupScreen() {
     bbep.fillScreen(BBEP_WHITE);
     bbep.setFont(FONT_8x8);
     
-    // Draw CC logo centered at top
+    // Smaller CC logo at top (using drawCCLogoCentered)
+    drawCCLogoCentered(10, 800);
+    
+    // Title
+    bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
+    bbep.setCursor(280, 165);
+    bbep.print("COMMUTE COMPUTE SETUP");
+    
+    // Setup instructions box
+    bbep.drawRect(50, 190, 700, 220, BBEP_BLACK);
+    bbep.drawRect(51, 191, 698, 218, BBEP_BLACK);
+    
+    // Step 1: Fork & Deploy
+    bbep.setCursor(70, 210);
+    bbep.print("1. Fork the repo and deploy to Vercel or Render:");
+    bbep.setCursor(90, 230);
+    bbep.print("github.com/angusbergman17-cpu/einkptdashboard");
+    
+    // Step 2: Connect device to WiFi
+    bbep.setCursor(70, 260);
+    bbep.print("2. Connect to this WiFi network:");
+    bbep.setCursor(90, 280);
+    bbep.print("SSID: CommuteCompute-Setup  Password: transport123");
+    
+    // Step 3: Configure URL
+    bbep.setCursor(70, 310);
+    bbep.print("3. Open 192.168.4.1, enter your server URL:");
+    bbep.setCursor(90, 330);
+    bbep.print("https://[your-name].vercel.app  (or .onrender.com)");
+    
+    // Step 4: Complete wizard
+    bbep.setCursor(70, 360);
+    bbep.print("4. Complete setup wizard at your server URL");
+    bbep.setCursor(90, 380);
+    bbep.print("Dashboard will appear when setup is complete.");
+    
+    // Footer with copyright
+    bbep.drawLine(50, 430, 750, 430, BBEP_BLACK);
+    bbep.setCursor(220, 450);
+    bbep.print("(c) 2026 Angus Bergman - CC BY-NC 4.0");
+    
+    bbep.refresh(REFRESH_FULL, true);
+}
+
+// ============================================================================
+// Stage 2b: Waiting for Setup Wizard Screen
+// ============================================================================
+void showWaitingSetupScreen() {
+    bbep.fillScreen(BBEP_WHITE);
+    bbep.setFont(FONT_8x8);
+    
+    // Smaller CC logo at top
     drawCCLogoCentered(20, 800);
     
     // Title
     bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
-    bbep.setCursor(300, 170);
-    bbep.print("WiFi Setup Mode");
+    bbep.setCursor(250, 175);
+    bbep.print("WAITING FOR SETUP WIZARD");
     
-    // AP info box
-    bbep.drawRect(200, 195, 400, 80, BBEP_BLACK);
-    bbep.drawRect(201, 196, 398, 78, BBEP_BLACK);
+    // Status box
+    bbep.drawRect(150, 200, 500, 120, BBEP_BLACK);
+    bbep.drawRect(151, 201, 498, 118, BBEP_BLACK);
     
-    bbep.setCursor(250, 215);
-    bbep.print("Connect to this network:");
-    bbep.setCursor(265, 240);
-    bbep.print("CommuteCompute-Setup");
-    bbep.setCursor(250, 260);
-    bbep.print("Password: transport123");
+    bbep.setCursor(170, 225);
+    bbep.print("WiFi Connected!");
     
-    // Browser instructions
-    bbep.setCursor(200, 300);
-    bbep.print("Then open your browser to:");
-    bbep.setCursor(250, 325);
-    bbep.print("http://192.168.4.1");
+    bbep.setCursor(170, 255);
+    bbep.print("Server: ");
+    // Print server URL (truncated if too long)
+    if (strlen(serverUrl) > 40) {
+        char truncated[45];
+        strncpy(truncated, serverUrl, 40);
+        truncated[40] = '.';
+        truncated[41] = '.';
+        truncated[42] = '.';
+        truncated[43] = '\0';
+        bbep.print(truncated);
+    } else {
+        bbep.print(serverUrl);
+    }
     
-    // Bullet points
-    bbep.setCursor(200, 365);
-    bbep.print("* Select your home WiFi network");
-    bbep.setCursor(200, 385);
-    bbep.print("* Enter your WiFi password");
-    bbep.setCursor(200, 405);
-    bbep.print("* Click Save and wait");
+    bbep.setCursor(170, 285);
+    bbep.print("Please complete setup wizard on your computer");
     
-    // Footer
+    // Instructions
+    bbep.setCursor(150, 340);
+    bbep.print("Open your server URL in a browser and");
+    bbep.setCursor(150, 360);
+    bbep.print("complete the setup wizard to continue.");
+    
+    // Spinner indication
+    bbep.setCursor(350, 400);
+    bbep.print("Checking...");
+    
+    // Footer with copyright
+    bbep.drawLine(50, 430, 750, 430, BBEP_BLACK);
     bbep.setCursor(220, 450);
     bbep.print("(c) 2026 Angus Bergman - CC BY-NC 4.0");
     
