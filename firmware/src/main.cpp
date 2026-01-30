@@ -17,14 +17,17 @@
 #define ZONE_BMP_MAX_SIZE 20000
 #define ZONE_ID_MAX_LEN 32
 #define ZONE_DATA_MAX_LEN 8000
-#define FIRMWARE_VERSION "5.33"
+#define FIRMWARE_VERSION "6.0-pairing"
 
-// Fallback server URL if none configured
-#define DEFAULT_SERVER_URL "https://ptvtrmnl.vercel.app"
+// Default server for pairing API
+#define DEFAULT_SERVER "https://einkptdashboard.vercel.app"
+#define PAIRING_POLL_INTERVAL 5000  // 5 seconds
+#define PAIRING_TIMEOUT 600000       // 10 minutes
 
 BBEPAPER bbep(EP75_800x480);
 Preferences preferences;
-char serverUrl[128] = "";
+char webhookUrl[256] = "";
+char pairingCode[8] = "";
 unsigned long lastRefresh = 0;
 const unsigned long REFRESH_INTERVAL = 20000;
 const unsigned long FULL_REFRESH_INTERVAL = 300000;
@@ -32,38 +35,37 @@ unsigned long lastFullRefresh = 0;
 int partialRefreshCount = 0;
 const int MAX_PARTIAL_BEFORE_FULL = 30;
 bool wifiConnected = false;
-bool serverConfigured = false;
+bool devicePaired = false;
 bool initialDrawDone = false;
 
-// Error tracking for exponential backoff
+// Error tracking
 int consecutiveErrors = 0;
 const int MAX_BACKOFF_ERRORS = 5;
 unsigned long lastErrorTime = 0;
 
-// Persistent storage for zone data (fixes memory corruption)
+// Zone storage
 struct Zone { 
     char id[ZONE_ID_MAX_LEN]; 
     int x, y, w, h; 
     bool changed; 
-    char* data;  // Allocated separately
+    char* data;
     size_t dataLen;
 };
 Zone zones[MAX_ZONES];
 int zoneCount = 0;
 uint8_t* zoneBmpBuffer = nullptr;
-
-// Zone data buffers (persistent)
 char* zoneDataBuffers[MAX_ZONES] = {nullptr};
 
-WiFiManagerParameter customServerUrl("server", "Server URL (e.g. https://your-app.vercel.app)", "", 120);
-
+// Function declarations
 void initDisplay();
-void showWelcomeScreen();
-void showSetupScreen(const char* apName);
+void showPairingScreen();
 void showConnectingScreen();
-void showConfiguredScreen();
+void showPairedScreen();
 void showErrorScreen(const char* error);
 void connectWiFi();
+void generatePairingCode();
+bool pollPairingServer();
+bool fetchDashboardImage();
 bool fetchZoneUpdates(bool forceAll);
 bool decodeAndDrawZone(Zone& zone);
 void doFullRefresh();
@@ -72,29 +74,13 @@ void loadSettings();
 void saveSettings();
 unsigned long getBackoffDelay();
 void initZoneBuffers();
-void freeZoneBuffers();
 
 void setup() {
     WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
     Serial.begin(115200); delay(500);
-    Serial.println("\n=== PTV-TRMNL v" FIRMWARE_VERSION " ===");
-    
-    // FACTORY RESET - Clear all stored settings (REMOVE AFTER TESTING)
-    Serial.println("*** FACTORY RESET - Clearing all settings ***");
-    preferences.begin("ptv-trmnl", false);
-    preferences.clear();
-    preferences.end();
-    WiFi.disconnect(true, true);  // Clear WiFi credentials
-    delay(500);
+    Serial.println("\n=== Commute Compute v" FIRMWARE_VERSION " ===");
     
     loadSettings();
-    
-    // Apply default server if none configured
-    if (strlen(serverUrl) == 0) {
-        Serial.println("No server configured, using default");
-        strncpy(serverUrl, DEFAULT_SERVER_URL, sizeof(serverUrl) - 1);
-        saveSettings();
-    }
     
     zoneBmpBuffer = (uint8_t*)malloc(ZONE_BMP_MAX_SIZE);
     if (!zoneBmpBuffer) {
@@ -104,42 +90,65 @@ void setup() {
     initZoneBuffers();
     initDisplay();
     
-    if (!serverConfigured) { 
-        showWelcomeScreen(); 
-        delay(3000); 
-    }
-    
     Serial.println("Setup complete");
 }
 
 void loop() {
-    // WiFi connection check
-    if (!wifiConnected) { 
-        connectWiFi(); 
-        if (!wifiConnected) { 
-            delay(5000); 
-            return; 
-        } 
-        initialDrawDone = false;
-        consecutiveErrors = 0;
+    // Step 1: Connect to WiFi if not connected
+    if (!wifiConnected) {
+        connectWiFi();
+        if (!wifiConnected) {
+            delay(5000);
+            return;
+        }
     }
     
-    if (WiFi.status() != WL_CONNECTED) { 
+    if (WiFi.status() != WL_CONNECTED) {
         Serial.println("WiFi disconnected");
-        wifiConnected = false; 
-        return; 
+        wifiConnected = false;
+        return;
     }
     
-    // Server URL check (should not happen with default fallback)
-    if (strlen(serverUrl) == 0) { 
-        showSetupScreen("PTV-TRMNL-Setup"); 
-        delay(10000); 
-        return; 
+    // Step 2: If not paired, show pairing screen and poll
+    if (!devicePaired) {
+        static bool pairingScreenShown = false;
+        static unsigned long pairingStartTime = 0;
+        static unsigned long lastPollTime = 0;
+        
+        if (!pairingScreenShown) {
+            generatePairingCode();
+            showPairingScreen();
+            pairingScreenShown = true;
+            pairingStartTime = millis();
+            lastPollTime = 0;
+        }
+        
+        // Check timeout
+        if (millis() - pairingStartTime > PAIRING_TIMEOUT) {
+            Serial.println("Pairing timeout - regenerating code");
+            pairingScreenShown = false;
+            return;
+        }
+        
+        // Poll every 5 seconds
+        if (millis() - lastPollTime >= PAIRING_POLL_INTERVAL) {
+            lastPollTime = millis();
+            if (pollPairingServer()) {
+                devicePaired = true;
+                saveSettings();
+                showPairedScreen();
+                delay(2000);
+                initialDrawDone = false;
+            }
+        }
+        
+        delay(500);
+        return;
     }
     
+    // Step 3: Normal dashboard operation
     unsigned long now = millis();
     
-    // Exponential backoff on errors
     if (consecutiveErrors > 0) {
         unsigned long backoff = getBackoffDelay();
         if (now - lastErrorTime < backoff) {
@@ -156,7 +165,7 @@ void loop() {
         lastRefresh = now;
         
         if (fetchZoneUpdates(needsFull)) {
-            consecutiveErrors = 0;  // Reset on success
+            consecutiveErrors = 0;
             
             int changed = 0;
             for (int i = 0; i < zoneCount; i++) {
@@ -170,216 +179,157 @@ void loop() {
                 }
             }
             
-            if (needsFull && changed > 0) { 
-                doFullRefresh(); 
-                lastFullRefresh = now; 
-                partialRefreshCount = 0; 
-                initialDrawDone = true; 
+            if (needsFull && changed > 0) {
+                doFullRefresh();
+                lastFullRefresh = now;
+                partialRefreshCount = 0;
+                initialDrawDone = true;
             }
             
-            // Log status
-            Serial.printf("Refresh: %d zones changed, full=%s\n", changed, needsFull ? "yes" : "no");
+            Serial.printf("Refresh: %d zones, full=%s\n", changed, needsFull ? "yes" : "no");
         } else {
             consecutiveErrors++;
             lastErrorTime = now;
-            Serial.printf("Fetch failed (attempt %d), backoff %lums\n", 
-                          consecutiveErrors, getBackoffDelay());
+            Serial.printf("Fetch failed (attempt %d)\n", consecutiveErrors);
         }
     }
     
     delay(1000);
 }
 
-void initZoneBuffers() {
-    for (int i = 0; i < MAX_ZONES; i++) {
-        zoneDataBuffers[i] = (char*)malloc(ZONE_DATA_MAX_LEN);
-        if (!zoneDataBuffers[i]) {
-            Serial.printf("ERROR: Failed to allocate zone buffer %d\n", i);
-        }
-        zones[i].data = nullptr;
-        zones[i].id[0] = '\0';
+void generatePairingCode() {
+    const char* chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+    int len = strlen(chars);
+    for (int i = 0; i < 6; i++) {
+        pairingCode[i] = chars[random(0, len)];
     }
+    pairingCode[6] = '\0';
+    Serial.printf("Generated pairing code: %s\n", pairingCode);
 }
 
-void freeZoneBuffers() {
-    for (int i = 0; i < MAX_ZONES; i++) {
-        if (zoneDataBuffers[i]) {
-            free(zoneDataBuffers[i]);
-            zoneDataBuffers[i] = nullptr;
-        }
-    }
-}
-
-unsigned long getBackoffDelay() {
-    // Exponential backoff: 2s, 4s, 8s, 16s, 32s max
-    int capped = min(consecutiveErrors, MAX_BACKOFF_ERRORS);
-    return (1UL << capped) * 1000UL;
-}
-
-void initDisplay() {
-    bbep.initIO(EPD_DC_PIN, EPD_RST_PIN, EPD_BUSY_PIN, EPD_CS_PIN, EPD_MOSI_PIN, EPD_SCK_PIN, 8000000);
-    bbep.setPanelType(EP75_800x480); 
-    bbep.setRotation(0); 
-    bbep.allocBuffer(false);
-    pinMode(PIN_INTERRUPT, INPUT_PULLUP);
-}
-
-void showWelcomeScreen() {
+void showPairingScreen() {
     bbep.fillScreen(BBEP_WHITE);
-    bbep.setFont(FONT_8x8); 
+    bbep.setFont(FONT_8x8);
     bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
     
-    // Header bar
+    // Header
     bbep.fillRect(0, 0, 800, 60, BBEP_BLACK);
     bbep.setTextColor(BBEP_WHITE, BBEP_BLACK);
-    bbep.setCursor(200, 15); bbep.print("PTV-TRMNL SMART TRANSIT DISPLAY");
+    bbep.setCursor(180, 15); bbep.print("COMMUTE COMPUTE SMART DISPLAY");
     bbep.setCursor(320, 38); bbep.print("v" FIRMWARE_VERSION);
-    
-    // Reset colors  
     bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
     
-    // Setup box
-    bbep.drawRect(80, 80, 640, 280, BBEP_BLACK);
-    bbep.drawRect(81, 81, 638, 278, BBEP_BLACK);
-    bbep.setCursor(320, 100); bbep.print("FIRST TIME SETUP");
+    // Main box
+    bbep.drawRect(100, 90, 600, 260, BBEP_BLACK);
+    bbep.drawRect(101, 91, 598, 258, BBEP_BLACK);
     
     // Instructions
-    bbep.setCursor(100, 140); bbep.print("1. On your phone/computer, connect to WiFi:");
-    bbep.setCursor(140, 165); bbep.print("Network:  PTV-TRMNL-Setup");
-    bbep.setCursor(140, 185); bbep.print("Password: transport123");
+    bbep.setCursor(280, 110); bbep.print("DEVICE SETUP");
     
-    bbep.setCursor(100, 220); bbep.print("2. Open browser and go to: 192.168.4.1");
+    bbep.setCursor(140, 150); bbep.print("1. On your phone/computer, go to:");
+    bbep.setCursor(180, 180); bbep.print("einkptdashboard.vercel.app/setup-wizard.html");
     
-    bbep.setCursor(100, 255); bbep.print("3. Select your home WiFi and enter password");
+    bbep.setCursor(140, 220); bbep.print("2. Complete the setup wizard");
     
-    bbep.setCursor(100, 290); bbep.print("4. Server URL: einkptdashboard.vercel.app");
+    bbep.setCursor(140, 260); bbep.print("3. Enter this code when prompted:");
     
-    bbep.setCursor(100, 325); bbep.print("5. Save and wait for dashboard to appear");
+    // Large pairing code box
+    bbep.fillRect(250, 290, 300, 60, BBEP_BLACK);
+    bbep.setTextColor(BBEP_WHITE, BBEP_BLACK);
+    bbep.setCursor(310, 310);
+    // Print code with spacing
+    for (int i = 0; i < 6; i++) {
+        bbep.print(pairingCode[i]); bbep.print(" ");
+    }
+    bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
     
     // Footer
     bbep.fillRect(0, 400, 800, 80, BBEP_BLACK);
     bbep.setTextColor(BBEP_WHITE, BBEP_BLACK);
-    bbep.setCursor(180, 420); bbep.print("github.com/angusbergman17-cpu/einkptdashboard");
-    bbep.setCursor(300, 450); bbep.print("(c) 2026 Angus Bergman");
+    bbep.setCursor(200, 420); bbep.print("Waiting for setup to complete...");
+    bbep.setCursor(250, 450); bbep.print("(c) 2026 Angus Bergman");
     
-    bbep.refresh(REFRESH_FULL, true); 
+    bbep.refresh(REFRESH_FULL, true);
     lastFullRefresh = millis();
 }
 
-void showSetupScreen(const char* apName) {
-    bbep.fillScreen(BBEP_WHITE); 
-    bbep.setFont(FONT_8x8); 
-    bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
+bool pollPairingServer() {
+    WiFiClientSecure* client = new WiFiClientSecure();
+    client->setInsecure();
+    HTTPClient http;
     
-    // Header bar
-    bbep.fillRect(0, 0, 800, 50, BBEP_BLACK);
-    bbep.setTextColor(BBEP_WHITE, BBEP_BLACK);
-    bbep.setCursor(220, 18); bbep.print("PTV-TRMNL SETUP REQUIRED");
-    bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
+    String url = String(DEFAULT_SERVER) + "/api/pair/" + String(pairingCode);
+    Serial.printf("Polling: %s\n", url.c_str());
     
-    // Instructions box
-    bbep.drawRect(60, 70, 680, 260, BBEP_BLACK);
-    bbep.drawRect(61, 71, 678, 258, BBEP_BLACK);
+    http.setTimeout(10000);
+    if (!http.begin(*client, url)) {
+        Serial.println("HTTP begin failed");
+        delete client;
+        return false;
+    }
     
-    // Step 1
-    bbep.setCursor(80, 95); bbep.print("STEP 1: On your phone, connect to WiFi network:");
-    bbep.setCursor(120, 120); bbep.printf("Network:  %s", apName);
-    bbep.setCursor(120, 140); bbep.print("Password: transport123");
+    int code = http.GET();
+    if (code != 200) {
+        Serial.printf("HTTP error: %d\n", code);
+        http.end();
+        delete client;
+        return false;
+    }
     
-    // Step 2
-    bbep.setCursor(80, 175); bbep.print("STEP 2: Open browser and go to:");
-    bbep.setCursor(120, 200); bbep.print("http://192.168.4.1");
+    String payload = http.getString();
+    http.end();
+    delete client;
     
-    // Step 3
-    bbep.setCursor(80, 235); bbep.print("STEP 3: In the setup page:");
-    bbep.setCursor(120, 260); bbep.print("- Select your home WiFi network");
-    bbep.setCursor(120, 280); bbep.print("- Enter your WiFi password");
-    bbep.setCursor(120, 300); bbep.print("- Server: einkptdashboard.vercel.app");
+    JsonDocument doc;
+    if (deserializeJson(doc, payload)) {
+        Serial.println("JSON parse error");
+        return false;
+    }
     
-    // Status bar
-    bbep.fillRect(60, 350, 680, 30, BBEP_BLACK);
-    bbep.setTextColor(BBEP_WHITE, BBEP_BLACK);
-    bbep.setCursor(230, 360); bbep.print("Waiting for configuration...");
-    bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
+    const char* status = doc["status"] | "unknown";
+    Serial.printf("Pairing status: %s\n", status);
     
-    // Reset info
-    bbep.setCursor(100, 405); bbep.print("TO RESET: Reflash firmware via USB to restart setup");
+    if (strcmp(status, "paired") == 0) {
+        const char* url = doc["webhookUrl"] | "";
+        if (strlen(url) > 0) {
+            strncpy(webhookUrl, url, sizeof(webhookUrl) - 1);
+            Serial.printf("Paired! Webhook: %s\n", webhookUrl);
+            return true;
+        }
+    }
     
-    // Footer with copyright
-    bbep.fillRect(0, 430, 800, 50, BBEP_BLACK);
-    bbep.setTextColor(BBEP_WHITE, BBEP_BLACK);
-    bbep.setCursor(200, 445); bbep.print("github.com/angusbergman17-cpu/einkptdashboard");
-    bbep.setCursor(290, 465); bbep.print("(c) 2026 Angus Bergman");
-    
-    bbep.refresh(REFRESH_FULL, true);
+    return false;
 }
 
 void showConnectingScreen() {
-    bbep.fillScreen(BBEP_WHITE); 
-    bbep.setFont(FONT_8x8); 
+    bbep.fillScreen(BBEP_WHITE);
+    bbep.setFont(FONT_8x8);
     bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
     
-    // Header bar
     bbep.fillRect(0, 0, 800, 50, BBEP_BLACK);
     bbep.setTextColor(BBEP_WHITE, BBEP_BLACK);
-    bbep.setCursor(250, 18); bbep.print("PTV-TRMNL SMART DISPLAY");
+    bbep.setCursor(250, 18); bbep.print("COMMUTE COMPUTE");
     bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
     
-    // Main content box
-    bbep.drawRect(100, 80, 600, 200, BBEP_BLACK);
-    bbep.drawRect(101, 81, 598, 198, BBEP_BLACK);
-    
-    // Status - larger centered text
-    bbep.setCursor(280, 120); bbep.print("CONNECTING TO WIFI...");
-    
-    // Divider line
-    bbep.drawLine(150, 160, 650, 160, BBEP_BLACK);
-    
-    // Fallback instructions
-    bbep.setCursor(150, 190); bbep.print("If no network found, connect to:");
-    bbep.setCursor(200, 220); bbep.print("Network:  PTV-TRMNL-Setup");
-    bbep.setCursor(200, 245); bbep.print("Password: transport123");
-    
-    // Reset instructions
-    bbep.drawRect(100, 310, 600, 60, BBEP_BLACK);
-    bbep.setCursor(120, 330); bbep.print("TO RESET: Hold button for 10 seconds, or reflash firmware");
-    bbep.setCursor(120, 350); bbep.print("via USB to clear WiFi settings and start setup again.");
-    
-    // Footer with copyright
-    bbep.fillRect(0, 420, 800, 60, BBEP_BLACK);
-    bbep.setTextColor(BBEP_WHITE, BBEP_BLACK);
-    bbep.setCursor(220, 440); bbep.print("github.com/angusbergman17-cpu/einkptdashboard");
-    bbep.setCursor(280, 460); bbep.print("(c) 2026 Angus Bergman");
+    bbep.drawRect(150, 150, 500, 150, BBEP_BLACK);
+    bbep.setCursor(280, 200); bbep.print("CONNECTING TO WIFI...");
+    bbep.setCursor(200, 250); bbep.print("Network: Connect to PTV-TRMNL-Setup");
     
     bbep.refresh(REFRESH_FULL, true);
 }
 
-void showConfiguredScreen() {
-    bbep.fillScreen(BBEP_WHITE); 
-    bbep.setFont(FONT_8x8); 
+void showPairedScreen() {
+    bbep.fillScreen(BBEP_WHITE);
+    bbep.setFont(FONT_8x8);
     bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
     
-    // Header with WiFi indicator
     bbep.fillRect(0, 0, 800, 50, BBEP_BLACK);
     bbep.setTextColor(BBEP_WHITE, BBEP_BLACK);
-    bbep.setCursor(300, 18); bbep.print("PTV-TRMNL");
+    bbep.setCursor(300, 18); bbep.print("COMMUTE COMPUTE");
     bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
     
-    // WiFi indicator box (top right)
-    bbep.drawRect(680, 10, 100, 35, BBEP_WHITE);
-    bbep.fillRect(690, 20, 20, 15, BBEP_WHITE);
-    bbep.fillRect(715, 15, 20, 20, BBEP_WHITE);
-    bbep.fillRect(740, 10, 20, 25, BBEP_WHITE);
-    
-    // Status
-    bbep.setCursor(320, 170); bbep.print("CONNECTED!");
-    bbep.setCursor(100, 220); bbep.print("Server:");
-    bbep.setCursor(100, 250); bbep.printf("https://%s", serverUrl);
-    bbep.setCursor(260, 320); bbep.print("Fetching transit data...");
-    
-    // Loading indicator
-    bbep.drawRect(300, 360, 200, 20, BBEP_BLACK);
-    bbep.fillRect(302, 362, 60, 16, BBEP_BLACK);
+    bbep.setCursor(320, 180); bbep.print("PAIRED!");
+    bbep.setCursor(220, 240); bbep.print("Loading your dashboard...");
     
     bbep.refresh(REFRESH_FULL, true);
 }
@@ -388,104 +338,106 @@ void showErrorScreen(const char* error) {
     bbep.fillScreen(BBEP_WHITE);
     bbep.setFont(FONT_8x8);
     bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
-    bbep.setCursor(300, 200); bbep.print("ERROR");
+    bbep.setCursor(350, 200); bbep.print("ERROR");
     bbep.setCursor(150, 240); bbep.print(error);
-    bbep.setCursor(200, 300); bbep.print("Retrying...");
+    bbep.setCursor(280, 300); bbep.print("Retrying...");
     bbep.refresh(REFRESH_FULL, true);
 }
 
 void loadSettings() {
-    preferences.begin("ptv-trmnl", true);
-    String url = preferences.getString("serverUrl", "");
-    url.toCharArray(serverUrl, sizeof(serverUrl));
+    preferences.begin("cc-device", true);
+    String url = preferences.getString("webhookUrl", "");
+    url.toCharArray(webhookUrl, sizeof(webhookUrl));
     preferences.end();
-    serverConfigured = strlen(serverUrl) > 0;
-    Serial.printf("Server: %s\n", serverConfigured ? serverUrl : "(not set)");
+    devicePaired = strlen(webhookUrl) > 0;
+    Serial.printf("Webhook: %s\n", devicePaired ? webhookUrl : "(not paired)");
 }
 
 void saveSettings() {
-    preferences.begin("ptv-trmnl", false);
-    preferences.putString("serverUrl", serverUrl);
+    preferences.begin("cc-device", false);
+    preferences.putString("webhookUrl", webhookUrl);
     preferences.end();
-    serverConfigured = strlen(serverUrl) > 0;
-    Serial.printf("Settings saved. Server: %s\n", serverUrl);
-}
-
-void saveParamCallback() {
-    const char* val = customServerUrl.getValue();
-    if (val && strlen(val) > 0) {
-        strncpy(serverUrl, val, sizeof(serverUrl) - 1);
-        serverUrl[sizeof(serverUrl) - 1] = '\0';
-        saveSettings();
-    }
+    Serial.printf("Settings saved. Webhook: %s\n", webhookUrl);
 }
 
 void connectWiFi() {
     showConnectingScreen();
     WiFiManager wm;
     wm.setConfigPortalTimeout(180);
-    customServerUrl.setValue(serverUrl, 120);
-    wm.addParameter(&customServerUrl);
-    wm.setSaveParamsCallback(saveParamCallback);
     
-    if (wm.autoConnect("PTV-TRMNL-Setup")) {
+    if (wm.autoConnect("PTV-TRMNL-Setup", "transport123")) {
         wifiConnected = true;
         Serial.printf("Connected: %s\n", WiFi.localIP().toString().c_str());
-        if (strlen(serverUrl) > 0) { 
-            showConfiguredScreen(); 
-            delay(2000); 
-        }
     } else {
         wifiConnected = false;
         Serial.println("WiFi connection failed");
     }
 }
 
+void initDisplay() {
+    bbep.initIO(EPD_DC_PIN, EPD_RST_PIN, EPD_BUSY_PIN, EPD_CS_PIN, EPD_MOSI_PIN, EPD_SCK_PIN, 8000000);
+    bbep.setPanelType(EP75_800x480);
+    bbep.setRotation(0);
+    bbep.allocBuffer(false);
+    pinMode(PIN_INTERRUPT, INPUT_PULLUP);
+}
+
+void initZoneBuffers() {
+    for (int i = 0; i < MAX_ZONES; i++) {
+        zoneDataBuffers[i] = (char*)malloc(ZONE_DATA_MAX_LEN);
+        zones[i].data = nullptr;
+        zones[i].id[0] = '\0';
+    }
+}
+
+unsigned long getBackoffDelay() {
+    int capped = min(consecutiveErrors, MAX_BACKOFF_ERRORS);
+    return (1UL << capped) * 1000UL;
+}
+
 bool fetchZoneUpdates(bool forceAll) {
-    if (strlen(serverUrl) == 0) return false;
+    if (strlen(webhookUrl) == 0) return false;
     
-    WiFiClientSecure* client = new WiFiClientSecure(); 
+    WiFiClientSecure* client = new WiFiClientSecure();
     client->setInsecure();
     HTTPClient http;
     
-    String url = String(serverUrl);
-    // Ensure clean URL construction
-    if (!url.endsWith("/")) url += "/";
-    url += "api/zones?batch=0";
+    // Extract base URL from webhook URL for zones API
+    String baseUrl = String(webhookUrl);
+    int apiIndex = baseUrl.indexOf("/api/device/");
+    if (apiIndex > 0) {
+        baseUrl = baseUrl.substring(0, apiIndex);
+    }
+    
+    String url = baseUrl + "/api/zones?batch=0";
     if (forceAll) url += "&force=true";
     
     Serial.printf("Fetch: %s\n", url.c_str());
     http.setTimeout(30000);
     
-    if (!http.begin(*client, url)) { 
-        Serial.println("HTTP begin failed");
-        delete client; 
-        return false; 
-    }
-    
-    http.addHeader("User-Agent", "PTV-TRMNL/" FIRMWARE_VERSION);
-    int code = http.GET();
-    
-    if (code != 200) { 
-        Serial.printf("HTTP error: %d\n", code);
-        http.end(); 
-        delete client; 
-        return false; 
-    }
-    
-    Serial.printf("Heap before getString: %d\n", ESP.getFreeHeap()); String payload = http.getString(); Serial.printf("Heap after getString: %d, payload len: %d\n", ESP.getFreeHeap(), payload.length()); 
-    http.end(); 
-    delete client;
-    
-    // Parse JSON
-    JsonDocument doc;
-    Serial.printf("Heap before JSON parse: %d\n", ESP.getFreeHeap()); DeserializationError err = deserializeJson(doc, payload); Serial.printf("Heap after JSON parse: %d\n", ESP.getFreeHeap());
-    if (err) {
-        Serial.printf("JSON error: %s\n", err.c_str());
+    if (!http.begin(*client, url)) {
+        delete client;
         return false;
     }
     
-    // Process zones with persistent storage
+    http.addHeader("User-Agent", "CommuteCompute/" FIRMWARE_VERSION);
+    int code = http.GET();
+    
+    if (code != 200) {
+        http.end();
+        delete client;
+        return false;
+    }
+    
+    String payload = http.getString();
+    http.end();
+    delete client;
+    
+    JsonDocument doc;
+    if (deserializeJson(doc, payload)) {
+        return false;
+    }
+    
     zoneCount = 0;
     JsonArray zonesArr = doc["zones"].as<JsonArray>();
     
@@ -493,11 +445,8 @@ bool fetchZoneUpdates(bool forceAll) {
         if (zoneCount >= MAX_ZONES) break;
         
         Zone& zone = zones[zoneCount];
-        
-        // Copy ID to persistent buffer
         const char* id = z["id"] | "unknown";
         strncpy(zone.id, id, ZONE_ID_MAX_LEN - 1);
-        zone.id[ZONE_ID_MAX_LEN - 1] = '\0';
         
         zone.x = z["x"] | 0;
         zone.y = z["y"] | 0;
@@ -505,7 +454,6 @@ bool fetchZoneUpdates(bool forceAll) {
         zone.h = z["h"] | 0;
         zone.changed = z["changed"] | false;
         
-        // Copy data to persistent buffer
         const char* data = z["data"] | (const char*)nullptr;
         if (data && zoneDataBuffers[zoneCount]) {
             size_t dataLen = strlen(data);
@@ -514,7 +462,6 @@ bool fetchZoneUpdates(bool forceAll) {
                 zone.data = zoneDataBuffers[zoneCount];
                 zone.dataLen = dataLen;
             } else {
-                Serial.printf("Zone %s data too large: %zu\n", zone.id, dataLen);
                 zone.data = nullptr;
             }
         } else {
@@ -524,7 +471,6 @@ bool fetchZoneUpdates(bool forceAll) {
         zoneCount++;
     }
     
-    Serial.printf("Parsed %d zones\n", zoneCount);
     return true;
 }
 
@@ -534,41 +480,26 @@ bool decodeAndDrawZone(Zone& zone) {
     size_t len = strlen(zone.data);
     size_t dec = decode_base64_length((unsigned char*)zone.data, len);
     
-    if (dec > ZONE_BMP_MAX_SIZE) {
-        Serial.printf("Zone %s BMP too large: %zu\n", zone.id, dec);
-        return false;
-    }
+    if (dec > ZONE_BMP_MAX_SIZE) return false;
     
     decode_base64((unsigned char*)zone.data, len, zoneBmpBuffer);
     
-    // Validate BMP header
-    if (zoneBmpBuffer[0] != 'B' || zoneBmpBuffer[1] != 'M') {
-        Serial.printf("Zone %s invalid BMP header\n", zone.id);
-        return false;
-    }
+    if (zoneBmpBuffer[0] != 'B' || zoneBmpBuffer[1] != 'M') return false;
     
     int result = bbep.loadBMP(zoneBmpBuffer, zone.x, zone.y, BBEP_BLACK, BBEP_WHITE);
-    if (result != BBEP_SUCCESS) {
-        Serial.printf("Zone %s loadBMP failed: %d\n", zone.id, result);
-        return false;
-    }
-    
-    return true;
+    return result == BBEP_SUCCESS;
 }
 
-void doFullRefresh() { 
-    bbep.refresh(REFRESH_FULL, true); 
+void doFullRefresh() {
+    bbep.refresh(REFRESH_FULL, true);
 }
 
 void flashAndRefreshZone(Zone& zone) {
-    // Flash zone to black
     bbep.fillRect(zone.x, zone.y, zone.w, zone.h, BBEP_BLACK);
-    bbep.refresh(REFRESH_PARTIAL, true); 
-    delay(150);  // Increased from 50ms for better e-paper settling
+    bbep.refresh(REFRESH_PARTIAL, true);
+    delay(150);
     
-    // Draw new content
     if (!decodeAndDrawZone(zone)) {
-        // On failure, clear to white
         bbep.fillRect(zone.x, zone.y, zone.w, zone.h, BBEP_WHITE);
     }
     

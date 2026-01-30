@@ -24,6 +24,7 @@
 #include "soc/rtc_cntl_reg.h"
 #include "esp_task_wdt.h"
 #include "../include/config.h"
+#include "../include/cc-logo-draw.h"
 
 // ============================================================================
 // CONFIGURATION
@@ -226,7 +227,7 @@ void loop() {
             feedWatchdog();
             
             // Attempt connection (non-blocking with timeout)
-            if (wm.autoConnect("PTV-TRMNL-Setup", "transport123")) {
+            if (wm.autoConnect("CommuteCompute-Setup", "transport123")) {
                 wifiConnected = true;
                 Serial.printf("✓ WiFi connected: %s\n", WiFi.localIP().toString().c_str());
                 showConfiguredScreen();
@@ -402,42 +403,37 @@ void initDisplay() {
 
 void showWelcomeScreen() {
     bbep.fillScreen(BBEP_WHITE);
-    
-    // Black header bar
-    bbep.fillRect(0, 0, 800, 60, BBEP_BLACK);
     bbep.setFont(FONT_8x8);
-    bbep.setTextColor(BBEP_WHITE, BBEP_BLACK);
-    bbep.setCursor(200, 15);
-    bbep.print("PTV-TRMNL SMART TRANSIT DISPLAY");
-    bbep.setCursor(380, 35);
+    
+    // Draw CC logo centered at top
+    drawCCLogoCentered(30, 800);
+    
+    // Title below logo
+    bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
+    bbep.setCursor(280, 185);
+    bbep.print("SMART TRANSIT DISPLAY");
+    bbep.setCursor(350, 205);
     bbep.printf("v%s", FIRMWARE_VERSION);
     
     // Setup box
-    bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
-    bbep.drawRect(100, 80, 600, 280, BBEP_BLACK);
-    bbep.drawRect(101, 81, 598, 278, BBEP_BLACK); // Double line effect
+    bbep.drawRect(100, 230, 600, 180, BBEP_BLACK);
+    bbep.drawRect(101, 231, 598, 178, BBEP_BLACK);
     
     // Title
-    bbep.setCursor(300, 100);
+    bbep.setCursor(300, 245);
     bbep.print("FIRST TIME SETUP");
     
     // Instructions
-    bbep.setCursor(120, 140);
-    bbep.print("1. Connect to WiFi: PTV-TRMNL-Setup");
-    bbep.setCursor(120, 165);
+    bbep.setCursor(120, 275);
+    bbep.print("1. Connect to WiFi: CommuteCompute-Setup");
+    bbep.setCursor(120, 295);
     bbep.print("   Password: transport123");
-    
-    bbep.setCursor(120, 200);
+    bbep.setCursor(120, 320);
     bbep.print("2. Open browser: 192.168.4.1");
-    
-    bbep.setCursor(120, 235);
+    bbep.setCursor(120, 345);
     bbep.print("3. Select your WiFi and enter password");
-    
-    bbep.setCursor(120, 270);
-    bbep.print("4. Server: einkptdashboard.vercel.app");
-    
-    bbep.setCursor(120, 305);
-    bbep.print("5. Save and wait for dashboard");
+    bbep.setCursor(120, 370);
+    bbep.print("4. Save and wait for dashboard");
     
     // Footer
     bbep.setCursor(220, 450);
@@ -449,49 +445,40 @@ void showWelcomeScreen() {
 
 void showWiFiSetupScreen() {
     bbep.fillScreen(BBEP_WHITE);
-    
-    // Black header bar
-    bbep.fillRect(0, 0, 800, 60, BBEP_BLACK);
     bbep.setFont(FONT_8x8);
-    bbep.setTextColor(BBEP_WHITE, BBEP_BLACK);
-    bbep.setCursor(200, 15);
-    bbep.print("PTV-TRMNL SMART TRANSIT DISPLAY");
-    bbep.setCursor(330, 35);
+    
+    // Draw CC logo centered at top
+    drawCCLogoCentered(20, 800);
+    
+    // Title
+    bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
+    bbep.setCursor(300, 170);
     bbep.print("WiFi Setup Mode");
     
-    // WiFi Configuration title
-    bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
-    bbep.setCursor(300, 90);
-    bbep.print("WiFi CONFIGURATION");
-    
     // AP info box
-    bbep.drawRect(200, 120, 400, 100, BBEP_BLACK);
-    bbep.drawRect(201, 121, 398, 98, BBEP_BLACK);
+    bbep.drawRect(200, 195, 400, 80, BBEP_BLACK);
+    bbep.drawRect(201, 196, 398, 78, BBEP_BLACK);
     
-    bbep.setCursor(270, 140);
+    bbep.setCursor(250, 215);
     bbep.print("Connect to this network:");
-    
-    bbep.setCursor(290, 170);
-    bbep.print("PTV-TRMNL-Setup");
-    
-    bbep.setCursor(270, 195);
+    bbep.setCursor(265, 240);
+    bbep.print("CommuteCompute-Setup");
+    bbep.setCursor(250, 260);
     bbep.print("Password: transport123");
     
     // Browser instructions
-    bbep.setCursor(200, 250);
+    bbep.setCursor(200, 300);
     bbep.print("Then open your browser to:");
-    bbep.setCursor(200, 275);
+    bbep.setCursor(250, 325);
     bbep.print("http://192.168.4.1");
     
     // Bullet points
-    bbep.setCursor(200, 320);
+    bbep.setCursor(200, 365);
     bbep.print("* Select your home WiFi network");
-    bbep.setCursor(200, 345);
+    bbep.setCursor(200, 385);
     bbep.print("* Enter your WiFi password");
-    bbep.setCursor(200, 370);
-    bbep.print("* Server URL: einkptdashboard.vercel.app");
-    bbep.setCursor(200, 395);
-    bbep.print("* Click Save and wait for dashboard");
+    bbep.setCursor(200, 405);
+    bbep.print("* Click Save and wait");
     
     // Footer
     bbep.setCursor(220, 450);
@@ -513,7 +500,7 @@ void showConfiguredScreen() {
     bbep.setFont(FONT_8x8);
     bbep.setTextColor(BBEP_WHITE, BBEP_BLACK);
     bbep.setCursor(200, 15);
-    bbep.print("PTV-TRMNL SMART TRANSIT DISPLAY");
+    bbep.print("COMMUTE COMPUTE");
     bbep.setCursor(300, 35);
     bbep.printf("v%s - Setup Complete", FIRMWARE_VERSION);
     
@@ -557,48 +544,38 @@ void showConfiguredScreen() {
 
 void showSetupRequiredScreen() {
     bbep.fillScreen(BBEP_WHITE);
-    
-    // Black header bar
-    bbep.fillRect(0, 0, 800, 60, BBEP_BLACK);
     bbep.setFont(FONT_8x8);
-    bbep.setTextColor(BBEP_WHITE, BBEP_BLACK);
-    bbep.setCursor(200, 15);
-    bbep.print("PTV-TRMNL SMART TRANSIT DISPLAY");
-    bbep.setCursor(300, 35);
-    bbep.print("Journey Setup Required");
+    
+    // Draw CC logo centered at top
+    drawCCLogoCentered(20, 800);
     
     // Title
     bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
-    bbep.setCursor(280, 90);
-    bbep.print("COMPLETE WEB SETUP");
+    bbep.setCursor(280, 170);
+    bbep.print("Journey Setup Required");
     
-    // URL box (centered)
-    bbep.drawRect(200, 120, 400, 80, BBEP_BLACK);
-    bbep.drawRect(201, 121, 398, 78, BBEP_BLACK);
+    // URL box
+    bbep.drawRect(200, 195, 400, 60, BBEP_BLACK);
+    bbep.drawRect(201, 196, 398, 58, BBEP_BLACK);
     
-    bbep.setCursor(250, 145);
+    bbep.setCursor(250, 215);
     bbep.print("Open in your browser:");
-    
-    bbep.setCursor(220, 175);
+    bbep.setCursor(210, 235);
     bbep.print("einkptdashboard.vercel.app");
     
     // Instructions
-    bbep.setCursor(150, 230);
-    bbep.print("Your device is connected to WiFi but needs");
-    bbep.setCursor(150, 255);
-    bbep.print("journey configuration.");
+    bbep.setCursor(150, 280);
+    bbep.print("Your device is connected but needs setup.");
     
     // Bullet points
-    bbep.setCursor(150, 300);
-    bbep.print("* Click 'Setup Wizard' on the website");
-    bbep.setCursor(150, 325);
-    bbep.print("* Enter your Home address");
-    bbep.setCursor(150, 350);
-    bbep.print("* Enter your Work address");
-    bbep.setCursor(150, 375);
+    bbep.setCursor(150, 320);
+    bbep.print("* Go to Setup Wizard on the website");
+    bbep.setCursor(150, 345);
+    bbep.print("* Enter your Home and Work addresses");
+    bbep.setCursor(150, 370);
     bbep.print("* Configure your transit route");
-    bbep.setCursor(150, 400);
-    bbep.print("* Save - dashboard will appear automatically");
+    bbep.setCursor(150, 395);
+    bbep.print("* Dashboard will appear automatically");
     
     // Footer
     bbep.setCursor(220, 450);
