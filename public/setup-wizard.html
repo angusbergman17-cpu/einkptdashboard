@@ -1025,6 +1025,14 @@
                     
                     let webhookHtml = '';
                     if (webhookResult.success) {
+                        // Store config in localStorage for admin page to read
+                        localStorage.setItem('ptv-trmnl-config', JSON.stringify(fullConfig));
+                        localStorage.setItem('ptv-trmnl-webhook-url', webhookResult.webhookUrl);
+                        localStorage.setItem('ptv-trmnl-configured', 'true');
+                        
+                        // Extract token from webhook URL for passing to admin
+                        const webhookToken = webhookResult.webhookUrl.split('/api/device/')[1] || '';
+                        
                         webhookHtml = `
                             <div style="margin-top: 20px; padding: 15px; background: rgba(99, 102, 241, 0.1); border-radius: 8px; border: 1px solid rgba(99, 102, 241, 0.3);">
                                 <h4 style="color: #6366f1; margin-bottom: 10px;">📱 Your TRMNL Webhook URL:</h4>
@@ -1046,7 +1054,7 @@
                             <h3 style="color: #22c55e; margin-bottom: 10px;">✅ Setup Complete!</h3>
                             <p style="color: #86efac;">Your intelligent transit display is ready.</p>
                             ${webhookHtml}
-                            <button type="button" class="btn" onclick="window.location.href='/admin'" style="margin-top: 15px;">Go to Dashboard →</button>
+                            <button type="button" class="btn" onclick="window.location.href='/admin.html'" style="margin-top: 15px;">Go to Dashboard →</button>
                         </div>
                     `;
                 } else {

@@ -4493,72 +4493,106 @@
         }
 
         async function loadSavedPreferences() {
-            try {
-                // Load from server preferences
-                const response = await fetch(BASE_URL + '/admin/preferences');
-                if (response.ok) {
-                    const data = await response.json();
-                    const prefs = data.preferences || data;
-
-                    // Load addresses
-                    if (prefs.addresses) {
-                        if (document.getElementById('home-address')) {
-                            document.getElementById('home-address').value = prefs.addresses.home || '';
-                        }
-                        if (document.getElementById('cafe-address')) {
-                            document.getElementById('cafe-address').value = prefs.addresses.cafe || '';
-                        }
-                        if (document.getElementById('cafe-name')) {
-                            document.getElementById('cafe-name').value = prefs.addresses.cafeName || '';
-                        }
-                        if (document.getElementById('work-address')) {
-                            document.getElementById('work-address').value = prefs.addresses.work || '';
-                        }
-                    }
-
-                    // Load journey preferences
-                    if (prefs.journey) {
-                        if (document.getElementById('arrival-time')) {
-                            document.getElementById('arrival-time').value = prefs.journey.arrivalTime || '09:00';
-                        }
-
-                        // Load transit route if configured
-                        if (prefs.journey.transitRoute?.mode1) {
-                            if (document.getElementById('mode1-type')) {
-                                document.getElementById('mode1-type').value = prefs.journey.transitRoute.mode1.type || 0;
-                            }
-                            if (document.getElementById('mode1-origin')) {
-                                document.getElementById('mode1-origin').value = prefs.journey.transitRoute.mode1.originStation?.name || '';
-                            }
-                            if (document.getElementById('mode1-destination')) {
-                                document.getElementById('mode1-destination').value = prefs.journey.transitRoute.mode1.destinationStation?.name || '';
-                            }
-                        }
-                    }
-
-                    // Load API credentials
-                    if (prefs.api) {
-                        if (document.getElementById('ptv-dev-id')) {
-                            document.getElementById('ptv-dev-id').value = prefs.api.key || '';
-                        }
-                        if (document.getElementById('ptv-api-key')) {
-                            document.getElementById('ptv-api-key').value = prefs.api.token || '';
-                        }
-                    }
-
-                    console.log('✅ Preferences loaded from server');
+            let prefs = null;
+            let source = 'none';
+            
+            // First try localStorage (for Vercel serverless mode)
+            const localConfig = localStorage.getItem('ptv-trmnl-config');
+            if (localConfig) {
+                try {
+                    prefs = JSON.parse(localConfig);
+                    source = 'localStorage';
+                    console.log('✅ Preferences loaded from localStorage (serverless mode)');
+                } catch (e) {
+                    console.warn('Failed to parse localStorage config:', e);
                 }
-            } catch (error) {
-                console.error('Failed to load preferences from server:', error);
+            }
+            
+            // If no localStorage, try server (for self-hosted mode)
+            if (!prefs) {
+                try {
+                    const response = await fetch(BASE_URL + '/api/admin/preferences');
+                    if (response.ok) {
+                        const data = await response.json();
+                        prefs = data.preferences || data;
+                        source = 'server';
+                        console.log('✅ Preferences loaded from server');
+                    }
+                } catch (error) {
+                    console.warn('Server preferences not available (expected on Vercel):', error.message);
+                }
+            }
+            
+            // Apply preferences to form fields
+            if (prefs) {
+                // Load addresses
+                if (prefs.addresses) {
+                    if (document.getElementById('home-address')) {
+                        document.getElementById('home-address').value = prefs.addresses.home || '';
+                    }
+                    if (document.getElementById('cafe-address')) {
+                        document.getElementById('cafe-address').value = prefs.addresses.cafe || '';
+                    }
+                    if (document.getElementById('cafe-name')) {
+                        document.getElementById('cafe-name').value = prefs.addresses.cafeName || '';
+                    }
+                    if (document.getElementById('work-address')) {
+                        document.getElementById('work-address').value = prefs.addresses.work || '';
+                    }
+                }
 
-                // Fallback to localStorage
-                const saved = localStorage.getItem('ptv-journey-prefs');
-                if (saved) {
-                    const p = JSON.parse(saved);
-                    if (document.getElementById('home-address')) document.getElementById('home-address').value = p.homeAddress || '';
-                    if (document.getElementById('work-address')) document.getElementById('work-address').value = p.workAddress || '';
-                    if (document.getElementById('cafe-address')) document.getElementById('cafe-address').value = p.cafeAddress || '';
-                    if (document.getElementById('arrival-time')) document.getElementById('arrival-time').value = p.arrivalTime || '09:00';
+                // Load journey preferences
+                if (prefs.journey) {
+                    if (document.getElementById('arrival-time')) {
+                        document.getElementById('arrival-time').value = prefs.journey.arrivalTime || '09:00';
+                    }
+
+                    // Load transit route if configured
+                    if (prefs.journey.transitRoute?.mode1) {
+                        if (document.getElementById('mode1-type')) {
+                            document.getElementById('mode1-type').value = prefs.journey.transitRoute.mode1.type || 0;
+                        }
+                        if (document.getElementById('mode1-origin')) {
+                            document.getElementById('mode1-origin').value = prefs.journey.transitRoute.mode1.originStation?.name || '';
+                        }
+                        if (document.getElementById('mode1-destination')) {
+                            document.getElementById('mode1-destination').value = prefs.journey.transitRoute.mode1.destinationStation?.name || '';
+                        }
+                    }
+                }
+
+                // Load API credentials
+                if (prefs.api) {
+                    if (document.getElementById('ptv-dev-id')) {
+                        document.getElementById('ptv-dev-id').value = prefs.api.key || '';
+                    }
+                    if (document.getElementById('ptv-api-key')) {
+                        document.getElementById('ptv-api-key').value = prefs.api.token || '';
+                    }
+                }
+                
+                // Update config summary display
+                updateConfigSummary(prefs);
+            } else {
+                console.log('ℹ️ No preferences found - complete setup wizard first');
+            }
+        }
+        
+        function updateConfigSummary(prefs) {
+            const summaryEl = document.getElementById('config-summary');
+            if (summaryEl && prefs) {
+                const parts = [];
+                if (prefs.addresses?.home) parts.push(`🏠 ${prefs.addresses.home}`);
+                if (prefs.addresses?.work) parts.push(`💼 ${prefs.addresses.work}`);
+                if (prefs.addresses?.cafe) parts.push(`☕ ${prefs.addresses.cafe}`);
+                if (prefs.journey?.arrivalTime) parts.push(`⏰ Arrive by ${prefs.journey.arrivalTime}`);
+                if (prefs.state) parts.push(`📍 ${prefs.state}`);
+                if (prefs.apiMode) parts.push(`☁️ ${prefs.apiMode === 'cached' ? 'Free Mode' : 'Live Mode'}`);
+                
+                if (parts.length > 0) {
+                    summaryEl.innerHTML = parts.join(' • ');
+                } else {
+                    summaryEl.innerHTML = 'No configuration yet. <a href="/setup-wizard.html" style="color: #6366f1;">Complete setup →</a>';
                 }
             }
         }
