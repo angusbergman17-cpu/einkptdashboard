@@ -2,85 +2,75 @@
 
 ## Complete Project Overview
 
-**Version:** 1.0  
+**Version:** 1.1  
 **Date:** January 2026  
 **Author:** Angus Bergman  
-**License:** CC BY-NC 4.0 (Creative Commons Attribution-NonCommercial)
+**License:** CC BY-NC 4.0
 
 ---
 
 # Executive Summary
 
-**Commute Compute System™** is a fully self-hosted smart transit display for Australian public transport. It delivers real-time journey information to e-ink displays, answering the daily commuter questions: "When should I leave?", "Is my train delayed?", "Do I have time for coffee?", and "Should I bring an umbrella?"
+I built **Commute Compute System™** as a fully self-hosted smart transit display for Australian public transport. It delivers real-time journey information to e-ink displays, answering the daily questions every commuter faces: "When should I leave?", "Is my train delayed?", "Do I have time for coffee?", and "Should I bring an umbrella?"
 
-The system is completely free to deploy, requires zero ongoing costs, respects user privacy by keeping all data on the user's own server, and works across Victoria, New South Wales, and Queensland transit systems.
+I designed the system to be completely free to deploy, require zero ongoing costs, and respect user privacy by keeping all data on the user's own server.
 
 ---
 
 # Part 1: Project Scale
 
-## Repository Statistics
+## What I Built
 
 | Metric | Value |
 |--------|-------|
 | **Total Source Files** | 176 |
 | **Total Lines of Code** | 76,445 |
 
-## Code Breakdown by Language
+## Code Breakdown
 
-| Language | Lines | Purpose |
-|----------|-------|---------|
-| **JavaScript** | 31,243 | Server, API, rendering engine |
+| Language | Lines | What I Used It For |
+|----------|-------|-------------------|
+| **JavaScript** | 31,243 | Server, API endpoints, rendering engine |
 | **HTML** | 18,165 | Admin panel, setup wizard, simulators |
-| **Markdown** | 23,960 | Documentation (21 documents) |
-| **C++ (Firmware)** | 3,077 | Custom ESP32-C3 firmware |
+| **Markdown** | 23,960 | 21 documentation files |
+| **C++** | 3,077 | Custom ESP32-C3 firmware |
 
-## Documentation Scale
+## Key Components I Created
 
-| Document | Lines | Purpose |
-|----------|-------|---------|
-| DEVELOPMENT-RULES.md | 1,836 | 21 sections, 67 subsections of rules |
-| ARCHITECTURE.md | 1,200+ | System architecture (v4.0) |
-| DASHBOARD-SPEC-V10.md | 800+ | Locked visual specification |
-| SETUP-WIZARD-ARCHITECTURE.md | 900+ | Setup system documentation |
-| + 17 additional docs | 20,000+ | Various technical documentation |
-
-## Component Count
-
-| Component Type | Count |
-|----------------|-------|
+| Component | Count |
+|-----------|-------|
 | API Endpoints | 18 |
 | Service Modules | 15 |
 | Renderer Versions | 6 |
 | HTML Pages | 9 |
-| Firmware Variants | 4 planned |
+| Firmware Variants | 4 |
 
 ---
 
 # Part 2: Vision & Goals
 
-## The Problem
+## The Problem I Wanted to Solve
 
-Every morning, commuters face uncertainty:
+Every morning, I faced the same uncertainty:
 
-- **"When should I leave?"** — Depends on real-time transit delays
-- **"Is my train delayed?"** — Need to check multiple apps
-- **"Do I have time for coffee?"** — Mental math every day
-- **"Should I bring an umbrella?"** — Another app to check
+- "When should I leave?" — Depends on real-time delays
+- "Is my train delayed?" — Had to check multiple apps
+- "Do I have time for coffee?" — Mental math every day
+- "Should I bring an umbrella?" — Another app to check
 
-**Commute Compute solves all of these with a single glance at an e-ink display.**
+I wanted a single glance at an e-ink display to answer all of these.
 
-## Core Principles
+## Core Principles I Followed
 
-| Principle | Implementation |
-|-----------|----------------|
-| **Privacy First** | All data stays on user's own server. No tracking, no analytics, no central database. |
-| **Truly Free** | Runs entirely on Vercel free tier. Zero ongoing costs. |
-| **Zero Dependencies** | Custom firmware connects only to user's server — never to any cloud service. |
-| **Australian Focus** | Purpose-built for Australian transit: VIC, NSW, QLD with more states planned. |
-| **Open Source** | All code freely available under CC BY-NC 4.0. |
+| Principle | How I Implemented It |
+|-----------|---------------------|
+| **Privacy First** | All data stays on user's own server |
+| **Truly Free** | Runs entirely on Vercel free tier |
+| **Zero Dependencies** | Custom firmware connects only to user's server |
+| **Australian Focus** | Built for VIC, NSW, QLD transit systems |
+| **Open Source** | All code freely available |
 
-## Brand Architecture
+## Brands I Created
 
 | Brand | Purpose |
 |-------|---------|
@@ -90,231 +80,231 @@ Every morning, commuters face uncertainty:
 | **CC LiveDash™** | Multi-device live renderer |
 | **CCFirm™** | Custom firmware family |
 
-All trademarks © 2026 Angus Bergman.
-
 ---
 
-# Part 3: Technical Challenges & Solutions
+# Part 3: Technical Challenges I Solved
 
 ## Challenge 1: E-ink Display Constraints
 
-### The Problem
-E-ink displays have severe limitations compared to regular screens:
-- **1-bit color only** — Pure black and white, no grayscale
-- **Slow refresh** — 2-3 seconds for full refresh
-- **Ghosting** — Previous images leave artifacts
-- **No anti-aliasing** — Fonts must be pixel-perfect
+### The Problem I Faced
 
-### The Solution
-- **Server-side rendering** — All computation on server, device just displays images
-- **Zone-based partial refresh** — Only update changed areas (500ms vs 3s)
-- **1-bit BMP format** — Custom renderer outputs pure black/white
-- **Pixel-perfect fonts** — Inter font family, carefully sized
+E-ink displays have severe limitations:
 
-### Implementation
+- 1-bit color only (pure black and white)
+- Slow refresh (2-3 seconds full refresh)
+- Ghosting from previous images
+- No anti-aliasing possible
+
+### How I Solved It
+
+I implemented **server-side rendering** with **zone-based partial refresh**:
+
 ```
-Zone Layout (800×480 display):
-┌─────────────────────────────────┐
-│ HEADER (0-94px)                 │ ← Updates: time, weather
-├─────────────────────────────────┤
-│ SUMMARY (96-124px)              │ ← Updates: status changes
-├─────────────────────────────────┤
-│ JOURNEY LEGS (132-448px)        │ ← Updates: delays, changes
-├─────────────────────────────────┤
-│ FOOTER (448-480px)              │ ← Rarely updates
-└─────────────────────────────────┘
+My Zone Layout (800x480 display):
 
-Each zone refreshes independently → 20-second cycle
++----------------------------------+
+| HEADER (0-94px)                  |  <- Updates for time/weather
++----------------------------------+
+| SUMMARY (96-124px)               |  <- Updates for status
++----------------------------------+
+| JOURNEY LEGS (132-448px)         |  <- Updates for delays
++----------------------------------+
+| FOOTER (448-480px)               |  <- Rarely updates
++----------------------------------+
+
+Each zone refreshes independently.
+Full cycle: 20 seconds.
+Partial refresh: ~500ms per zone.
 ```
 
 ---
 
 ## Challenge 2: ESP32-C3 Memory Constraints
 
-### The Problem
-The TRMNL device uses an ESP32-C3 microcontroller with severe limitations:
-- **Only 400KB RAM** — Cannot buffer full 800×480 image
-- **No PSRAM** — No external memory available
-- **Single core** — Cannot run parallel tasks
-- **Easy to brick** — Wrong code = unusable device
+### The Problem I Faced
 
-### The Solution
-- **Zone batching** — Fetch and render one zone at a time
-- **Streaming architecture** — Process data as it arrives
-- **State machine pattern** — Non-blocking code flow
-- **Anti-brick rules** — 12 mandatory firmware safety rules
+The TRMNL device uses an ESP32-C3 with severe limitations:
 
-### Anti-Brick Rules (Critical)
-```cpp
-// ❌ FORBIDDEN - Causes device brick
-void setup() {
-    deepSleep(1000000);      // BRICK - can't reflash
-    delay(30000);            // BRICK - too long
-    WiFi.begin();            // BRICK - blocking in setup
-    http.GET();              // BRICK - network in setup
-}
+- Only 400KB RAM total
+- No external PSRAM
+- Single core processor
+- Very easy to brick with wrong code
 
-// ✅ REQUIRED - Safe pattern
-void setup() {
-    Serial.begin(115200);    // Quick, non-blocking
-    initDisplay();           // < 5 seconds total
-    state = STATE_WIFI;      // Defer to loop()
-}
+### How I Solved It
 
-void loop() {
-    switch(state) {          // State machine
-        case STATE_WIFI: ...
-        case STATE_FETCH: ...
-        case STATE_RENDER: ...
-    }
-}
+I developed a **zone batching** approach and **12 anti-brick rules**:
+
 ```
+FORBIDDEN (causes brick):
+  - deepSleep() in setup()
+  - Network calls in setup()
+  - Delays longer than 2 seconds
+  - Watchdog timer enabled
+
+REQUIRED (safe pattern):
+  - setup() completes in <5 seconds
+  - State machine in loop()
+  - Non-blocking operations only
+  - Brownout detection disabled
+```
+
+I documented all 12 rules in DEVELOPMENT-RULES.md Appendix D.
 
 ---
 
 ## Challenge 3: Zero-Config Serverless Deployment
 
-### The Problem
-- Users should **never** edit environment variables
-- Vercel serverless has **no persistent storage**
-- Each request is stateless — no shared memory
-- API keys must be secure but accessible
+### The Problem I Faced
 
-### The Solution
-**Config Token Architecture** — All configuration encoded in URL
+- Users should never edit environment variables
+- Vercel serverless has no persistent storage
+- Each request is completely stateless
+- API keys need to be secure but accessible
+
+### How I Solved It
+
+I created a **Config Token Architecture** where all configuration is encoded in the URL:
 
 ```
-Setup Time:                      Runtime:
-┌─────────────┐                  ┌─────────────────────────────────┐
-│ Setup Wizard│                  │ Device fetches:                 │
-│ - Addresses │ → Encode →       │ /api/device/eyJhIjp7Imhv...     │
-│ - API keys  │   to URL         │                                 │
-│ - Preferences│                 │ Server decodes token from URL   │
-└─────────────┘                  │ All config available instantly  │
-                                 └─────────────────────────────────┘
+SETUP TIME:
+  User enters data in Setup Wizard
+            |
+            v
+  All config encoded to base64 token
+            |
+            v
+  Token becomes part of device URL
+
+RUNTIME:
+  Device requests: /api/device/eyJhIjp7...
+            |
+            v
+  Server decodes token from URL
+            |
+            v
+  All config available instantly
+            |
+            v
+  No storage needed!
 ```
 
-### Token Structure
-```javascript
+Token structure I designed:
+
+```
 {
-  "a": { "home": "1 Clara St...", "work": "80 Collins St..." },
-  "l": { "home": { "lat": -37.84, "lng": 144.99 }, ... },
-  "s": "VIC",           // State
-  "t": "09:00",         // Arrival time
-  "c": true,            // Coffee enabled
-  "k": "api-key...",    // Transit API key
-  "cf": { ... },        // Cached cafe data
-  "m": "cached"         // API mode
+  "a": addresses,
+  "l": lat/lng locations (cached),
+  "s": state (VIC/NSW/QLD),
+  "t": arrival time,
+  "c": coffee enabled,
+  "k": transit API key,
+  "cf": cached cafe data,
+  "m": API mode
 }
 ```
-
-**Result:** Zero server-side storage, works perfectly on Vercel free tier.
 
 ---
 
 ## Challenge 4: Free-Tier Architecture
 
-### The Problem
-- Google Places API costs money (~$0.02/call)
-- Users shouldn't need paid APIs
-- But address autocomplete improves UX significantly
+### The Problem I Faced
 
-### The Solution
-**Setup-time caching + Free fallbacks**
+- Google Places API costs ~$0.02 per call
+- I didn't want users to need paid APIs
+- But address autocomplete significantly improves UX
 
-| Data | When Fetched | Cost |
-|------|--------------|------|
-| Address geocoding | Setup (once) | Free (OSM) or paid (Google) |
-| Cafe business hours | Setup (once) | Free (default) or paid (Google) |
-| Transit data | Runtime | Always free |
-| Weather | Runtime | Always free |
+### How I Solved It
+
+I implemented **setup-time caching** with **free fallbacks**:
 
 ```
-Free Mode (default):           Live Mode (optional):
-┌─────────────────────┐        ┌─────────────────────┐
-│ • OSM geocoding     │        │ • Google geocoding  │
-│ • Default cafe hours│        │ • Real cafe hours   │
-│ • All cached at     │        │ • Runtime API calls │
-│   setup time        │        │ • Costs ~$0.02/call │
-│ • $0 runtime cost   │        │                     │
-└─────────────────────┘        └─────────────────────┘
+FREE MODE (default):
+  - OSM Nominatim for geocoding (free)
+  - Default cafe hours (free)
+  - All data cached at setup time
+  - $0 runtime cost
+
+LIVE MODE (optional):
+  - Google Places for geocoding
+  - Real cafe business hours
+  - Only for users who want it
 ```
 
 ---
 
-## Challenge 5: Multi-State Transit API Integration
+## Challenge 5: Multi-State Transit APIs
 
-### The Problem
-- Each Australian state has different transit APIs
+### The Problem I Faced
+
+Each Australian state has different transit APIs:
+
 - Different authentication methods
 - Different data formats
 - Different rate limits
 
-### The Solution
-**SmartCommute™ Engine** — Unified abstraction layer
+### How I Solved It
 
-| State | Authority | API Type | Auth Method |
-|-------|-----------|----------|-------------|
-| VIC | Transport Victoria | GTFS-RT | KeyId header (UUID) |
-| NSW | Transport for NSW | GTFS-RT | Authorization header |
-| QLD | TransLink | GTFS-RT | X-API-Key header |
+I built the **SmartCommute™ Engine** as a unified abstraction:
 
-```javascript
-// Unified interface regardless of state
-const journey = await SmartCommute.calculate({
-  home: { lat, lng },
-  work: { lat, lng },
-  arrivalTime: "09:00",
-  state: "VIC"  // or "NSW", "QLD"
-});
-
-// Engine handles all state-specific logic internally
 ```
+State     | Authority          | Auth Method
+----------|-------------------|------------------
+VIC       | Transport Victoria | KeyId header (UUID)
+NSW       | Transport for NSW  | Authorization header
+QLD       | TransLink          | X-API-Key header
+```
+
+The engine handles all state-specific logic internally. Users just specify their state.
 
 ---
 
 ## Challenge 6: Real-Time Disruption Handling
 
-### The Problem
-- Services get suspended (signal faults, emergencies)
-- Trams get diverted (roadworks, events)
-- Trains get cancelled (staffing, weather)
+### The Problem I Faced
+
+- Services get suspended (signal faults)
+- Trams get diverted (roadworks)
+- Trains get cancelled
 - Users need to know immediately
 
-### The Solution
-**Automatic route adaptation**
+### How I Solved It
+
+I implemented **automatic route adaptation**:
 
 ```
-Normal Journey:
-  Walk → Train → Walk
+NORMAL JOURNEY:
+  Walk -> Train -> Walk
 
-Signal fault detected:
-  Walk → [SUSPENDED] → Walk
-           ↓
-  Auto-insert replacement:
-  Walk → Rail Replacement Bus → Train → Walk
+SIGNAL FAULT DETECTED:
+  Walk -> [SUSPENDED] -> Walk
+              |
+              v
+  System auto-inserts replacement:
+  Walk -> Rail Replacement Bus -> Train -> Walk
 
-Display shows:
-  ⚠ DISRUPTION → Arrive 8:52 (+18 min)
+DISPLAY SHOWS:
+  "DISRUPTION -> Arrive 8:52 (+18 min)"
   [Diagonal stripes on cancelled service]
-  [Rail replacement bus automatically added]
+  [Rail replacement automatically added]
 ```
 
 ---
 
 ## Challenge 7: The Coffee Decision
 
-### The Problem
+### The Problem I Faced
+
 - Users want coffee but don't want to be late
 - Coffee time varies (5-15 minutes)
 - Should skip coffee if running late
-- Different patterns (origin, interchange, destination)
+- Different patterns needed (origin, interchange, destination)
 
-### The Solution
-**CoffeeDecision Engine**
+### How I Solved It
+
+I built the **CoffeeDecision Engine**:
 
 ```
-Input:
+INPUTS:
   - Current time
   - Journey duration
   - Target arrival time
@@ -322,81 +312,90 @@ Input:
   - Cafe business hours (cached)
   - Current delays
 
-Logic:
-  IF coffee_enabled AND
-     cafe_is_open(current_time, cached_hours) AND
-     (journey_time + coffee_time + delays) <= buffer_before_arrival
+DECISION LOGIC:
+  IF coffee_enabled
+  AND cafe_is_open
+  AND (journey + coffee + delays) <= arrival_buffer
   THEN
-     insert_coffee_leg()
-     status = "TIME FOR COFFEE"
-  ELSE IF delays_detected AND would_be_late_with_coffee
+    -> Insert coffee leg
+    -> Status: "TIME FOR COFFEE"
+  
+  ELSE IF delays_detected
+  AND would_be_late_with_coffee
   THEN
-     skip_coffee_leg()
-     status = "SKIP — Running late"
+    -> Skip coffee leg
+    -> Status: "SKIP - Running late"
 ```
 
 ---
 
-## Challenge 8: bb_epaper Library ESP32-C3 Bugs
+## Challenge 8: bb_epaper Library Bugs
 
-### The Problem (Discovered after weeks of debugging)
-- `allocBuffer()` causes garbage display on ESP32-C3
+### The Problem I Faced
+
+After weeks of debugging, I discovered ESP32-C3 specific bugs:
+
+- `allocBuffer()` causes garbage display
 - `FONT_12x16` renders text rotated 90°
-- These bugs are specific to RISC-V architecture
-- No documentation existed
+- No documentation existed for these issues
 
-### The Solution
-**Document findings, implement workarounds**
+### How I Solved It
 
-```cpp
-// ❌ BROKEN - Causes garbage display
-bbep.allocBuffer(true);   // Don't use!
-bbep.setBuffer(buf);      // Don't use!
+I documented my findings and implemented workarounds:
 
-// ✅ WORKING - Direct rendering
-bbep.fillScreen(BBEP_WHITE);
-bbep.setFont(FONT_8x8);   // NOT FONT_12x16!
-bbep.drawString("Hello", 0, 0);
-bbep.refresh(REFRESH_FULL, true);
+```
+BROKEN (causes garbage):
+  bbep.allocBuffer(true);
+  bbep.setBuffer(buf);
+
+WORKING (what I use):
+  bbep.fillScreen(BBEP_WHITE);
+  bbep.setFont(FONT_8x8);  // NOT FONT_12x16!
+  bbep.drawString("Hello", 0, 0);
+  bbep.refresh(REFRESH_FULL, true);
 ```
 
-**This discovery is now documented in DEVELOPMENT-RULES.md Appendix D.**
+I added all findings to DEVELOPMENT-RULES.md Appendix D.
 
 ---
 
 ## Challenge 9: Vercel Serverless Font Rendering
 
-### The Problem
-- Vercel serverless functions have **no system fonts**
-- `canvas.fillText()` silently fails
-- Text renders as blank
+### The Problem I Faced
 
-### The Solution
-**Bundle fonts + explicit registration**
+- Vercel serverless functions have no system fonts
+- `canvas.fillText()` silently fails
+- Text renders as completely blank
+
+### How I Solved It
+
+I bundled fonts and registered them explicitly:
 
 ```javascript
-import { GlobalFonts } from '@napi-rs/canvas';
+// I register fonts BEFORE any canvas operations
+GlobalFonts.registerFromPath(
+  './fonts/Inter-Bold.ttf', 
+  'Inter'
+);
 
-// Register fonts BEFORE any canvas operations
-GlobalFonts.registerFromPath('./fonts/Inter-Bold.ttf', 'Inter');
-GlobalFonts.registerFromPath('./fonts/Inter-Regular.ttf', 'Inter');
-
-// Now text renders correctly
-ctx.font = '800 17px Inter';  // NOT 'sans-serif'
-ctx.fillText('Hello', 0, 0);
+// Now I use the registered font name
+ctx.font = '800 17px Inter';
+// NOT 'sans-serif' - that fails silently!
 ```
 
 ---
 
 ## Challenge 10: iOS Safari Compatibility
 
-### The Problem
+### The Problem I Faced
+
 - Safari validates forms even with `novalidate`
-- Relative URLs fail on mobile
+- Relative URLs fail on mobile Safari
 - Pattern validation throws errors
 
-### The Solution
-**Explicit attributes on all form elements**
+### How I Solved It
+
+I added explicit attributes on all form elements:
 
 ```html
 <!-- Required for iOS Safari -->
@@ -404,9 +403,9 @@ ctx.fillText('Hello', 0, 0);
        autocomplete="off" 
        inputmode="text">
 
-<button type="button" formnovalidate>Submit</button>
-
-<form novalidate onsubmit="return false;">
+<button type="button" formnovalidate>
+  Submit
+</button>
 
 <!-- Always use absolute URLs -->
 const url = window.location.origin + '/api/endpoint';
@@ -416,167 +415,155 @@ const url = window.location.origin + '/api/endpoint';
 
 # Part 4: System Architecture
 
-## Self-Hosted Distribution Model
+## The Distribution Model I Designed
 
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                          SELF-HOSTED MODEL                              │
-│                                                                         │
-│    Official Repo              User's Fork              User's Server    │
-│   ┌───────────┐              ┌───────────┐            ┌───────────┐    │
-│   │ GitHub    │    Fork      │ User's    │   Deploy   │  Vercel   │    │
-│   │ Public    │ ──────────▶  │ Copy      │ ─────────▶ │  (Free)   │    │
-│   └───────────┘              └───────────┘            └─────┬─────┘    │
-│                                                              │          │
-│                                                              ▼          │
-│                                                       ┌───────────┐    │
-│                                                       │ User's    │    │
-│                                                       │ E-ink     │    │
-│                                                       │ Display   │    │
-│                                                       └───────────┘    │
-│                                                                         │
-│   ✅ Complete data isolation — no shared infrastructure                 │
-│   ✅ User owns API keys — never stored centrally                        │
-│   ✅ Zero ongoing costs — Vercel free tier sufficient                   │
-│   ✅ Custom firmware — never contacts external clouds                   │
-└─────────────────────────────────────────────────────────────────────────┘
+SELF-HOSTED MODEL:
+
+  Official Repo          User's Fork           User's Server
+  +-----------+         +-----------+         +-----------+
+  | GitHub    |  Fork   | User's    | Deploy  | Vercel    |
+  | Public    | ------> | Copy      | ------> | (Free)    |
+  +-----------+         +-----------+         +-----+-----+
+                                                    |
+                                                    v
+                                              +-----------+
+                                              | User's    |
+                                              | E-ink     |
+                                              | Display   |
+                                              +-----------+
+
+KEY BENEFITS:
+  - Complete data isolation
+  - User owns all API keys
+  - Zero ongoing costs
+  - No external cloud dependencies
 ```
 
-## Data Flow
+## The Data Flow I Implemented
 
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                              DATA FLOW                                  │
-│                                                                         │
-│  ┌─────────────────┐                                                    │
-│  │ Transit API     │  (Transport Victoria / TfNSW / TransLink)         │
-│  │ GTFS-RT Feeds   │                                                    │
-│  └────────┬────────┘                                                    │
-│           │                                                             │
-│           ▼ 30-second cache                                             │
-│  ┌─────────────────┐                                                    │
-│  │ SmartCommute™   │  Journey calculation engine                        │
-│  │ Engine          │                                                    │
-│  └────────┬────────┘                                                    │
-│           │                                                             │
-│     ┌─────┴─────┬─────────────┬─────────────┐                          │
-│     │           │             │             │                          │
-│     ▼           ▼             ▼             ▼                          │
-│  ┌──────┐  ┌─────────┐  ┌──────────┐  ┌──────────┐                     │
-│  │Weather│  │ Coffee  │  │Disruption│  │ Express  │                     │
-│  │ (BOM) │  │Decision │  │Detection │  │Detection │                     │
-│  └───┬───┘  └────┬────┘  └────┬─────┘  └────┬─────┘                     │
-│      │           │            │             │                          │
-│      └───────────┴────────────┴─────────────┘                          │
-│                        │                                                │
-│                        ▼                                                │
-│  ┌─────────────────────────────────────────────────────────────────┐   │
-│  │                    CCDash™ V10 Renderer                          │   │
-│  │              Creates 800×480 1-bit BMP image                     │   │
-│  └──────────────────────────────┬──────────────────────────────────┘   │
-│                                 │                                       │
-│                                 ▼                                       │
-│  ┌─────────────────────────────────────────────────────────────────┐   │
-│  │                    Your E-ink Display                            │   │
-│  │              Displays image, sleeps 20 seconds                   │   │
-│  └─────────────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────────────┘
+TRANSIT API (VIC/NSW/QLD)
+        |
+        v (30-second cache)
+SMARTCOMMUTE ENGINE
+        |
+        +---> Weather (BOM)
+        |
+        +---> Coffee Decision
+        |
+        +---> Disruption Detection
+        |
+        +---> Express Detection
+        |
+        v
+CCDASH V10 RENDERER
+        |
+        v (800x480 1-bit BMP)
+E-INK DISPLAY
+        |
+        v (sleep 20 seconds)
+REPEAT
 ```
-
-## Technology Stack
-
-| Layer | Technology | Purpose |
-|-------|------------|---------|
-| **Server** | Node.js 18+, Vercel Serverless | API and rendering |
-| **Rendering** | @napi-rs/canvas | 1-bit BMP generation |
-| **Transit Data** | GTFS-RT Protocol Buffers | Real-time departures |
-| **Weather** | Bureau of Meteorology | Temperature, conditions |
-| **Firmware** | ESP32-C3, PlatformIO, C++ | Device control |
-| **Display** | E-ink (TRMNL, Kindle) | Low-power display |
 
 ---
 
 # Part 5: The SmartCommute™ Engine
 
-## Overview
+## What I Built
 
-SmartCommute™ is the journey calculation engine that powers Commute Compute. It:
+SmartCommute™ is the journey calculation engine. It:
 
-1. **Fetches real-time data** from transit authorities (GTFS-RT)
-2. **Detects delays and disruptions** from service alerts
-3. **Calculates multi-modal routes** (walk → tram → train → walk)
-4. **Inserts coffee stops** when timing permits
-5. **Adapts to disruptions** with alternative routes
-6. **Detects express services** that save time
+1. Fetches real-time data from transit authorities
+2. Detects delays and disruptions
+3. Calculates multi-modal routes
+4. Inserts coffee stops when timing permits
+5. Adapts to disruptions automatically
+6. Detects express services that save time
 
-## Supported States
+## States I Support
 
-| State | Transit Authority | Status | Features |
-|-------|------------------|--------|----------|
-| **Victoria** | Transport Victoria (PTV) | ✅ Production | Full GTFS-RT, alerts |
-| **New South Wales** | Transport for NSW | ✅ Supported | GTFS-RT, alerts |
-| **Queensland** | TransLink | ✅ Supported | GTFS-RT, alerts |
-| South Australia | Adelaide Metro | 🔄 Planned | — |
-| Western Australia | Transperth | 🔄 Planned | — |
-| Tasmania | Metro Tasmania | 🔄 Planned | — |
+| State | Authority | Status |
+|-------|-----------|--------|
+| **Victoria** | Transport Victoria | Production |
+| **NSW** | Transport for NSW | Supported |
+| **Queensland** | TransLink | Supported |
+| South Australia | Adelaide Metro | Planned |
+| Western Australia | Transperth | Planned |
 
-## Engine Decision Flow
+## The Decision Flow I Designed
 
 ```
 START
-  │
-  ├─► Fetch GTFS-RT data (30s cache)
-  │
-  ├─► Check service alerts
-  │     ├─► Suspended? → Insert replacement bus + DISRUPTION status
-  │     ├─► Diverted? → Add walk leg + DIVERSION status
-  │     └─► Cancelled? → Show next service
-  │
-  ├─► Check delays
-  │     ├─► Single delay? → DELAY status
-  │     └─► Multiple delays? → DELAYS status (plural)
-  │
-  ├─► Coffee decision
-  │     ├─► Time available? → Insert coffee + "TIME FOR COFFEE"
-  │     ├─► Running late? → Skip coffee + "SKIP — Running late"
-  │     └─► Extra buffer from disruption? → Insert coffee + "EXTRA TIME"
-  │
-  ├─► Express detection
-  │     └─► Express saves time? → Show EXPRESS badge + time savings
-  │
-  ├─► Weather check
-  │     └─► Rain likely? → "BRING UMBRELLA"
-  │
-  └─► Render CCDash™ V10 layout → Send to device
+  |
+  v
+Fetch GTFS-RT data (30s cache)
+  |
+  v
+Check service alerts
+  |
+  +---> Suspended? -> Insert replacement + DISRUPTION
+  |
+  +---> Diverted? -> Add walk leg + DIVERSION
+  |
+  +---> Cancelled? -> Show next service
+  |
+  v
+Check delays
+  |
+  +---> Single delay? -> DELAY status
+  |
+  +---> Multiple? -> DELAYS status (plural)
+  |
+  v
+Coffee decision
+  |
+  +---> Time available? -> "TIME FOR COFFEE"
+  |
+  +---> Running late? -> "SKIP - Running late"
+  |
+  +---> Extra buffer? -> "EXTRA TIME"
+  |
+  v
+Express detection
+  |
+  +---> Saves time? -> Show EXPRESS badge
+  |
+  v
+Weather check
+  |
+  +---> Rain likely? -> "BRING UMBRELLA"
+  |
+  v
+Render CCDash V10 layout
+  |
+  v
+Send to device
 ```
 
 ---
 
 # Part 6: Dashboard Scenarios
 
-The following scenarios demonstrate how SmartCommute™ handles real-world situations.
+I designed the system to handle these real-world scenarios:
 
----
-
-## Scenario 1: Normal Morning Commute with Coffee
+## Scenario 1: Normal Commute with Coffee
 
 **Image: scenario-normal-coffee.png**
 
-**Context:**
 - Location: 1 Clara St, South Yarra
 - Time: 7:45 AM Tuesday
 - Weather: 22° Sunny
 
-**What the engine calculated:**
+What the engine calculated:
 - Total journey: 47 minutes
-- Arrival: 8:32 AM
-- Coffee: ✅ "TIME FOR COFFEE" — sufficient buffer exists
-- 5-leg journey: Walk → Coffee (~5 min) → Walk → Train → Walk
+- Coffee: "TIME FOR COFFEE" (sufficient buffer)
+- 5 legs: Walk -> Coffee -> Walk -> Train -> Walk
 
-**Visual indicators:**
-- Solid borders on all legs = normal service
-- Coffee icon with checkmark = confirmed
-- Status: "LEAVE NOW → Arrive 8:32"
+Visual indicators:
+- Solid borders = normal service
+- Coffee checkmark = confirmed
+- Status: "LEAVE NOW -> Arrive 8:32"
 
 ---
 
@@ -584,45 +571,39 @@ The following scenarios demonstrate how SmartCommute™ handles real-world situa
 
 **Image: scenario-delay-skip.png**
 
-**Context:**
 - Location: 1 Clara St, South Yarra
 - Time: 8:22 AM Monday
-- Weather: 17° Rain, BRING UMBRELLA
+- Weather: 17° Rain
 
-**What the engine calculated:**
+What the engine calculated:
 - Train delayed +8 minutes
-- Original arrival would be 9:10 AM
-- With coffee would be 9:18 AM (late for 9:00 target)
-- Decision: Skip coffee to minimize lateness
+- With coffee would be late
+- Decision: Skip coffee
 
-**Visual indicators:**
-- Dashed border on coffee leg = SKIP state
-- "✗ SKIP — Running late" subtitle
-- Dashed border on train = delayed
-- Status: "⏱ DELAY → Arrive 9:18 (+8 min)"
+Visual indicators:
+- Dashed border on coffee = SKIP
+- "SKIP - Running late" subtitle
+- Status: "DELAY -> Arrive 9:18 (+8 min)"
 
 ---
 
-## Scenario 3: Express Service Detection
+## Scenario 3: Express Service
 
 **Image: scenario-express.png**
 
-**Context:**
 - Location: Caulfield Station
 - Time: 6:48 AM Monday
-- Weather: 14° Fog, MAYBE RAIN
+- Weather: 14° Fog
 
-**What the engine calculated:**
-- Express service available on Frankston Line
-- Skips 6 stations (Caulfield → Richmond → Flinders St only)
-- Saves 8 minutes vs all-stops service
-- Shows alternative times for comparison
+What the engine calculated:
+- Express skips 6 stations
+- Saves 8 minutes vs all-stops
+- Shows alternatives for comparison
 
-**Visual indicators:**
-- "EXPRESS" badge on service
-- "Frankston Line EXPRESS • Skips 6 stations"
-- Footer: "EXPRESS saves 8 min vs all-stops service"
-- Alternative times: "Next EXPRESS: 6:55 • All stops: 6:55, 7:05"
+Visual indicators:
+- "EXPRESS" badge
+- "Skips 6 stations" note
+- "EXPRESS saves 8 min" footer
 
 ---
 
@@ -630,73 +611,60 @@ The following scenarios demonstrate how SmartCommute™ handles real-world situa
 
 **Image: scenario-diversion.png**
 
-**Context:**
 - Location: Richmond Station
 - Time: 5:45 PM Wednesday
 - Weather: 31° Hot
 
-**What the engine calculated:**
-- Tram 70 diverted due to roadworks
-- Route adapted automatically
-- Extra walking leg inserted: "Walk Around Diversion"
-- Alternative: Bus 625 to complete journey
-- Total delay: +5 minutes
+What the engine calculated:
+- Tram 70 diverted (roadworks)
+- Extra walking leg added
+- Bus alternative shown
 
-**Visual indicators:**
-- Arrow prefix: "← Tram 70 Diverted"
+Visual indicators:
+- Arrow: "← Tram 70 Diverted"
 - Extra leg: "← Walk Around Diversion"
-- Dashed borders on affected legs
-- Status: "⚠ TRAM DIVERSION → Arrive 6:38 (+5 min)"
+- Status: "TRAM DIVERSION -> Arrive 6:38 (+5 min)"
 
 ---
 
-## Scenario 5: Multi-Modal Journey (Tram + Bus)
+## Scenario 5: Multi-Modal (Tram + Bus)
 
 **Image: scenario-multimodal.png**
 
-**Context:**
 - Location: 42 Chapel St, Windsor
 - Time: 2:30 PM Saturday
 - Weather: 28° Hot
 
-**What the engine calculated:**
-- Journey requires tram then bus
+What the engine calculated:
 - Tram 78 to Richmond
 - Walk to bus stop
 - Bus 246 to Elsternwick
-- Total: 53 minutes
 
-**Visual indicators:**
-- Different icons: Tram (🚊) vs Bus (🚌)
+Visual indicators:
+- Different icons (tram vs bus)
 - Walking legs between modes
-- "Next: 4, 12 min" = upcoming service frequency
-- Status: "LEAVE IN 5 MIN → Arrive 3:28"
+- "Next: 4, 12 min" frequency
 
 ---
 
-## Scenario 6: Major Disruption with Rail Replacement
+## Scenario 6: Major Disruption
 
 **Image: scenario-disruption.png**
 
-**Context:**
 - Location: 1 Clara St, South Yarra
 - Time: 7:20 AM Thursday
 - Weather: 19° Overcast
 
-**What the engine calculated:**
-- Sandringham Line SUSPENDED (signal fault)
-- Rail replacement bus automatically inserted
-- Reroute: Bus to Richmond → Train to Parliament
-- Disruption creates buffer → coffee added with "EXTRA TIME"
-- Total delay: +18 minutes
+What the engine calculated:
+- Sandringham Line SUSPENDED
+- Rail replacement bus inserted
+- Extra buffer = coffee added
 
-**Visual indicators:**
-- Diagonal stripe pattern = SUSPENDED/CANCELLED
-- "CANCELLED" text on affected service
-- "⚠ Sandringham Line SUSPENDED — Signal fault"
-- Rail Replacement Bus leg added
-- Coffee: "✓ EXTRA TIME — Disruption"
-- Status: "⚠ DISRUPTION → Arrive 8:52 (+18 min)"
+Visual indicators:
+- Diagonal stripes = CANCELLED
+- "SUSPENDED - Signal fault"
+- Rail replacement bus added
+- Coffee: "EXTRA TIME - Disruption"
 
 ---
 
@@ -704,219 +672,204 @@ The following scenarios demonstrate how SmartCommute™ handles real-world situa
 
 **Image: scenario-multiple-delays.png**
 
-**Context:**
 - Location: Malvern Station
 - Time: 8:15 AM Tuesday
-- Weather: 15° Showers, BRING UMBRELLA
+- Weather: 15° Showers
 
-**What the engine calculated:**
-- Train to Richmond: +10 minutes delay
-- Tram 70 to Docklands: +5 minutes delay
-- Combined impact: +15 minutes
-- Status uses plural "DELAYS"
+What the engine calculated:
+- Train: +10 minutes delay
+- Tram: +5 minutes delay
+- Combined: +15 minutes
 
-**Visual indicators:**
+Visual indicators:
 - Multiple dashed borders
-- Individual delays shown: "+10 MIN", "+5 MIN"
-- Status: "⏱ DELAYS → Arrive 9:22 (+15 min)"
+- Individual delays shown
+- Status: "DELAYS -> Arrive 9:22 (+15 min)"
 
 ---
 
-## Scenario 8: Evening Commute with Friday Treat
+## Scenario 8: Friday Treat
 
 **Image: scenario-friday.png**
 
-**Context:**
-- Location: 80 Collins St, Melbourne (work)
+- Location: 80 Collins St (work)
 - Time: 6:20 PM Friday
 - Weather: 23° Warm
 
-**What the engine calculated:**
-- Reverse commute (work → home)
-- Coffee at destination (High St Cafe, Glen Iris)
-- Special "Friday Treat" status for end-of-week
-- Total journey: 65 minutes including coffee
+What the engine calculated:
+- Reverse commute (work to home)
+- Coffee at destination
+- "Friday Treat" status
 
-**Visual indicators:**
-- "HOME — 1 CLARA ST" in footer (reverse commute)
-- Coffee: "✓ FRIDAY TREAT"
-- Coffee at end of journey (destination pattern)
+Visual indicators:
+- "HOME" in footer
+- "FRIDAY TREAT" on coffee
+- Destination coffee pattern
 
 ---
 
-## Scenario 9: Weekend Leisure Trip
+## Scenario 9: Weekend Leisure
 
 **Image: scenario-weekend.png**
 
-**Context:**
 - Location: Flinders St Station
 - Time: 11:15 AM Sunday
 - Weather: 24° Sunny
 
-**What the engine calculated:**
-- Non-work journey (leisure)
-- Destination: Caulfield Park Rotunda
-- Simple route: Train → Walk → Walk to picnic spot
-- No coffee (leisure trip pattern)
-- Total: 33 minutes
+What the engine calculated:
+- Leisure destination (park)
+- Simple route to picnic spot
+- No coffee (leisure pattern)
 
-**Visual indicators:**
-- Leisure destination: "CAULFIELD PARK ROTUNDA"
-- Descriptive subtitle: "Near the rotunda"
-- Weekend date format
-- No coffee leg
+Visual indicators:
+- "CAULFIELD PARK ROTUNDA" destination
+- "Near the rotunda" description
+- Weekend formatting
 
 ---
 
 # Part 7: Visual Design System
 
-## CCDash™ V10 Layout (LOCKED)
+## The Layout I Designed (CCDash V10)
 
 ```
-┌────────────────────────────────────────────────────────────────────────┐
-│ HEADER (0-94px)                                                        │
-│                                                                        │
-│  ┌──────────────┐   ┌────────────────────┐   ┌───────────────────┐    │
-│  │ LOCATION     │   │   TIME (64px)      │   │ WEATHER           │    │
-│  │ Small caps   │   │   7:45   AM        │   │ 22° Sunny         │    │
-│  └──────────────┘   │   Day, Date        │   │ ☀ NO UMBRELLA     │    │
-│                     └────────────────────┘   └───────────────────┘    │
-├────────────────────────────────────────────────────────────────────────┤
-│ SUMMARY BAR (96-124px)                                                 │
-│                                                                        │
-│  LEAVE NOW → Arrive 8:32                                       47 min  │
-│                                                                        │
-├────────────────────────────────────────────────────────────────────────┤
-│ JOURNEY LEGS (132-448px)                                               │
-│                                                                        │
-│  ┌─────────────────────────────────────────────────────────────────┐  │
-│  │ ① 🚶  Walk to Norman Cafe                              4 MIN    │  │
-│  │       From home • 300 Toorak Rd                        WALK     │  │
-│  └─────────────────────────────────────────────────────────────────┘  │
-│                              ▼                                         │
-│  ┌─────────────────────────────────────────────────────────────────┐  │
-│  │ ② ☕  Coffee at Norman                                 ~5 MIN   │  │
-│  │       ✓ TIME FOR COFFEE                                         │  │
-│  └─────────────────────────────────────────────────────────────────┘  │
-│                              ▼                                         │
-│  ┌─────────────────────────────────────────────────────────────────┐  │
-│  │ ③ 🚶  Walk to South Yarra Stn                          6 MIN    │  │
-│  │       Platform 1                                       WALK     │  │
-│  └─────────────────────────────────────────────────────────────────┘  │
-│                              ▼                                         │
-│  ┌─────────────────────────────────────────────────────────────────┐  │
-│  │ ④ 🚃  Train to Parliament                              5 MIN    │  │
-│  │       Sandringham • Next: 5, 12 min                             │  │
-│  └─────────────────────────────────────────────────────────────────┘  │
-│                              ▼                                         │
-│  ┌─────────────────────────────────────────────────────────────────┐  │
-│  │ ⑤ 🚶  Walk to Office                                  26 MIN    │  │
-│  │       Parliament → 80 Collins St                       WALK     │  │
-│  └─────────────────────────────────────────────────────────────────┘  │
-│                                                                        │
-├────────────────────────────────────────────────────────────────────────┤
-│ FOOTER (448-480px)                                                     │
-│                                                                        │
-│  80 COLLINS ST, MELBOURNE                              ARRIVE  8:32    │
-│                                                                        │
-└────────────────────────────────────────────────────────────────────────┘
++------------------------------------------+
+| HEADER (0-94px)                          |
+|                                          |
+| LOCATION      TIME (64px)      WEATHER   |
+| Small caps    7:45 AM          22° Sunny |
+|               Tuesday          NO UMBRELLA|
++------------------------------------------+
+| SUMMARY BAR (96-124px)                   |
+|                                          |
+| LEAVE NOW -> Arrive 8:32          47 min |
++------------------------------------------+
+| JOURNEY LEGS (132-448px)                 |
+|                                          |
+| +--------------------------------------+ |
+| | 1  Walk to Norman Cafe       4 MIN   | |
+| |    From home                 WALK    | |
+| +--------------------------------------+ |
+|                  v                       |
+| +--------------------------------------+ |
+| | 2  Coffee at Norman          ~5 MIN  | |
+| |    TIME FOR COFFEE                   | |
+| +--------------------------------------+ |
+|                  v                       |
+| +--------------------------------------+ |
+| | 3  Walk to South Yarra Stn   6 MIN   | |
+| |    Platform 1                WALK    | |
+| +--------------------------------------+ |
+|                  v                       |
+| +--------------------------------------+ |
+| | 4  Train to Parliament       5 MIN   | |
+| |    Sandringham - Next: 5, 12 min     | |
+| +--------------------------------------+ |
+|                  v                       |
+| +--------------------------------------+ |
+| | 5  Walk to Office           26 MIN   | |
+| |    Parliament -> 80 Collins  WALK    | |
+| +--------------------------------------+ |
++------------------------------------------+
+| FOOTER (448-480px)                       |
+|                                          |
+| 80 COLLINS ST, MELBOURNE    ARRIVE 8:32  |
++------------------------------------------+
 ```
 
-## Visual States
+## Visual States I Defined
 
-### Border Styles
+| State | Border | Meaning |
+|-------|--------|---------|
+| Normal | Solid 2px black | Service running normally |
+| Delayed | Dashed 2px gray | Service delayed |
+| Skip | Dashed 2px gray | Coffee skipped |
+| Cancelled | Diagonal stripes | Service suspended |
 
-| Border | CSS | Meaning |
-|--------|-----|---------|
-| Solid 2px black | `border: 2px solid #1a1a1a` | Normal service |
-| Dashed 2px gray | `border: 2px dashed #888` | Delayed/skip/diverted |
-
-### Background Patterns
-
-| Pattern | Meaning |
-|---------|---------|
-| White | Normal |
-| Diagonal stripes (135°) | Cancelled/Suspended |
-
-### Status Bar Variants
+## Status Bar Variants
 
 | Status | Format |
 |--------|--------|
-| Normal | `LEAVE NOW → Arrive X:XX` |
-| Leave Soon | `LEAVE IN X MIN → Arrive X:XX` |
-| Delay | `⏱ DELAY → Arrive X:XX (+X min)` |
-| Multiple Delays | `⏱ DELAYS → Arrive X:XX (+X min)` |
-| Disruption | `⚠ DISRUPTION → Arrive X:XX (+X min)` |
-| Diversion | `⚠ TRAM DIVERSION → Arrive X:XX (+X min)` |
+| Normal | LEAVE NOW -> Arrive X:XX |
+| Leave Soon | LEAVE IN X MIN -> Arrive X:XX |
+| Delay | DELAY -> Arrive X:XX (+X min) |
+| Delays | DELAYS -> Arrive X:XX (+X min) |
+| Disruption | DISRUPTION -> Arrive X:XX (+X min) |
+| Diversion | TRAM DIVERSION -> Arrive X:XX (+X min) |
 
-### Mode Icons
+## Mode Icons
 
 | Icon | Mode |
 |------|------|
-| 🚶 | Walk |
-| 🚃 | Train |
-| 🚊 | Tram |
-| 🚌 | Bus |
-| ☕ | Coffee |
+| Walking figure | Walk |
+| Train | Train |
+| Tram | Tram |
+| Bus | Bus |
+| Coffee cup | Coffee |
 
 ---
 
 # Part 8: Supported Devices
 
-## TRMNL E-ink Displays (Primary)
+## TRMNL Devices (Primary)
 
-| Device | Resolution | Orientation | Bit Depth | Status |
-|--------|-----------|-------------|-----------|--------|
-| **TRMNL OG** | 800×480 | Landscape | 1-bit BMP | ✅ Primary |
-| **TRMNL Mini** | 400×300 | Landscape | 1-bit BMP | ✅ Supported |
+| Device | Resolution | Status |
+|--------|-----------|--------|
+| TRMNL OG | 800x480 | Primary target |
+| TRMNL Mini | 400x300 | Supported |
 
-## Kindle E-readers (Jailbreak Required)
+## Kindle Devices (Jailbreak Required)
 
-| Device | Resolution | Orientation | Bit Depth | Status |
-|--------|-----------|-------------|-----------|--------|
-| Kindle Paperwhite 5 | 1236×1648 | Portrait | 8-bit PNG | ✅ Supported |
-| Kindle Paperwhite 3/4 | 1072×1448 | Portrait | 8-bit PNG | ✅ Supported |
-| Kindle Voyage | 1072×1448 | Portrait | 8-bit PNG | ✅ Supported |
-| Kindle Basic | 600×800 | Portrait | 8-bit PNG | ✅ Supported |
+| Device | Resolution | Status |
+|--------|-----------|--------|
+| Kindle Paperwhite 5 | 1236x1648 | Supported |
+| Kindle Paperwhite 3/4 | 1072x1448 | Supported |
+| Kindle Voyage | 1072x1448 | Supported |
+| Kindle Basic | 600x800 | Supported |
 
 ## Planned Devices
 
 | Device | Resolution | Status |
 |--------|-----------|--------|
-| Inkplate 6 | 800×600 | 🔄 Planned |
-| Inkplate 10 | 1200×825 | 🔄 Planned |
-| Waveshare 7.5" | 800×480 | 🔄 Planned |
+| Inkplate 6 | 800x600 | Planned |
+| Inkplate 10 | 1200x825 | Planned |
+| Waveshare 7.5" | 800x480 | Planned |
 
 ---
 
 # Part 9: Setup & Deployment
 
-## Deployment Process
+## The Process I Designed
 
 ```
-Step 1: Fork Repository
-        ↓
+Step 1: Fork the repository
+            |
+            v
 Step 2: Deploy to Vercel (one click)
-        ↓
+            |
+            v
 Step 3: Run Setup Wizard
-        • Enter addresses (home, work, cafe)
-        • Select transit authority (VIC/NSW/QLD)
-        • Enter arrival time preference
-        • Optional: Add API keys
-        ↓
-Step 4: Flash CCFirm™ to device
-        ↓
-Step 5: Enter webhook URL in device
-        ↓
+        - Enter addresses
+        - Select state (VIC/NSW/QLD)
+        - Set arrival time
+        - Optional: Add API keys
+            |
+            v
+Step 4: Flash CCFirm to device
+            |
+            v
+Step 5: Enter webhook URL
+            |
+            v
 Done! Device displays your commute.
 ```
 
-## Zero Runtime Costs
+## Cost Breakdown
 
 | Service | Setup Cost | Runtime Cost |
 |---------|------------|--------------|
 | Vercel Hosting | Free | Free |
-| Transport Victoria API | Free (registration) | Free |
+| Transit API | Free | Free |
 | BOM Weather | Free | Free |
 | OSM Geocoding | Free | Free |
 | Google Places | ~$0.02 (optional) | Free (cached) |
@@ -926,47 +879,47 @@ Done! Device displays your commute.
 
 # Part 10: Roadmap
 
-## Completed ✅
+## What I've Completed
 
 | Phase | Items |
 |-------|-------|
-| **Foundation** | Core server, V10 spec, zone refresh, VIC API, weather, setup wizard, simulator |
-| **Firmware** | CCFirm™, anti-brick rules, state machine, WiFi portal |
-| **Documentation** | DEVELOPMENT-RULES v1.6, Architecture v4.0, all technical docs |
-| **Multi-State** | SmartCommute™, CC LiveDash™, NSW, QLD, state auto-detection |
-| **Setup UX** | Zero-config, free-tier caching, API validation, iOS compatibility |
+| Foundation | Core server, V10 spec, zone refresh, VIC API, weather |
+| Firmware | CCFirm, anti-brick rules, state machine |
+| Documentation | DEVELOPMENT-RULES v1.6, Architecture v4.0 |
+| Multi-State | SmartCommute, CC LiveDash, NSW, QLD support |
+| Setup UX | Zero-config, free-tier caching, iOS compatibility |
 
-## In Progress 🔄
+## What I'm Working On
 
 - End-to-end automated testing
 - Additional device support
-- Error handling polish
+- Error handling improvements
 
-## Planned 🔲
+## What I've Planned
 
 - South Australia, Western Australia, Tasmania
 - Inkplate and Waveshare support
 - Video tutorials
-- Public launch announcement
+- Public launch
 
 ---
 
 # Summary
 
-**Commute Compute System™** represents 18 months of development solving real problems:
+I built **Commute Compute System™** over 18 months, solving real problems:
 
 - **76,445 lines of code** across 176 files
 - **10 major technical challenges** solved
 - **3 Australian states** supported
 - **9 device types** compatible
 - **Zero ongoing costs** for users
-- **Complete privacy** — your data stays on your server
+- **Complete privacy** — data stays on user's server
 
-The system succeeds when a Melbourne commuter can glance at their e-ink display, see "LEAVE NOW — Coffee included", and walk out the door knowing they'll catch their train on time.
+The system succeeds when a commuter can glance at their e-ink display, see "LEAVE NOW — Coffee included", and walk out the door knowing they'll catch their train on time.
 
 ---
 
-**Built with ☕ in Melbourne**
+**Built with coffee in Melbourne**
 
-*Copyright © 2025-2026 Angus Bergman*  
+*Copyright 2025-2026 Angus Bergman*  
 *Licensed under CC BY-NC 4.0*
