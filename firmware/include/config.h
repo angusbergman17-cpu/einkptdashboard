@@ -2,8 +2,9 @@
 #define CONFIG_H
 
 /**
- * PTV-TRMNL Firmware Configuration
- * 
+ * Commute Compute Firmware Configuration
+ * CCFirm™ - Custom firmware for TRMNL e-ink displays
+ *
  * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
  */
@@ -12,7 +13,7 @@
 // VERSION
 // =============================================================================
 
-#define FIRMWARE_VERSION "6.0"
+#define FIRMWARE_VERSION "6.1"
 
 // =============================================================================
 // SERVER CONFIGURATION
@@ -31,8 +32,8 @@
 // WIFI CONFIGURATION (Captive Portal)
 // =============================================================================
 
-#define WIFI_AP_NAME "PTV-TRMNL-Setup"
-#define WIFI_AP_PASSWORD "transport123"
+#define WIFI_AP_NAME "CC-Setup"
+#define WIFI_AP_PASSWORD "commute123"
 
 // =============================================================================
 // TIMING (milliseconds) - TIERED REFRESH SYSTEM
