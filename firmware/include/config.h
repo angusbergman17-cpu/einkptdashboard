@@ -35,11 +35,16 @@
 #define WIFI_AP_PASSWORD "transport123"
 
 // =============================================================================
-// TIMING (milliseconds)
+// TIMING (milliseconds) - TIERED REFRESH SYSTEM
 // =============================================================================
 
-// Partial refresh every 20 seconds
+// Legacy: Partial refresh every 20 seconds (for non-tiered firmware)
 #define DEFAULT_REFRESH_INTERVAL 20000
+
+// Tiered refresh intervals (for tiered firmware)
+#define TIER1_REFRESH_INTERVAL 60000     // 1 minute - time-critical (clock, durations)
+#define TIER2_REFRESH_INTERVAL 120000    // 2 minutes - content (weather, legs) - only if changed
+#define TIER3_REFRESH_INTERVAL 300000    // 5 minutes - static (location bar)
 
 // Full refresh every 10 minutes (prevents ghosting)
 #define DEFAULT_FULL_REFRESH 600000
