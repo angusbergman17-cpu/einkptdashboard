@@ -2,8 +2,8 @@
 #define CONFIG_H
 
 /**
- * PTV-TRMNL Firmware Configuration
- * 
+ * Commute Compute Firmware Configuration (CCFirmTRMNL)
+ *
  * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
  */
@@ -31,8 +31,8 @@
 // WIFI CONFIGURATION (Captive Portal)
 // =============================================================================
 
-#define WIFI_AP_NAME "PTV-TRMNL-Setup"
-#define WIFI_AP_PASSWORD "transport123"
+#define WIFI_AP_NAME "CC-Display-Setup"
+#define WIFI_AP_PASSWORD "commutecompute"
 
 // =============================================================================
 // TIMING (milliseconds) - TIERED REFRESH SYSTEM
@@ -116,7 +116,8 @@
 // =============================================================================
 
 // Maximum size for a single zone BMP
-#define ZONE_BUFFER_SIZE 20000
+// NOTE: legs zone is ~31.7KB, must be >= 40KB (see DEVELOPMENT-RULES.md Appendix D.4)
+#define ZONE_BUFFER_SIZE 40960
 
 // Maximum partial refreshes before forcing full refresh
 #define MAX_PARTIAL_BEFORE_FULL 30

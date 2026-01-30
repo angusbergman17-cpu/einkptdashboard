@@ -274,7 +274,7 @@ void loop() {
             feedWatchdog();
             
             // Attempt connection (non-blocking with timeout)
-            if (wm.autoConnect("CommuteCompute-Setup", "transport123")) {
+            if (wm.autoConnect("CommuteCompute-Setup", "commutecompute")) {
                 wifiConnected = true;
                 Serial.printf("✓ WiFi connected: %s\n", WiFi.localIP().toString().c_str());
                 
@@ -613,7 +613,7 @@ void showWelcomeScreen() {
     bbep.setCursor(120, 275);
     bbep.print("1. Connect to WiFi: CommuteCompute-Setup");
     bbep.setCursor(120, 295);
-    bbep.print("   Password: transport123");
+    bbep.print("   Password: commutecompute");
     bbep.setCursor(120, 320);
     bbep.print("2. Open browser: 192.168.4.1");
     bbep.setCursor(120, 345);
@@ -658,7 +658,7 @@ void showWiFiSetupScreen() {
     bbep.setCursor(70, 260);
     bbep.print("2. Connect to this WiFi network:");
     bbep.setCursor(90, 280);
-    bbep.print("SSID: CommuteCompute-Setup  Password: transport123");
+    bbep.print("SSID: CommuteCompute-Setup  Password: commutecompute");
     
     // Step 3: Configure URL
     bbep.setCursor(70, 310);

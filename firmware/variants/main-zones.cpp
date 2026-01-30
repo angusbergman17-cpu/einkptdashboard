@@ -220,7 +220,7 @@ void connectWiFi() {
     WiFiManager wm;
     wm.setConfigPortalTimeout(180);
     
-    if (wm.autoConnect("PTV-TRMNL-Setup")) {
+    if (wm.autoConnect("CC-Display-Setup")) {
         wifiConnected = true;
         Serial.print("Connected. IP: ");
         Serial.println(WiFi.localIP());

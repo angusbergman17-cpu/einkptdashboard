@@ -18,22 +18,22 @@
     "@vercel/kv": "^3.0.0",
     "adm-zip": "^0.5.10",
     "axios": "^1.13.3",
-    "canvas": "^3.1.0",
     "csv-parse": "^5.5.3",
     "dayjs": "^1.11.10",
     "dotenv": "^16.4.5",
     "express": "^4.22.1",
+    "express-rate-limit": "^7.1.5",
     "gtfs-realtime-bindings": "^1.1.1",
     "node-fetch": "^3.3.2",
     "nodemailer": "^7.0.12",
     "rss-parser": "^3.13.0"
   },
   "keywords": [
+    "commute-compute",
+    "transit",
+    "e-ink",
     "trmnl",
-    "melbourne",
-    "transport",
-    "ptv",
-    "e-ink"
+    "melbourne"
   ],
   "author": "Angus",
   "license": "CC-BY-NC-4.0",

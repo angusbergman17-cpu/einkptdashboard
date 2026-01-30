@@ -554,7 +554,7 @@ void showConnectingScreen() {
     
     bbep.drawRect(150, 150, 500, 150, BBEP_BLACK);
     bbep.setCursor(280, 200); bbep.print("CONNECTING TO WIFI...");
-    bbep.setCursor(200, 250); bbep.print("Network: Connect to PTV-TRMNL-Setup");
+    bbep.setCursor(200, 250); bbep.print("Network: Connect to CC-Display-Setup");
     
     bbep.refresh(REFRESH_FULL, true);
 }
@@ -606,7 +606,7 @@ void connectWiFi() {
     WiFiManager wm;
     wm.setConfigPortalTimeout(180);
     
-    if (wm.autoConnect("PTV-TRMNL-Setup", "transport123")) {
+    if (wm.autoConnect("CC-Display-Setup", "commutecompute")) {
         wifiConnected = true;
         Serial.printf("Connected: %s\n", WiFi.localIP().toString().c_str());
     } else {

@@ -57,34 +57,34 @@ function makeHeaders(apiKey) {
 async function fetchGtfsR({ url, apiKey, timeoutMs = 15000 }) {
   const headers = makeHeaders(apiKey);
 
-  console.log(`PTV Fetching: ${url}`);
-  console.log(`PTV API Key: ${apiKey ? apiKey.substring(0, 8) + '...' : 'NOT PROVIDED'}`);
+  console.log(`[OpenData] Fetching: ${url}`);
+  console.log(`[OpenData] API Key: ${apiKey ? apiKey.substring(0, 8) + '...' : 'NOT PROVIDED'}`);
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const res = await fetch(url, { headers, signal: controller.signal });
-    console.log(`PTV Response: ${res.status} ${res.statusText}`);
+    console.log(`[OpenData] Response: ${res.status} ${res.statusText}`);
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");
-      console.error(`PTV API Error: ${res.status} - ${text.substring(0, 200)}`);
+      console.error(`[OpenData] API Error: ${res.status} - ${text.substring(0, 200)}`);
       throw new Error(`OpenData API ${res.status} ${res.statusText}`);
     }
-    
+
     const arrayBuffer = await res.arrayBuffer();
-    console.log(`PTV Received ${arrayBuffer.byteLength} bytes of protobuf data`);
+    console.log(`[OpenData] Received ${arrayBuffer.byteLength} bytes of protobuf data`);
 
     const feed = GtfsRealtimeBindings.transit_realtime.FeedMessage.decode(
       new Uint8Array(arrayBuffer)
     );
-    
-    console.log(`PTV Decoded ${feed.entity?.length || 0} entities`);
+
+    console.log(`[OpenData] Decoded ${feed.entity?.length || 0} entities`);
     return feed;
   } catch (err) {
     if (err.name === 'AbortError') {
-      console.error(`PTV Request timeout after ${timeoutMs}ms`);
+      console.error(`[OpenData] Request timeout after ${timeoutMs}ms`);
       throw new Error(`OpenData API timeout`);
     }
     throw err;

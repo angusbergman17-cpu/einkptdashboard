@@ -48,7 +48,7 @@ void setup() {
     
     WiFiManager wm;
     wm.setConfigPortalTimeout(180);
-    wifiOK = wm.autoConnect("PTV-TRMNL-Setup");
+    wifiOK = wm.autoConnect("CC-Display-Setup");
     Serial.println(wifiOK ? "WiFi OK" : "WiFi FAIL");
 }
 

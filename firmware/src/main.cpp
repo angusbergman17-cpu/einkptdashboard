@@ -313,7 +313,7 @@ void showConnectingScreen() {
     
     bbep.drawRect(150, 150, 500, 150, BBEP_BLACK);
     bbep.setCursor(280, 200); bbep.print("CONNECTING TO WIFI...");
-    bbep.setCursor(200, 250); bbep.print("Network: Connect to PTV-TRMNL-Setup");
+    bbep.setCursor(200, 250); bbep.print("Network: Connect to CC-Display-Setup");
     
     bbep.refresh(REFRESH_FULL, true);
 }
@@ -363,7 +363,7 @@ void connectWiFi() {
     WiFiManager wm;
     wm.setConfigPortalTimeout(180);
     
-    if (wm.autoConnect("PTV-TRMNL-Setup", "transport123")) {
+    if (wm.autoConnect("CC-Display-Setup", "commutecompute")) {
         wifiConnected = true;
         Serial.printf("Connected: %s\n", WiFi.localIP().toString().c_str());
     } else {
@@ -376,7 +376,8 @@ void initDisplay() {
     bbep.initIO(EPD_DC_PIN, EPD_RST_PIN, EPD_BUSY_PIN, EPD_CS_PIN, EPD_MOSI_PIN, EPD_SCK_PIN, 8000000);
     bbep.setPanelType(EP75_800x480);
     bbep.setRotation(0);
-    bbep.allocBuffer(false);
+    // NOTE: Do NOT call bbep.allocBuffer() - causes garbage display on ESP32-C3 RISC-V
+    // See DEVELOPMENT-RULES.md Section 5.4 and Appendix D.2
     pinMode(PIN_INTERRUPT, INPUT_PULLUP);
 }
 

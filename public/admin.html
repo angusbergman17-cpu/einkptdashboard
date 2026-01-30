@@ -2268,10 +2268,7 @@
                         <span class="card-icon" style="color: var(--accent);">S</span>
                         <h2>Display Settings</h2>
                     </div>
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="use-24-hour">
-                        <label for="use-24-hour">24-hour time (default: 12-hour)</label>
-                    </div>
+                    <!-- Note: All times use 12-hour format per DEVELOPMENT-RULES.md Section 12.2 -->
                     <div class="checkbox-group">
                         <input type="checkbox" id="show-walking-times" checked>
                         <label for="show-walking-times">Show walking times</label>
@@ -4993,8 +4990,8 @@
         // ==================== END API KEYS STATUS DISPLAY ====================
 
         function saveDisplaySettings() {
+            // Note: 12-hour time format is mandatory per DEVELOPMENT-RULES.md Section 12.2
             localStorage.setItem('cc-display-settings', JSON.stringify({
-                use24Hour: document.getElementById('use-24-hour').checked,
                 showWalkingTimes: document.getElementById('show-walking-times').checked
             }));
             showMessage('api-message', 'Saved!', 'success');

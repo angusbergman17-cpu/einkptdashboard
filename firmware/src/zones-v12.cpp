@@ -175,7 +175,7 @@ void initDisplay() {
 void showWelcomeScreen() {
     bbep.fillScreen(BBEP_WHITE); bbep.setFont(FONT_8x8); bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
     bbep.setCursor(200, 100); bbep.printf("PTV-TRMNL v%s", FIRMWARE_VERSION);
-    bbep.setCursor(200, 140); bbep.print("Connect to WiFi: PTV-TRMNL-Setup");
+    bbep.setCursor(200, 140); bbep.print("Connect to WiFi: CC-Display-Setup");
     bbep.setCursor(200, 160); bbep.print("Open: 192.168.4.1");
     bbep.setCursor(200, 420); bbep.print("(c) 2026 Angus Bergman");
     bbep.refresh(REFRESH_FULL, true); lastFullRefresh = millis();
@@ -189,5 +189,5 @@ void connectWiFi() {
     WiFiManager wm; wm.setConfigPortalTimeout(180);
     customServerUrl.setValue(serverUrl, 120); wm.addParameter(&customServerUrl); wm.setSaveParamsCallback(saveParamCallback);
     wm.setCustomMenuHTML("<br><div style='text-align:center;font-size:11px;color:#aaa;margin-top:20px;'>System designed &amp; built by Angus Bergman</div>");
-    if (wm.autoConnect("PTV-TRMNL-Setup")) { wifiConnected = true; } else { wifiConnected = false; }
+    if (wm.autoConnect("CC-Display-Setup")) { wifiConnected = true; } else { wifiConnected = false; }
 }
