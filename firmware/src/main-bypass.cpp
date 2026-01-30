@@ -119,7 +119,7 @@ bool fetchAndDrawZones() {
     client.setInsecure();
     HTTPClient http;
     
-    String url = String(WEBHOOK_URL) + "?format=bmp&t=" + String(millis());
+    String url = String(WEBHOOK_URL) + "?force=1&t=" + String(millis());
     
     if (!http.begin(client, url)) {
         Serial.println("HTTP begin failed");
@@ -150,34 +150,29 @@ bool fetchAndDrawZones() {
     }
     
     JsonArray zonesArr = doc["zones"].as<JsonArray>();
-    JsonObject bmpData = doc["bmp"];
     
-    if (!bmpData) {
-        Serial.println("No BMP data in response");
+    if (zonesArr.size() == 0) {
+        Serial.println("Empty zones array");
         return false;
     }
     
     zoneCount = 0;
     bool anyChanged = false;
     
-    for (JsonVariant z : zonesArr) {
+    for (JsonObject zoneObj : zonesArr) {
         if (zoneCount >= MAX_ZONES) break;
         
-        const char* zoneId = z.as<const char*>();
-        JsonObject zoneInfo = bmpData[zoneId];
-        
-        if (!zoneInfo) continue;
-        
         Zone& zone = zones[zoneCount];
+        const char* zoneId = zoneObj["id"] | "unknown";
         strncpy(zone.id, zoneId, ZONE_ID_MAX_LEN - 1);
-        zone.x = zoneInfo["x"] | 0;
-        zone.y = zoneInfo["y"] | 0;
-        zone.w = zoneInfo["w"] | 0;
-        zone.h = zoneInfo["h"] | 0;
-        zone.changed = zoneInfo["changed"] | true;
+        zone.x = zoneObj["x"] | 0;
+        zone.y = zoneObj["y"] | 0;
+        zone.w = zoneObj["w"] | 0;
+        zone.h = zoneObj["h"] | 0;
+        zone.changed = zoneObj["changed"] | true;
         
         if (zone.changed || !initialDrawDone) {
-            const char* b64Data = zoneInfo["data"];
+            const char* b64Data = zoneObj["data"];
             if (b64Data) {
                 size_t len = strlen(b64Data);
                 size_t dec = decode_base64_length((unsigned char*)b64Data, len);
@@ -189,9 +184,17 @@ bool fetchAndDrawZones() {
                         if (result == BBEP_SUCCESS) {
                             anyChanged = true;
                             Serial.printf("Drew zone %s at (%d,%d) %dx%d\n", zone.id, zone.x, zone.y, zone.w, zone.h);
+                        } else {
+                            Serial.printf("loadBMP failed for zone %s: %d\n", zone.id, result);
                         }
+                    } else {
+                        Serial.printf("Invalid BMP header for zone %s\n", zone.id);
                     }
+                } else {
+                    Serial.printf("Zone %s data too large: %d bytes\n", zone.id, dec);
                 }
+            } else {
+                Serial.printf("No data for zone %s\n", zone.id);
             }
         }
         
