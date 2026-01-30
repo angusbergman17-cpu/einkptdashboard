@@ -17,9 +17,7 @@
 #define ZONE_BMP_MAX_SIZE 20000
 #define ZONE_ID_MAX_LEN 32
 #define ZONE_DATA_MAX_LEN 8000
-// Override config.h version
-#undef FIRMWARE_VERSION
-#define FIRMWARE_VERSION "6.6-hardcoded"
+#define FIRMWARE_VERSION "6.0-stable-hardcoded"
 
 // Default server for pairing API
 #define DEFAULT_SERVER "https://einkptdashboard.vercel.app"
@@ -31,11 +29,11 @@ Preferences preferences;
 char webhookUrl[256] = "";
 char pairingCode[8] = "";
 unsigned long lastRefresh = 0;
-const unsigned long REFRESH_INTERVAL = DEFAULT_REFRESH_INTERVAL;
-const unsigned long FULL_REFRESH_INTERVAL = DEFAULT_FULL_REFRESH;
+const unsigned long REFRESH_INTERVAL = 20000;
+const unsigned long FULL_REFRESH_INTERVAL = 300000;
 unsigned long lastFullRefresh = 0;
 int partialRefreshCount = 0;
-// MAX_PARTIAL_BEFORE_FULL is defined in config.h
+const int MAX_PARTIAL_BEFORE_FULL = 30;
 bool wifiConnected = false;
 bool devicePaired = false;
 bool initialDrawDone = false;
@@ -91,21 +89,6 @@ void setup() {
     
     initZoneBuffers();
     initDisplay();
-    
-    // Skip factory reset - using hardcoded webhook URL
-    
-    // GHOST BUSTER: Full screen clear cycle to remove artifacts
-    Serial.println("Clearing e-ink ghosting...");
-    bbep.fillScreen(BBEP_WHITE);
-    bbep.refresh(REFRESH_FULL, true);
-    delay(500);
-    bbep.fillScreen(BBEP_BLACK);
-    bbep.refresh(REFRESH_FULL, true);
-    delay(500);
-    bbep.fillScreen(BBEP_WHITE);
-    bbep.refresh(REFRESH_FULL, true);
-    delay(500);
-    Serial.println("Ghost clear complete");
     
     Serial.println("Setup complete");
 }
@@ -362,7 +345,7 @@ void showErrorScreen(const char* error) {
 }
 
 void loadSettings() {
-    // HARDCODED - bypass NVS to avoid corruption issues
+    // HARDCODED to bypass NVS corruption
     strncpy(webhookUrl, "https://einkptdashboard.vercel.app", sizeof(webhookUrl) - 1);
     devicePaired = true;
     Serial.printf("Webhook: %s (hardcoded)\n", webhookUrl);
@@ -450,12 +433,6 @@ bool fetchZoneUpdates(bool forceAll) {
     
     JsonDocument doc;
     if (deserializeJson(doc, payload)) {
-        return false;
-    }
-    
-    // Check if setup is required (server not configured yet)
-    if (doc["setup_required"] | false) {
-        Serial.println("Server says setup_required - waiting...");
         return false;
     }
     
