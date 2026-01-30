@@ -97,9 +97,16 @@ export async function getDepartures(stopId, routeType, options = {}) {
   }
   
   try {
+    console.log(`[ptv-api] Fetching departures: ${url.substring(0, 80)}...`);
     const res = await fetch(url, { timeout: 10000 });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    console.log(`[ptv-api] Response status: ${res.status}`);
+    if (!res.ok) {
+      const errorText = await res.text().catch(() => 'no body');
+      console.log(`[ptv-api] Error response: ${errorText.substring(0, 200)}`);
+      throw new Error(`HTTP ${res.status}: ${errorText.substring(0, 100)}`);
+    }
     const data = await res.json();
+    console.log(`[ptv-api] Got ${data.departures?.length || 0} departures`);
     
     const now = new Date();
     
