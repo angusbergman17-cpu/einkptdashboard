@@ -317,9 +317,12 @@ void loop() {
             // Wait 3 seconds then proceed to dashboard
             // TODO: Replace with actual /api/setup-status check when endpoint exists
             if (millis() - setupStartTime >= 3000) {
-                Serial.println("✓ Proceeding to dashboard");
-                waitingScreenShown = false;
-                currentState = STATE_FETCH_ZONES;
+                Serial.println("✓ Setup complete - staying on this screen for testing");
+                Serial.println("  (Remove this block to proceed to dashboard)");
+                // Reset timer to stay on this screen
+                setupStartTime = millis();
+                // DEBUG: Stay here instead of crashing in STATE_FETCH_ZONES
+                // currentState = STATE_FETCH_ZONES;
             }
             
             delay(100);
