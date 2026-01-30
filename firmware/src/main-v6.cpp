@@ -663,56 +663,59 @@ bool pollPairingStatus() {
 
 void showPairingScreen() {
     bbep.fillScreen(BBEP_WHITE);
+    bbep.setFont(FONT_8x8);  // ONLY use FONT_8x8 (rotation bug with others)
+    bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
     
-    // ========== LOGO AREA (top) ==========
-    // CC Logo is 150x141, center it at top
-    drawCCLogoCentered(15, 800);  // Logo at y=15
+    // ========== LOGO AREA (top, centered) ==========
+    // CC Logo is 150x141, center at x=325, y=10
+    drawCCLogo(325, 10);
     
     // ========== TITLE (below logo) ==========
-    bbep.setFont(FONT_12x16);
-    bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
-    bbep.setCursor(220, 170);
+    bbep.setCursor(310, 160);
     bbep.print("COMMUTE COMPUTE");
     
-    // ========== SETUP URL (prominent) ==========
-    bbep.setFont(FONT_12x16);
-    bbep.setCursor(100, 210);
+    // ========== SETUP URL (prominent box) ==========
+    bbep.drawRect(100, 185, 600, 35, BBEP_BLACK);
+    bbep.drawRect(101, 186, 598, 33, BBEP_BLACK);
+    bbep.setCursor(130, 198);
     bbep.print("Setup at: einkptdashboard.vercel.app");
     
-    // ========== PAIRING CODE (HUGE) ==========
-    // Draw a big box for the code
-    bbep.drawRect(100, 250, 600, 100, BBEP_BLACK);
-    bbep.drawRect(101, 251, 598, 98, BBEP_BLACK);
-    bbep.drawRect(102, 252, 596, 96, BBEP_BLACK);
+    // ========== PAIRING CODE SECTION ==========
+    // Big box for the code
+    bbep.drawRect(150, 235, 500, 100, BBEP_BLACK);
+    bbep.drawRect(151, 236, 498, 98, BBEP_BLACK);
+    bbep.drawRect(152, 237, 496, 96, BBEP_BLACK);
     
-    bbep.setFont(FONT_12x16);
-    bbep.setCursor(320, 265);
+    bbep.setCursor(340, 250);
     bbep.print("Enter code:");
     
-    // Draw pairing code LARGE - use 12x16 with big spacing
-    // Each character is spaced out dramatically
-    int codeX = 180;
-    int codeY = 295;
-    bbep.setFont(FONT_12x16);
+    // Draw pairing code with boxes around each character
+    // Using FONT_8x8 but with spacing and boxes to make it prominent
+    int codeStartX = 200;
+    int codeY = 280;
+    int boxSize = 50;
+    int spacing = 75;
+    
     for (int i = 0; i < 6; i++) {
-        // Draw each character with a box around it
-        bbep.drawRect(codeX + (i * 75), codeY - 5, 60, 40, BBEP_BLACK);
-        bbep.setCursor(codeX + (i * 75) + 20, codeY + 5);
+        int x = codeStartX + (i * spacing);
+        // Draw box around character
+        bbep.drawRect(x, codeY, boxSize, boxSize, BBEP_BLACK);
+        bbep.drawRect(x+1, codeY+1, boxSize-2, boxSize-2, BBEP_BLACK);
+        // Draw character centered in box (FONT_8x8 is 8px wide)
+        bbep.setCursor(x + 21, codeY + 21);
         bbep.printf("%c", pairingCode[i]);
     }
     
     // ========== INSTRUCTIONS ==========
-    bbep.setFont(FONT_12x16);
-    bbep.setCursor(120, 375);
-    bbep.print("1. Visit the URL on your phone");
-    bbep.setCursor(120, 400);
+    bbep.setCursor(200, 360);
+    bbep.print("1. Visit the URL on your phone or computer");
+    bbep.setCursor(200, 380);
     bbep.print("2. Complete the setup wizard");
-    bbep.setCursor(120, 425);
-    bbep.print("3. Enter the code when prompted");
+    bbep.setCursor(200, 400);
+    bbep.print("3. Enter the code above when prompted");
     
     // ========== FOOTER ==========
-    bbep.setFont(FONT_8x8);
-    bbep.setCursor(220, 460);
+    bbep.setCursor(250, 460);
     bbep.print("(c) 2026 Angus Bergman - CC BY-NC 4.0");
     
     bbep.refresh(REFRESH_FULL, true);
