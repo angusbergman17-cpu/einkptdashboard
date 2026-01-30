@@ -18,6 +18,30 @@
     },
     "api/zone/[id].js": {
       "includeFiles": "src/**,config/**,fonts/**"
+    },
+    "api/fullscreen.js": {
+      "includeFiles": "src/**,config/**,fonts/**"
+    },
+    "api/zones-tiered.js": {
+      "includeFiles": "src/**,config/**,fonts/**"
+    },
+    "api/health.js": {
+      "includeFiles": "src/**,config/**"
+    },
+    "api/status.js": {
+      "includeFiles": "src/**,config/**"
+    },
+    "api/version.js": {
+      "includeFiles": "config/**"
+    },
+    "api/admin/setup-complete.js": {
+      "includeFiles": "src/**,config/**"
+    },
+    "api/admin/preferences.js": {
+      "includeFiles": "src/**,config/**"
+    },
+    "api/admin/generate-webhook.js": {
+      "includeFiles": "src/**,config/**"
     }
   },
   "redirects": [

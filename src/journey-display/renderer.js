@@ -4,7 +4,7 @@
  * Copyright (c) 2026 Angus Bergman - Licensed under CC BY-NC 4.0
  */
 
-import { createCanvas } from 'canvas';
+import { createCanvas, GlobalFonts } from '@napi-rs/canvas';
 import { TransportMode, StepStatus, JourneyStatus, DisplayRegions } from './models.js';
 
 const DISPLAY_WIDTH = 800, DISPLAY_HEIGHT = 480;

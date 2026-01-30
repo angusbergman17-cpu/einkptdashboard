@@ -11,7 +11,7 @@
  * Licensed under CC BY-NC 4.0
  */
 
-import { createCanvas } from 'canvas';
+import { createCanvas } from '@napi-rs/canvas';
 import { getDepartures, getDisruptions, getWeather } from '../src/services/ptv-api.js';
 import SmartJourneyEngine from '../src/core/smart-journey-engine.js';
 import CCDashRendererV13 from '../src/services/ccdash-renderer-v13.js';
