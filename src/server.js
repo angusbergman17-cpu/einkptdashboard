@@ -7226,3 +7226,121 @@ safeguards.setupGracefulShutdown(server, async () => {
 });
 
 // Force rebuild 20260129-042622
+
+// ============================================================================
+// DEVICE PAIRING API (from PAIRING-SPEC.md)
+// ============================================================================
+
+// In-memory pairing codes (for simplicity - production should use KV/DB)
+const pairingCodes = new Map();
+
+// Generate pairing code
+function generatePairingCode() {
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return code;
+}
+
+// POST /api/pair/register - Device registers and gets a pairing code
+app.post('/api/pair/register', (req, res) => {
+  const { deviceMac } = req.body;
+  const code = generatePairingCode();
+  const expiresAt = Date.now() + (10 * 60 * 1000); // 10 minutes
+  
+  pairingCodes.set(code.toUpperCase(), {
+    code,
+    deviceMac: deviceMac || 'unknown',
+    status: 'waiting',
+    webhookUrl: null,
+    createdAt: Date.now(),
+    expiresAt
+  });
+  
+  console.log(`[PAIR] Device registered with code: ${code}`);
+  res.json({ success: true, code, expiresAt });
+});
+
+// GET /api/pair/:code - Device polls to check if paired
+app.get('/api/pair/:code', (req, res) => {
+  const code = req.params.code.toUpperCase();
+  const entry = pairingCodes.get(code);
+  
+  if (!entry) {
+    return res.status(404).json({ success: false, status: 'invalid', message: 'Code not found or expired' });
+  }
+  
+  // Check expiry
+  if (Date.now() > entry.expiresAt) {
+    pairingCodes.delete(code);
+    return res.status(410).json({ success: false, status: 'expired', message: 'Code expired' });
+  }
+  
+  if (entry.status === 'paired' && entry.webhookUrl) {
+    // Device is paired - return webhook URL
+    pairingCodes.delete(code); // One-time use
+    return res.json({
+      success: true,
+      status: 'paired',
+      webhookUrl: entry.webhookUrl,
+      message: 'Device paired successfully!'
+    });
+  }
+  
+  // Still waiting
+  res.json({
+    success: true,
+    status: 'waiting',
+    message: 'Waiting for setup to complete...'
+  });
+});
+
+// POST /api/pair/:code - Setup wizard sends config
+app.post('/api/pair/:code', (req, res) => {
+  const code = req.params.code.toUpperCase();
+  const entry = pairingCodes.get(code);
+  
+  if (!entry) {
+    return res.status(404).json({ success: false, message: 'Code not found or expired' });
+  }
+  
+  if (Date.now() > entry.expiresAt) {
+    pairingCodes.delete(code);
+    return res.status(410).json({ success: false, message: 'Code expired' });
+  }
+  
+  const { webhookUrl } = req.body;
+  const host = req.get('host');
+  const protocol = req.protocol;
+  
+  // Generate device-specific webhook URL
+  const deviceToken = require('crypto').randomBytes(16).toString('hex');
+  const generatedWebhookUrl = webhookUrl || \`\${protocol}://\${host}/api/screen?deviceId=\${deviceToken}\`;
+  
+  entry.status = 'paired';
+  entry.webhookUrl = generatedWebhookUrl;
+  pairingCodes.set(code, entry);
+  
+  console.log(\`[PAIR] Code \${code} configured with webhook: \${generatedWebhookUrl}\`);
+  res.json({
+    success: true,
+    status: 'configured',
+    message: \`Device code \${code} configured.\`,
+    webhookUrl: generatedWebhookUrl
+  });
+});
+
+// GET /api/pair - List active codes (admin only, for debugging)
+app.get('/api/pair', (req, res) => {
+  const codes = [];
+  for (const [code, entry] of pairingCodes) {
+    if (Date.now() < entry.expiresAt) {
+      codes.push({ code, status: entry.status, expiresIn: Math.round((entry.expiresAt - Date.now()) / 1000) });
+    }
+  }
+  res.json({ codes });
+});
+
+console.log('✅ Device pairing API enabled');

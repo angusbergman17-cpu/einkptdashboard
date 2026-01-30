@@ -30,7 +30,7 @@
 // CONFIGURATION
 // ============================================================================
 
-#define FIRMWARE_VERSION "6.0"
+#define FIRMWARE_VERSION "6.1"
 #define SCREEN_W 800
 #define SCREEN_H 480
 #define ZONE_BUFFER_SIZE 40000  // Needs to fit legs zone (~32KB)
@@ -72,6 +72,7 @@ enum State {
     STATE_INIT,
     STATE_WIFI_CONNECT,
     STATE_WIFI_PORTAL,
+    STATE_PAIRING,
     STATE_FETCH_ZONES,
     STATE_RENDER,
     STATE_IDLE,
@@ -92,6 +93,13 @@ char serverUrl[128] = "";
 bool wifiConnected = false;
 bool initialDrawDone = false;
 bool setupRequired = false;
+
+// Pairing
+char pairingCode[8] = "";
+unsigned long pairingStartTime = 0;
+bool pairingMode = false;
+#define PAIRING_POLL_INTERVAL_MS 5000
+#define PAIRING_TIMEOUT_MS 600000  // 10 minutes
 
 // Timing
 unsigned long lastRefresh = 0;
@@ -116,6 +124,7 @@ WiFiManagerParameter customServerUrl("server", "Server URL", "", 120);
 
 void initDisplay();
 void showWelcomeScreen();
+void showPairingScreen();
 void showWiFiSetupScreen();
 void showConnectingScreen();  // Alias for showWiFiSetupScreen
 void showConfiguredScreen();
@@ -129,6 +138,9 @@ bool fetchZoneList(bool forceAll);
 bool fetchAndDrawZone(const ZoneDef& zone, bool flash);
 void doFullRefresh();
 void doPartialRefresh();
+String generatePairingCode();
+bool registerForPairing();
+bool pollPairingStatus();
 
 // ============================================================================
 // SETUP - Must complete in <5 seconds, NO blocking operations
@@ -230,9 +242,20 @@ void loop() {
             if (wm.autoConnect("CommuteCompute-Setup", "transport123")) {
                 wifiConnected = true;
                 Serial.printf("✓ WiFi connected: %s\n", WiFi.localIP().toString().c_str());
-                showConfiguredScreen();
-                delay(2000);
-                currentState = STATE_FETCH_ZONES;
+                
+                // Check if we have a valid webhook URL stored
+                if (strlen(serverUrl) > 0 && strstr(serverUrl, "http") != nullptr) {
+                    // Already configured - go to dashboard
+                    showConfiguredScreen();
+                    delay(2000);
+                    currentState = STATE_FETCH_ZONES;
+                } else {
+                    // First time setup - enter pairing mode
+                    Serial.println("→ First time setup - entering pairing mode");
+                    currentState = STATE_PAIRING;
+                    pairingMode = true;
+                    pairingStartTime = millis();
+                }
                 consecutiveErrors = 0;
                 initialDrawDone = false;
             } else {
@@ -242,6 +265,52 @@ void loop() {
             }
             break;
         }
+        
+        // ----------------------------------------------------------------
+        case STATE_PAIRING: {
+            static unsigned long lastPollTime = 0;
+            static bool pairingScreenShown = false;
+            
+            feedWatchdog();
+            
+            // Register and show pairing screen (once)
+            if (!pairingScreenShown) {
+                Serial.println("→ STATE: Pairing Mode");
+                registerForPairing();
+                showPairingScreen();
+                pairingScreenShown = true;
+                lastPollTime = millis();
+            }
+            
+            // Check for timeout
+            if (millis() - pairingStartTime > PAIRING_TIMEOUT_MS) {
+                Serial.println("✗ Pairing timeout");
+                pairingScreenShown = false;
+                pairingMode = false;
+                showErrorScreen("Pairing timed out. Reset to try again.");
+                currentState = STATE_ERROR;
+                break;
+            }
+            
+            // Poll for pairing status every 5 seconds
+            if (millis() - lastPollTime >= PAIRING_POLL_INTERVAL_MS) {
+                lastPollTime = millis();
+                Serial.printf("[PAIR] Polling... (elapsed: %lus)\n", 
+                             (millis() - pairingStartTime) / 1000);
+                
+                if (pollPairingStatus()) {
+                    // Successfully paired!
+                    Serial.println("✓ Pairing complete!");
+                    pairingScreenShown = false;
+                    pairingMode = false;
+                    showConfiguredScreen();
+                    delay(2000);
+                    currentState = STATE_FETCH_ZONES;
+                }
+            }
+            
+            delay(100);  // Small delay to prevent tight loop
+            break;
         
         // ----------------------------------------------------------------
         case STATE_FETCH_ZONES: {
@@ -490,6 +559,156 @@ void showWiFiSetupScreen() {
 // Keep old name as alias for compatibility
 void showConnectingScreen() {
     showWiFiSetupScreen();
+}
+
+// ============================================================================
+// PAIRING CODE FLOW
+// ============================================================================
+
+String generatePairingCode() {
+    const char* chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+    String code = "";
+    for (int i = 0; i < 6; i++) {
+        code += chars[random(0, strlen(chars))];
+    }
+    return code;
+}
+
+bool registerForPairing() {
+    if (strlen(serverUrl) == 0) {
+        strcpy(serverUrl, DEFAULT_SERVER_URL);
+    }
+    
+    WiFiClientSecure client;
+    client.setInsecure();
+    HTTPClient http;
+    
+    String url = String(serverUrl) + "/api/pair/register";
+    Serial.printf("[PAIR] Registering at: %s\n", url.c_str());
+    
+    http.begin(client, url);
+    http.addHeader("Content-Type", "application/json");
+    http.setTimeout(HTTP_TIMEOUT_MS);
+    
+    String mac = WiFi.macAddress();
+    String body = "{\"deviceMac\":\"" + mac + "\"}";
+    
+    int httpCode = http.POST(body);
+    
+    if (httpCode == 200) {
+        String response = http.getString();
+        Serial.printf("[PAIR] Response: %s\n", response.c_str());
+        
+        // Parse JSON to get code
+        int codeStart = response.indexOf("\"code\":\"") + 8;
+        int codeEnd = response.indexOf("\"", codeStart);
+        if (codeStart > 8 && codeEnd > codeStart) {
+            String code = response.substring(codeStart, codeEnd);
+            strncpy(pairingCode, code.c_str(), 7);
+            pairingCode[6] = '\0';
+            Serial.printf("[PAIR] Got code: %s\n", pairingCode);
+            http.end();
+            return true;
+        }
+    }
+    
+    Serial.printf("[PAIR] Failed to register: %d\n", httpCode);
+    http.end();
+    
+    // Fallback: generate local code (won't work with server but shows UI)
+    String localCode = generatePairingCode();
+    strncpy(pairingCode, localCode.c_str(), 7);
+    return false;
+}
+
+bool pollPairingStatus() {
+    if (strlen(pairingCode) == 0) return false;
+    
+    WiFiClientSecure client;
+    client.setInsecure();
+    HTTPClient http;
+    
+    String url = String(serverUrl) + "/api/pair/" + pairingCode;
+    
+    http.begin(client, url);
+    http.setTimeout(HTTP_TIMEOUT_MS);
+    
+    int httpCode = http.GET();
+    
+    if (httpCode == 200) {
+        String response = http.getString();
+        
+        // Check if paired
+        if (response.indexOf("\"status\":\"paired\"") >= 0) {
+            // Extract webhook URL
+            int urlStart = response.indexOf("\"webhookUrl\":\"") + 14;
+            int urlEnd = response.indexOf("\"", urlStart);
+            if (urlStart > 14 && urlEnd > urlStart) {
+                String webhook = response.substring(urlStart, urlEnd);
+                strncpy(serverUrl, webhook.c_str(), 127);
+                serverUrl[127] = '\0';
+                Serial.printf("[PAIR] Paired! Webhook: %s\n", serverUrl);
+                
+                // Save to preferences
+                saveSettings();
+                http.end();
+                return true;
+            }
+        }
+    }
+    
+    http.end();
+    return false;
+}
+
+void showPairingScreen() {
+    bbep.fillScreen(BBEP_WHITE);
+    bbep.setFont(FONT_8x8);
+    
+    // Draw CC logo centered at top
+    drawCCLogoCentered(20, 800);
+    
+    // Title
+    bbep.setTextColor(BBEP_BLACK, BBEP_WHITE);
+    bbep.setCursor(280, 160);
+    bbep.print("SMART TRANSIT DISPLAY");
+    bbep.setCursor(350, 180);
+    bbep.printf("v%s", FIRMWARE_VERSION);
+    
+    // Setup URL box
+    bbep.drawRect(150, 210, 500, 50, BBEP_BLACK);
+    bbep.drawRect(151, 211, 498, 48, BBEP_BLACK);
+    bbep.setCursor(200, 228);
+    bbep.print("Setup at: einkptdashboard.vercel.app/setup");
+    
+    // Pairing code - BIG and prominent
+    bbep.drawRect(250, 280, 300, 80, BBEP_BLACK);
+    bbep.drawRect(251, 281, 298, 78, BBEP_BLACK);
+    bbep.fillRect(252, 282, 296, 76, BBEP_WHITE);
+    
+    bbep.setCursor(305, 300);
+    bbep.print("Enter code:");
+    
+    // Draw pairing code in large text (simulated with spacing)
+    bbep.setCursor(300, 330);
+    for (int i = 0; i < 6; i++) {
+        bbep.printf(" %c ", pairingCode[i]);
+    }
+    
+    // Instructions
+    bbep.setCursor(180, 390);
+    bbep.print("1. Visit the setup URL on your phone or computer");
+    bbep.setCursor(180, 410);
+    bbep.print("2. Complete the setup wizard");
+    bbep.setCursor(180, 430);
+    bbep.print("3. Enter the code above when prompted");
+    
+    // Footer
+    bbep.setCursor(220, 460);
+    bbep.print("(c) 2026 Angus Bergman - CC BY-NC 4.0");
+    
+    bbep.refresh(REFRESH_FULL, true);
+    lastFullRefresh = millis();
 }
 
 void showConfiguredScreen() {
