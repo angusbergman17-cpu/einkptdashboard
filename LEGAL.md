@@ -30,6 +30,22 @@ The following are **unregistered trademarks (™)** owned by **Angus Bergman**:
 
 All trademarks, service marks, trade names, logos, and designs listed above are the exclusive intellectual property of **Angus Bergman**. All associated copyrights, including but not limited to source code, documentation, specifications, and brand assets relating to each trademark, are owned by Angus Bergman.
 
+### License Disclaimer
+
+**NOTICE:** Use of the Commute Compute System™ and all associated trademarks, software, documentation, and intellectual property is granted solely pursuant to the terms of the **CC BY-NC 4.0 (Creative Commons Attribution-NonCommercial 4.0 International)** license, unless otherwise expressly agreed in writing by the copyright owner.
+
+By using, copying, modifying, or distributing any part of this system, you acknowledge and agree that:
+
+1. Your use is subject to and governed by the CC BY-NC 4.0 license terms
+2. No ownership or proprietary rights are transferred to you
+3. Commercial use is strictly prohibited without prior written permission
+4. All trademark rights remain exclusively with Angus Bergman
+5. Attribution must be maintained in all copies and derivative works
+
+**No implied license** is granted under any trademark, patent, or other intellectual property right of Angus Bergman, except as expressly set forth in the applicable license.
+
+For commercial licensing inquiries or permissions beyond the scope of CC BY-NC 4.0, contact the copyright owner.
+
 ### Firmware Naming Convention
 
 All custom firmware uses the **CCFirm** prefix:
