@@ -1049,12 +1049,18 @@
                         `;
                     }
                     
+                    // Hide the form elements and button row after success
+                    const form = document.querySelector('#step-5 form');
+                    if (form) {
+                        form.style.display = 'none';
+                    }
+                    
                     document.getElementById('setup-status').innerHTML = `
                         <div class="success-box" style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); padding: 20px; border-radius: 12px;">
                             <h3 style="color: #22c55e; margin-bottom: 10px;">✅ Setup Complete!</h3>
                             <p style="color: #86efac;">Your intelligent transit display is ready.</p>
                             ${webhookHtml}
-                            <button type="button" class="btn" onclick="window.location.href='/admin.html'" style="margin-top: 15px;">Go to Dashboard →</button>
+                            <button type="button" class="btn" onclick="window.location.href='/admin.html'" style="margin-top: 15px; width: 100%;">Go to Dashboard →</button>
                         </div>
                     `;
                 } else {
