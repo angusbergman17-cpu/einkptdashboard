@@ -707,9 +707,58 @@
         .feedback-note a {
             color: var(--accent);
         }
+        
+        /* SVG Icons */
+        .svg-icon {
+            width: 24px;
+            height: 24px;
+            color: var(--accent);
+            flex-shrink: 0;
+        }
+        
+        .svg-icon.sm { width: 18px; height: 18px; }
+        .svg-icon.lg { width: 32px; height: 32px; }
+        .svg-icon.muted { color: var(--text-secondary); }
     </style>
 </head>
 <body>
+    <!-- SVG Icon Definitions -->
+    <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+        <symbol id="icon-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </symbol>
+        <symbol id="icon-route" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/>
+        </symbol>
+        <symbol id="icon-monitor" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+        </symbol>
+        <symbol id="icon-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </symbol>
+        <symbol id="icon-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+        </symbol>
+        <symbol id="icon-thermometer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/>
+        </symbol>
+        <symbol id="icon-train" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="3" width="16" height="16" rx="2"/><path d="M4 11h16"/><path d="M12 3v8"/><circle cx="8" cy="15" r="1"/><circle cx="16" cy="15" r="1"/><path d="m9 19-2 3"/><path d="m15 19 2 3"/>
+        </symbol>
+        <symbol id="icon-coffee" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/>
+        </symbol>
+        <symbol id="icon-building" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/>
+        </symbol>
+        <symbol id="icon-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </symbol>
+        <symbol id="icon-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+        </symbol>
+    </svg>
+
     <!-- Accessibility: Skip to main content -->
     <a href="#main-content" class="skip-link">Skip to main content</a>
     
@@ -754,7 +803,7 @@
             <!-- Status Banner -->
             <div class="status-banner">
                 <div class="status-info">
-                    <h1>👋 Good <span id="greeting-time">Morning</span></h1>
+                    <h1>Good <span id="greeting-time">Morning</span></h1>
                     <p id="journey-summary">Your commute is ready</p>
                 </div>
                 <div class="status-time">
@@ -766,31 +815,31 @@
             <!-- Quick Actions -->
             <div class="quick-actions">
                 <a href="/admin.html" class="action-card">
-                    <div class="icon">⚙️</div>
-                    <h3>Settings</h3>
-                    <p>Change addresses, times & API keys</p>
+                    <svg class="svg-icon lg"><use href="#icon-settings"/></svg>
+                    <div><h3>Settings</h3>
+                    <p>Change addresses, times & API keys</p></div>
                 </a>
                 <a href="/journey-display.html" class="action-card">
-                    <div class="icon">🗺️</div>
-                    <h3>Full Journey View</h3>
-                    <p>See complete route details</p>
+                    <svg class="svg-icon lg"><use href="#icon-route"/></svg>
+                    <div><h3>Full Journey View</h3>
+                    <p>See complete route details</p></div>
                 </a>
                 <a href="/simulator.html" class="action-card">
-                    <div class="icon">📟</div>
-                    <h3>Device Simulator</h3>
-                    <p>Test display rendering</p>
+                    <svg class="svg-icon lg"><use href="#icon-monitor"/></svg>
+                    <div><h3>Device Simulator</h3>
+                    <p>Test display rendering</p></div>
                 </a>
                 <div class="action-card" onclick="recalculateJourney()">
-                    <div class="icon">🔄</div>
-                    <h3>Recalculate Route</h3>
-                    <p>Get fresh transit data</p>
+                    <svg class="svg-icon lg"><use href="#icon-refresh"/></svg>
+                    <div><h3>Recalculate Route</h3>
+                    <p>Get fresh transit data</p></div>
                 </div>
             </div>
             
             <!-- Journey Preview -->
             <div class="journey-preview">
                 <div class="journey-header">
-                    <h2>📍 Today's Journey</h2>
+                    <h2><svg class="svg-icon sm" style="vertical-align: middle; margin-right: 6px;"><use href="#icon-pin"/></svg>Today's Journey</h2>
                     <span id="journey-eta" style="color: var(--success); font-weight: 600;">--</span>
                 </div>
                 <div id="journey-legs">
@@ -805,11 +854,11 @@
                     <div class="value" id="api-status">--</div>
                 </div>
                 <div class="status-card">
-                    <h3>🌡️ Weather</h3>
+                    <h3><svg class="svg-icon sm muted" style="vertical-align: middle; margin-right: 4px;"><use href="#icon-thermometer"/></svg> Weather</h3>
                     <div class="value" id="weather-status">--</div>
                 </div>
                 <div class="status-card">
-                    <h3>📊 Last Update</h3>
+                    <h3><svg class="svg-icon sm muted" style="vertical-align: middle; margin-right: 4px;"><use href="#icon-refresh"/></svg> Last Update</h3>
                     <div class="value" id="last-update">--</div>
                 </div>
             </div>
@@ -818,7 +867,7 @@
         <!-- Setup View (New Users) -->
         <div class="setup-view" id="setup-view">
             <div class="welcome-card">
-                <div class="icon">🚃</div>
+                <svg class="svg-icon" style="width: 56px; height: 56px; margin-bottom: 16px;"><use href="#icon-train"/></svg>
                 <h1>Welcome to Commute Compute</h1>
                 <p>
                     Your intelligent transit display for Australian public transport.
@@ -827,23 +876,23 @@
                 
                 <div class="welcome-features">
                     <div class="feature">
-                        <div class="icon">📍</div>
+                        <svg class="svg-icon"><use href="#icon-route"/></svg>
                         <h4>Smart Routes</h4>
                         <p>Auto-detects best transit options</p>
                     </div>
                     <div class="feature">
-                        <div class="icon">☕</div>
+                        <svg class="svg-icon"><use href="#icon-coffee"/></svg>
                         <h4>Coffee Stops</h4>
                         <p>Includes your favorite cafe</p>
                     </div>
                     <div class="feature">
-                        <div class="icon">📟</div>
+                        <svg class="svg-icon"><use href="#icon-monitor"/></svg>
                         <h4>E-Ink Display</h4>
                         <p>Always-on, low-power dashboard</p>
                     </div>
                 </div>
                 
-                <a href="/setup-wizard.html" class="btn-primary">🚀 Start Setup</a>
+                <a href="/setup-wizard.html" class="btn-primary">Start Setup</a>
                 <br>
                 <a href="/simulator.html" class="btn-secondary">View Demo First</a>
             </div>
@@ -851,20 +900,20 @@
         <!-- Live Attribution Bar -->
         <div class="attribution-bar" id="attribution-bar" role="marquee" aria-live="polite">
             <div class="attribution-content" id="attribution-content">
-                <span class="attribution-item">🚆 Transit data: Transport for Victoria (CC BY 4.0)</span>
+                <span class="attribution-item">Transit data: Transport for Victoria (CC BY 4.0)</span>
             </div>
         </div>
         
         <!-- Feedback Button -->
         <button class="feedback-btn" onclick="openFeedback()" aria-label="Send Feedback">
-            💬 Feedback
+            Feedback
         </button>
         
         <!-- Feedback Modal -->
         <div class="feedback-modal" id="feedback-modal" role="dialog" aria-labelledby="feedback-title" aria-hidden="true">
             <div class="feedback-content">
                 <button class="feedback-close" onclick="closeFeedback()" aria-label="Close">&times;</button>
-                <h2 id="feedback-title">📬 Send Feedback</h2>
+                <h2 id="feedback-title">Send Feedback</h2>
                 <p>Help improve Commute Compute! Your feedback goes directly to the developer.</p>
                 <form id="feedback-form" onsubmit="submitFeedback(event)">
                     <div class="form-group">
@@ -872,7 +921,7 @@
                         <select id="feedback-type" required>
                             <option value="bug">🐛 Bug Report</option>
                             <option value="feature">✨ Feature Request</option>
-                            <option value="general">💬 General Feedback</option>
+                            <option value="general">General Feedback</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -898,7 +947,7 @@
             Data sources: <span id="active-sources">Loading...</span>
         </div>
         <div class="footer-support">
-            <a href="https://buymeacoffee.com/angusbergman" target="_blank" rel="noopener noreferrer" class="support-link">☕ Buy me a coffee</a>
+            <a href="https://buymeacoffee.com/angusbergman" target="_blank" rel="noopener noreferrer" class="support-link">Support the project</a>
             <span class="footer-divider">•</span>
             <a href="https://github.com/sponsors/angusbergman17-cpu" target="_blank" rel="noopener noreferrer" class="support-link">💖 Sponsor</a>
         </div>
@@ -1025,23 +1074,27 @@
             }
         }
         
+        function getSvgIcon(name) {
+            return `<svg class="svg-icon" style="width:20px;height:20px;"><use href="#icon-${name}"/></svg>`;
+        }
+        
         function renderJourneyLegs(journey) {
             const container = document.getElementById('journey-legs');
-            const icons = {
-                'walk': '🚶',
-                'tram': '🚊',
-                'train': '🚆',
-                'bus': '🚌',
-                'coffee': '☕',
-                'default': '📍'
+            const iconMap = {
+                'walk': 'route',
+                'tram': 'train',
+                'train': 'train',
+                'bus': 'train',
+                'coffee': 'coffee',
+                'default': 'pin'
             };
             
             let html = '';
             journey.legs.forEach(leg => {
-                const icon = icons[leg.mode?.toLowerCase()] || icons.default;
+                const iconName = iconMap[leg.mode?.toLowerCase()] || iconMap.default;
                 html += `
                     <div class="journey-leg">
-                        <div class="leg-icon">${icon}</div>
+                        <div class="leg-icon">${getSvgIcon(iconName)}</div>
                         <div class="leg-info">
                             <h4>${leg.description || leg.mode || 'Transit'}</h4>
                             <p>${leg.from || ''} → ${leg.to || ''}</p>
@@ -1081,17 +1134,17 @@
         
         // ==================== LIVE ATTRIBUTION ====================
         const attributionSources = [
-            { icon: '🚆', text: 'Transit data: Transport for Victoria (CC BY 4.0)' },
-            { icon: '🗺️', text: 'Geocoding: OpenStreetMap / Nominatim (ODbL)' },
-            { icon: '🌤️', text: 'Weather: Bureau of Meteorology Australia' },
-            { icon: '📍', text: 'Maps: Google Places API / Mapbox' },
-            { icon: '🚊', text: 'NSW data: Transport for NSW Open Data' },
-            { icon: '🚌', text: 'QLD data: TransLink Queensland' },
-            { icon: '🚃', text: 'SA data: Adelaide Metro' },
-            { icon: '🚆', text: 'WA data: Transperth' },
-            { icon: '📟', text: 'Hardware: CC E-ink Display Platform' },
-            { icon: '⚡', text: 'Framework: Node.js / Express' },
-            { icon: '📜', text: 'License: CC BY-NC 4.0 © Angus Bergman' }
+            'Transit data: Transport for Victoria (CC BY 4.0)',
+            'Geocoding: OpenStreetMap / Nominatim (ODbL)',
+            'Weather: Bureau of Meteorology Australia',
+            'Maps: Google Places API / Mapbox',
+            'NSW data: Transport for NSW Open Data',
+            'QLD data: TransLink Queensland',
+            'SA data: Adelaide Metro',
+            'WA data: Transperth',
+            'Hardware: CC E-ink Display Platform',
+            'Framework: Node.js / Express',
+            'License: CC BY-NC 4.0 © Angus Bergman'
         ];
         
         function initAttribution() {
@@ -1100,7 +1153,7 @@
             
             // Duplicate items for seamless scroll
             const items = attributionSources.map(s => 
-                `<span class="attribution-item">${s.icon} ${s.text}</span>`
+                `<span class="attribution-item">${s}</span>`
             ).join('');
             container.innerHTML = items + items; // Duplicate for seamless loop
             
