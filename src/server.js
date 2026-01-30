@@ -1778,7 +1778,7 @@ app.get('/api/dashboard', async (req, res) => {
       left: 0;
       right: 0;
       height: 20px;
-      background: ${hasLiveData ? '#10b981' : '#fbbf24'};
+      background: ${hasLiveData ? '#4fb28e' : '#fbbf24'};
       color: ${hasLiveData ? 'white' : '#1f2937'};
       display: flex;
       align-items: center;
@@ -6871,7 +6871,7 @@ app.get('/preview', requireConfiguration, (req, res) => {
         // Live dashboard refresh every 20 seconds
         let countdown = 20;
         const countdownEl = document.createElement('div');
-        countdownEl.style.cssText = 'position: fixed; bottom: 20px; right: 20px; background: rgba(0,0,0,0.7); color: #10b981; padding: 10px 15px; border-radius: 8px; font-family: monospace; font-size: 14px; z-index: 9999;';
+        countdownEl.style.cssText = 'position: fixed; bottom: 20px; right: 20px; background: rgba(0,0,0,0.7); color: #4fb28e; padding: 10px 15px; border-radius: 8px; font-family: monospace; font-size: 14px; z-index: 9999;';
         countdownEl.innerHTML = '🔄 Live: <span id="cd">20</span>s';
         document.body.appendChild(countdownEl);
         

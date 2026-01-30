@@ -211,7 +211,7 @@ function generateHtmlPreview(device, config) {
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚃</text></svg>">
     <style>
         :root {
-            --bg-primary: #0f172a;
+            --bg-primary: #1a2744;
             --bg-secondary: #1e293b;
             --bg-card: rgba(30, 41, 59, 0.8);
             --accent: #6366f1;
