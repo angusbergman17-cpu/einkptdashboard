@@ -4,6 +4,7 @@
 #include <WiFiClientSecure.h>
 #include <WiFiManager.h>
 #include <Preferences.h>
+#include <nvs_flash.h>
 #include <ArduinoJson.h>
 #include <bb_epaper.h>
 #include "base64.hpp"
@@ -79,6 +80,16 @@ void setup() {
     WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
     Serial.begin(115200); delay(500);
     Serial.println("\n=== Commute Compute v" FIRMWARE_VERSION " ===");
+    
+    // Initialize NVS explicitly before any library uses it
+    // This prevents crashes from corrupted NVS
+    esp_err_t err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        Serial.println("NVS corrupted, erasing...");
+        nvs_flash_erase();
+        nvs_flash_init();
+    }
+    Serial.println("NVS initialized");
     
     loadSettings();
     
