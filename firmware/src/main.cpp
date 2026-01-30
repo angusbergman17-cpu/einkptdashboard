@@ -19,7 +19,7 @@
 #define ZONE_DATA_MAX_LEN 8000
 // Override config.h version
 #undef FIRMWARE_VERSION
-#define FIRMWARE_VERSION "6.2-ghostbuster"
+#define FIRMWARE_VERSION "6.3-stable"
 
 // Default server for pairing API
 #define DEFAULT_SERVER "https://einkptdashboard.vercel.app"
@@ -450,6 +450,12 @@ bool fetchZoneUpdates(bool forceAll) {
     
     JsonDocument doc;
     if (deserializeJson(doc, payload)) {
+        return false;
+    }
+    
+    // Check if setup is required (server not configured yet)
+    if (doc["setup_required"] | false) {
+        Serial.println("Server says setup_required - waiting...");
         return false;
     }
     
