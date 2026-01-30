@@ -444,6 +444,25 @@
                         </label>
                     </div>
 
+                    <div class="form-group" style="margin-top: 20px; padding: 15px; background: rgba(99, 102, 241, 0.1); border-radius: 8px;">
+                        <label class="form-label" style="margin-bottom: 10px;">☁️ API Usage Mode</label>
+                        <div style="margin-bottom: 10px;">
+                            <label style="display: flex; align-items: center; cursor: pointer;">
+                                <input type="radio" name="api-mode" value="cached" checked style="margin-right: 8px;">
+                                <span><strong>Free Mode</strong> — Use cached data (no runtime API calls)</span>
+                            </label>
+                        </div>
+                        <div>
+                            <label style="display: flex; align-items: center; cursor: pointer;">
+                                <input type="radio" name="api-mode" value="live" style="margin-right: 8px;">
+                                <span><strong>Live Mode</strong> — Real-time cafe busy-ness (uses Google API)</span>
+                            </label>
+                        </div>
+                        <small style="color: #718096; display: block; margin-top: 10px;">
+                            Free Mode caches all location data during setup. Live Mode fetches real-time cafe status but requires Google Places API credits.
+                        </small>
+                    </div>
+
                     <div id="setup-status"></div>
 
                     <div class="btn-row">
@@ -946,19 +965,52 @@
                 lastStep = 'checking result.success';
 
                 if (result.success) {
+                    // Get API mode (cached = free, live = uses Google API at runtime)
+                    const apiMode = document.querySelector('input[name="api-mode"]:checked')?.value || 'cached';
+                    const googleKey = document.getElementById('google-places-api-key')?.value || '';
+                    const includeCoffee = document.getElementById('include-coffee').checked;
+                    
+                    // Cache cafe details during setup (one-time API call) if cafe address provided
+                    let cafeData = null;
+                    if (includeCoffee && addresses.cafe && result.locations?.cafe) {
+                        lastStep = 'caching cafe details';
+                        try {
+                            const cafeResponse = await fetch(baseUrl + '/api/cafe-details', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    lat: result.locations.cafe.lat,
+                                    lon: result.locations.cafe.lon,
+                                    cafeName: addresses.cafe,
+                                    googleKey: googleKey
+                                })
+                            });
+                            const cafeResult = await cafeResponse.json();
+                            if (cafeResult.success) {
+                                cafeData = cafeResult.cafe;
+                                console.log('Cached cafe data:', cafeData);
+                            }
+                        } catch (cafeError) {
+                            console.warn('Could not cache cafe details:', cafeError);
+                        }
+                    }
+                    
                     // Generate webhook URL for TRMNL device
-                    // Pass the full config so it can be embedded in the URL (for serverless persistence)
+                    // All location data is cached here - no runtime API calls needed for basic functionality
                     const fullConfig = {
                         addresses: addresses,
                         journey: {
                             transitRoute: result.transitRoute || {},
                             arrivalTime: document.getElementById('arrival-time').value,
-                            coffeeEnabled: document.getElementById('include-coffee').checked
+                            coffeeEnabled: includeCoffee
                         },
                         locations: result.locations || {},
                         state: selectedAuthority,
                         api: { key: document.getElementById('api-key')?.value || '' },
-                        additionalAPIs: { google_places: document.getElementById('google-places-api-key')?.value || '' }
+                        // Cafe data cached from setup - no runtime API calls
+                        cafe: cafeData,
+                        // API mode: 'cached' (free) or 'live' (uses Google API)
+                        apiMode: apiMode
                     };
                     
                     lastStep = 'fetching generate-webhook';
