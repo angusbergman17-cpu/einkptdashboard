@@ -472,9 +472,9 @@
                     <div id="setup-status"></div>
                     
                     <!-- Fallback navigation - always visible after attempting setup -->
-                    <div id="manual-navigation" style="display: none; margin-top: 20px; padding: 15px; background: rgba(99, 102, 241, 0.1); border-radius: 8px; text-align: center;">
-                        <p style="color: #94a3b8; margin-bottom: 10px;">Setup submitted. If this page doesn't update:</p>
-                        <a href="/admin.html" class="btn" style="display: inline-block; text-decoration: none;">
+                    <div id="manual-navigation" style="display: none; margin-top: 20px; padding: 15px; background: rgba(79, 178, 142, 0.15); border: 2px solid #4fb28e; border-radius: 8px; text-align: center;">
+                        <p style="color: #f1f5f9; margin-bottom: 10px; font-weight: 600;">✓ Setup submitted!</p>
+                        <a href="/admin.html" class="btn" style="display: inline-block; text-decoration: none; background: #4fb28e; color: #fff; padding: 12px 24px; border-radius: 8px; font-weight: 600;">
                             Go to Dashboard →
                         </a>
                     </div>
@@ -1089,9 +1089,15 @@
                             <h3 style="color: #22c55e; margin-bottom: 10px;">✅ Setup Complete!</h3>
                             <p style="color: #86efac;">Your intelligent transit display is ready.</p>
                             ${webhookHtml}
-                            <button type="button" class="btn" onclick="window.location.href='/admin.html'" style="margin-top: 15px; width: 100%;">Go to Dashboard →</button>
+                            <p style="color: #94a3b8; margin-top: 15px; font-size: 13px;">Redirecting to dashboard in 3 seconds...</p>
+                            <button type="button" class="btn" onclick="window.location.href='/admin.html'" style="margin-top: 10px; width: 100%; background: #4fb28e;">Go to Dashboard →</button>
                         </div>
                     `;
+                    
+                    // Auto-redirect after 3 seconds
+                    setTimeout(() => {
+                        window.location.href = '/admin.html';
+                    }, 3000);
                 } else {
                     alert('Setup failed: ' + result.error);
                 }
