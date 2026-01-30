@@ -373,7 +373,8 @@ void connectWiFi() {
 }
 
 void initDisplay() {
-    bbep.initIO(EPD_DC_PIN, EPD_RST_PIN, EPD_BUSY_PIN, EPD_CS_PIN, EPD_MOSI_PIN, EPD_SCK_PIN, 8000000);
+    // Use speed=0 for bit-bang mode - hardware SPI fails on ESP32-C3 with custom pins
+    bbep.initIO(EPD_DC_PIN, EPD_RST_PIN, EPD_BUSY_PIN, EPD_CS_PIN, EPD_MOSI_PIN, EPD_SCK_PIN, 0);
     bbep.setPanelType(EP75_800x480);
     bbep.setRotation(0);
     // allocBuffer(false) removed - causes ESP32-C3 SPI issues (commit 02f9f27)
