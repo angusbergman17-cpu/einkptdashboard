@@ -356,11 +356,35 @@ Third-party libraries retain their original licenses.
 
 ---
 
+## 🗺️ Roadmap
+
+Future development priorities:
+
+| Feature | Status | Description |
+|---------|--------|-------------|
+| **📅 Calendar Integration** | 🔜 Next | Sync with Google/Outlook calendar for smart departure times based on appointments |
+| **📱 Live Mobile Widgets** | 🔜 Next | iOS and Android home screen widgets with real-time commute info |
+| **🇦🇺 More States** | 🔄 Planned | SA, WA, TAS, ACT, NT transit authority support |
+| **🖥️ More Devices** | 🔄 Planned | Inkplate, Waveshare, custom ESP32 displays |
+| **🔔 Push Notifications** | 💭 Exploring | Alert when disruptions affect your route |
+
+Want to see a feature prioritized? [Open an issue](https://github.com/angusbergman17-cpu/einkptdashboard/issues) or sponsor development!
+
+---
+
 ## 💖 Support
 
-If Commute Compute helps you catch your train on time:
+If Commute Compute helps you catch your train on time, consider supporting continued development:
 
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/angusbergman)
+[![GitHub Sponsors](https://img.shields.io/badge/GitHub%20Sponsors-db61a2?style=for-the-badge&logo=github-sponsors&logoColor=white)](https://github.com/sponsors/angusbergman17-cpu)
+
+**Your support helps fund:**
+- 📅 Calendar integration development
+- 📱 Native iOS/Android widget apps
+- 🇦🇺 Additional state transit APIs
+- 🖥️ New device support
+- ☕ Coffee (essential for development)
 
 ---
 
