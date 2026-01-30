@@ -372,7 +372,7 @@ class SetupWizard {
 
     this.log('Resources:', 'yellow');
     this.log('   - MobileRead Forums: https://www.mobileread.com/forums/forumdisplay.php?f=150', 'cyan');
-    this.log('   - TRMNL Kindle Guide: https://usetrmnl.com/guides/turn-your-amazon-kindle-into-a-trmnl\n', 'cyan');
+    this.log('   - Kindle Setup: See docs/KINDLE-SETUP.md for e-ink display setup\n', 'cyan');
 
     this.log('Steps:', 'yellow');
     this.log('   1. Check your Kindle firmware version', 'cyan');

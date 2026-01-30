@@ -1505,7 +1505,7 @@ app.post('/admin/generate-webhook', async (req, res) => {
       webhookUrl,
       instructions: [
         '1. Copy this webhook URL',
-        '2. In TRMNL app, create a new Private Plugin',
+        '2. Flash custom firmware to your e-ink device',
         '3. Paste the webhook URL',
         '4. Your device will start showing transit data!'
       ]
