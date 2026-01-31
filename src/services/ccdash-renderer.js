@@ -259,17 +259,327 @@ export const ZONES = {
 let previousDataHash = {};
 let cachedBMPs = {};
 
-// Mode icons (ASCII art for e-ink)
-const MODE_ICONS = {
-  walk: '🚶',
-  coffee: '☕',
-  tram: '🚊',
-  train: '🚆',
-  bus: '🚌',
-  vline: '🚄',
-  wait: '⏱️',
-  transit: '🚇'
-};
+// =============================================================================
+// MODE ICON DRAWING FUNCTIONS (V10 Spec Section 5.3)
+// Canvas-drawn icons for 1-bit e-ink (no emojis, no anti-aliasing)
+// =============================================================================
+
+/**
+ * Draw walk icon - person walking (32x32)
+ * V10 Spec Section 5.3.1
+ */
+function drawWalkIcon(ctx, x, y, size = 32) {
+  const scale = size / 32;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(scale, scale);
+  
+  ctx.fillStyle = '#000';
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  
+  // Head
+  ctx.beginPath();
+  ctx.arc(16, 5, 4, 0, Math.PI * 2);
+  ctx.fill();
+  
+  // Body
+  ctx.beginPath();
+  ctx.moveTo(16, 10);
+  ctx.lineTo(16, 18);
+  ctx.stroke();
+  
+  // Legs
+  ctx.beginPath();
+  ctx.moveTo(16, 18);
+  ctx.lineTo(11, 28);
+  ctx.stroke();
+  
+  ctx.beginPath();
+  ctx.moveTo(16, 18);
+  ctx.lineTo(21, 28);
+  ctx.stroke();
+  
+  // Arms
+  ctx.beginPath();
+  ctx.moveTo(16, 12);
+  ctx.lineTo(11, 17);
+  ctx.stroke();
+  
+  ctx.beginPath();
+  ctx.moveTo(16, 12);
+  ctx.lineTo(21, 17);
+  ctx.stroke();
+  
+  ctx.restore();
+}
+
+/**
+ * Draw train icon (32x32)
+ * V10 Spec Section 5.3.2
+ */
+function drawTrainIcon(ctx, x, y, size = 32) {
+  const scale = size / 32;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(scale, scale);
+  
+  ctx.fillStyle = '#000';
+  
+  // Main body with rounded top
+  ctx.beginPath();
+  ctx.moveTo(5, 26);
+  ctx.lineTo(5, 9);
+  ctx.quadraticCurveTo(5, 4, 10, 4);
+  ctx.lineTo(22, 4);
+  ctx.quadraticCurveTo(27, 4, 27, 9);
+  ctx.lineTo(27, 26);
+  ctx.closePath();
+  ctx.fill();
+  
+  // Window (white cutout)
+  ctx.fillStyle = '#FFF';
+  ctx.fillRect(8, 7, 16, 10);
+  
+  // Lights/details at bottom (white)
+  ctx.fillRect(10, 20, 4, 3);
+  ctx.fillRect(18, 20, 4, 3);
+  
+  // Wheels/rails
+  ctx.fillStyle = '#000';
+  ctx.fillRect(7, 26, 6, 3);
+  ctx.fillRect(19, 26, 6, 3);
+  
+  ctx.restore();
+}
+
+/**
+ * Draw tram icon - Melbourne W-class style (32x32)
+ * V10 Spec Section 5.3.3
+ */
+function drawTramIcon(ctx, x, y, size = 32) {
+  const scale = size / 32;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(scale, scale);
+  
+  ctx.fillStyle = '#000';
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 2;
+  
+  // Pantograph pole
+  ctx.beginPath();
+  ctx.moveTo(16, 2);
+  ctx.lineTo(16, 8);
+  ctx.stroke();
+  
+  // Pantograph bar
+  ctx.beginPath();
+  ctx.moveTo(12, 2);
+  ctx.lineTo(20, 2);
+  ctx.stroke();
+  
+  // Main body
+  ctx.beginPath();
+  ctx.moveTo(4, 24);
+  ctx.lineTo(4, 12);
+  ctx.quadraticCurveTo(4, 8, 8, 8);
+  ctx.lineTo(24, 8);
+  ctx.quadraticCurveTo(28, 8, 28, 12);
+  ctx.lineTo(28, 24);
+  ctx.closePath();
+  ctx.fill();
+  
+  // Windows (white cutouts)
+  ctx.fillStyle = '#FFF';
+  ctx.fillRect(6, 11, 6, 6);
+  ctx.fillRect(13, 11, 6, 6);
+  ctx.fillRect(20, 11, 6, 6);
+  
+  // Wheels
+  ctx.fillStyle = '#000';
+  ctx.beginPath();
+  ctx.arc(9, 26, 2.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(23, 26, 2.5, 0, Math.PI * 2);
+  ctx.fill();
+  
+  ctx.restore();
+}
+
+/**
+ * Draw bus icon (32x32)
+ * V10 Spec Section 5.3.4
+ */
+function drawBusIcon(ctx, x, y, size = 32) {
+  const scale = size / 32;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(scale, scale);
+  
+  ctx.fillStyle = '#000';
+  
+  // Main body
+  ctx.beginPath();
+  ctx.moveTo(3, 24);
+  ctx.lineTo(3, 9);
+  ctx.quadraticCurveTo(3, 6, 6, 6);
+  ctx.lineTo(26, 6);
+  ctx.quadraticCurveTo(29, 6, 29, 9);
+  ctx.lineTo(29, 24);
+  ctx.closePath();
+  ctx.fill();
+  
+  // Windshield (white)
+  ctx.fillStyle = '#FFF';
+  ctx.fillRect(5, 8, 22, 8);
+  
+  // Side windows (white)
+  ctx.fillRect(5, 17, 5, 4);
+  ctx.fillRect(11, 17, 5, 4);
+  ctx.fillRect(17, 17, 5, 4);
+  
+  // Wheels
+  ctx.fillStyle = '#000';
+  ctx.beginPath();
+  ctx.arc(9, 26, 3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(23, 26, 3, 0, Math.PI * 2);
+  ctx.fill();
+  
+  ctx.restore();
+}
+
+/**
+ * Draw coffee icon (32x32)
+ * V10 Spec Section 5.3.5
+ */
+function drawCoffeeIcon(ctx, x, y, size = 32) {
+  const scale = size / 32;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(scale, scale);
+  
+  ctx.fillStyle = '#000';
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 2.5;
+  
+  // Cup body
+  ctx.beginPath();
+  ctx.moveTo(6, 10);
+  ctx.lineTo(6, 13);
+  ctx.quadraticCurveTo(6, 24, 14, 24);
+  ctx.quadraticCurveTo(22, 24, 22, 13);
+  ctx.lineTo(22, 10);
+  ctx.closePath();
+  ctx.fill();
+  
+  // Handle
+  ctx.beginPath();
+  ctx.moveTo(22, 12);
+  ctx.lineTo(25, 12);
+  ctx.quadraticCurveTo(28.5, 12, 28.5, 15.5);
+  ctx.quadraticCurveTo(28.5, 19, 25, 19);
+  ctx.lineTo(22, 19);
+  ctx.stroke();
+  
+  // Saucer
+  ctx.fillRect(4, 26, 20, 3);
+  
+  ctx.restore();
+}
+
+/**
+ * Draw mode icon by type
+ */
+function drawModeIcon(ctx, type, x, y, size = 32) {
+  switch (type) {
+    case 'walk':
+      drawWalkIcon(ctx, x, y, size);
+      break;
+    case 'train':
+    case 'vline':
+      drawTrainIcon(ctx, x, y, size);
+      break;
+    case 'tram':
+      drawTramIcon(ctx, x, y, size);
+      break;
+    case 'bus':
+      drawBusIcon(ctx, x, y, size);
+      break;
+    case 'coffee':
+      drawCoffeeIcon(ctx, x, y, size);
+      break;
+    default:
+      // Default: draw a simple transit icon (circle with T)
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      ctx.arc(x + size/2, y + size/2, size/2 - 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#FFF';
+      ctx.font = `bold ${Math.floor(size * 0.5)}px Inter, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('T', x + size/2, y + size/2);
+      ctx.textAlign = 'left';
+      break;
+  }
+}
+
+/**
+ * Draw leg number circle (V10 Spec Section 5.2)
+ * 24x24 black circle with white number
+ */
+function drawLegNumber(ctx, number, x, y, status = 'normal') {
+  const size = 24;
+  const centerX = x + size / 2;
+  const centerY = y + size / 2;
+  
+  ctx.fillStyle = '#000';
+  
+  if (status === 'skipped' || status === 'cancelled') {
+    // Dashed circle for skipped
+    ctx.strokeStyle = '#888';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, size / 2 - 1, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    
+    // X mark for cancelled
+    if (status === 'cancelled') {
+      ctx.fillStyle = '#000';
+      ctx.font = 'bold 14px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('✗', centerX, centerY);
+    } else {
+      ctx.fillStyle = '#888';
+      ctx.font = 'bold 13px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(number.toString(), centerX, centerY);
+    }
+  } else {
+    // Normal: solid black circle
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, size / 2, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // White number
+    ctx.fillStyle = '#FFF';
+    ctx.font = 'bold 13px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(number.toString(), centerX, centerY);
+  }
+  
+  ctx.textAlign = 'left';
+}
 
 /**
  * Convert canvas to 1-bit BMP for e-ink display
@@ -352,10 +662,26 @@ function getDynamicLegZone(legIndex, totalLegs) {
 }
 
 /**
- * Render a journey leg zone
+ * Render a journey leg zone (V10 Spec Section 5)
+ * Includes: leg number, mode icon, title, subtitle, duration box
  */
-function renderLegZone(ctx, leg, zone, isHighlighted = false) {
+function renderLegZone(ctx, leg, zone, legNumber = 1, isHighlighted = false) {
   const { x, y, w, h } = { x: 0, y: 0, w: zone.w, h: zone.h };
+  const status = leg.status || 'normal';
+  
+  // Determine border style based on status (V10 Spec Section 5.1)
+  let borderWidth = 2;
+  let borderDash = [];
+  
+  if (status === 'delayed') {
+    borderWidth = 3;
+    borderDash = [6, 4];
+  } else if (leg.type === 'coffee' && leg.canGet) {
+    borderWidth = 3;
+  } else if (leg.type === 'coffee' && !leg.canGet) {
+    borderWidth = 2;
+    borderDash = [4, 4];
+  }
   
   // Background
   if (isHighlighted) {
@@ -366,57 +692,114 @@ function renderLegZone(ctx, leg, zone, isHighlighted = false) {
     ctx.fillStyle = '#FFF';
     ctx.fillRect(x, y, w, h);
     ctx.fillStyle = '#000';
+    
     // Border
     ctx.strokeStyle = '#000';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
+    ctx.lineWidth = borderWidth;
+    ctx.setLineDash(borderDash);
+    ctx.strokeRect(x + borderWidth/2, y + borderWidth/2, w - borderWidth, h - borderWidth);
+    ctx.setLineDash([]);
   }
   
-  // Mode icon area (left side, 48px wide)
-  const iconX = x + 8;
-  const iconY = y + h / 2;
-  ctx.font = '24px Inter, sans-serif';
-  ctx.textBaseline = 'middle';
+  // Leg number circle (V10 Spec Section 5.2)
+  const numberX = x + 8;
+  const numberY = y + (h - 24) / 2;
+  drawLegNumber(ctx, legNumber, numberX, numberY, status);
   
-  const icon = MODE_ICONS[leg.type] || MODE_ICONS.transit;
-  ctx.fillText(icon, iconX, iconY);
+  // Mode icon (V10 Spec Section 5.3)
+  const iconX = x + 40;
+  const iconY = y + (h - 32) / 2;
+  
+  // For skipped coffee, draw with reduced opacity effect (gray)
+  if (leg.type === 'coffee' && !leg.canGet) {
+    ctx.globalAlpha = 0.4;
+  }
+  
+  drawModeIcon(ctx, leg.type, iconX, iconY, 32);
+  ctx.globalAlpha = 1.0;
   
   // Main text area
-  const textX = x + 56;
+  const textX = x + 82;
+  const textColor = isHighlighted ? '#FFF' : (status === 'skipped' || (leg.type === 'coffee' && !leg.canGet)) ? '#888' : '#000';
+  ctx.fillStyle = textColor;
   
-  // Title (bold)
-  ctx.font = 'bold 18px Inter, sans-serif';
+  // Title with status prefix (V10 Spec Section 5.4)
+  ctx.font = 'bold 16px Inter, sans-serif';
   ctx.textBaseline = 'top';
-  const title = leg.title || getLegTitle(leg);
-  ctx.fillText(title, textX, y + 8);
+  let titlePrefix = '';
+  if (status === 'delayed') titlePrefix = '⏱ ';
+  else if (status === 'cancelled' || status === 'suspended') titlePrefix = '⚠ ';
+  else if (status === 'diverted') titlePrefix = '↩ ';
+  else if (leg.type === 'coffee') titlePrefix = '☕ ';
   
-  // Subtitle (smaller)
-  ctx.font = '13px Inter, sans-serif';
+  const title = titlePrefix + (leg.title || getLegTitle(leg));
+  ctx.fillText(title, textX, y + 6);
+  
+  // Subtitle (V10 Spec Section 5.5)
+  ctx.font = '12px Inter, sans-serif';
   const subtitle = leg.subtitle || getLegSubtitle(leg);
-  ctx.fillText(subtitle, textX, y + 30);
+  ctx.fillText(subtitle, textX, y + 26);
   
-  // Time box (right side)
+  // Time box (right side, fills to edge) - V10 Spec Section 5.6
   const timeBoxW = 72;
-  const timeBoxH = h - 8;
-  const timeBoxX = w - timeBoxW - 8;
-  const timeBoxY = y + 4;
+  const timeBoxH = h;
+  const timeBoxX = w - timeBoxW;
+  const timeBoxY = y;
   
-  // Time box background
-  ctx.fillStyle = isHighlighted ? '#FFF' : '#000';
-  ctx.fillRect(timeBoxX, timeBoxY, timeBoxW, timeBoxH);
+  // Determine time box style
+  let timeBoxBg = '#000';
+  let timeBoxTextColor = '#FFF';
+  let showDuration = true;
   
-  // Time text
-  ctx.fillStyle = isHighlighted ? '#000' : '#FFF';
-  ctx.font = 'bold 22px Inter, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
+  if (isHighlighted) {
+    timeBoxBg = '#FFF';
+    timeBoxTextColor = '#000';
+  } else if (status === 'delayed') {
+    timeBoxBg = '#FFF';
+    timeBoxTextColor = '#000';
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([6, 4]);
+    ctx.strokeRect(timeBoxX + 2, timeBoxY + 2, timeBoxW - 4, timeBoxH - 4);
+    ctx.setLineDash([]);
+  } else if (leg.type === 'coffee' && !leg.canGet) {
+    // Skip coffee - dashed border, no fill
+    ctx.strokeStyle = '#888';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 4]);
+    ctx.strokeRect(timeBoxX + 2, timeBoxY + 2, timeBoxW - 4, timeBoxH - 4);
+    ctx.setLineDash([]);
+    showDuration = false;
+    // Draw "—" for skipped
+    ctx.fillStyle = '#888';
+    ctx.font = 'bold 22px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('—', timeBoxX + timeBoxW / 2, timeBoxY + timeBoxH / 2);
+    ctx.textAlign = 'left';
+  }
   
-  const minutes = leg.minutes ?? leg.durationMinutes ?? '--';
-  ctx.fillText(minutes.toString(), timeBoxX + timeBoxW / 2, timeBoxY + timeBoxH / 2 - 8);
-  
-  ctx.font = '10px Inter, sans-serif';
-  const timeLabel = leg.type === 'walk' ? 'MIN WALK' : 'MIN';
-  ctx.fillText(timeLabel, timeBoxX + timeBoxW / 2, timeBoxY + timeBoxH / 2 + 12);
+  if (showDuration && !(leg.type === 'coffee' && !leg.canGet)) {
+    // Time box background
+    ctx.fillStyle = timeBoxBg;
+    if (timeBoxBg === '#000') {
+      ctx.fillRect(timeBoxX, timeBoxY, timeBoxW, timeBoxH);
+    }
+    
+    // Time text
+    ctx.fillStyle = timeBoxTextColor;
+    ctx.font = 'bold 22px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    const minutes = leg.minutes ?? leg.durationMinutes ?? '--';
+    const displayMin = leg.type === 'coffee' ? `~${minutes}` : minutes.toString();
+    ctx.fillText(displayMin, timeBoxX + timeBoxW / 2, timeBoxY + timeBoxH / 2 - 8);
+    
+    ctx.font = '9px Inter, sans-serif';
+    const timeLabel = leg.type === 'walk' ? 'MIN WALK' : 'MIN';
+    ctx.fillText(timeLabel, timeBoxX + timeBoxW / 2, timeBoxY + timeBoxH / 2 + 12);
+  }
   
   // Reset
   ctx.textAlign = 'left';
@@ -451,22 +834,69 @@ function getLegTitle(leg) {
 }
 
 /**
- * Generate leg subtitle from leg data
+ * Generate leg subtitle from leg data (V10 Spec Section 5.5)
  */
 function getLegSubtitle(leg) {
+  const status = leg.status || 'normal';
+  
   switch (leg.type) {
     case 'walk':
+      // First walk: "From home • [destination]"
+      // Other walks: "[location/platform]"
+      if (leg.isFirst || leg.fromHome) {
+        const dest = leg.to || leg.destination?.name || '';
+        return dest ? `From home • ${dest}` : 'From home';
+      }
+      const location = leg.platform || leg.location || leg.to || '';
       const dist = leg.distanceMeters || leg.distance;
-      return dist ? `${dist}m` : '';
+      return dist ? `${location} • ${dist}m` : location;
+      
     case 'coffee':
-      return 'Order & wait';
+      // Coffee status subtitles
+      if (leg.canGet === false || status === 'skipped') {
+        return '✗ SKIP — Running late';
+      } else if (leg.extraTime || status === 'extended') {
+        return '✓ EXTRA TIME — Disruption';
+      }
+      return '✓ TIME FOR COFFEE';
+      
     case 'tram':
     case 'train':
     case 'bus':
+    case 'vline':
     case 'transit':
-      const from = leg.origin?.name || leg.from;
-      const to = leg.destination?.name || leg.to;
-      return from ? `From ${from}` : '';
+      // Transit: show line name + "Next: X, Y min"
+      const lineName = leg.lineName || leg.routeName || '';
+      const nextDepartures = leg.nextDepartures || leg.upcoming || [];
+      
+      let parts = [];
+      if (lineName) parts.push(lineName);
+      
+      // Add "Next: X, Y min" if we have real-time data
+      if (nextDepartures.length >= 2) {
+        parts.push(`Next: ${nextDepartures[0]}, ${nextDepartures[1]} min`);
+      } else if (nextDepartures.length === 1) {
+        parts.push(`Next: ${nextDepartures[0]} min`);
+      } else if (leg.nextIn !== undefined) {
+        // Fallback to single next value
+        parts.push(`Next: ${leg.nextIn} min`);
+      }
+      
+      // Add delay info if delayed
+      if (status === 'delayed' && leg.delayMinutes) {
+        return `+${leg.delayMinutes} MIN • ${parts.join(' • ')}`;
+      }
+      
+      // Add diversion stop if diverted
+      if (status === 'diverted' && leg.diversionStop) {
+        parts.push(leg.diversionStop);
+      }
+      
+      return parts.join(' • ');
+      
+    case 'wait':
+      return leg.location ? `At ${leg.location}` : '';
+      
     default:
       return leg.subtitle || '';
   }
@@ -540,7 +970,8 @@ function renderHeaderDayDate(data, prefs) {
 }
 
 /**
- * Render weather zone
+ * Render weather zone (V10 Spec Section 2.6 & 2.7)
+ * Includes temperature, condition, and umbrella indicator
  */
 function renderHeaderWeather(data, prefs) {
   const zone = ZONES['header.weather'];
@@ -550,34 +981,64 @@ function renderHeaderWeather(data, prefs) {
   ctx.fillStyle = '#FFF';
   ctx.fillRect(0, 0, zone.w, zone.h);
   
-  // Border
+  // Weather box border (V10 Spec Section 2.6)
   ctx.strokeStyle = '#000';
-  ctx.lineWidth = 1;
-  ctx.strokeRect(2, 2, zone.w - 4, zone.h - 4);
+  ctx.lineWidth = 2;
+  ctx.strokeRect(2, 2, zone.w - 4, 60);
   
   ctx.fillStyle = '#000';
   
-  // Temperature
-  ctx.font = 'bold 32px Inter, sans-serif';
+  // Temperature (centered in box)
+  ctx.font = 'bold 34px Inter, sans-serif';
+  ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
   const temp = data.temp ?? data.temperature ?? '--';
-  ctx.fillText(`${temp}°`, 12, 12);
+  ctx.fillText(`${temp}°`, zone.w / 2, 8);
   
-  // Condition
+  // Condition (centered below temp)
   ctx.font = '12px Inter, sans-serif';
-  ctx.fillText(data.condition || data.weather || '', 12, 52);
+  ctx.fillText(data.condition || data.weather || '', zone.w / 2, 44);
   
-  // Weather icon (right side)
-  ctx.font = '28px Inter, sans-serif';
-  ctx.textAlign = 'right';
-  const weatherIcon = data.weather_icon || '☀️';
-  ctx.fillText(weatherIcon, zone.w - 12, 24);
+  // Umbrella indicator (V10 Spec Section 2.7)
+  // Position: below weather box, 132×18px
+  const umbrellaY = 66;
+  const umbrellaH = 18;
+  const umbrellaW = zone.w - 8;
+  const umbrellaX = 4;
   
+  const needsUmbrella = data.rain_expected || data.precipitation > 30 || 
+    (data.condition && /rain|shower|storm|drizzle/i.test(data.condition));
+  
+  if (needsUmbrella) {
+    // Black background with white text
+    ctx.fillStyle = '#000';
+    ctx.fillRect(umbrellaX, umbrellaY, umbrellaW, umbrellaH);
+    ctx.fillStyle = '#FFF';
+    ctx.font = 'bold 10px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🌧 BRING UMBRELLA', umbrellaX + umbrellaW / 2, umbrellaY + umbrellaH / 2);
+  } else {
+    // White background with border, black text
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(umbrellaX, umbrellaY, umbrellaW, umbrellaH);
+    ctx.fillStyle = '#000';
+    ctx.font = 'bold 10px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const icon = /cloud|overcast/i.test(data.condition || '') ? '☁' : '☀';
+    ctx.fillText(`${icon} NO UMBRELLA`, umbrellaX + umbrellaW / 2, umbrellaY + umbrellaH / 2);
+  }
+  
+  ctx.textAlign = 'left';
   return canvasToBMP(canvas);
 }
 
 /**
- * Render status bar zone (coffee decision / leave now / disruption)
+ * Render status bar zone (V10 Spec Section 4)
+ * Left: Status message (LEAVE NOW / DELAY / DISRUPTION)
+ * Right: Total journey time
  */
 function renderStatus(data, prefs) {
   const zone = ZONES['status'];
@@ -589,38 +1050,44 @@ function renderStatus(data, prefs) {
   ctx.fillRect(0, 0, zone.w, zone.h);
   
   ctx.fillStyle = '#FFF';
-  ctx.font = 'bold 16px Inter, sans-serif';
   ctx.textBaseline = 'middle';
   
-  // Determine status type and message
+  // Determine status type and message (V10 Spec Section 4.1)
   let statusText = '';
-  let leftIcon = '';
+  const arriveBy = data.arrive_by || data.arrivalTime || '--:--';
+  const leaveIn = data.leave_in || data.leaveIn;
   
   if (data.status_type === 'disruption' || data.disruption) {
-    leftIcon = '⚠️';
-    statusText = `DISRUPTION: ${data.disruption_message || 'Service delays'}`;
-  } else if (data.coffee_decision) {
-    const cd = data.coffee_decision;
-    if (cd.canGet) {
-      leftIcon = '☕';
-      statusText = `${cd.decision}: ${cd.subtext}`;
-    } else {
-      leftIcon = '🏃';
-      statusText = `${cd.decision}: ${cd.subtext}`;
-    }
+    const delayMin = data.delay_minutes || data.delayMinutes || 0;
+    statusText = delayMin > 0 
+      ? `⚠ DISRUPTION → Arrive ${arriveBy} (+${delayMin} min)`
+      : `⚠ DISRUPTION → Arrive ${arriveBy}`;
+  } else if (data.status_type === 'delay' || data.isDelayed) {
+    const delayMin = data.delay_minutes || data.delayMinutes || 0;
+    statusText = `⏱ DELAY → Arrive ${arriveBy} (+${delayMin} min)`;
+  } else if (data.status_type === 'diversion' || data.isDiverted) {
+    const delayMin = data.delay_minutes || data.delayMinutes || 0;
+    statusText = delayMin > 0
+      ? `⚠ TRAM DIVERSION → Arrive ${arriveBy} (+${delayMin} min)`
+      : `⚠ DIVERSION → Arrive ${arriveBy}`;
+  } else if (leaveIn !== undefined && leaveIn > 0) {
+    statusText = `LEAVE IN ${leaveIn} MIN → Arrive ${arriveBy}`;
   } else {
-    leftIcon = '➡️';
-    const arriveBy = data.arrive_by || data.arrivalTime || '--:--';
     statusText = `LEAVE NOW → Arrive ${arriveBy}`;
   }
   
-  // Icon
-  ctx.font = '18px Inter, sans-serif';
-  ctx.fillText(leftIcon, 16, zone.h / 2);
+  // Left text (status message)
+  ctx.font = 'bold 13px Inter, sans-serif';
+  ctx.fillText(statusText, 16, zone.h / 2);
   
-  // Text
-  ctx.font = 'bold 14px Inter, sans-serif';
-  ctx.fillText(statusText, 48, zone.h / 2);
+  // Right text - Total journey time (V10 Spec Section 4.2)
+  const totalMinutes = data.total_minutes || data.totalMinutes || data.journeyDuration;
+  if (totalMinutes) {
+    ctx.textAlign = 'right';
+    ctx.font = 'bold 13px Inter, sans-serif';
+    ctx.fillText(`${totalMinutes} min`, zone.w - 16, zone.h / 2);
+    ctx.textAlign = 'left';
+  }
   
   return canvasToBMP(canvas);
 }
@@ -639,6 +1106,11 @@ function renderLeg(legIndex, data, prefs) {
   const leg = legs[legIndex - 1];
   if (!leg) return null;
   
+  // Mark first leg for subtitle generation
+  if (legIndex === 1) {
+    leg.isFirst = true;
+  }
+  
   const zone = getDynamicLegZone(legIndex, totalLegs);
   const canvas = createCanvas(zone.w, zone.h);
   const ctx = canvas.getContext('2d');
@@ -646,7 +1118,7 @@ function renderLeg(legIndex, data, prefs) {
   // Check if this leg is the current/next one to highlight
   const isHighlighted = leg.isCurrent || leg.isNext || (legIndex === 1 && data.highlight_first);
   
-  renderLegZone(ctx, leg, zone, isHighlighted);
+  renderLegZone(ctx, leg, zone, legIndex, isHighlighted);
   
   return canvasToBMP(canvas);
 }
@@ -820,82 +1292,191 @@ export function renderFullScreen(data, prefs = {}) {
   }
   
   // Re-render zones directly to main canvas for preview
-  // Header
+  // =========================================================================
+  // HEADER (V10 Spec Section 2)
+  // =========================================================================
   ctx.fillStyle = '#000';
-  ctx.font = 'bold 16px Inter, sans-serif';
+  ctx.font = 'bold 11px Inter, sans-serif';
   ctx.textBaseline = 'top';
-  ctx.fillText((data.location || 'HOME').toUpperCase(), 16, 16);
+  ctx.fillText((data.location || 'HOME').toUpperCase(), 16, 8);
   
-  ctx.font = 'bold 48px Inter, sans-serif';
-  ctx.fillText(data.current_time || '--:--', 16, 40);
+  ctx.font = 'bold 68px Inter, sans-serif';
+  ctx.fillText(data.current_time || '--:--', 16, 22);
   
-  ctx.font = 'bold 20px Inter, sans-serif';
-  ctx.fillText(data.day || '', 240, 24);
+  // AM/PM indicator
+  ctx.font = 'bold 16px Inter, sans-serif';
+  const timeStr = data.current_time || '';
+  const isPM = timeStr.toLowerCase().includes('pm') || (parseInt(timeStr) >= 12 && parseInt(timeStr) < 24);
+  ctx.fillText(data.am_pm || (isPM ? 'PM' : 'AM'), 200, 72);
+  
+  // Day and date
+  ctx.font = 'bold 18px Inter, sans-serif';
+  ctx.fillText(data.day || '', 300, 28);
   ctx.font = '16px Inter, sans-serif';
-  ctx.fillText(data.date || '', 240, 52);
-  
-  // Weather box
-  ctx.strokeRect(600, 8, 184, 86);
-  ctx.font = 'bold 32px Inter, sans-serif';
-  ctx.fillText(`${data.temp || '--'}°`, 612, 20);
-  ctx.font = '12px Inter, sans-serif';
-  ctx.fillText(data.condition || '', 612, 60);
-  
-  // Status bar
+  ctx.fillStyle = '#444';
+  ctx.fillText(data.date || '', 300, 50);
   ctx.fillStyle = '#000';
-  ctx.fillRect(0, 96, 800, 32);
-  ctx.fillStyle = '#FFF';
-  ctx.font = 'bold 14px Inter, sans-serif';
-  ctx.textBaseline = 'middle';
-  const statusText = data.coffee_decision?.decision || 'LEAVE NOW';
-  ctx.fillText(`${statusText} → Arrive ${data.arrive_by || '--:--'}`, 16, 112);
   
-  // Journey legs
+  // Weather box (V10 Spec Section 2.6)
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(644, 12, 140, 78);
+  ctx.font = 'bold 34px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(`${data.temp || '--'}°`, 714, 30);
+  ctx.font = '12px Inter, sans-serif';
+  ctx.fillText(data.condition || '', 714, 64);
+  ctx.textAlign = 'left';
+  
+  // Umbrella indicator (V10 Spec Section 2.7)
+  const needsUmbrella = data.rain_expected || data.precipitation > 30 || 
+    (data.condition && /rain|shower|storm|drizzle/i.test(data.condition));
+  const umbrellaY = 68;
+  if (needsUmbrella) {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(652, umbrellaY, 132, 18);
+    ctx.fillStyle = '#FFF';
+    ctx.font = 'bold 10px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('🌧 BRING UMBRELLA', 718, umbrellaY + 10);
+  } else {
+    ctx.strokeRect(652, umbrellaY, 132, 18);
+    ctx.fillStyle = '#000';
+    ctx.font = 'bold 10px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    const icon = /cloud|overcast/i.test(data.condition || '') ? '☁' : '☀';
+    ctx.fillText(`${icon} NO UMBRELLA`, 718, umbrellaY + 10);
+  }
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#000';
+  
+  // Divider line
+  ctx.fillRect(0, 94, 800, 2);
+  
+  // =========================================================================
+  // STATUS BAR (V10 Spec Section 4)
+  // =========================================================================
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 96, 800, 28);
+  ctx.fillStyle = '#FFF';
+  ctx.font = 'bold 13px Inter, sans-serif';
+  ctx.textBaseline = 'middle';
+  
+  // Left: Status message
+  const arriveBy = data.arrive_by || data.arrivalTime || '--:--';
+  const leaveIn = data.leave_in || data.leaveIn;
+  let statusText;
+  if (data.status_type === 'disruption' || data.disruption) {
+    statusText = `⚠ DISRUPTION → Arrive ${arriveBy}`;
+  } else if (leaveIn !== undefined && leaveIn > 0) {
+    statusText = `LEAVE IN ${leaveIn} MIN → Arrive ${arriveBy}`;
+  } else {
+    statusText = `LEAVE NOW → Arrive ${arriveBy}`;
+  }
+  ctx.fillText(statusText, 16, 110);
+  
+  // Right: Total journey time
+  const totalMinutes = data.total_minutes || data.totalMinutes || data.journeyDuration;
+  if (totalMinutes) {
+    ctx.textAlign = 'right';
+    ctx.fillText(`${totalMinutes} min`, 784, 110);
+    ctx.textAlign = 'left';
+  }
+  
+  // =========================================================================
+  // JOURNEY LEGS (V10 Spec Section 5)
+  // =========================================================================
   const legs = data.journey_legs || data.legs || [];
   legs.forEach((leg, idx) => {
-    const zone = getDynamicLegZone(idx + 1, legs.length);
+    const legNum = idx + 1;
+    const zone = getDynamicLegZone(legNum, legs.length);
+    const status = leg.status || 'normal';
+    const isSkippedCoffee = leg.type === 'coffee' && leg.canGet === false;
     
+    // Background
     ctx.fillStyle = '#FFF';
     ctx.fillRect(zone.x, zone.y, zone.w, zone.h);
+    
+    // Border (varies by status)
     ctx.strokeStyle = '#000';
+    ctx.lineWidth = (status === 'delayed' || (leg.type === 'coffee' && leg.canGet)) ? 3 : 2;
+    if (status === 'delayed' || isSkippedCoffee) {
+      ctx.setLineDash(status === 'delayed' ? [6, 4] : [4, 4]);
+    }
     ctx.strokeRect(zone.x + 1, zone.y + 1, zone.w - 2, zone.h - 2);
+    ctx.setLineDash([]);
     
-    ctx.fillStyle = '#000';
-    ctx.font = '24px Inter, sans-serif';
-    ctx.textBaseline = 'middle';
-    const icon = MODE_ICONS[leg.type] || '🚇';
-    ctx.fillText(icon, zone.x + 8, zone.y + zone.h / 2);
+    // Leg number circle (V10 Spec Section 5.2)
+    drawLegNumber(ctx, legNum, zone.x + 8, zone.y + (zone.h - 24) / 2, status);
     
-    ctx.font = 'bold 18px Inter, sans-serif';
+    // Mode icon (V10 Spec Section 5.3)
+    if (isSkippedCoffee) ctx.globalAlpha = 0.4;
+    drawModeIcon(ctx, leg.type, zone.x + 40, zone.y + (zone.h - 32) / 2, 32);
+    ctx.globalAlpha = 1.0;
+    
+    // Title (V10 Spec Section 5.4)
+    ctx.fillStyle = isSkippedCoffee ? '#888' : '#000';
+    ctx.font = 'bold 16px Inter, sans-serif';
     ctx.textBaseline = 'top';
-    ctx.fillText(getLegTitle(leg), zone.x + 56, zone.y + 8);
+    let titlePrefix = '';
+    if (status === 'delayed') titlePrefix = '⏱ ';
+    else if (status === 'cancelled') titlePrefix = '⚠ ';
+    else if (leg.type === 'coffee') titlePrefix = '☕ ';
     
-    ctx.font = '13px Inter, sans-serif';
-    ctx.fillText(getLegSubtitle(leg), zone.x + 56, zone.y + 30);
+    if (idx === 0) leg.isFirst = true;
+    ctx.fillText(titlePrefix + getLegTitle(leg), zone.x + 82, zone.y + 6);
     
-    // Time box
+    // Subtitle (V10 Spec Section 5.5)
+    ctx.font = '12px Inter, sans-serif';
+    ctx.fillText(getLegSubtitle(leg), zone.x + 82, zone.y + 26);
+    
+    // Time box (V10 Spec Section 5.6)
     const timeBoxW = 72;
-    const timeBoxX = zone.x + zone.w - timeBoxW - 8;
-    ctx.fillRect(timeBoxX, zone.y + 4, timeBoxW, zone.h - 8);
-    ctx.fillStyle = '#FFF';
-    ctx.font = 'bold 22px Inter, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText((leg.minutes || leg.durationMinutes || '--').toString(), timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 - 6);
-    ctx.font = '10px Inter, sans-serif';
-    ctx.fillText(leg.type === 'walk' ? 'MIN WALK' : 'MIN', timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 + 14);
+    const timeBoxX = zone.x + zone.w - timeBoxW;
+    
+    if (!isSkippedCoffee) {
+      ctx.fillStyle = '#000';
+      ctx.fillRect(timeBoxX, zone.y, timeBoxW, zone.h);
+      ctx.fillStyle = '#FFF';
+      ctx.font = 'bold 22px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const minutes = leg.minutes || leg.durationMinutes || '--';
+      const displayMin = leg.type === 'coffee' ? `~${minutes}` : minutes.toString();
+      ctx.fillText(displayMin, timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 - 6);
+      ctx.font = '9px Inter, sans-serif';
+      ctx.fillText(leg.type === 'walk' ? 'MIN WALK' : 'MIN', timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 + 14);
+    } else {
+      // Skipped coffee: dashed border, "—"
+      ctx.strokeStyle = '#888';
+      ctx.setLineDash([4, 4]);
+      ctx.strokeRect(timeBoxX + 2, zone.y + 2, timeBoxW - 4, zone.h - 4);
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#888';
+      ctx.font = 'bold 22px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('—', timeBoxX + timeBoxW / 2, zone.y + zone.h / 2);
+    }
     ctx.textAlign = 'left';
     ctx.fillStyle = '#000';
   });
   
-  // Footer
+  // =========================================================================
+  // FOOTER (V10 Spec Section 6)
+  // =========================================================================
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 448, 800, 32);
   ctx.fillStyle = '#FFF';
-  ctx.font = 'bold 14px Inter, sans-serif';
+  
+  // Destination (V10 Spec Section 6.1)
+  ctx.font = 'bold 16px Inter, sans-serif';
   ctx.textBaseline = 'middle';
   ctx.fillText(`ARRIVE at ${(data.destination || 'WORK').toUpperCase()}`, 16, 464);
+  
+  // Arrival time (V10 Spec Section 6.3)
   ctx.textAlign = 'right';
+  ctx.font = 'bold 24px Inter, sans-serif';
   ctx.fillText(data.arrive_by || '--:--', 784, 464);
   
   return canvas.toBuffer('image/png');
