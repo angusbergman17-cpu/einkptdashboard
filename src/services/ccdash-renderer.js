@@ -1621,10 +1621,10 @@ export function renderFullScreen(data, prefs = {}) {
     displayTime = displayTime.replace(/\s*(am|pm)/gi, '');
   }
   
-  // v1.34: Even LARGER clock, right against status bar
+  // v1.35: Clock LOWER - bottom touching status bar
   const clockFontSize = 82;
   ctx.font = `bold ${clockFontSize}px Inter, sans-serif`;
-  const clockY = 94 - clockFontSize - 2;  // Bottom of clock right against status bar
+  const clockY = 94 - clockFontSize + 12;  // Bottom of clock touching status bar
   ctx.fillText(displayTime, 8, clockY);
   
   // Measure clock width for AM/PM positioning
