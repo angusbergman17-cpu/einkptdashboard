@@ -239,6 +239,7 @@ async function checkExternalApi(name, api) {
     status: null,
     responseTime: null,
     recommendation: null,
+    optional: api.optional || false,
   };
 
   // Skip if requires API key and none configured
@@ -263,6 +264,13 @@ async function checkExternalApi(name, api) {
 
   } catch (error) {
     result.error = error.message;
+    // For optional external APIs, treat timeouts as warnings not failures
+    if (api.optional) {
+      result.warning = result.error;
+      result.error = null;
+      result.success = true; // Don't count optional timeouts as failures
+      result.optionalFailed = true;
+    }
   }
 
   if (!result.success) {

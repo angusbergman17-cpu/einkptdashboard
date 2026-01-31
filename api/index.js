@@ -25,6 +25,36 @@ try {
 
 // Export handler that shows errors gracefully
 export default function handler(req, res) {
+  // API index - return available endpoints
+  if (req.url === '/api/index' || req.url === '/api' || req.url === '/api/') {
+    return res.status(200).json({
+      name: 'Commute Compute System™ API',
+      version: HANDLER_VERSION,
+      timestamp: new Date().toISOString(),
+      status: initError ? 'error' : 'ok',
+      endpoints: {
+        rendering: [
+          'GET /api/screen - Full dashboard PNG',
+          'GET /api/zones - Zone-based BMP refresh',
+          'GET /api/zones-tiered - Tiered refresh zones',
+          'GET /api/zonedata - Zone metadata',
+          'GET /api/fullscreen - Full screen PNG',
+          'GET /api/livedash - Multi-device renderer'
+        ],
+        system: [
+          'GET /api/health - Health check',
+          'GET /api/status - Server status',
+          'GET /api/version - Version info'
+        ],
+        setup: [
+          'GET /api/address-search - Geocoding',
+          'POST /api/cafe-details - Cafe info',
+          'POST /api/admin/setup-complete - Validate setup'
+        ]
+      }
+    });
+  }
+
   // Debug endpoint to verify deployment
   if (req.url === '/api/debug') {
     return res.status(200).json({
@@ -45,11 +75,11 @@ export default function handler(req, res) {
       stack: process.env.NODE_ENV !== 'production' ? initError.stack : undefined
     });
   }
-  
+
   if (!app) {
     return res.status(500).json({ error: 'App not initialized' });
   }
-  
+
   return app(req, res);
 }
 // Rebuild 20260129-044523

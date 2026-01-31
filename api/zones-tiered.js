@@ -267,15 +267,22 @@ export default async function handler(req, res) {
     }
     
     // Render zones
-    let result;
+    let result = {};
     if (tierParam === 'all') {
-      result = ccdashRenderer.renderAllZones(dashboardData);
+      // Render all zones
+      result = ccdashRenderer.renderZones(dashboardData, forceAll);
     } else {
-      result = ccdashRenderer.renderZonesByTier(dashboardData, parseInt(tierParam), forceAll);
+      // Render only zones for the specified tier
+      const tierZones = ccdashRenderer.getZonesForTier(parseInt(tierParam));
+      for (const zoneId of tierZones) {
+        result[zoneId] = ccdashRenderer.renderSingleZone(zoneId, dashboardData);
+      }
     }
-    
+
     // Add tier intervals to response
     result.intervals = TIER_CONFIG;
+    result.tier = tierParam;
+    result.timestamp = now.toISOString();
     
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');

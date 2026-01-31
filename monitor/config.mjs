@@ -548,22 +548,22 @@ export default {
     },
 
     // Nominatim Geocoding (always-free fallback)
+    // Note: Nominatim has strict rate limits (1 req/sec) and may timeout
+    // This is a low-priority check since it's external and /api/address-search has fallbacks
     nominatim: {
       url: 'https://nominatim.openstreetmap.org/search?q=Melbourne&format=json&limit=1',
       method: 'GET',
       requiresApiKey: false,
-      description: 'OpenStreetMap Nominatim Geocoding',
+      optional: true, // Mark as optional - failures don't indicate system problems
+      description: 'OpenStreetMap Nominatim Geocoding (external)',
       resolutionGuide: `
-        FAILURE: Nominatim geocoding unavailable
-        CAUSES:
-        1. OSM server overload
-        2. Rate limiting (1 req/sec)
-        3. Network issues
+        NOTE: This is an EXTERNAL service check
+        Nominatim failures don't affect your system - /api/address-search has multiple fallbacks
 
-        RESOLUTION:
-        1. Respect rate limits
-        2. Check OSM status page
-        3. This is the last-resort fallback - if this fails, address search won't work
+        If consistently failing:
+        1. Check OSM status: https://status.openstreetmap.org
+        2. Nominatim enforces 1 req/sec rate limit
+        3. Your geocoding still works via Google/Mapbox fallbacks
       `
     },
   },
