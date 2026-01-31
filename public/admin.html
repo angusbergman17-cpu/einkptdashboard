@@ -5438,7 +5438,7 @@
             loadEinkPreview(forceRefresh);
         }
 
-        // Load E-Ink preview image from /api/screen or /api/livedash
+        // Load E-Ink preview image from /api/screen
         async function loadEinkPreview(forceRefresh = false) {
             const config = JSON.parse(localStorage.getItem('cc-config') || '{}');
             const device = config.device || localStorage.getItem('cc-device') || 'trmnl-og';
@@ -5450,20 +5450,18 @@
             // Show loading state
             const loadingOverlay = document.getElementById('eink-loading-overlay');
             const previewImage = document.getElementById('eink-preview-image');
-            if (loadingOverlay) loadingOverlay.style.display = 'flex';
-            
-            // Build the API URL based on device
-            const webhookUrl = config.webhookUrl || localStorage.getItem('cc-webhook-url');
-            let imageUrl;
-            
-            if (webhookUrl) {
-                // Use the configured webhook URL (what firmware actually fetches)
-                imageUrl = webhookUrl + (forceRefresh ? `?t=${Date.now()}` : '');
-            } else {
-                // Use /api/screen endpoint with device type
-                const baseUrl = BASE_URL || window.location.origin;
-                imageUrl = `${baseUrl}/api/screen?device=${device}&format=png&t=${Date.now()}`;
+            if (loadingOverlay) {
+                loadingOverlay.style.display = 'flex';
+                loadingOverlay.innerHTML = `
+                    <div class="spinner" style="margin-bottom: 12px;"></div>
+                    <span style="font-size: 13px; color: #94a3b8;">Loading display...</span>
+                `;
             }
+            
+            // Always use /api/screen endpoint (this is what generates the e-ink image)
+            const baseUrl = window.location.origin;
+            const timestamp = Date.now();
+            const imageUrl = `${baseUrl}/api/screen?device=${device}&format=png&t=${timestamp}`;
             
             // Update API URL display
             const apiUrlEl = document.getElementById('eink-api-url');
@@ -5471,10 +5469,16 @@
             
             // Set image source
             if (previewImage) {
-                previewImage.src = imageUrl;
-                // Set dimensions based on device
-                previewImage.style.width = Math.min(deviceConfig.width, 760) + 'px';
-                previewImage.style.height = 'auto';
+                // Clear previous source first
+                previewImage.src = '';
+                
+                // Set new source after a small delay to ensure reload
+                setTimeout(() => {
+                    previewImage.src = imageUrl;
+                    // Set dimensions based on device
+                    previewImage.style.width = Math.min(deviceConfig.width, 760) + 'px';
+                    previewImage.style.height = 'auto';
+                }, 50);
             }
             
             // Also load raw SmartCommute data for the debug panel
