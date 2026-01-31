@@ -38,7 +38,7 @@ Preferences preferences;
 char webhookUrl[256] = "";
 char pairingCode[8] = "";
 unsigned long lastRefresh = 0;
-const unsigned long REFRESH_INTERVAL = 20000;
+const unsigned long REFRESH_INTERVAL = 60000;  // 1 minute (was 20s)
 const unsigned long FULL_REFRESH_INTERVAL = 300000;
 unsigned long lastFullRefresh = 0;
 int partialRefreshCount = 0;
