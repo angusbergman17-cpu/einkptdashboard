@@ -5707,7 +5707,7 @@
             const deviceConfig = DEVICE_CONFIGS[device] || DEVICE_CONFIGS['trmnl-og'];
             
             // Update device info display
-            updateDeviceInfo(device, deviceConfig);
+            updateEinkDeviceInfo(device, deviceConfig);
             
             // Show loading state
             const loadingOverlay = document.getElementById('eink-loading-overlay');
@@ -5815,7 +5815,7 @@
         }
 
         // Update device info in the panel
-        function updateDeviceInfo(device, deviceConfig) {
+        function updateEinkDeviceInfo(device, deviceConfig) {
             const deviceNameEl = document.getElementById('eink-device-name');
             const dimensionsEl = document.getElementById('eink-dimensions');
             const deviceInfoEl = document.getElementById('eink-device-info');
