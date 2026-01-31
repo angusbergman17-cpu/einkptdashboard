@@ -1,62 +1,57 @@
 /**
- * CCDash™ Renderer (Consolidated v2.1)
+ * CCDash™ Renderer v1.38
  * Part of the Commute Compute System™
  * 
  * Primary renderer for Commute Compute System dashboards.
- * Implements CCDashDesignV10 specification.
- * 
- * Consolidates functionality from:
- * - ccdash-renderer-v13.js (primary renderer)
- * - zone-renderer.js (zone-based refresh)
- * - zone-renderer-tiered.js (tiered refresh intervals)
+ * Implements CCDashDesignV10 specification v1.38.
  * 
  * ============================================================================
- * 🔴 MANDATORY: SPEC-RENDERER PARITY (DEVELOPMENT-RULES.md Section 7.4)
+ * FEATURES (v1.38)
  * ============================================================================
- * This renderer MUST implement ALL elements defined in specs/CCDASH-SPEC-V10.md.
- * No exceptions. Every visual element, state, icon, or behavior in the spec
- * MUST have a corresponding implementation here.
  * 
- * Required parity elements (from Section 7.4.1):
- * - Weather Box: temp, condition, umbrella indicator
- * - Summary Bar: all status variants + total journey time
- * - Leg Numbers: sequential numbered circles
- * - Mode Icons: canvas-drawn walk/train/tram/bus/coffee
- * - Leg Titles: status prefixes (⏱, ⚠, ↩, ☕)
- * - Leg Subtitles: "Next: X, Y min" for transit
- * - Duration Boxes: all states (normal, delayed, skip, cancelled)
+ * HEADER (0-94px):
+ * - Large clock (82px) positioned at bottom, touching status bar
+ * - AM/PM aligned with bottom of coffee/weather boxes
+ * - Service status indicator (✓ SERVICES OK / ⚠ DISRUPTIONS)
+ * - Data source indicator (● LIVE DATA / ○ TIMETABLE FALLBACK)
+ * - Coffee decision box (GET A COFFEE / NO TIME FOR COFFEE with sad face)
+ * - Weather box with temp, condition, umbrella indicator
  * 
- * PROHIBITED: Partial implementation, placeholder text, missing icons.
+ * STATUS BAR (96-124px):
+ * - Full black background (no outline)
+ * - Status message with arrival time
+ * - Delay indicator box (+X min DELAY) when delays present
+ * - Total journey time
+ * 
+ * JOURNEY LEGS (132-440px):
+ * - Dynamic scaling (3-7 legs supported)
+ * - Walk legs: individual duration (X MIN WALK)
+ * - Transit legs: cumulative time from departure (X MIN)
+ * - DEPART column for transit with scheduled times
+ * - Next departures in subtitle (Next: X, Y min)
+ * - Thin borders (1px) for easy glancing
+ * - Arrow connectors between legs
+ * 
+ * FOOTER (448-480px):
+ * - Destination with address (WORK — 80 COLLINS ST)
+ * - Arrival time
+ * 
  * ============================================================================
  * 
  * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
  * https://creativecommons.org/licenses/by-nc/4.0/
  * 
- * Features:
- * - Full screen rendering (800×480)
- * - Zone-based partial refresh
- * - Tiered refresh support (1/2/5 min intervals)
- * - 1-bit BMP output for e-ink
- * - SVG mode icons (walk, train, tram, coffee)
- * 
  * Layout (800x480):
  * ┌─────────────────────────────────────────────────────────────────────┐
- * │ HEADER: Location (left) | Time (center-left) | Weather (right)     │ 0-94
+ * │ HEADER: Clock | Day/Date/Status | Coffee Box | Weather             │ 0-94
  * ├─────────────────────────────────────────────────────────────────────┤
- * │ STATUS BAR: Coffee Decision / Leave Now / Disruption               │ 96-124
+ * │ STATUS BAR: Leave status | Delay box | Total time                  │ 96-124
  * ├─────────────────────────────────────────────────────────────────────┤
- * │ LEG 1: [Icon] Walk to Cafe                              3 MIN WALK │ 132-186
- * │ LEG 2: [Icon] Local Cafe                        4 MIN      │ 190-244
- * │ LEG 3: [Icon] Walk to Tram Stop                         2 MIN WALK │ 248-302
- * │ LEG 4: [Icon] Tram 58 → Collins St                     12 MIN      │ 306-360
- * │ LEG 5: [Icon] Walk to Work                              4 MIN WALK │ 364-418
+ * │ LEG 1-7: Dynamic journey legs with mode icons and durations        │ 132-440
  * ├─────────────────────────────────────────────────────────────────────┤
- * │ FOOTER: ARRIVE 08:55 at WORK                                       │ 448-480
+ * │ FOOTER: WORK — ADDRESS                              ARRIVE HH:MM   │ 448-480
  * └─────────────────────────────────────────────────────────────────────┘
- *
- * Copyright (c) 2026 Angus Bergman
- * Licensed under CC BY-NC 4.0
  */
 
 import { createCanvas, GlobalFonts, loadImage } from '@napi-rs/canvas';

@@ -1,10 +1,11 @@
 # CCDashDesignV10 - Commute Compute Dashboard Specification
 
 **Status:** 🔒 LOCKED  
-**Last Updated:** 2026-01-30  
+**Version:** 1.38  
+**Last Updated:** 2026-01-31  
 **Display:** 800×480px e-ink (TRMNL device)  
-**Refresh:** 20-second partial refresh cycle
-**Renderer:** CCDashRendererV13 (ccdash-renderer-v13.js)
+**Refresh:** 60-second partial refresh cycle  
+**Renderer:** ccdash-renderer.js (Consolidated v2.1)
 
 ---
 
@@ -13,30 +14,31 @@
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │ HEADER (0-94px)                                                              │
-│ ┌─────────────────────────────────────┐  ┌─────────────────────────────────┐ │
-│ │ Address                             │  │ Weather Box                     │ │
-│ │ TIME (large)           Day          │  │ Temperature                     │ │
-│ │              AM/PM     Date         │  │ Condition                       │ │
-│ │                                     │  │ [Umbrella Indicator]            │ │
-│ └─────────────────────────────────────┘  └─────────────────────────────────┘ │
+│ ┌────────────┐ ┌──────────┐ ┌───────────────────────┐ ┌───────────────────┐  │
+│ │ Location   │ │ Thursday │ │ ☕ GET A COFFEE       │ │ 24°               │  │
+│ │            │ │ 11 Jan   │ │   + ARRIVE BY         │ │ Partly Cloudy     │  │
+│ │  7:24      │ │ [STATUS] │ │   8:19am              │ │ [NO UMBRELLA]     │  │
+│ │       AM   │ │ [DATA]   │ │                       │ │                   │  │
+│ └────────────┘ └──────────┘ └───────────────────────┘ └───────────────────┘  │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ SUMMARY BAR (96-124px) - Black background                                    │
+│ STATUS BAR (96-124px) - Black background                                     │
+│ LEAVE NOW → Arrive 8:19am                    [+8 min DELAY]        55 min    │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ JOURNEY LEGS (132-440px)                                                     │
+│ JOURNEY LEGS (132-440px) - Dynamic leg boxes with arrows between             │
 │ ┌──────────────────────────────────────────────────────────────────────────┐ │
-│ │ [#] [Icon] Title                                              [Duration] │ │
-│ │            Subtitle • Next: X, Y min                          [Box     ] │ │
+│ │ ① 🚶 Walk to Industry Beans                                    │ 4      │ │
+│ │      From home • Industry Beans                                │MIN WALK│ │
 │ └──────────────────────────────────────────────────────────────────────────┘ │
 │                                    ▼                                         │
 │ ┌──────────────────────────────────────────────────────────────────────────┐ │
-│ │ [#] [Icon] Title                                              [Duration] │ │
-│ │            Subtitle                                           [Box     ] │ │
+│ │ ② ☕ Coffee at Industry Beans                                  │ ~11    │ │
+│ │      ✓ TIME FOR COFFEE                                         │ MIN    │ │
 │ └──────────────────────────────────────────────────────────────────────────┘ │
 │                                    ▼                                         │
 │                                   ...                                        │
 ├──────────────────────────────────────────────────────────────────────────────┤
 │ FOOTER (448-480px) - Black background                                        │
-│ DESTINATION ADDRESS                                        ARRIVE  HH:MM    │
+│ WORK — 80 COLLINS ST                                       ARRIVE  8:19am    │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -45,491 +47,308 @@
 ## 2. Header Section (0-94px)
 
 ### 2.1 Current Location
-- **Position:** `left: 16px, top: 8px`
-- **Font:** 11px, letter-spacing: 0.5px
-- **Content:** Current address in UPPERCASE
-- **Source:** User configuration / GPS
+- **Position:** `left: 12px, top: 4px`
+- **Font:** 10px bold, UPPERCASE
+- **Content:** Current address (e.g., "88 SMITH ST, COLLINGWOOD")
+- **Source:** User configuration
 
-### 2.2 Current Time
-- **Position:** `left: 16px, top: 22px`
-- **Font:** 68px, weight: 900, letter-spacing: -3px
-- **Format:** 12-hour (e.g., "7:45", "11:15")
-- **Source:** System clock
+### 2.2 Current Time (Clock)
+- **Position:** `left: 8px, top: calculated` (bottom-aligned near status bar)
+- **Font:** 82px bold
+- **Format:** 12-hour (e.g., "7:24")
+- **Positioning:** Bottom of clock digits touch the status bar area
 
 ### 2.3 AM/PM Indicator
-- **Position:** `left: 200px, top: 72px`
-- **Font:** 16px, weight: 700
-- **Source:** System clock
+- **Position:** Right of clock, bottom-aligned with coffee/weather boxes (y ≈ 68)
+- **Font:** 22px bold
+- **Content:** "AM" or "PM"
 
 ### 2.4 Day of Week
-- **Position:** `left: 300px, top: 28px`
-- **Font:** 18px, weight: 600
-- **Source:** System clock
+- **Position:** `left: clockWidth + 58px, top: 6px`
+- **Font:** 20px bold
+- **Content:** Full day name (e.g., "Thursday")
 
 ### 2.5 Date
-- **Position:** `left: 300px, top: 50px`
-- **Font:** 16px, color: #444
-- **Format:** "DD Month" (e.g., "28 January")
-- **Source:** System clock
+- **Position:** `left: clockWidth + 58px, top: 28px`
+- **Font:** 14px
+- **Format:** "DD Month" (e.g., "11 January")
 
-### 2.6 Weather Box
-- **Position:** `right: 16px, top: 12px`
-- **Size:** 140×78px
-- **Border:** 2px solid #000
+### 2.6 Service Status Indicator
+- **Position:** Below day/date, `top: 46px`
+- **Size:** 115×16px
 
-#### 2.6.1 Temperature
-- **Position:** Centered in box, top: 18px
-- **Font:** 34px, weight: 800
-- **Format:** "XX°" (e.g., "22°")
-- **Source:** Weather API
+| Status | Background | Border | Text |
+|--------|------------|--------|------|
+| Services OK | White | 1px black | "✓ SERVICES OK" |
+| Disruptions | Black fill | None | "⚠ DISRUPTIONS" (white text) |
 
-#### 2.6.2 Condition
-- **Position:** Centered in box, top: 52px
-- **Font:** 12px
-- **Content:** Short description (e.g., "Sunny", "Rain", "Overcast")
-- **Source:** Weather API
+### 2.7 Data Source Indicator
+- **Position:** Below service status, `top: 64px`
+- **Size:** 115×16px (same as service status)
 
-### 2.7 Umbrella Indicator
-- **Position:** `right: 20px, top: 68px`
-- **Size:** 132×18px
+| Source | Background | Border | Text |
+|--------|------------|--------|------|
+| Live Data | Black fill | None | "● LIVE DATA" (white text) |
+| Timetable Fallback | White | 1px black | "○ TIMETABLE FALLBACK" |
 
-| Weather Condition | Background | Text Color | Content |
-|-------------------|------------|------------|---------|
-| Rain/Showers expected | `#000` (black) | `#fff` (white) | "🌧 BRING UMBRELLA" |
-| No rain expected | `#fff` (white) + 2px border | `#000` (black) | "☀ NO UMBRELLA" or "☁ NO UMBRELLA" |
+### 2.8 Coffee Decision Box (Conditional)
+- **Position:** Between status indicators and weather box
+- **Size:** Dynamic width (fills gap), height: 86px
+- **Condition:** Only shown if journey includes coffee leg
 
-**Source:** Weather API precipitation forecast
+#### 2.8.1 Coffee Available (canGet: true)
+- **Background:** Black fill
+- **Icon:** White coffee cup (drawn, not emoji)
+- **Text:** 
+  - "GET A COFFEE" (18px bold, white)
+  - "+ ARRIVE BY" (12px, white)
+  - Arrival time (28px bold, white)
 
----
+#### 2.8.2 Coffee Skipped (canGet: false)
+- **Background:** White with 2px black border
+- **Icon:** Sad face (drawn circle with frown)
+- **Text:** "NO TIME FOR COFFEE" (16px bold, black)
 
-## 3. Divider Line
+### 2.9 Weather Box
+- **Position:** `right: 8px, top: 4px`
+- **Size:** 172×86px
+- **Border:** 2px solid black
 
-- **Position:** `top: 94px`
-- **Size:** Full width (800px), height: 2px
-- **Color:** #000
+#### 2.9.1 Temperature
+- **Position:** Centered horizontally, `top: 26px` (middle-aligned)
+- **Font:** 36px bold
+- **Format:** "XX°" (e.g., "24°")
 
----
+#### 2.9.2 Condition
+- **Position:** Centered horizontally, `top: 50px`
+- **Font:** 11px
+- **Content:** Weather description (e.g., "Partly Cloudy")
 
-## 4. Summary Bar (96-124px)
+#### 2.9.3 Umbrella Indicator
+- **Position:** Bottom of weather box, 4px inset
+- **Size:** 164×14px
 
-- **Position:** `top: 96px`
-- **Size:** Full width (800px), height: 28px
-- **Background:** #000 (black)
-
-### 4.1 Left Content
-- **Position:** `left: 16px, top: 101px`
-- **Font:** 13px, weight: 700, color: #fff
-
-| State | Format |
-|-------|--------|
-| Normal | "LEAVE NOW → Arrive HH:MM" or "LEAVE IN X MIN → Arrive HH:MM" |
-| Delay | "⏱ DELAY → Arrive HH:MM (+X min)" |
-| Disruption | "⚠ DISRUPTION → Arrive HH:MM (+X min)" |
-| Diversion | "⚠ TRAM DIVERSION → Arrive HH:MM (+X min)" |
-
-### 4.2 Right Content
-- **Position:** `right: 16px, top: 101px`
-- **Font:** 13px, weight: 700, color: #fff
-- **Content:** Total journey time (e.g., "47 min", "92 min")
-
-**Source:** Journey planning API (calculated from all legs)
+| Condition | Background | Text |
+|-----------|------------|------|
+| Rain expected | Black fill | "BRING UMBRELLA" (white) |
+| No rain | White + 1px border | "NO UMBRELLA" (black) |
 
 ---
 
-## 5. Journey Legs (132-440px)
+## 3. Status Bar (96-124px)
 
-Maximum visible legs: **5** (at 52px height each with 12px arrows)  
-For fewer legs, larger heights can be used (64px or 80px)
+- **Background:** Solid black (#000), no outline
+- **Height:** 28px
+- **Text:** White (#FFF)
 
-### SmartCommute Variable Legs
+### 3.1 Left: Status Message
+- **Position:** `left: 16px`
+- **Font:** 13px bold
+- **Formats:**
+  - `LEAVE NOW → Arrive 8:19am ✓` (on time)
+  - `LEAVE IN X MIN → Arrive 8:19am` (buffer time)
+  - `⏱ DELAY → Arrive 8:27am (+8 min)` (delays)
+  - `⚠ DISRUPTION → Arrive 8:27am (+8 min)` (major issues)
 
-SmartCommute may generate journeys with varying leg counts (2-6+). Rendering rules:
+### 3.2 Center-Right: Delay Box (Conditional)
+- **Position:** Before total time
+- **Size:** 80×18px
+- **Condition:** Only shown if legs have actual delays (delayMinutes > 0)
+- **Background:** White
+- **Text:** "+X min DELAY" (11px bold, black, centered)
 
-| Leg Count | Leg Height | Arrow Height | Strategy |
-|-----------|------------|--------------|----------|
-| 2 legs | 130px | 12px | Extra large legs, full detail |
-| 3 legs | 96px | 12px | Large legs |
-| 4 legs | 70px | 12px | Medium legs |
-| 5 legs | 52px | 12px | Standard |
-| 6+ legs | 52px | 8px | Compact mode, scrollable if needed |
-
-**Overflow Handling:** For >5 legs, display first 5 with indicator "...+N more" in footer area.
-
-### 5.1 Leg Container
-
-#### 5.1.1 Normal State
-- **Position:** `left: 12px, right: 12px`
-- **Height:** 52px (standard), 64px (4 legs), 80px (3 legs)
-- **Border:** 2px solid #000
-- **Background:** #fff
-
-#### 5.1.2 Coffee (Can Get)
-- **Border:** 3px solid #000
-- **Background:** #fff
-
-#### 5.1.3 Coffee (Skip)
-- **Border:** 2px dashed #000
-- **Background:** #fff
-- **All content:** Opacity 0.4 or color #888
-
-#### 5.1.4 Delayed
-- **Border:** 3px dashed #000
-- **Background:** #fff
-
-#### 5.1.5 Suspended
-- **Border:** 3px solid #000
-- **Background:** `repeating-linear-gradient(135deg, #fff, #fff 4px, #000 4px, #000 6px)`
-
-#### 5.1.6 Diverted
-- **Border:** 3px solid #000
-- **Background:** `repeating-linear-gradient(90deg, #fff, #fff 5px, #000 5px, #000 7px)`
-
-### 5.2 Leg Number
-- **Position:** `left: 10px, top: 14px`
-- **Size:** 24×24px
-- **Style:** Background #000, color #fff, border-radius: 50%
-- **Font:** 13px, weight: 700, centered
-
-| State | Content |
-|-------|---------|
-| Normal | Sequential number (1, 2, 3...) |
-| Suspended | "✗" |
-| Coffee Skip | Dashed border, color #888 |
-
-### 5.3 Mode Icon
-- **Position:** `left: 44px, top: 10px`
-- **Size:** 32×32px
-
-#### 5.3.1 Walk Icon
-```svg
-<svg viewBox="0 0 32 32" fill="none">
-  <circle cx="16" cy="5" r="4" fill="#000"/>
-  <path d="M16 10v8M16 18l-5 10M16 18l5 10M16 12l-5 5M16 12l5 5" 
-        stroke="#000" stroke-width="3" stroke-linecap="round"/>
-</svg>
-```
-
-#### 5.3.2 Train Icon (V5 - Locked)
-```svg
-<svg viewBox="0 0 32 32" fill="none">
-  <rect x="5" y="4" width="22" height="22" rx="5" fill="#000"/>
-  <rect x="8" y="7" width="16" height="10" rx="2" fill="#fff"/>
-  <rect x="10" y="20" width="4" height="3" rx="1" fill="#fff"/>
-  <rect x="18" y="20" width="4" height="3" rx="1" fill="#fff"/>
-  <rect x="7" y="26" width="6" height="3" rx="1" fill="#000"/>
-  <rect x="19" y="26" width="6" height="3" rx="1" fill="#000"/>
-</svg>
-```
-
-#### 5.3.3 Tram Icon (Melbourne W-class style)
-```svg
-<svg viewBox="0 0 32 32" fill="none">
-  <path d="M16 2v6" stroke="#000" stroke-width="2"/>
-  <path d="M12 2h8" stroke="#000" stroke-width="2"/>
-  <rect x="4" y="8" width="24" height="16" rx="4" fill="#000"/>
-  <rect x="6" y="11" width="6" height="6" rx="1" fill="#fff"/>
-  <rect x="13" y="11" width="6" height="6" rx="1" fill="#fff"/>
-  <rect x="20" y="11" width="6" height="6" rx="1" fill="#fff"/>
-  <circle cx="9" cy="26" r="2.5" fill="#000"/>
-  <circle cx="23" cy="26" r="2.5" fill="#000"/>
-</svg>
-```
-
-#### 5.3.4 Bus Icon
-```svg
-<svg viewBox="0 0 32 32" fill="none">
-  <rect x="3" y="6" width="26" height="18" rx="3" fill="#000"/>
-  <rect x="5" y="8" width="22" height="8" rx="2" fill="#fff"/>
-  <rect x="5" y="17" width="5" height="4" rx="1" fill="#fff"/>
-  <rect x="11" y="17" width="5" height="4" rx="1" fill="#fff"/>
-  <rect x="17" y="17" width="5" height="4" rx="1" fill="#fff"/>
-  <circle cx="9" cy="26" r="3" fill="#000"/>
-  <circle cx="23" cy="26" r="3" fill="#000"/>
-</svg>
-```
-
-#### 5.3.5 Coffee Icon
-```svg
-<svg viewBox="0 0 32 32" fill="none">
-  <path d="M6 10h16v3c0 7-3.5 11-8 11s-8-4-8-11v-3z" fill="#000"/>
-  <path d="M22 12h3c2 0 3.5 1.5 3.5 3.5S27 19 25 19h-3" stroke="#000" stroke-width="2.5"/>
-  <rect x="4" y="26" width="20" height="3" rx="1.5" fill="#000"/>
-</svg>
-```
-
-### 5.4 Leg Title
-- **Position:** `left: 86px, top: 8px`
-- **Font:** 16px, weight: 700
-
-| State | Prefix |
-|-------|--------|
-| Normal | None |
-| Delayed | "⏱ " |
-| Suspended | "⚠ " |
-| Diverted | "↩ " |
-| Coffee | "☕ " |
-| Replacement | "🔄 " |
-
-### 5.5 Leg Subtitle
-- **Position:** `left: 86px, top: 28px`
-- **Font:** 12px
-
-| Leg Type | Format |
-|----------|--------|
-| Walk (first leg) | "From home • [destination]" |
-| Walk (other) | "[location/platform]" |
-| Transit (normal) | "[Line name] • Next: X, Y min" |
-| Transit (delayed) | "+X MIN • Next: X, Y min" |
-| Coffee (can get) | "✓ TIME FOR COFFEE" or "✓ EXTRA TIME — Disruption" |
-| Coffee (skip) | "✗ SKIP — Running late" |
-| Suspended | "SUSPENDED — [reason]" |
-| Diverted | "Next: X, Y min • [stop name]" |
-
-**Source:** Transport Victoria OpenData (GTFS-RT Trip Updates)
-
-### 5.6 Duration Box
-- **Position:** `right: -2px, top: -2px` (fills to edge)
-- **Size:** 72×52px (standard leg)
-- **Background:** #000 (solid for normal states)
-
-#### Duration Box States
-
-| State | Background | Border | Text Color |
-|-------|------------|--------|------------|
-| Normal (walk) | #000 | None | #fff |
-| Normal (transit) | #000 | None | #fff |
-| Coffee (can get) | #000 | None | #fff |
-| Coffee (skip) | None | 2px dashed #888 left | #888, content: "—" |
-| Delayed | None | 3px dashed #000 left | #000 |
-| Diverted | #fff | None | #000 |
-| Suspended | None | None | Text "CANCELLED" |
-
-#### Duration Box Content
-
-| Leg Type | Number | Label |
-|----------|--------|-------|
-| Walk | Duration in minutes | "MIN WALK" |
-| Transit | Minutes until next service | "MIN" |
-| Coffee | "~X" (approximate) | "MIN" |
-
-- **Number font:** 26px (22px for ~X), weight: 900
-- **Label font:** 8px
-
-### 5.7 Arrow Connector
-- **Position:** Centered horizontally (`left: 50%, transform: translateX(-50%)`)
-- **Style:** CSS triangle pointing down
-- **Size:** 20px wide × 12px tall (border-left/right: 10px, border-top: 12px)
-- **Color:** #000
-
-```css
-.arrow-point {
-  width: 0;
-  height: 0;
-  border-left: 10px solid transparent;
-  border-right: 10px solid transparent;
-  border-top: 12px solid #000;
-}
-```
+### 3.3 Right: Total Journey Time
+- **Position:** `right: 16px`
+- **Font:** 13px bold
+- **Format:** "XX min" (e.g., "55 min")
 
 ---
 
-## 6. Footer (448-480px)
+## 4. Journey Legs Section (132-440px)
 
-- **Position:** `top: 448px`
-- **Size:** Full width (800px), height: 32px
-- **Background:** #000 (black)
+### 4.1 Dynamic Layout
+- Legs are dynamically sized based on total leg count
+- Maximum 7 legs supported
+- Gap between legs: 14px (includes arrow space)
+- Scale factor: `min(1, 5 / legCount)`
 
-### 6.1 Destination Address
-- **Position:** `left: 16px, top: 454px`
-- **Font:** 16px, weight: 800, color: #fff
-- **Content:** Destination in UPPERCASE (optionally prefixed with "HOME — ")
+### 4.2 Leg Box Structure
 
-### 6.2 Arrive Label
-- **Position:** `right: 130px, top: 454px`
-- **Font:** 12px, color: #fff
-- **Content:** "ARRIVE"
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│ [①] [🚶] Title Text                              DEPART   │ XX        │
+│          Subtitle • Next: X, Y min               HH:MMam  │ MIN WALK  │
+└─────────────────────────────────────────────────────────────────────────┘
+```
 
-### 6.3 Arrival Time
-- **Position:** `right: 16px, top: 450px`
-- **Font:** 24px, weight: 900, color: #fff
-- **Format:** "HH:MM" (12-hour, no AM/PM in footer)
+### 4.3 Leg Number Circle
+- **Position:** `left: 6px`, vertically centered
+- **Size:** Scaled (16-24px based on leg count)
+
+| Status | Style |
+|--------|-------|
+| Normal | Black filled circle, white number |
+| Skipped | Dashed circle outline, black number |
+| Cancelled | Dashed circle with "✗" |
+
+### 4.4 Mode Icons (Canvas-Drawn)
+- **Position:** Right of leg number, 4px gap
+- **Size:** Scaled (20-32px)
+- **Types:** walk, train, tram, bus, coffee
+- **Variants:** Solid (normal), Outline (delayed/skipped)
+
+### 4.5 Title & Subtitle
+- **Position:** Right of icon, 8px gap
+- **Title:** Bold, scaled (12-16px)
+- **Subtitle:** Regular, scaled (10-12px)
+- **Gap:** 2px between title and subtitle (close together)
+- **Vertical:** Centered as a unit within leg box
+
+### 4.6 DEPART Column (Transit Only)
+- **Position:** Left of duration box
+- **Content:** "DEPART" label + time (e.g., "7:40am")
+- **Font:** Label 7-9px, Time 10-14px bold
+- **Shown for:** train, tram, bus, ferry
+
+### 4.7 Duration Box
+- **Position:** Right edge of leg box
+- **Size:** Scaled (56-72px width)
+
+#### Duration Display Rules:
+| Leg Type | Display | Label |
+|----------|---------|-------|
+| Walk | Individual duration | "X MIN WALK" |
+| Transit | Cumulative from leave | "X MIN" |
+| Coffee | Cumulative with ~ prefix | "~X MIN" |
+
+#### Duration Box Styles:
+| Status | Background | Border | Text |
+|--------|------------|--------|------|
+| Normal | Black | None | White |
+| Delayed | White | Dashed left edge | Black |
+| Skipped Coffee | White | Dashed all sides | "—" |
+
+### 4.8 Leg Borders
+- **Normal:** 1px solid black
+- **Coffee (canGet):** 2px solid black
+- **Delayed:** 2px dashed black
+- **Skipped:** 1px dashed black
+
+### 4.9 Arrow Connectors
+- **Position:** Centered (x=400), between leg boxes
+- **Style:** Filled black downward triangle
+- **Size:** 16×10px
 
 ---
 
-## 7. Server Interaction
+## 5. Footer Section (448-480px)
 
-### 7.1 API Endpoints
+- **Background:** Solid black (#000)
+- **Height:** 32px
+- **Text:** White (#FFF)
 
-#### 7.1.1 Weather Data
-- **Endpoint:** Weather API (configured)
-- **Refresh:** Every 30 minutes
-- **Data Required:**
-  - Temperature (°C)
-  - Condition description
-  - Precipitation probability (for umbrella decision)
+### 5.1 Destination
+- **Position:** `left: 16px`
+- **Font:** 14px bold
+- **Format:** "DESTINATION — ADDRESS" (e.g., "WORK — 80 COLLINS ST")
+- **Home variant:** "HOME — 15 BEACH RD"
 
-#### 7.1.2 Journey Planning
-- **Endpoint:** Transport Victoria OpenData API (GTFS static + real-time)
-- **Refresh:** Every 20 seconds (matches display refresh)
-- **Request Parameters:**
-  - Origin (current location)
-  - Destination (configured)
-  - Departure time (now)
-  - Include real-time data: true
-
-#### 7.1.3 Real-Time Departures
-- **Endpoint:** GTFS-RT Trip Updates
-- **Refresh:** Every 20 seconds
-- **Data Required:**
-  - Next 2 departures for each transit leg
-  - Delay information
-  - Service status (normal/delayed/suspended/diverted)
-
-#### 7.1.4 Disruptions
-- **Endpoint:** GTFS-RT Service Alerts
-- **Refresh:** Every 5 minutes
-- **Data Required:**
-  - Active disruptions affecting route
-  - Disruption type (suspension, delay, diversion)
-  - Affected stops/lines
-
-### 7.2 Coffee Stop Logic
-
-```
-IF journey has configured coffee stop:
-  coffee_time = configured_coffee_duration (default: 5 min)
-  
-  IF (departure_time + journey_time_without_coffee + coffee_time) <= required_arrival_time:
-    coffee_status = "CAN_GET"
-    subtitle = "✓ TIME FOR COFFEE"
-  ELSE IF disruption_causes_extra_time:
-    coffee_status = "CAN_GET"
-    subtitle = "✓ EXTRA TIME — Disruption"
-  ELSE:
-    coffee_status = "SKIP"
-    subtitle = "✗ SKIP — Running late"
-```
-
-### 7.3 Data Flow
-
-```
-┌─────────────────┐
-│  TRMNL Device   │
-│  (Display)      │
-└────────┬────────┘
-         │ Request every 20s
-         ▼
-┌─────────────────┐
-│  Vercel Edge    │
-│  Function       │
-└────────┬────────┘
-         │
-    ┌────┴────┬──────────┐
-    ▼         ▼          ▼
-┌───────┐ ┌─────────┐ ┌──────────┐
-│Weather│ │ GTFS-RT │ │ GTFS-RT  │
-│ API   │ │ Static  │ │ Updates  │
-└───────┘ └─────────┘ └──────────┘
-```
-
-### 7.4 Response Format
-
-The server returns pre-rendered HTML/image optimized for e-ink display:
-- Monochrome (black/white only)
-- No anti-aliasing on text
-- Dithering for any gradients (suspended/diverted patterns)
-- 800×480px PNG or HTML
-
-### 7.5 Caching Strategy
-
-| Data Type | Cache Duration | Stale-While-Revalidate |
-|-----------|----------------|------------------------|
-| Weather | 30 minutes | 60 minutes |
-| Journey Plan | 20 seconds | 60 seconds |
-| Departures | 20 seconds | 60 seconds |
-| Disruptions | 5 minutes | 15 minutes |
-| Static assets | 24 hours | 7 days |
+### 5.2 Arrival Time
+- **Position:** `right: 16px`
+- **Label:** "ARRIVE" (9px, 70% opacity)
+- **Time:** 20px bold (e.g., "8:19am")
 
 ---
 
-## 8. Configuration
+## 6. Data Requirements
 
-### 8.1 User Settings
-
-```json
+### 6.1 Required Fields
+```javascript
 {
-  "home": {
-    "address": "1 Clara St, South Yarra",
-    "coordinates": { "lat": -37.8389, "lng": 144.9931 }
-  },
-  "work": {
-    "address": "80 Collins St, Melbourne",
-    "coordinates": { "lat": -37.8136, "lng": 144.9631 }
-  },
-  "coffeeStop": {
-    "enabled": true,
-    "name": "Norman Cafe",
-    "address": "300 Toorak Rd",
-    "duration": 5,
-    "position": "start" | "end"
-  },
-  "preferences": {
-    "maxWalkDistance": 800,
-    "preferredModes": ["train", "tram", "bus"],
-    "avoidStairs": false
-  }
+  location: "88 SMITH ST, COLLINGWOOD",
+  current_time: "7:24 AM",
+  day: "Thursday",
+  date: "11 January",
+  temp: 24,
+  condition: "Partly Cloudy",
+  total_minutes: 55,
+  arrive_by: "8:19am",
+  destination: "WORK",
+  destination_address: "80 Collins St",
+  isLive: true,  // or false for timetable fallback
+  journey_legs: [...]
 }
 ```
 
-### 8.2 Display Timing
+### 6.2 Journey Leg Structure
+```javascript
+{
+  type: "tram",  // walk, train, tram, bus, coffee
+  to: "City",
+  minutes: 21,
+  departTime: "7:40am",  // for transit
+  lineName: "Route 96",
+  nextDepartures: [3, 8],  // minutes until next 2 departures
+  status: "delayed",  // optional
+  delayMinutes: 8,  // optional
+  canGet: true  // for coffee legs
+}
+```
 
-| Setting | Value | Description |
-|---------|-------|-------------|
-| Refresh interval | 20 seconds | TRMNL partial refresh cycle |
-| Wake time | 06:00 | Start showing journey |
-| Sleep time | 22:00 | Switch to minimal display |
-| Weekend mode | Optional | Different schedule/destinations |
-
----
-
-## 9. Error States
-
-### 9.1 No Connection
-- Display last cached data with timestamp
-- Show "⚠ OFFLINE — Last updated HH:MM" in summary bar
-
-### 9.2 API Error
-- Retry with exponential backoff
-- Show cached data if available
-- Display error indicator after 3 failed attempts
-
-### 9.3 No Route Found
-- Display message: "No route available"
-- Suggest alternative departure times
+### 6.3 Optional Fields
+- `disruption: true` — Shows disruption indicators
+- `rain_expected: true` — Forces umbrella indicator
+- `isFirst: true` — First leg (shows "From home")
+- `fromHome: true` / `fromWork: true` — Origin context
 
 ---
 
-## 10. Accessibility
+## 7. Renderer API
 
-- High contrast (black/white only)
-- Large readable fonts
-- Clear iconography
-- No reliance on color alone for status
+### 7.1 Primary Function
+```javascript
+import { renderFullScreen } from './src/services/ccdash-renderer.js';
+
+const pngBuffer = renderFullScreen(data);
+```
+
+### 7.2 Zone-Based Rendering
+```javascript
+import { renderSingleZone, getActiveZones } from './src/services/ccdash-renderer.js';
+
+const zones = getActiveZones(data);
+for (const zoneId of zones) {
+  const bmp = renderSingleZone(zoneId, data);
+}
+```
+
+### 7.3 Available Zones
+- `header.location`, `header.time`, `header.dayDate`, `header.weather`
+- `status`
+- `leg1` through `leg7`
+- `footer`
 
 ---
 
-## Document History
+## 8. Version History
 
 | Version | Date | Changes |
 |---------|------|---------|
-| v10 | 2026-01-28 | Final locked specification |
-| v9 | 2026-01-28 | Centered arrow points, edge-fill duration boxes |
-| v8 | 2026-01-28 | MIN WALK vs MIN labels |
-| v7 | 2026-01-28 | Train icon with rails |
-| v6 | 2026-01-28 | Duration boxes restored |
-| v5 | 2026-01-28 | 12h time, mode icons, coffee states |
-| v4 | 2026-01-28 | Initial layout design |
+| v1.38 | 2026-01-31 | Same-size status boxes, work address in footer |
+| v1.37 | 2026-01-31 | AM/PM bottom-aligned, status bar full black |
+| v1.36 | 2026-01-31 | AM/PM alignment with boxes |
+| v1.35 | 2026-01-31 | Clock lower, touching status bar |
+| v1.34 | 2026-01-31 | Delay box, timetable fallback label |
+| v1.33 | 2026-01-31 | Live/scheduled data indicator |
+| v1.32 | 2026-01-31 | Larger coffee box, sad face, thinner borders |
+| v1.31 | 2026-01-31 | Coffee indicator in header |
+| v1.30 | 2026-01-31 | Service status box, closer text |
+| v1.29 | 2026-01-31 | Major layout improvements |
 
 ---
 
-**🔒 This specification is LOCKED. Any changes require version increment and approval.**
+## 9. Licensing
+
+**Copyright (c) 2026 Angus Bergman**  
+Licensed under CC BY-NC 4.0  
+https://creativecommons.org/licenses/by-nc/4.0/
