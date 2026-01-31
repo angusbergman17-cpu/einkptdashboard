@@ -1,9 +1,10 @@
 # Commute Compute System™ Architecture
 
-**Version:** 4.0  
-**Last Updated:** 2026-01-30  
+**Version:** 5.0  
+**Last Updated:** 2026-01-31  
 **Status:** Active  
 **Specification:** CCDash™ V10 (LOCKED)  
+**Development Rules:** v1.14 (24 sections)  
 **Copyright:** © 2026 Angus Bergman — CC BY-NC 4.0
 
 ---
@@ -41,12 +42,15 @@ See **LEGAL.md** for complete IP documentation.
 12. [CC LiveDash™ Multi-Device Renderer](#12-cc-livedash-multi-device-renderer)
 13. [CoffeeDecision Patterns](#13-coffeedecision-patterns)
 14. [Setup Wizard & Free-Tier Architecture](#14-setup-wizard--free-tier-architecture)
-15. [Journey Display Module](#15-journey-display-module) *(New in v4.0)*
-16. [Data Layer Architecture](#16-data-layer-architecture) *(New in v4.0)*
-17. [Multi-State Transit Support](#17-multi-state-transit-support) *(New in v4.0)*
-18. [Device Pairing System](#18-device-pairing-system) *(New in v4.0)*
-19. [Health Monitoring](#19-health-monitoring) *(New in v4.0)*
-20. [Firmware Architecture (CCFirm™)](#20-firmware-architecture-ccfirm) *(New in v4.0)*
+15. [Journey Display Module](#15-journey-display-module)
+16. [Data Layer Architecture](#16-data-layer-architecture)
+17. [Multi-State Transit Support](#17-multi-state-transit-support)
+18. [Device Pairing System](#18-device-pairing-system)
+19. [Health Monitoring](#19-health-monitoring)
+20. [Firmware Architecture (CCFirm™)](#20-firmware-architecture-ccfirm)
+21. [Vercel KV Storage](#21-vercel-kv-storage) *(New in v5.0)*
+22. [GTFS-RT Data Flow](#22-gtfs-rt-data-flow) *(New in v5.0)*
+23. [Turnkey Compliance](#23-turnkey-compliance) *(New in v5.0)*
 
 ---
 
@@ -107,7 +111,7 @@ Commute Compute is a **fully self-hosted smart transit display system** for Aust
 │   │  │  CCFirm™ Custom Firmware (NOT usetrmnl firmware)        │    │   │
 │   │  │  - Fetches from user's Vercel URL only                  │    │   │
 │   │  │  - Receives 1-bit BMP zones                             │    │   │
-│   │  │  - 20-second partial refresh cycle                      │    │   │
+│   │  │  - 60-second partial refresh cycle                      │    │   │
 │   │  └─────────────────────────────────────────────────────────┘    │   │
 │   └─────────────────────────────────────────────────────────────────┘   │
 │                                                                          │
@@ -603,7 +607,7 @@ ctx.font = '800 17px Inter';
 4. Server returns only changed zone BMPs
 5. Firmware fetches zones endpoint
 6. Firmware applies partial refresh per zone
-7. Cycle repeats every 20 seconds
+7. Cycle repeats every 60 seconds
 ```
 
 ### 8.4 Memory Constraints (ESP32-C3)
@@ -1207,9 +1211,194 @@ CCFirm™ is the custom firmware family for Commute Compute devices. All devices
 
 ---
 
+## 21. Vercel KV Storage
+
+*New in v5.0 — See DEVELOPMENT-RULES.md Section 24.6*
+
+### 21.1 Overview
+
+Vercel KV provides persistent, serverless key-value storage for API keys and user preferences. This replaces environment variables for Zero-Config compliance.
+
+### 21.2 Storage Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         VERCEL KV STORAGE                                │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  ┌──────────────────────┐     ┌──────────────────────┐                  │
+│  │  Setup Wizard        │────▶│  POST /api/save-     │                  │
+│  │  (enters API keys)   │     │  transit-key         │                  │
+│  └──────────────────────┘     └──────────┬───────────┘                  │
+│                                          │                               │
+│                                          ▼                               │
+│  ┌──────────────────────────────────────────────────────────────────┐   │
+│  │                      VERCEL KV STORE                              │   │
+│  │                                                                   │   │
+│  │  transit-api-key: "ce606b90-9ffb-43e8-bcd7-..."                  │   │
+│  │  google-api-key:  "AIzaSy..."                                     │   │
+│  │  preferences:     { addresses: {...}, journey: {...} }            │   │
+│  │  device-config:   { webhookUrl: "...", deviceId: "..." }          │   │
+│  │                                                                   │   │
+│  └──────────────────────────────────────────────────────────────────┘   │
+│                                          │                               │
+│                                          ▼                               │
+│  ┌──────────────────────┐     ┌──────────────────────┐                  │
+│  │  /api/zones          │────▶│  getTransitApiKey()  │                  │
+│  │  (runtime request)   │     │  reads from KV       │                  │
+│  └──────────────────────┘     └──────────────────────┘                  │
+│                                                                          │
+│  ✅ Zero-Config: No environment variables needed                         │
+│  ✅ Secure: Keys stored in Vercel's encrypted KV                        │
+│  ✅ Portable: Config moves with Vercel project                           │
+│  ✅ Serverless: No persistent storage required                           │
+└──────────────────────────────────────────────────────────────────────────┘
+```
+
+### 21.3 KV Key Schema
+
+| Key | Type | Purpose |
+|-----|------|---------|
+| `transit-api-key` | string | Transport Victoria OpenData API key |
+| `google-api-key` | string | Google Places API key (optional) |
+| `preferences` | JSON | User preferences from Setup Wizard |
+| `device-config` | JSON | Device configuration |
+| `last-validated` | timestamp | Last API key validation time |
+
+### 21.4 Access Pattern
+
+```javascript
+import { kv } from '@vercel/kv';
+
+// Read API key from KV (Zero-Config compliant)
+async function getTransitApiKey() {
+  const key = await kv.get('transit-api-key');
+  if (!key) {
+    console.log('[KV] No transit API key configured');
+    return null;
+  }
+  return key;
+}
+
+// ❌ PROHIBITED: Environment variables
+// const apiKey = process.env.TRANSIT_API_KEY;
+```
+
+---
+
+## 22. GTFS-RT Data Flow
+
+*New in v5.0 — See DEVELOPMENT-RULES.md Section 23*
+
+### 22.1 Overview
+
+SmartCommute™ uses GTFS-RT (General Transit Feed Specification - Realtime) for live transit data. Direction-specific stop IDs are critical for correct journey calculation.
+
+### 22.2 Stop ID Architecture
+
+**GTFS-RT uses direction-specific stop IDs.** Each platform at a station has a unique ID.
+
+| Station | Stop ID | Platform | Direction | Destination |
+|---------|---------|----------|-----------|-------------|
+| South Yarra | `12179` | PKM/CBE citybound | → City | Parliament via City Loop |
+| South Yarra | `14295` | FKN citybound | → City | Flinders Street |
+| South Yarra | `14271` | SHM outbound | → Suburbs | Sandringham |
+
+### 22.3 Citybound Detection
+
+```javascript
+/**
+ * Check if a stop ID is in the Melbourne City Loop area
+ * City Loop stations: Parliament, Melbourne Central, Flagstaff, Southern Cross
+ */
+function isCityLoopStop(stopId) {
+  if (!stopId) return false;
+  // 26xxx = City Loop, 12204/12205 = Flinders St
+  return stopId.startsWith('26') || stopId === '12204' || stopId === '12205';
+}
+
+// In processGtfsRtDepartures():
+const finalStop = stops[stops.length - 1]?.stopId;
+const isCitybound = isCityLoopStop(finalStop);
+const destination = isCitybound ? 'City Loop' : getLineName(routeId);
+```
+
+### 22.4 Departure Output Schema
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `minutes` | number | ✅ | Minutes until departure |
+| `destination` | string | ✅ | Display destination ("City Loop" or line name) |
+| `isCitybound` | boolean | ✅ | Direction flag |
+| `finalStop` | string | ✅ | Terminus stop ID |
+| `routeId` | string | ✅ | GTFS route identifier |
+| `isLive` | boolean | ✅ | Live vs scheduled data |
+| `delay` | number | ✅ | Delay in minutes |
+| `source` | string | ✅ | Data source ("gtfs-rt" or "fallback") |
+
+### 22.5 Line Name Extraction
+
+```javascript
+function getLineName(routeId) {
+  // GTFS route ID: "aus:vic:vic-02-XXX:"
+  const match = routeId.match(/vic-\d+-([A-Z]+)/i);
+  if (!match) return routeId;
+  
+  const lineNames = {
+    'PKM': 'Pakenham', 'CBE': 'Cranbourne', 'FKN': 'Frankston',
+    'SHM': 'Sandringham', 'GLW': 'Glen Waverley', 'ALM': 'Alamein',
+    'BEL': 'Belgrave', 'LIL': 'Lilydale', 'HBE': 'Hurstbridge',
+    'MER': 'Mernda', 'CRB': 'Craigieburn', 'SUN': 'Sunbury',
+    'UPF': 'Upfield', 'WER': 'Werribee', 'WIL': 'Williamstown'
+  };
+  
+  return lineNames[match[1].toUpperCase()] || match[1];
+}
+```
+
+---
+
+## 23. Turnkey Compliance
+
+*New in v5.0 — See DEVELOPMENT-RULES.md Section 17.4*
+
+### 23.1 Principle
+
+The repository MUST be completely **turnkey** — any user can fork/clone and deploy immediately without removing someone else's personal data.
+
+### 23.2 Prohibited Hardcoding
+
+| Prohibited | Reason | Correct Approach |
+|------------|--------|------------------|
+| Home/work/cafe addresses | Personal location data | Setup Wizard → Vercel KV |
+| API keys | Security risk | Setup Wizard → Vercel KV |
+| WiFi credentials | Device-specific | User configures before flash |
+| Stop IDs for specific locations | Location-specific | Auto-detect or user preference |
+| Lat/lon coordinates | Personal location | Geocode from user addresses |
+
+### 23.3 Allowed Defaults
+
+| Allowed | Example | Reason |
+|---------|---------|--------|
+| City center coordinates | Melbourne CBD: -37.8136, 144.9631 | Generic fallback |
+| Public infrastructure names | South Yarra, Parliament, Collins St | Official PTV names |
+| Example addresses in comments | "e.g., 123 Example St" | Documentation only |
+| Sample config template | `config/sample-journey.json` | Clearly marked sample |
+
+### 23.4 Verification
+
+```bash
+# Pre-commit check for personal data
+grep -rn "Clara\|Toorak\|Norman" src/ api/ --include="*.js" \
+  | grep -v "test\|example\|sample" && echo "❌ PERSONAL DATA FOUND" \
+  || echo "✅ Turnkey compliant"
+```
+
+---
+
 ## References
 
-- [DEVELOPMENT-RULES.md](../DEVELOPMENT-RULES.md) — All development rules (v1.6)
+- [DEVELOPMENT-RULES.md](../DEVELOPMENT-RULES.md) — All development rules (v1.14, 24 sections)
 - [specs/CCDashDesignV10.md](../specs/CCDashDesignV10.md) — Dashboard specification (LOCKED)
 - [firmware/ANTI-BRICK-REQUIREMENTS.md](../firmware/ANTI-BRICK-REQUIREMENTS.md) — Firmware safety rules
 - [firmware/BOOT-SEQUENCE.md](../firmware/BOOT-SEQUENCE.md) — Boot sequence documentation
@@ -1223,6 +1412,7 @@ CCFirm™ is the custom firmware family for Commute Compute devices. All devices
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 5.0 | 2026-01-31 | **Alignment with DEVELOPMENT-RULES.md v1.14**: Added Vercel KV Storage (Section 21), GTFS-RT Data Flow (Section 22), Turnkey Compliance (Section 23). Updated references to dev rules. Refresh interval now 60s. |
 | 4.0 | 2026-01-30 | Major update: Added Journey Display Module, Data Layer, Multi-State Support, Device Pairing, Health Monitoring, CCFirm™ Architecture. Updated component structure, API endpoints, and device support. |
 | 3.0 | 2026-01-29 | Added IP notice, Setup Wizard, Free-Tier architecture |
 | 2.2 | 2026-01-28 | Setup Wizard & Free-Tier Architecture |
@@ -1232,5 +1422,6 @@ CCFirm™ is the custom firmware family for Commute Compute devices. All devices
 
 ---
 
-**Document Version:** 4.0  
+**Document Version:** 5.0  
+**Development Rules:** v1.14 (24 sections)  
 **Copyright © 2025-2026 Commute Compute System by Angus Bergman — CC BY-NC 4.0**
