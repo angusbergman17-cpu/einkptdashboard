@@ -1016,22 +1016,37 @@ function renderLegZone(ctx, leg, zone, legNumber = 1, isHighlighted = false) {
  * Generate leg title from leg data
  */
 function getLegTitle(leg) {
+  // Handle diversion walks (per ref image 8)
+  if (leg.type === 'walk' && leg.isDiversion) {
+    return 'Walk Around Diversion';
+  }
+  
   switch (leg.type) {
     case 'walk':
+      // "Walk Home" when destination is home (per ref image 8)
+      if (leg.to === 'home' || leg.toHome || leg.to?.toLowerCase().includes('home')) return 'Walk Home';
       if (leg.to === 'cafe' || leg.to?.toLowerCase().includes('cafe')) return 'Walk to Cafe';
-      if (leg.to === 'work' || leg.to?.toLowerCase().includes('work')) return 'Walk to Work';
+      if (leg.to === 'work' || leg.to?.toLowerCase().includes('work') || leg.to === 'office') return 'Walk to Office';
       if (leg.to?.toLowerCase().includes('station') || leg.to?.toLowerCase().includes('stop')) return `Walk to ${leg.to}`;
       return `Walk to ${leg.to || 'Stop'}`;
     case 'coffee':
       return leg.location || 'Coffee Stop';
     case 'tram':
-      return `Tram ${leg.routeNumber || ''} → ${leg.destination?.name || leg.to || 'City'}`;
+      // Handle diverted trams (per ref image 8)
+      if (leg.status === 'diverted') {
+        return `Tram ${leg.routeNumber || ''} Diverted`;
+      }
+      return `Tram ${leg.routeNumber || ''} to ${leg.destination?.name || leg.to || 'City'}`;
     case 'train':
-      return `Train → ${leg.destination?.name || leg.to || 'City'}`;
+      return `Train to ${leg.destination?.name || leg.to || 'City'}`;
     case 'bus':
-      return `Bus ${leg.routeNumber || ''} → ${leg.destination?.name || leg.to || ''}`;
+      // Handle replacement bus (per ref image 6)
+      if (leg.isReplacement) {
+        return 'Rail Replacement Bus';
+      }
+      return `Bus ${leg.routeNumber || ''} to ${leg.destination?.name || leg.to || ''}`;
     case 'transit':
-      return `${leg.mode || 'Transit'} ${leg.routeNumber || ''} → ${leg.destination?.name || leg.to || ''}`;
+      return `${leg.mode || 'Transit'} ${leg.routeNumber || ''} to ${leg.destination?.name || leg.to || ''}`;
     case 'wait':
       return `Wait at ${leg.location || 'stop'}`;
     default:
@@ -1047,11 +1062,19 @@ function getLegSubtitle(leg) {
   
   switch (leg.type) {
     case 'walk':
-      // First walk: "From home • [destination]"
-      // Other walks: "[location/platform]"
-      if (leg.isFirst || leg.fromHome) {
+      // Diversion walk (per ref image 8)
+      if (leg.isDiversion) {
+        return leg.diversionReason || 'Extra walk due to works';
+      }
+      // First walk: "From home • [dest]" or "From work • [dest]" (per ref images 5, 8)
+      if (leg.isFirst || leg.fromHome || leg.fromWork) {
         const dest = leg.to || leg.destination?.name || '';
-        return dest ? `From home • ${dest}` : 'From home';
+        const origin = leg.fromWork ? 'From work' : 'From home';
+        return dest ? `${origin} • ${dest}` : origin;
+      }
+      // Final walk to home (per ref image 8)
+      if (leg.toHome) {
+        return leg.destination?.address || leg.to || '';
       }
       const location = leg.platform || leg.location || leg.to || '';
       const dist = leg.distanceMeters || leg.distance;
@@ -1809,8 +1832,14 @@ export function renderFullScreen(data, prefs = {}) {
     ctx.textBaseline = 'top';
     
     let titlePrefix = '';
+    // Diversion walks also get ↩ prefix (per ref image 8 - leg 3)
+    const isDiversionWalk = leg.type === 'walk' && leg.isDiversion;
+    // Replacement bus gets ⏱ prefix (per ref image 6)
+    const isReplacementBus = leg.type === 'bus' && leg.isReplacement;
+    
     if (isSuspended) titlePrefix = '⚠ ';
-    else if (isDiverted) titlePrefix = '↩ ';
+    else if (isDiverted || isDiversionWalk) titlePrefix = '↩ ';
+    else if (isReplacementBus) titlePrefix = '⏱ ';
     else if (isDelayed && leg.type !== 'walk') titlePrefix = '⏱ ';
     else if (leg.type === 'coffee' && isCoffeeCanGet) titlePrefix = '☕ ';
     
@@ -1972,16 +2001,28 @@ export function renderFullScreen(data, prefs = {}) {
   // =========================================================================
   // FOOTER (V10 Spec Section 6) - Per reference images
   // Ref format: "80 COLLINS ST, MELBOURNE" ... "ARRIVE" ... "9:18"
+  // Or for home destination: "HOME — 1 CLARA ST" (per ref images 5, 8)
   // =========================================================================
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 448, 800, 32);
   ctx.fillStyle = '#FFF';
   
-  // Destination address (left side, uppercase, bold) - per ref images
+  // Destination address (left side, uppercase, bold)
+  // Add "HOME — " prefix if destination is home (per ref images 5, 8)
   ctx.font = 'bold 14px Inter, sans-serif';
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'left';
-  ctx.fillText((data.destination || 'WORK').toUpperCase(), 16, 464);
+  
+  let footerDest = (data.destination || 'WORK').toUpperCase();
+  const isHomeDestination = data.destinationType === 'home' || 
+                            data.isReverseCommute || 
+                            data.destination?.toLowerCase().includes('home') ||
+                            footerDest.includes('HOME');
+  
+  if (isHomeDestination && !footerDest.startsWith('HOME')) {
+    footerDest = `HOME — ${footerDest}`;
+  }
+  ctx.fillText(footerDest, 16, 464);
   
   // "ARRIVE" label + time (right aligned) - per ref images
   // Format: "ARRIVE    9:18"
