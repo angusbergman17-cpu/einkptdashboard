@@ -4352,44 +4352,189 @@
 
         async function loadAllData() {
             try {
-                const [status, weather, regions, systemStatus] = await Promise.all([
-                    fetch(BASE_URL + '/api/status').then(r => r.json()).catch(() => null),
-                    fetch(BASE_URL + '/admin/weather').then(r => r.json()).catch(() => null),
-                    fetch(BASE_URL + '/api/region-updates').then(r => r.json()).catch(() => null),
-                    fetch(BASE_URL + '/api/system-status').then(r => r.json()).catch(() => null)
-                ]);
-
-                if (status) {
-                    updateDepartures(status);
-                    // Check both server status AND localStorage for data mode
-                    const transitValidated = localStorage.getItem('cc-transit-api-validated') === 'true';
-                    const hasTransitKey = !!localStorage.getItem('cc-transit-api-key');
-                    const isLive = status.dataMode === 'Live' || (hasTransitKey && transitValidated);
-                    document.getElementById('data-mode').textContent = isLive ? 'Live Data' : 'Fallback';
-                    
-                    // Update the Live Data tab banner to match
-                    updateLiveDataBanner(isLive, hasTransitKey, transitValidated);
-                } else {
-                    // Show "Not configured" state when no status
+                // Get config from localStorage
+                const config = JSON.parse(localStorage.getItem('cc-config') || '{}');
+                const transitKey = localStorage.getItem('cc-transit-api-key') || '';
+                const hasTransitKey = !!transitKey;
+                const transitValidated = localStorage.getItem('cc-transit-api-validated') === 'true';
+                
+                // Check if configured
+                if (!config.addresses?.home) {
                     document.getElementById('train-departures').innerHTML = '<div class="no-data">Complete setup first</div>';
                     document.getElementById('tram-departures').innerHTML = '<div class="no-data">Complete setup first</div>';
+                    document.getElementById('weather-display').innerHTML = '<div class="no-data">Complete setup first</div>';
+                    document.getElementById('coffee-decision').innerHTML = '<div class="no-data">Complete setup first</div>';
+                    return;
                 }
-                if (weather) {
-                    updateWeather(weather);
+                
+                // Fetch SmartCommute data - this is the single source of truth per dev rules
+                const scResponse = await fetch(BASE_URL + '/api/smartcommute', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        home: config.addresses?.home,
+                        work: config.addresses?.work,
+                        cafe: config.addresses?.cafe,
+                        arrivalTime: config.journey?.arrivalTime || '09:00',
+                        state: config.state || 'VIC',
+                        coffeeEnabled: config.journey?.coffeeEnabled !== false
+                    })
+                });
+                
+                const scData = await scResponse.json();
+                
+                if (scData.success) {
+                    // Update Live Data banner
+                    const isLive = !scData.fallbackMode && (hasTransitKey && transitValidated);
+                    const dataMode = document.getElementById('data-mode');
+                    if (dataMode) dataMode.textContent = isLive ? 'Live Data' : 'Timetable';
+                    updateLiveDataBanner(isLive, hasTransitKey, transitValidated);
+                    
+                    // Update departures from nextDeparture
+                    updateSmartCommuteDepartures(scData);
+                    
+                    // Update weather
+                    if (scData.weather) {
+                        updateWeatherFromSmartCommute(scData.weather);
+                    } else {
+                        document.getElementById('weather-display').innerHTML = '<div class="no-data">Weather data unavailable</div>';
+                    }
+                    
+                    // Update coffee decision
+                    updateCoffeeFromSmartCommute(scData.coffee, scData.summary);
+                    
+                    // Update journey summary
+                    updateJourneySummaryFromSmartCommute(scData);
                 } else {
-                    document.getElementById('weather-display').innerHTML = '<div class="no-data">Weather unavailable</div>';
+                    throw new Error(scData.error || 'SmartCommute calculation failed');
                 }
-                if (systemStatus) updateSystemStatus(systemStatus);
-                loadJourneySummary();
-                loadCoffeeDecision();
-                loadAutoCalcStatus();
+                
             } catch (error) {
                 console.error('Error loading data:', error);
                 // Show error state in widgets
-                document.getElementById('train-departures').innerHTML = '<div class="no-data">Unable to load</div>';
-                document.getElementById('tram-departures').innerHTML = '<div class="no-data">Unable to load</div>';
+                document.getElementById('train-departures').innerHTML = `<div class="no-data">Error: ${error.message}</div>`;
+                document.getElementById('tram-departures').innerHTML = '<div class="no-data">See train departures</div>';
                 document.getElementById('weather-display').innerHTML = '<div class="no-data">Unable to load</div>';
+                document.getElementById('coffee-decision').innerHTML = '<div class="no-data">Unable to calculate</div>';
             }
+        }
+        
+        // Update departures from SmartCommute response
+        function updateSmartCommuteDepartures(scData) {
+            const trainEl = document.getElementById('train-departures');
+            const tramEl = document.getElementById('tram-departures');
+            
+            // Extract departure info from journey legs
+            const trainLeg = scData.journey_legs?.find(l => l.type === 'train');
+            const tramLeg = scData.journey_legs?.find(l => l.type === 'tram');
+            
+            if (trainLeg) {
+                trainEl.innerHTML = `
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                            <div>
+                                <div style="font-weight: 600; font-size: 14px; color: #f1f5f9;">${sanitize(trainLeg.title)}</div>
+                                <div style="font-size: 12px; color: #94a3b8; margin-top: 2px;">${sanitize(trainLeg.subtitle)}</div>
+                            </div>
+                            <div style="font-size: 24px; font-weight: 700; color: #4fb28e;">${trainLeg.minutes}<span style="font-size: 12px; font-weight: 400; color: #94a3b8;"> min</span></div>
+                        </div>
+                    </div>`;
+            } else {
+                trainEl.innerHTML = '<div class="no-data" style="color: #94a3b8; text-align: center; padding: 20px;">No train in route</div>';
+            }
+            
+            if (tramLeg) {
+                tramEl.innerHTML = `
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                            <div>
+                                <div style="font-weight: 600; font-size: 14px; color: #f1f5f9;">${sanitize(tramLeg.title)}</div>
+                                <div style="font-size: 12px; color: #94a3b8; margin-top: 2px;">${sanitize(tramLeg.subtitle)}</div>
+                            </div>
+                            <div style="font-size: 24px; font-weight: 700; color: #667eea;">${tramLeg.minutes}<span style="font-size: 12px; font-weight: 400; color: #94a3b8;"> min</span></div>
+                        </div>
+                    </div>`;
+            } else {
+                tramEl.innerHTML = '<div class="no-data" style="color: #94a3b8; text-align: center; padding: 20px;">No tram in route</div>';
+            }
+        }
+        
+        // Update weather from SmartCommute response
+        function updateWeatherFromSmartCommute(weather) {
+            const el = document.getElementById('weather-display');
+            if (!weather) {
+                el.innerHTML = '<div class="no-data">Weather unavailable</div>';
+                return;
+            }
+            el.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <div style="font-size: 48px; font-weight: 700; color: #f1f5f9;">${weather.temp || '--'}°</div>
+                    <div>
+                        <div style="font-size: 16px; font-weight: 500; color: #f1f5f9;">${sanitize(weather.condition) || 'N/A'}</div>
+                        ${weather.umbrella ? '<div style="font-size: 12px; color: #fbbf24; margin-top: 4px;">☂️ Bring umbrella</div>' : ''}
+                    </div>
+                </div>`;
+        }
+        
+        // Update coffee decision from SmartCommute response
+        function updateCoffeeFromSmartCommute(coffee, summary) {
+            const el = document.getElementById('coffee-decision');
+            if (!coffee) {
+                el.innerHTML = '<div class="no-data">Unable to calculate</div>';
+                return;
+            }
+            
+            const canGet = coffee.canGet;
+            const badge = document.getElementById('coffee-status-badge');
+            if (badge) {
+                badge.textContent = canGet ? 'YES' : 'SKIP';
+                badge.style.background = canGet ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)';
+                badge.style.color = canGet ? '#22c55e' : '#ef4444';
+            }
+            
+            el.innerHTML = `
+                <div style="text-align: center; padding: 16px;">
+                    <div style="font-size: 40px; margin-bottom: 8px;">${canGet ? '☕' : '🏃'}</div>
+                    <div style="font-size: 18px; font-weight: 700; color: ${canGet ? '#22c55e' : '#ef4444'};">${canGet ? 'TIME FOR COFFEE!' : 'SKIP COFFEE'}</div>
+                    <div style="font-size: 13px; color: #94a3b8; margin-top: 8px;">${sanitize(coffee.subtext) || (canGet ? 'You have time for a quick coffee' : 'Not enough time today')}</div>
+                </div>`;
+        }
+        
+        // Update journey summary from SmartCommute response  
+        function updateJourneySummaryFromSmartCommute(scData) {
+            const el = document.getElementById('journey-summary');
+            if (!scData.journey_legs || scData.journey_legs.length === 0) {
+                el.innerHTML = '<div style="padding: 20px; text-align: center; color: #94a3b8;">No journey data available</div>';
+                return;
+            }
+            
+            let html = '<div style="display: flex; flex-direction: column; gap: 12px;">';
+            
+            // Summary bar
+            html += `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: rgba(79, 178, 142, 0.15); border-radius: 8px; margin-bottom: 8px;">
+                    <div style="font-size: 14px; color: #94a3b8;">Leave <strong style="color: #f1f5f9;">${sanitize(scData.summary?.leaveNow || 'Now')}</strong></div>
+                    <div style="font-size: 14px; color: #94a3b8;">Arrive <strong style="color: #4fb28e;">${sanitize(scData.summary?.arriveAt || '--:--')}</strong></div>
+                    <div style="font-size: 14px; color: #94a3b8;">Total <strong style="color: #f1f5f9;">${scData.summary?.totalMinutes || '--'} min</strong></div>
+                </div>`;
+            
+            // Journey legs
+            scData.journey_legs.forEach((leg, idx) => {
+                const icon = { walk: '🚶', coffee: '☕', train: '🚆', tram: '🚊', bus: '🚌' }[leg.type] || '🚇';
+                const stateColor = leg.state === 'delayed' ? '#fbbf24' : leg.state === 'skip' ? '#94a3b8' : '#f1f5f9';
+                html += `
+                    <div style="display: flex; align-items: center; gap: 12px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px; opacity: ${leg.state === 'skip' ? '0.5' : '1'};">
+                        <span style="font-size: 20px;">${icon}</span>
+                        <div style="flex: 1;">
+                            <div style="font-size: 14px; font-weight: 500; color: ${stateColor};">${sanitize(leg.title)}</div>
+                            <div style="font-size: 11px; color: #94a3b8;">${sanitize(leg.subtitle)}</div>
+                        </div>
+                        <div style="font-size: 16px; font-weight: 600; color: #f1f5f9;">${leg.minutes} min</div>
+                    </div>`;
+            });
+            
+            html += '</div>';
+            el.innerHTML = html;
         }
 
         function updateSystemStatus(status) {
