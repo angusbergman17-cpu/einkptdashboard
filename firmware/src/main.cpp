@@ -116,6 +116,10 @@ const int NUM_ZONES = 5;
 // Track which zones changed for anti-ghosting
 bool zoneChanged[NUM_ZONES] = {false};
 
+// ETag cache for each zone (for 304 Not Modified support)
+#define ETAG_MAX_LEN 24
+char zoneETags[NUM_ZONES][ETAG_MAX_LEN] = {"", "", "", "", ""};
+
 // Function declarations
 void initDisplay();
 void showPairingScreen();
@@ -533,6 +537,15 @@ int fetchAndRenderZone(const char* baseUrl, const ZoneDef& def, bool forceAll) {
     client.setInsecure();
     HTTPClient http;
     
+    // Find zone index for ETag cache
+    int zoneIdx = -1;
+    for (int i = 0; i < NUM_ZONES; i++) {
+        if (strcmp(ZONE_DEFS[i].id, def.id) == 0) {
+            zoneIdx = i;
+            break;
+        }
+    }
+    
     // /api/zone/[id] returns raw BMP directly
     String url = String(baseUrl) + "/api/zone/" + def.id;
     if (forceAll) url += "?force=true";
@@ -546,6 +559,13 @@ int fetchAndRenderZone(const char* baseUrl, const ZoneDef& def, bool forceAll) {
     }
     
     http.addHeader("User-Agent", "CommuteCompute/" FIRMWARE_VERSION);
+    
+    // Send cached ETag for conditional request (unless force=true)
+    if (!forceAll && zoneIdx >= 0 && strlen(zoneETags[zoneIdx]) > 0) {
+        http.addHeader("If-None-Match", zoneETags[zoneIdx]);
+        Serial.printf("  ETag: %s\n", zoneETags[zoneIdx]);
+    }
+    
     int code = http.GET();
     
     if (code == 304) {
@@ -558,6 +578,14 @@ int fetchAndRenderZone(const char* baseUrl, const ZoneDef& def, bool forceAll) {
         Serial.printf("  HTTP error: %d\n", code);
         http.end();
         return 0;
+    }
+    
+    // Store new ETag from response
+    if (zoneIdx >= 0 && http.hasHeader("ETag")) {
+        String newETag = http.header("ETag");
+        strncpy(zoneETags[zoneIdx], newETag.c_str(), ETAG_MAX_LEN - 1);
+        zoneETags[zoneIdx][ETAG_MAX_LEN - 1] = '\0';
+        Serial.printf("  New ETag: %s\n", zoneETags[zoneIdx]);
     }
     
     // Get raw BMP data size

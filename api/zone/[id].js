@@ -6,15 +6,26 @@
  * 
  * Query params:
  * - demo=<scenario>: Use demo scenario data
+ * - force=true: Skip ETag check, always return fresh content
+ * 
+ * Supports ETag caching - returns 304 Not Modified if content unchanged.
  * 
  * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
  */
 
+import { createHash } from 'crypto';
 import { getDepartures, getDisruptions, getWeather } from '../../src/services/ptv-api.js';
 import SmartJourneyEngine from '../../src/core/smart-journey-engine.js';
 import { renderSingleZone, ZONES } from '../../src/services/zone-renderer.js';
 import { getScenario } from '../../src/services/journey-scenarios.js';
+
+/**
+ * Generate ETag from buffer content
+ */
+function generateETag(buffer) {
+  return '"' + createHash('md5').update(buffer).digest('hex').substring(0, 16) + '"';
+}
 
 // Singleton engine instance
 let journeyEngine = null;
@@ -245,14 +256,28 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Zone render failed' });
     }
     
+    // Generate ETag from content hash
+    const etag = generateETag(bmpBuffer);
+    const forceRefresh = req.query?.force === 'true';
+    
+    // Check If-None-Match header for caching (unless force=true)
+    const clientETag = req.headers['if-none-match'];
+    if (!forceRefresh && clientETag && clientETag === etag) {
+      // Content unchanged - return 304 Not Modified
+      res.setHeader('ETag', etag);
+      res.setHeader('Cache-Control', 'private, max-age=10');
+      return res.status(304).end();
+    }
+    
     // Return raw BMP with headers
     res.setHeader('Content-Type', 'application/octet-stream');
     res.setHeader('Content-Length', bmpBuffer.length);
+    res.setHeader('ETag', etag);
     res.setHeader('X-Zone-X', zone.x);
     res.setHeader('X-Zone-Y', zone.y);
     res.setHeader('X-Zone-Width', zone.w);
     res.setHeader('X-Zone-Height', zone.h);
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Cache-Control', 'private, max-age=10');
     
     return res.status(200).send(bmpBuffer);
     
