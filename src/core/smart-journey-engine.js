@@ -1,12 +1,19 @@
 /**
- * SMART JOURNEY ENGINE V3
- * Auto-discovers preferred journey routes using JourneyPlanner
- * Supports multi-modal routes (tram → train, etc.)
- * Integrates with Coffee Decision Engine and live transit data
+ * @deprecated SMART JOURNEY ENGINE V3 - DEPRECATED
+ * 
+ * This file is deprecated and will be removed in a future version.
+ * All functionality has been consolidated into SmartCommute™ engine.
+ * 
+ * USE INSTEAD: import SmartCommute from '../engines/smart-commute.js'
+ * 
+ * Consolidated on: 2026-01-31
+ * Per DEVELOPMENT-RULES.md Section 24: Single source of truth
  *
  * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
  */
+
+console.warn('[DEPRECATED] SmartJourneyEngine is deprecated. Use SmartCommute from engines/smart-commute.js instead.');
 
 import fs from 'fs/promises';
 import path from 'path';

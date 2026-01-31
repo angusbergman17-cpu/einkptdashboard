@@ -17,7 +17,7 @@
  */
 
 import { getDepartures, getDisruptions, getWeather } from '../src/services/opendata-client.js';
-import SmartJourneyEngine from '../src/core/smart-journey-engine.js';
+import SmartCommute from '../src/engines/smart-commute.js';
 import { getTransitApiKey } from '../src/data/kv-preferences.js';
 import tieredRenderer, { ZONES_TIERED, TIER_INTERVALS } from '../src/services/zone-renderer-tiered.js';
 import PreferencesManager from '../src/data/preferences-manager.js';
@@ -58,7 +58,7 @@ function formatDateParts(date) {
  */
 async function getEngine() {
   if (!journeyEngine) {
-    journeyEngine = new SmartJourneyEngine();
+    journeyEngine = new SmartCommute();
     await journeyEngine.initialize();
   }
   return journeyEngine;

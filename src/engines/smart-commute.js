@@ -1,9 +1,16 @@
 /**
- * SMARTCOMMUTE ENGINE
+ * SMARTCOMMUTE™ ENGINE (Consolidated v2.0)
  * 
  * Unified intelligent commute planning for Australian public transport.
  * Auto-detects state from user's home address and configures appropriate
  * transit APIs and weather services.
+ * 
+ * Consolidates functionality from:
+ * - smart-commute.js (multi-state, GTFS-RT, weather)
+ * - smart-journey-engine.js (route discovery, journey display)
+ * - journey-planner.js (segment building)
+ * 
+ * Per DEVELOPMENT-RULES.md Section 24: Single source of truth for journey calculations.
  * 
  * Supports all Australian states/territories:
  * - VIC: Transport Victoria (via OpenData API)
@@ -17,12 +24,14 @@
  * 
  * Features:
  * - Auto-detects state from home address
+ * - Auto-discovers routes from nearby stops
  * - Falls back to timetables when no API keys
  * - Integrates with BOM weather API by state
  * - Smart route recommendations with coffee patterns
  * - Live transit updates when available
+ * - Builds journey display data for renderers
  * 
- * Copyright (c) 2025 Angus Bergman
+ * Copyright (c) 2025-2026 Angus Bergman
  * Licensed under CC BY-NC 4.0 (Creative Commons Attribution-NonCommercial 4.0 International License)
  * https://creativecommons.org/licenses/by-nc/4.0/
  */
@@ -30,6 +39,8 @@
 import SmartRouteRecommender from '../services/smart-route-recommender.js';
 import * as ptvApi from '../services/opendata-client.js';
 import CoffeeDecision from '../core/coffee-decision.js';
+import fs from 'fs/promises';
+import path from 'path';
 
 // =============================================================================
 // STATE CONFIGURATION
@@ -164,6 +175,10 @@ export class SmartCommute {
     this.coffeeDecision = null;
     this.fallbackMode = false;
     this.apiKeys = {};
+    
+    // Route discovery state (merged from smart-journey-engine)
+    this.discoveredRoutes = [];
+    this.selectedRouteIndex = 0;
     
     // Cache
     this.cache = {
@@ -828,6 +843,477 @@ export class SmartCommute {
         weather: !!this.cache.weather
       }
     };
+  }
+
+  // ===========================================================================
+  // ROUTE DISCOVERY (Merged from smart-journey-engine.js)
+  // ===========================================================================
+
+  /**
+   * Get configured locations with coordinates
+   */
+  getLocations() {
+    const prefs = this.getPrefs();
+    return {
+      home: prefs.homeLocation || { address: prefs.homeAddress, label: 'HOME' },
+      work: prefs.workLocation || { address: prefs.workAddress, label: 'WORK' },
+      cafe: prefs.cafeLocation || { name: prefs.cafeName, address: prefs.coffeeAddress, label: 'COFFEE' }
+    };
+  }
+
+  /**
+   * Auto-discover all viable routes using fallback timetables
+   */
+  async discoverRoutes() {
+    const locations = this.getLocations();
+    const prefs = this.getPrefs();
+    const includeCoffee = prefs.coffeeEnabled !== false && locations.cafe;
+    
+    console.log('🔍 SmartCommute: Auto-discovering routes...');
+    
+    // Get fallback timetables for stop data
+    const fallbackTimetables = global.fallbackTimetables;
+    if (!fallbackTimetables) {
+      console.log('⚠️ No fallback timetables available, using hardcoded routes');
+      this.discoveredRoutes = this.getHardcodedRoutes(locations, includeCoffee);
+      return this.discoveredRoutes;
+    }
+    
+    const allStops = fallbackTimetables.getStopsForState?.(this.state || 'VIC') || [];
+    if (allStops.length === 0) {
+      console.log('⚠️ No stops data available, using hardcoded routes');
+      this.discoveredRoutes = this.getHardcodedRoutes(locations, includeCoffee);
+      return this.discoveredRoutes;
+    }
+    
+    // Find stops near home, cafe, and work
+    const homeStops = this.findNearbyStops(locations.home, allStops, 1000);
+    const workStops = this.findNearbyStops(locations.work, allStops, 1000);
+    
+    console.log(`   Found ${homeStops.length} stops near home, ${workStops.length} near work`);
+    
+    // Build route alternatives
+    const routes = [];
+    
+    // Strategy 1: Direct routes (single mode)
+    const directRoutes = this.findDirectRoutes(homeStops, workStops, locations, includeCoffee);
+    routes.push(...directRoutes);
+    
+    // Strategy 2: Multi-modal routes (tram → train, etc.)
+    const multiModalRoutes = this.findMultiModalRoutes(homeStops, workStops, allStops, locations, includeCoffee);
+    routes.push(...multiModalRoutes);
+    
+    // Sort by total time and pick best options
+    routes.sort((a, b) => a.totalMinutes - b.totalMinutes);
+    
+    // Keep top 5 unique routes
+    this.discoveredRoutes = routes.slice(0, 5);
+    
+    console.log(`✅ Discovered ${this.discoveredRoutes.length} route alternatives`);
+    return this.discoveredRoutes;
+  }
+
+  /**
+   * Find stops near a location
+   */
+  findNearbyStops(location, allStops, radiusMeters = 1000) {
+    if (!location?.lat || !location?.lon) return [];
+    
+    return allStops
+      .map(stop => ({
+        ...stop,
+        distance: this.haversineDistance(location.lat, location.lon, stop.lat, stop.lon)
+      }))
+      .filter(stop => stop.distance <= radiusMeters)
+      .sort((a, b) => a.distance - b.distance);
+  }
+
+  /**
+   * Find direct routes (single transit mode)
+   */
+  findDirectRoutes(homeStops, workStops, locations, includeCoffee) {
+    const routes = [];
+    const homeByType = this.groupByRouteType(homeStops);
+    const workByType = this.groupByRouteType(workStops);
+    
+    for (const [routeType, homeTypeStops] of Object.entries(homeByType)) {
+      if (!workByType[routeType]) continue;
+      
+      const homeStop = homeTypeStops[0];
+      const workStop = workByType[routeType][0];
+      
+      const modeName = this.getTransitModeName(parseInt(routeType));
+      const walkToStop = Math.ceil(homeStop.distance / 80);
+      const transitTime = this.estimateTransitTime(homeStop, workStop);
+      const walkFromStop = Math.ceil(workStop.distance / 80);
+      
+      const legs = [];
+      let totalMinutes = 0;
+      
+      if (includeCoffee) {
+        legs.push({ type: 'walk', to: 'cafe', from: 'home', minutes: 3 });
+        legs.push({ type: 'coffee', location: locations.cafe?.name || 'Cafe', minutes: 4 });
+        legs.push({ type: 'walk', to: `${modeName} stop`, minutes: walkToStop });
+        totalMinutes += 7 + walkToStop;
+      } else {
+        legs.push({ type: 'walk', to: `${modeName} stop`, minutes: walkToStop });
+        totalMinutes += walkToStop;
+      }
+      
+      legs.push({
+        type: modeName.toLowerCase(),
+        routeNumber: homeStop.route_number || '',
+        origin: { name: homeStop.name, lat: homeStop.lat, lon: homeStop.lon },
+        destination: { name: workStop.name, lat: workStop.lat, lon: workStop.lon },
+        minutes: transitTime
+      });
+      totalMinutes += transitTime;
+      
+      legs.push({ type: 'walk', to: 'work', minutes: walkFromStop });
+      totalMinutes += walkFromStop;
+      
+      routes.push({
+        id: `direct-${modeName.toLowerCase()}-${homeStop.route_number || 'main'}`,
+        name: `${modeName}${homeStop.route_number ? ' ' + homeStop.route_number : ''} Direct`,
+        description: includeCoffee ? `Home → Coffee → ${modeName} → Work` : `Home → ${modeName} → Work`,
+        type: 'direct',
+        totalMinutes,
+        legs
+      });
+    }
+    
+    return routes;
+  }
+
+  /**
+   * Find multi-modal routes (e.g., tram → train)
+   */
+  findMultiModalRoutes(homeStops, workStops, allStops, locations, includeCoffee) {
+    const routes = [];
+    const trainStations = allStops.filter(s => s.route_type === 0);
+    const tramStops = allStops.filter(s => s.route_type === 1);
+    const homeTrams = homeStops.filter(s => s.route_type === 1);
+    const workTrains = workStops.filter(s => s.route_type === 0);
+    
+    if (homeTrams.length === 0 || workTrains.length === 0) return routes;
+    
+    for (const trainStation of trainStations.slice(0, 20)) {
+      const nearbyTrams = tramStops.filter(t => 
+        this.haversineDistance(trainStation.lat, trainStation.lon, t.lat, t.lon) < 300
+      );
+      
+      if (nearbyTrams.length === 0) continue;
+      
+      const homeTram = homeTrams[0];
+      const workTrain = workTrains[0];
+      
+      const walkToCafe = includeCoffee ? 3 : 0;
+      const coffeeTime = includeCoffee ? 4 : 0;
+      const walkToTram = includeCoffee ? 2 : Math.ceil(homeTram.distance / 80);
+      const tramTime = this.estimateTransitTime(homeTram, nearbyTrams[0]);
+      const walkToTrain = 2;
+      const trainTime = this.estimateTransitTime(trainStation, workTrain);
+      const walkToWork = Math.ceil(workTrain.distance / 80);
+      
+      const totalMinutes = walkToCafe + coffeeTime + walkToTram + tramTime + walkToTrain + trainTime + walkToWork;
+      
+      if (totalMinutes > 45) continue;
+      
+      const legs = [];
+      if (includeCoffee) {
+        legs.push({ type: 'walk', to: 'cafe', minutes: walkToCafe });
+        legs.push({ type: 'coffee', location: locations.cafe?.name || 'Cafe', minutes: coffeeTime });
+        legs.push({ type: 'walk', to: 'tram stop', minutes: walkToTram });
+      } else {
+        legs.push({ type: 'walk', to: 'tram stop', minutes: walkToTram });
+      }
+      
+      legs.push({ type: 'tram', routeNumber: homeTram.route_number || '58', origin: { name: homeTram.name }, destination: { name: trainStation.name }, minutes: tramTime });
+      legs.push({ type: 'walk', to: 'train platform', minutes: walkToTrain });
+      legs.push({ type: 'train', routeNumber: workTrain.route_number || 'City Loop', origin: { name: trainStation.name }, destination: { name: workTrain.name }, minutes: trainTime });
+      legs.push({ type: 'walk', to: 'work', minutes: walkToWork });
+      
+      routes.push({
+        id: `multi-tram-train-${trainStation.name.replace(/\s+/g, '-').toLowerCase()}`,
+        name: `Tram → ${trainStation.name} → Train`,
+        description: includeCoffee ? `Home → Coffee → Tram → Train → Work` : `Home → Tram → Train → Work`,
+        type: 'multi-modal',
+        via: trainStation.name,
+        totalMinutes,
+        legs
+      });
+    }
+    
+    return routes;
+  }
+
+  /**
+   * Get hardcoded routes when no stop data available
+   */
+  getHardcodedRoutes(locations, includeCoffee) {
+    const routes = [];
+    const cafeName = locations?.cafe?.name || 'Cafe';
+    const nearestStation = 'Station';
+    const destStation = 'City';
+    
+    // Preferred route
+    const preferredLegs = [];
+    let preferredTotal = 0;
+    
+    if (includeCoffee) {
+      preferredLegs.push({ type: 'walk', to: 'cafe', from: 'home', minutes: 3 });
+      preferredLegs.push({ type: 'coffee', location: cafeName, minutes: 4 });
+      preferredLegs.push({ type: 'walk', to: nearestStation, from: 'cafe', minutes: 5 });
+      preferredTotal += 12;
+    } else {
+      preferredLegs.push({ type: 'walk', to: nearestStation, from: 'home', minutes: 8 });
+      preferredTotal += 8;
+    }
+    preferredLegs.push({ type: 'train', routeNumber: 'City Loop', origin: { name: nearestStation }, destination: { name: destStation }, minutes: 8 });
+    preferredLegs.push({ type: 'walk', to: 'work', from: destStation, minutes: 5 });
+    preferredTotal += 13;
+    
+    routes.push({
+      id: 'user-preferred',
+      name: 'Train via ' + nearestStation + ' (Preferred)',
+      description: includeCoffee ? 'Home → Coffee → Train → City → Office' : 'Home → Train → City → Office',
+      type: 'preferred',
+      totalMinutes: preferredTotal,
+      legs: preferredLegs
+    });
+    
+    // Tram alternative
+    const tramLegs = [];
+    let tramTotal = 0;
+    if (includeCoffee) {
+      tramLegs.push({ type: 'walk', to: 'cafe', minutes: 3 });
+      tramLegs.push({ type: 'coffee', location: cafeName, minutes: 4 });
+      tramLegs.push({ type: 'walk', to: 'tram stop', minutes: 2 });
+      tramTotal += 9;
+    } else {
+      tramLegs.push({ type: 'walk', to: 'tram stop', minutes: 5 });
+      tramTotal += 5;
+    }
+    tramLegs.push({ type: 'tram', routeNumber: '58', origin: { name: 'Local Stop' }, destination: { name: 'City' }, minutes: 12 });
+    tramLegs.push({ type: 'walk', to: 'work', minutes: 4 });
+    tramTotal += 16;
+    
+    routes.push({
+      id: 'tram-direct',
+      name: 'Tram Direct',
+      description: includeCoffee ? 'Home → Coffee → Tram → Work' : 'Home → Tram → Work',
+      type: 'direct',
+      totalMinutes: tramTotal,
+      legs: tramLegs
+    });
+    
+    return routes;
+  }
+
+  /**
+   * Get the currently selected route
+   */
+  getSelectedRoute() {
+    if (this.discoveredRoutes?.length > 0) {
+      return this.discoveredRoutes[this.selectedRouteIndex || 0];
+    }
+    const locations = this.getLocations();
+    const prefs = this.getPrefs();
+    const routes = this.getHardcodedRoutes(locations, prefs.coffeeEnabled !== false);
+    return routes[0];
+  }
+
+  /**
+   * Get all discovered routes
+   */
+  getAlternativeRoutes() {
+    return this.discoveredRoutes || [];
+  }
+
+  /**
+   * Select a route by index or ID
+   */
+  selectRoute(indexOrId) {
+    if (typeof indexOrId === 'number') {
+      this.selectedRouteIndex = Math.max(0, Math.min(indexOrId, (this.discoveredRoutes?.length || 1) - 1));
+    } else if (this.discoveredRoutes) {
+      const idx = this.discoveredRoutes.findIndex(r => r.id === indexOrId);
+      if (idx >= 0) this.selectedRouteIndex = idx;
+    }
+    return this.getSelectedRoute();
+  }
+
+  // ===========================================================================
+  // JOURNEY DISPLAY (Merged from smart-journey-engine.js)
+  // ===========================================================================
+
+  /**
+   * Build journey data for dashboard display
+   */
+  async buildJourneyForDisplay(transitData = null, weatherData = null) {
+    const now = this.getLocalTime();
+    const locations = this.getLocations();
+    const route = this.getSelectedRoute();
+    const prefs = this.getPrefs();
+    
+    // Use selected route's legs
+    const legs = route?.legs?.map((leg, idx) => this.formatLegForDisplay(leg, transitData, idx)) 
+      || this.getHardcodedRoutes(locations, true)[0].legs;
+    
+    // Calculate coffee decision
+    const coffeeDecision = this.calculateCoffeeDecision(transitData, '');
+    
+    // Calculate total journey time
+    const totalMinutes = legs.reduce((sum, leg) => sum + (leg.minutes || leg.durationMinutes || 0), 0);
+    
+    // Calculate departure time
+    const targetArr = prefs.arrivalTime || '09:00';
+    const [targetH, targetM] = targetArr.split(':').map(Number);
+    const targetMins = targetH * 60 + targetM;
+    const departureMins = targetMins - totalMinutes;
+    const depH = Math.floor(departureMins / 60);
+    const depM = departureMins % 60;
+    const departureTime = `${String(depH).padStart(2, '0')}:${String(depM).padStart(2, '0')}`;
+    
+    const currentTime = now.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: false });
+    
+    return {
+      location: locations.home?.label || 'HOME',
+      current_time: currentTime,
+      day: now.toLocaleDateString('en-AU', { weekday: 'long' }).toUpperCase(),
+      date: now.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' }),
+      temp: weatherData?.temp ?? weatherData?.temperature ?? null,
+      condition: weatherData?.condition ?? weatherData?.description ?? '',
+      weather_icon: this.getWeatherIcon(weatherData),
+      journey_legs: legs,
+      legs: legs,
+      coffee_decision: coffeeDecision,
+      arrive_by: targetArr,
+      departure_time: departureTime,
+      total_minutes: totalMinutes,
+      destination: locations.work?.label || 'WORK',
+      timestamp: now.toISOString(),
+      route_name: route?.description || route?.name || 'Auto-discovered route',
+      route_type: route?.type || 'auto',
+      alternatives_count: this.discoveredRoutes?.length || 0
+    };
+  }
+
+  /**
+   * Format leg for display
+   */
+  formatLegForDisplay(configLeg, transitData, index) {
+    const leg = {
+      type: configLeg.type || 'walk',
+      minutes: configLeg.durationMinutes || configLeg.minutes || 0,
+      durationMinutes: configLeg.durationMinutes || configLeg.minutes || 0
+    };
+    
+    if (configLeg.from) leg.from = configLeg.from;
+    if (configLeg.to) leg.to = configLeg.to;
+    if (configLeg.location) leg.location = configLeg.location;
+    if (configLeg.routeNumber) leg.routeNumber = configLeg.routeNumber;
+    if (configLeg.origin) leg.origin = configLeg.origin;
+    if (configLeg.destination) leg.destination = configLeg.destination;
+    
+    // Check for live data on transit legs
+    if (['tram', 'train', 'bus', 'transit'].includes(leg.type) && transitData) {
+      const departures = transitData.trains || transitData.trams || transitData.buses || [];
+      const match = this.findMatchingDeparture(leg, departures);
+      if (match) {
+        leg.minutes = match.minutes;
+        leg.isLive = true;
+      }
+    }
+    
+    return leg;
+  }
+
+  /**
+   * Find matching departure from live data
+   */
+  findMatchingDeparture(leg, departures) {
+    if (!departures?.length) return null;
+    
+    return departures.find(d => {
+      if (leg.routeNumber && d.route_number) {
+        return d.route_number.toString() === leg.routeNumber.toString();
+      }
+      if (leg.type === 'tram' && d.route_type === 1) return true;
+      if (leg.type === 'train' && d.route_type === 0) return true;
+      if (leg.type === 'bus' && d.route_type === 2) return true;
+      return false;
+    });
+  }
+
+  /**
+   * Get weather icon from condition
+   */
+  getWeatherIcon(weatherData) {
+    if (!weatherData) return '☀️';
+    const condition = (weatherData.condition || weatherData.description || '').toLowerCase();
+    if (condition.includes('rain') || condition.includes('shower')) return '🌧️';
+    if (condition.includes('cloud')) return '☁️';
+    if (condition.includes('sun') || condition.includes('clear')) return '☀️';
+    if (condition.includes('storm')) return '⛈️';
+    if (condition.includes('fog')) return '🌫️';
+    return '☀️';
+  }
+
+  // ===========================================================================
+  // HELPER METHODS
+  // ===========================================================================
+
+  /**
+   * Group stops by route type
+   */
+  groupByRouteType(stops) {
+    const grouped = {};
+    for (const stop of stops) {
+      const type = stop.route_type;
+      if (!grouped[type]) grouped[type] = [];
+      grouped[type].push(stop);
+    }
+    return grouped;
+  }
+
+  /**
+   * Estimate transit time between stops
+   */
+  estimateTransitTime(origin, dest) {
+    const distance = this.haversineDistance(origin.lat, origin.lon, dest.lat, dest.lon);
+    return Math.max(2, Math.ceil(distance / 400)); // ~25 km/h average
+  }
+
+  /**
+   * Haversine distance in meters
+   */
+  haversineDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371000;
+    const φ1 = lat1 * Math.PI / 180;
+    const φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180;
+    const Δλ = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  }
+
+  /**
+   * Get transit mode name from route type
+   */
+  getTransitModeName(routeType) {
+    const modes = { 0: 'Train', 1: 'Tram', 2: 'Bus', 3: 'V/Line' };
+    return modes[routeType] || 'Transit';
+  }
+
+  /**
+   * Alias for backward compatibility
+   */
+  getPreferredRoute() {
+    return this.getSelectedRoute();
   }
 }
 

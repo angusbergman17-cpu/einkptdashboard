@@ -40,7 +40,7 @@ import { renderDashboard, renderTestPattern } from "./services/image-renderer.js
 import { renderZones, clearCache as clearZoneCache, ZONES } from "./services/zone-renderer.js";
 import { getChangedZones as getChangedZonesV12, renderSingleZone as renderSingleZoneV12, getZoneDefinition as getZoneDefV12, ZONES as ZONES_V12, clearCache as clearZoneCacheV12 } from "./services/zone-renderer-v12.js";
 import { getChangedZones as getChangedZonesCCDash, renderSingleZone as renderSingleZoneCCDash, getZoneDefinition as getZoneDefCCDash, getActiveZones as getActiveZonesCCDash, ZONES as ZONES_CCDASH, clearCache as clearZoneCacheCCDash, renderFullScreen as renderFullScreenCCDash } from "./services/ccdash-renderer-v13.js";
-import SmartJourneyEngine from "./core/smart-journey-engine.js";
+import SmartCommute from "./engines/smart-commute.js";
 
 // Setup error handlers early (before any async operations)
 safeguards.setupErrorHandlers();
@@ -129,9 +129,9 @@ global.weatherBOM = weather;
 global.fallbackTimetables = fallbackTimetables; // For journey planner stop lookup
 
 // Initialize Smart Journey Engine V2 (auto-detects preferred journey from config)
-const smartJourneyEngine = new SmartJourneyEngine(preferences);
-smartJourneyEngine.initialize().then(() => {
-  global.smartJourneyEngine = smartJourneyEngine;
+const smartCommute = new SmartCommute(preferences);
+smartCommute.initialize().then(() => {
+  global.smartCommute = smartCommute;
   console.log('✅ Smart Journey Engine V2 initialized');
 }).catch(err => {
   console.error('❌ Smart Journey Engine initialization failed:', err.message);
@@ -6953,9 +6953,9 @@ async function buildV13DisplayData() {
   const localNow = new Date(now.toLocaleString('en-US', { timeZone: timezone }));
   
   // Try Smart Journey Engine first
-  if (global.smartJourneyEngine) {
+  if (global.smartCommute) {
     try {
-      const journeyData = await global.smartJourneyEngine.buildJourneyForDisplay(
+      const journeyData = await global.smartCommute.buildJourneyForDisplay(
         cachedData, // Transit data
         cachedJourney?.weather // Weather data
       );
@@ -6985,7 +6985,7 @@ async function buildV13DisplayData() {
       { type: 'walk', to: 'work', minutes: 4 }
     ],
     destination: prefs?.addresses?.work?.split(',')[0] || 'WORK',
-    coffee_decision: global.smartJourneyEngine?.calculateCoffeeDecision?.(cachedData, cachedJourney?.legs) || { decision: 'GET COFFEE', subtext: 'You have time', canGet: true }
+    coffee_decision: global.smartCommute?.calculateCoffeeDecision?.(cachedData, cachedJourney?.legs) || { decision: 'GET COFFEE', subtext: 'You have time', canGet: true }
   };
 }
 
@@ -6995,7 +6995,7 @@ app.get('/api/v13/ping', (req, res) => {
     pong: true, 
     timestamp: new Date().toISOString(),
     v13: 'active',
-    smartJourneyEngine: typeof global.smartJourneyEngine !== 'undefined'
+    smartCommute: typeof global.smartCommute !== 'undefined'
   });
 });
 
@@ -7009,7 +7009,7 @@ app.get('/api/v13/zones/changed', async (req, res) => {
       timestamp: new Date().toISOString(), 
       changed,
       version: 'ccdash',
-      smartJourney: !!global.smartJourneyEngine
+      smartJourney: !!global.smartCommute
     });
   } catch (e) { 
     console.error('CCDash zones/changed error:', e);
@@ -7096,7 +7096,7 @@ app.get('/api/v13/journey', async (req, res) => {
       },
       meta: {
         timestamp: data.timestamp,
-        smartJourneyActive: !!global.smartJourneyEngine
+        smartJourneyActive: !!global.smartCommute
       }
     });
   } catch (e) {
@@ -7113,11 +7113,11 @@ app.post('/api/v13/zones/reset', (req, res) => {
 // CCDash: Get alternative routes
 app.get('/api/v13/alternatives', (req, res) => {
   try {
-    const alternatives = global.smartJourneyEngine?.getAlternativeRoutes() || [];
+    const alternatives = global.smartCommute?.getAlternativeRoutes() || [];
     res.json({ 
       success: true, 
       alternatives,
-      activeRoute: global.smartJourneyEngine?.getPreferredRoute()?.description || 'Default route'
+      activeRoute: global.smartCommute?.getPreferredRoute()?.description || 'Default route'
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -7130,7 +7130,7 @@ app.post('/api/v13/select-route', async (req, res) => {
     const { routeId } = req.body;
     if (!routeId) return res.status(400).json({ error: 'routeId required' });
     
-    const selected = await global.smartJourneyEngine?.selectAlternativeRoute(routeId);
+    const selected = await global.smartCommute?.selectAlternativeRoute(routeId);
     if (!selected) return res.status(404).json({ error: 'Route not found' });
     
     clearZoneCacheCCDash(); // Clear cache to force re-render

@@ -13,7 +13,7 @@
 
 import { createCanvas } from '@napi-rs/canvas';
 import { getDepartures, getDisruptions, getWeather } from '../src/services/opendata-client.js';
-import SmartJourneyEngine from '../src/core/smart-journey-engine.js';
+import SmartCommute from '../src/engines/smart-commute.js';
 import CCDashRendererV13 from '../src/services/ccdash-renderer-v13.js';
 import PreferencesManager from '../src/data/preferences-manager.js';
 
@@ -43,7 +43,7 @@ function formatDateParts(date) {
 
 async function getEngine() {
   if (!journeyEngine) {
-    journeyEngine = new SmartJourneyEngine();
+    journeyEngine = new SmartCommute();
     await journeyEngine.initialize();
   }
   return journeyEngine;

@@ -17,7 +17,7 @@
  */
 
 import { getDepartures, getDisruptions, getWeather } from '../src/services/opendata-client.js';
-import SmartJourneyEngine from '../src/core/smart-journey-engine.js';
+import SmartCommute from '../src/engines/smart-commute.js';
 import { getTransitApiKey } from '../src/data/kv-preferences.js';
 import { renderZones, clearCache, ZONES } from '../src/services/zone-renderer.js';
 import { getScenario, getScenarioNames } from '../src/services/journey-scenarios.js';
@@ -60,8 +60,8 @@ function formatDateParts(date) {
  */
 async function getEngine() {
   if (!journeyEngine) {
-    journeyEngine = new SmartJourneyEngine();
-    await journeyEngine.initialize();
+    journeyEngine = new SmartCommute(prefs);
+    await journeyEngine.initialize(prefs);
   }
   return journeyEngine;
 }

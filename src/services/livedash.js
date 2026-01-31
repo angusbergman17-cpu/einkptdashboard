@@ -542,7 +542,7 @@ export class LiveDash {
     const route = data.route;
     const coffee = data.coffee;
     
-    // Check for pre-computed journey_legs (from SmartJourneyEngine or zone-renderer)
+    // Check for pre-computed journey_legs (from SmartCommute or zone-renderer)
     if (data.journey_legs && Array.isArray(data.journey_legs) && data.journey_legs.length > 0) {
       return data.journey_legs.map(leg => ({
         type: leg.type || 'walk',
