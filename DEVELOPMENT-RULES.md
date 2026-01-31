@@ -78,6 +78,8 @@ The system was previously known as "Commute Compute". Update any remaining refer
 | 18 | [Change Management](#-section-18-change-management) | 🟠 HIGH | Locked elements, modification process |
 | 19 | [Refresh Timing](#-section-19-refresh-timing) | 🔴 CRITICAL | 60s partial, 5min full refresh (v1.8) |
 | 20 | [Licensing](#-section-20-licensing) | 🔴 CRITICAL | CC BY-NC 4.0 requirement |
+| 21 | [Device Setup Flow](#-section-21-device-setup-flow-mandatory) | 🔴 CRITICAL | Setup wizard, admin panel, device config |
+| 22 | [Admin Panel UI/UX Branding](#-section-22-admin-panel-uiux-branding-mandatory) | 🔴 CRITICAL | Colors, typography, icons (no emojis), cards, readability |
 
 ### Appendices
 
@@ -271,12 +273,32 @@ The system was previously known as "Commute Compute". Update any remaining refer
 - License Header (Required in all files)
 </details>
 
+<details>
+<summary><strong>Section 21: Device Setup Flow</strong></summary>
+
+- 21.1 Complete Setup Flow
+</details>
+
+<details>
+<summary><strong>Section 22: Admin Panel UI/UX Branding</strong></summary>
+
+- 22.1 Color Palette
+- 22.2 Typography
+- 22.3 Icons & Imagery (NO EMOJIS)
+- 22.4 Card & Container Styles
+- 22.5 Spacing & Layout
+- 22.6 Interactive Elements
+- 22.7 Readability Requirements
+- 22.8 Consistency Checklist
+</details>
+
 ---
 
 ## 📜 Version History
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.12 | 2026-01-31 | Angus Bergman | **ADMIN PANEL UI/UX BRANDING**: Added Section 22 — mandatory branding rules for admin panel. Color palette, typography (Inter font), NO EMOJIS (use SVG icons), card styles, spacing, buttons, form inputs, readability requirements. Includes consistency checklist. |
 | 1.11 | 2026-01-31 | Angus Bergman | **FIRMWARE REQUIREMENTS**: Added to Section 5.2 — (1) Power cycle reboot support (device boots correctly when power disconnected/reconnected). (2) Firmware version must be displayed on screen for visual troubleshooting. |
 | 1.10 | 2026-01-31 | Angus Bergman | **UI CONSISTENCY TESTING**: Added Section 14.4 — mandatory testing checklist for UI changes. Covers: Setup Wizard steps, Admin Panel tabs, internal links, Quick Links, terminology consistency, localStorage key consistency, endpoint consistency, systematic testing order. |
 | 1.9 | 2026-01-31 | Angus Bergman | **ADMIN PANEL LOCALSTORAGE ARCHITECTURE**: (1) Admin panel tabs rebuilt to read from localStorage (Setup Wizard saves here). (2) Device naming: Use "TRMNL Display (OG)" not "CC E-Ink Display". (3) Firmware disclaimer required for all device references. (4) API Settings auto-populates from wizard data. (5) Added Section 3.7 (Admin Panel localStorage Keys). |
@@ -2155,6 +2177,154 @@ After setup wizard is complete:
 2. **Render** - URL format: `https://[custom-name].onrender.app`
 
 Both support zero-config deployment from forked repo. Free tier sufficient for personal use.
+
+---
+
+## 🎨 Section 22: Admin Panel UI/UX Branding (MANDATORY)
+
+**🚨 CRITICAL:** All Admin Panel and Setup Wizard UI must adhere to Commute Compute branding guidelines. Consistency is mandatory across all pages, tabs, and components.
+
+### 22.1 Color Palette
+
+| Name | Hex | Usage |
+|------|-----|-------|
+| **CC Green** | `#4fb28e` | Primary actions, success states, active indicators |
+| **CC Purple** | `#667eea` | Secondary accents, gradients, info states |
+| **CC Dark** | `#0f172a` | Background base |
+| **CC Surface** | `#1e293b` | Card backgrounds, elevated surfaces |
+| **White** | `#f1f5f9` | Primary text |
+| **Muted** | `#94a3b8` | Secondary text, hints |
+| **Warning** | `#fbbf24` | Warning states, pending validation |
+| **Error** | `#ef4444` | Error states, critical alerts |
+
+### 22.2 Typography
+
+| Element | Font | Weight | Size |
+|---------|------|--------|------|
+| Page titles | Inter | 700 (Bold) | 24px |
+| Section headers | Inter | 600 (Semi) | 18px |
+| Card titles | Inter | 600 (Semi) | 16px |
+| Body text | Inter | 400 (Regular) | 14px |
+| Labels | Inter | 500 (Medium) | 13px |
+| Small/hints | Inter | 400 (Regular) | 12px |
+| Monospace | JetBrains Mono | 400 | 12px |
+
+**Font Stack:** `'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`
+
+### 22.3 Icons & Imagery
+
+**🚫 NO EMOJIS in production UI.** Use proper SVG or icon font icons instead.
+
+| ❌ Don't | ✅ Do |
+|----------|-------|
+| 🚆 Train emoji | `<svg>` train icon or icon font |
+| ☕ Coffee emoji | `<svg>` coffee cup icon |
+| ⚠️ Warning emoji | `<svg>` alert triangle icon |
+| ✅ Checkmark emoji | `<svg>` check icon or CSS-styled checkmark |
+
+**Icon Guidelines:**
+- Use consistent icon set (recommend: Lucide, Heroicons, or Feather)
+- Icons should be 16px, 20px, or 24px (consistent within context)
+- Icon color should match text color or be CC Green for actions
+- Maintain 4px minimum padding around icons
+
+### 22.4 Card & Container Styles
+
+**Card Properties:**
+```css
+.card {
+  background: rgba(30, 41, 59, 0.8);  /* CC Surface with transparency */
+  border-radius: 12px;
+  padding: 20px;
+  border-left: 4px solid #4fb28e;     /* CC Green accent */
+}
+```
+
+**Status Badges:**
+```css
+.badge {
+  padding: 6px 14px;
+  border-radius: 20px;               /* Pill shape */
+  font-size: 12px;
+  font-weight: 600;
+}
+.badge-success { background: rgba(34, 197, 94, 0.9); }
+.badge-warning { background: rgba(251, 191, 36, 0.9); }
+.badge-error { background: rgba(239, 68, 68, 0.7); }
+```
+
+**Gradients (for emphasis areas):**
+```css
+/* Primary gradient */
+background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+
+/* Success gradient */
+background: linear-gradient(135deg, rgba(79, 178, 142, 0.1) 0%, rgba(34, 197, 94, 0.1) 100%);
+```
+
+### 22.5 Spacing & Layout
+
+| Spacing | Value | Usage |
+|---------|-------|-------|
+| xs | 4px | Icon padding, inline gaps |
+| sm | 8px | Between related elements |
+| md | 12px | Card internal padding |
+| lg | 20px | Section separation |
+| xl | 30px | Major section breaks |
+
+**Grid:** Use CSS Grid with `gap: 20px` for card layouts.
+
+### 22.6 Interactive Elements
+
+**Buttons:**
+```css
+.btn {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+.btn-primary { background: #4fb28e; color: white; }
+.btn-secondary { background: rgba(255,255,255,0.1); color: #f1f5f9; }
+```
+
+**Form Inputs:**
+```css
+.form-input {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 12px;
+  color: #f1f5f9;
+}
+.form-input:focus {
+  border-color: #4fb28e;
+  outline: none;
+}
+```
+
+### 22.7 Readability Requirements
+
+- **Minimum contrast ratio:** 4.5:1 for body text, 3:1 for large text
+- **Line height:** 1.5 for body text, 1.3 for headings
+- **Maximum line length:** 75 characters for readability
+- **No justified text** — use left-aligned
+- **Adequate whitespace** — don't crowd elements
+
+### 22.8 Consistency Checklist
+
+Before deploying UI changes, verify:
+
+- [ ] Colors match Section 22.1 palette
+- [ ] Typography follows Section 22.2 specs
+- [ ] **No emojis** — replaced with proper icons
+- [ ] Cards use consistent border-radius (12px) and accent borders
+- [ ] Buttons use standard styles (primary/secondary)
+- [ ] Form inputs are styled consistently
+- [ ] Spacing is consistent (use defined values)
+- [ ] Interactive elements have hover/focus states
+- [ ] Text is readable (contrast, line-height, spacing)
 
 ---
 
