@@ -2097,9 +2097,10 @@
                     <div id="eink-display-container" style="background: #1a1a1a; border-radius: 8px; padding: 16px; display: flex; justify-content: center; align-items: center; min-height: 300px;">
                         <div id="eink-image-wrapper" style="position: relative; box-shadow: 0 4px 20px rgba(0,0,0,0.5); border-radius: 4px; overflow: hidden;">
                             <img id="eink-preview-image" 
-                                 src="" 
+                                 src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" 
                                  alt="E-Ink Display Preview" 
-                                 style="display: block; max-width: 100%; height: auto; background: #f5f5f0;">
+                                 crossorigin="anonymous"
+                                 style="display: block; max-width: 100%; height: auto; background: #f5f5f0; min-height: 200px;">
                             <div id="eink-loading-overlay" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(26,26,26,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8;">
                                 <div class="spinner" style="margin-bottom: 12px;"></div>
                                 <span style="font-size: 13px;">Loading display...</span>
@@ -5728,34 +5729,30 @@
             const apiUrlEl = document.getElementById('eink-api-url');
             if (apiUrlEl) apiUrlEl.textContent = imageUrl;
             
-            // Set image source - use a new Image to preload without triggering onerror on empty src
+            // Set image source directly with proper error handling
             if (previewImage) {
-                // Create a new Image object to preload the image
-                const newImage = new Image();
-                
                 // Add timeout for slow connections (30 seconds)
                 const loadTimeout = setTimeout(() => {
                     console.error('[Admin] E-ink preview load timeout');
                     handleEinkImageError('Timeout - try refreshing');
                 }, 30000);
                 
-                newImage.onload = function() {
+                // Set up handlers on the actual image element
+                previewImage.onload = function() {
                     clearTimeout(loadTimeout);
-                    // Only set the src once loaded to avoid flicker
-                    previewImage.src = imageUrl;
                     previewImage.style.width = Math.min(deviceConfig.width, 760) + 'px';
                     previewImage.style.height = 'auto';
                     handleEinkImageLoad();
                 };
-                newImage.onerror = function(e) {
+                previewImage.onerror = function(e) {
                     clearTimeout(loadTimeout);
                     console.error('[Admin] E-ink preview load error:', e);
                     handleEinkImageError('Failed to load - check console');
                 };
                 
-                // Start loading the image
+                // Start loading - set src directly on the img element
                 console.log('[Admin] Loading e-ink preview from:', imageUrl);
-                newImage.src = imageUrl;
+                previewImage.src = imageUrl;
             }
             
             // Also load raw SmartCommute data for the debug panel

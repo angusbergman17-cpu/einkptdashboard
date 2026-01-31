@@ -591,6 +591,15 @@ async function handleDemoMode(req, res, scenarioName) {
  * Main handler - Vercel serverless function
  */
 export default async function handler(req, res) {
+  // CORS headers - required for admin panel preview
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
   try {
     // Check for random mode - generates dynamic journey using SmartJourney patterns
     if (req.query?.random === '1' || req.query?.random === 'true') {
