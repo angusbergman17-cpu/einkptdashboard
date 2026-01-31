@@ -471,8 +471,8 @@ function drawBusIcon(ctx, x, y, size = 32) {
 }
 
 /**
- * Draw coffee icon (32x32)
- * V10 Spec Section 5.3.5
+ * Draw coffee icon (32x32) WITH STEAM LINES
+ * V10 Spec Section 5.3.5 - Per reference image 2
  */
 function drawCoffeeIcon(ctx, x, y, size = 32) {
   const scale = size / 32;
@@ -482,6 +482,22 @@ function drawCoffeeIcon(ctx, x, y, size = 32) {
   
   ctx.fillStyle = '#000';
   ctx.strokeStyle = '#000';
+  ctx.lineWidth = 2;
+  
+  // Steam lines (wavy lines above cup) - per reference image
+  ctx.beginPath();
+  ctx.moveTo(10, 8);
+  ctx.quadraticCurveTo(8, 5, 10, 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(14, 8);
+  ctx.quadraticCurveTo(16, 5, 14, 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(18, 8);
+  ctx.quadraticCurveTo(16, 5, 18, 2);
+  ctx.stroke();
+  
   ctx.lineWidth = 2.5;
   
   // Cup body
@@ -1842,28 +1858,50 @@ export function renderFullScreen(data, prefs = {}) {
     
     ctx.textAlign = 'left';
     ctx.fillStyle = '#000';
+    
+    // -----------------------------------------------------------------------
+    // ARROW CONNECTOR ▼ (between legs) - Per reference images
+    // Draw arrow pointing down after each leg except the last
+    // -----------------------------------------------------------------------
+    if (idx < legs.length - 1) {
+      const arrowY = zone.y + zone.h + 2;  // Position just below current leg
+      const arrowX = 400;  // Center of screen
+      
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      ctx.moveTo(arrowX - 8, arrowY);
+      ctx.lineTo(arrowX + 8, arrowY);
+      ctx.lineTo(arrowX, arrowY + 10);
+      ctx.closePath();
+      ctx.fill();
+    }
   });
   
   // Store delay count for status bar
   data._delayedLegCount = delayedLegs.length;
   
   // =========================================================================
-  // FOOTER (V10 Spec Section 6) - Real-Time Arrival Amendment 2026-01-31
+  // FOOTER (V10 Spec Section 6) - Per reference images
+  // Format: "DESTINATION ADDRESS" ... "ARRIVE" ... "X:XX"
   // =========================================================================
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 448, 800, 32);
   ctx.fillStyle = '#FFF';
   
-  // Destination (V10 Spec Section 6.1)
+  // Destination address (left side, uppercase) - per ref images
   ctx.font = 'bold 16px Inter, sans-serif';
   ctx.textBaseline = 'middle';
-  ctx.fillText(`ARRIVE at ${(data.destination || 'WORK').toUpperCase()}`, 16, 464);
+  ctx.fillText((data.destination || 'WORK').toUpperCase(), 16, 464);
   
-  // Calculated arrival time (V10 Spec Section 6.3 Amendment)
+  // "ARRIVE" label (right side, before time) - per ref images
   ctx.textAlign = 'right';
+  ctx.font = '12px Inter, sans-serif';
+  ctx.fillText('ARRIVE', 720, 464);
+  
+  // Calculated arrival time (far right, large) - per ref images
   ctx.font = 'bold 22px Inter, sans-serif';
   const footerArrival = data._calculatedArrival || data.arrive_by || '--:--';
-  ctx.fillText(footerArrival, 784, 458);
+  ctx.fillText(footerArrival, 784, 464);
   
   // Target time indicator (V10 Spec Section 6.4 Amendment)
   const targetTime = data._targetArrival || data.arrive_by || '09:00';
