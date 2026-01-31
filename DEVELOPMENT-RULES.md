@@ -44,7 +44,7 @@ The system was previously known as "Commute Compute". Update any remaining refer
 | V10 Dashboard | CCDashDesignV10 |
 | V10 spec | CCDashDesignV10 spec |
 | v13 renderer | CCDashRendererV13 |
-| zone-renderer-v13.js | ccdash-renderer-v13.js |
+| zone-renderer-v13.js | CCDashZoneRendererV13.js |
 | LiveDash (standalone) | CC LiveDash |
 
 **Note:** "SmartCommute" is retained as the journey calculation engine name.
