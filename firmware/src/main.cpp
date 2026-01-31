@@ -253,23 +253,26 @@ void loop() {
                     initialDrawDone = true;
                     Serial.println("Full refresh complete!");
                 } else {
-                    // Batched anti-ghost: all changed zones together, then re-render ALL
-                    Serial.println("Doing batched anti-ghost refresh...");
+                    // Anti-ghost ONLY changed zones, leave others untouched
+                    Serial.println("Partial refresh with selective anti-ghost...");
                     
                     // Extract base URL
                     String baseUrl = String(webhookUrl);
                     int apiIndex = baseUrl.indexOf("/api/device/");
                     if (apiIndex > 0) baseUrl = baseUrl.substring(0, apiIndex);
                     
-                    // Count changed
+                    // Count actually changed zones
                     int changedCount = 0;
                     for (int i = 0; i < NUM_ZONES; i++) {
-                        if (zoneChanged[i]) changedCount++;
+                        if (zoneChanged[i]) {
+                            changedCount++;
+                            Serial.printf("  Zone %d (%s) changed\n", i, ZONE_DEFS[i].id);
+                        }
                     }
                     
-                    if (changedCount > 0) {
-                        // Step 1: Fill ALL changed zones BLACK (single refresh)
-                        Serial.printf("Anti-ghost: %d zones -> BLACK\n", changedCount);
+                    if (changedCount > 0 && changedCount < NUM_ZONES) {
+                        // Only some zones changed - do selective anti-ghost
+                        Serial.printf("Anti-ghost: %d/%d zones -> BLACK\n", changedCount, NUM_ZONES);
                         for (int i = 0; i < NUM_ZONES; i++) {
                             if (zoneChanged[i]) {
                                 bbep->fillRect(ZONE_DEFS[i].x, ZONE_DEFS[i].y, 
@@ -278,8 +281,7 @@ void loop() {
                         }
                         bbep->refresh(REFRESH_PARTIAL, true);
                         
-                        // Step 2: Fill ALL changed zones WHITE (single refresh)
-                        Serial.printf("Anti-ghost: %d zones -> WHITE\n", changedCount);
+                        Serial.printf("Anti-ghost: %d/%d zones -> WHITE\n", changedCount, NUM_ZONES);
                         for (int i = 0; i < NUM_ZONES; i++) {
                             if (zoneChanged[i]) {
                                 bbep->fillRect(ZONE_DEFS[i].x, ZONE_DEFS[i].y, 
@@ -288,16 +290,28 @@ void loop() {
                         }
                         bbep->refresh(REFRESH_PARTIAL, true);
                         
-                        // Step 3: Re-render ALL zones (prevents gray fade on unchanged zones)
-                        Serial.println("Re-rendering ALL zones...");
+                        // Re-fetch ONLY changed zones (content was overwritten)
+                        Serial.println("Re-rendering changed zones only...");
                         for (int i = 0; i < NUM_ZONES; i++) {
-                            fetchAndRenderZone(baseUrl.c_str(), ZONE_DEFS[i], true);
+                            if (zoneChanged[i]) {
+                                fetchAndRenderZone(baseUrl.c_str(), ZONE_DEFS[i], false);
+                            }
                             yield();
                         }
                         bbep->refresh(REFRESH_PARTIAL, true);
-                        partialRefreshCount++;
+                    } else if (changedCount == NUM_ZONES) {
+                        // All zones changed - skip anti-ghost, just do full refresh
+                        Serial.println("All zones changed - triggering full refresh");
+                        doFullRefresh();
+                        lastFullRefresh = now;
+                        partialRefreshCount = 0;
+                    } else {
+                        // Nothing changed - just partial refresh what's already rendered
+                        Serial.println("No zones changed, simple partial refresh");
+                        bbep->refresh(REFRESH_PARTIAL, true);
                     }
-                    Serial.println("Batched refresh complete!");
+                    partialRefreshCount++;
+                    Serial.println("Partial refresh complete!");
                 }
             }
             
