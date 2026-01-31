@@ -21,7 +21,7 @@
 #define SCREEN_W 800
 #define SCREEN_H 480
 #define MAX_ZONES 6
-#define ZONE_BMP_MAX_SIZE 25000  // Decoded BMP (legs zone is ~800*316/8 = 31KB raw)
+#define ZONE_BMP_MAX_SIZE 35000  // Raw BMP (legs zone is ~32KB)
 #define ZONE_ID_MAX_LEN 32
 // Legs zone is ~42KB base64. Allocate lazily to save RAM for HTTP response.
 #define ZONE_DATA_MAX_LEN 45000
