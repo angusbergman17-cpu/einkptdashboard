@@ -252,8 +252,8 @@ export function getZonesForTier(tier) {
 // Zone definitions for the new layout
 export const ZONES = {
   // Header row (0-94px)
-  'header.location': { id: 'header.location', x: 16, y: 8, w: 200, h: 24 },
-  'header.time': { id: 'header.time', x: 16, y: 28, w: 220, h: 68 },  // v1.23: lower, larger
+  'header.location': { id: 'header.location', x: 16, y: 4, w: 200, h: 20 },
+  'header.time': { id: 'header.time', x: 16, y: 20, w: 280, h: 80 },  // v1.24: even larger
   'header.dayDate': { id: 'header.dayDate', x: 240, y: 16, w: 280, h: 78 },
   'header.weather': { id: 'header.weather', x: 600, y: 8, w: 184, h: 86 },
   
@@ -1221,12 +1221,12 @@ function renderHeaderTime(data, prefs) {
   ctx.fillRect(0, 0, zone.w, zone.h);
   
   ctx.fillStyle = '#000';
-  // v1.23: Larger clock (72px), positioned lower
-  ctx.font = '900 72px Inter, sans-serif';
+  // v1.24: Even larger clock (84px)
+  ctx.font = '900 84px Inter, sans-serif';
   ctx.textBaseline = 'top';
   
   const time = data.current_time || data.time || '--:--';
-  ctx.fillText(time, 0, 0);
+  ctx.fillText(time, 0, -8);  // Slight negative offset to maximize size
   
   return canvasToBMP(canvas);
 }

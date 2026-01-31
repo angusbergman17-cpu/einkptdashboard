@@ -607,6 +607,32 @@ function generateRandomJourney(targetLegs = null) {
   const arriveHour = hour + Math.floor((mins + totalMinutes) / 60);
   const arriveMins = (mins + totalMinutes) % 60;
 
+  // v1.24: Calculate DEPART times for each leg based on cumulative journey time
+  const startMins = hour * 60 + mins;
+  let cumulative = 0;
+  for (const leg of legs) {
+    // Calculate when user arrives at this leg
+    const arriveAtLegMins = startMins + cumulative;
+    const aH = Math.floor(arriveAtLegMins / 60) % 24;
+    const aM = arriveAtLegMins % 60;
+    const aH12 = aH % 12 || 12;
+    const ampm = aH >= 12 ? 'pm' : 'am';
+    
+    // For transit legs, show DEPART time (when service departs)
+    if (['train', 'tram', 'bus'].includes(leg.type)) {
+      // Assume next departure is arrival time + 1-3 min wait
+      const waitMin = 1 + Math.floor(Math.random() * 3);
+      const departMins = arriveAtLegMins + waitMin;
+      const dH = Math.floor(departMins / 60) % 24;
+      const dM = departMins % 60;
+      const dH12 = dH % 12 || 12;
+      const dAmPm = dH >= 12 ? 'pm' : 'am';
+      leg.departTime = `${dH12}:${dM.toString().padStart(2, '0')}${dAmPm}`;
+    }
+    
+    cumulative += leg.minutes;
+  }
+
   return {
     origin: home.address.toUpperCase(),
     destination: work.address.toUpperCase(),
@@ -648,7 +674,8 @@ async function handleRandomJourney(req, res) {
       day: journey.dayOfWeek,
       date: journey.date,
       temp: journey.weather.temp,
-      weather: journey.weather.condition,
+      condition: journey.weather.condition,  // v1.24: use 'condition' key
+      weather: journey.weather.condition,    // Also set weather for compat
       umbrella: journey.weather.umbrella,
       status: journey.status,
       arrive_by: journey.arrivalTime,
