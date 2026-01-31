@@ -1592,17 +1592,16 @@ export function renderFullScreen(data, prefs = {}) {
   
   // Re-render zones directly to main canvas for preview
   // =========================================================================
-  // HEADER (V10 Spec Section 2)
+  // HEADER (V10 Spec Section 2) - v1.29: Improved layout and spacing
   // =========================================================================
   ctx.fillStyle = '#000';
-  ctx.font = 'bold 11px Inter, sans-serif';
   ctx.textBaseline = 'top';
-  ctx.fillText((data.location || 'HOME').toUpperCase(), 16, 8);
+  
+  // Location - small, top left
+  ctx.font = 'bold 10px Inter, sans-serif';
+  ctx.fillText((data.location || 'HOME').toUpperCase(), 12, 4);
   
   // Convert to 12-hour format (DEVELOPMENT-RULES.md: 12-hour time MANDATORY)
-  // v1.28: Clock vertically centered on header bar (0-94px)
-  const clockFontSize = 68;
-  ctx.font = `bold ${clockFontSize}px Inter, sans-serif`;
   let displayTime = data.current_time || '--:--';
   let isPM = false;
   
@@ -1622,70 +1621,90 @@ export function renderFullScreen(data, prefs = {}) {
     displayTime = displayTime.replace(/\s*(am|pm)/gi, '');
   }
   
-  // v1.28: Center clock vertically in header area (header height 94px, location uses top 20px)
-  const headerClockAreaTop = 20;
-  const headerClockAreaHeight = 74;  // 94 - 20
-  const clockY = headerClockAreaTop + (headerClockAreaHeight - clockFontSize) / 2;
-  ctx.fillText(displayTime, 16, clockY);
+  // v1.29: LARGE clock, positioned lower (closer to status bar)
+  const clockFontSize = 72;
+  ctx.font = `bold ${clockFontSize}px Inter, sans-serif`;
+  const clockY = 18;  // Lower position for better visual balance
+  ctx.fillText(displayTime, 12, clockY);
   
-  // AM/PM indicator - positioned relative to clock
-  ctx.font = 'bold 16px Inter, sans-serif';
-  ctx.fillText(data.am_pm || (isPM ? 'PM' : 'AM'), 200, clockY + clockFontSize - 16);
+  // Measure clock width for AM/PM positioning
+  const clockWidth = ctx.measureText(displayTime).width;
   
-  // Day and date (1-bit: ALL text must be #000, no gray)
+  // AM/PM indicator - right after clock, vertically centered with clock
   ctx.font = 'bold 18px Inter, sans-serif';
-  ctx.fillText(data.day || '', 300, 28);
-  ctx.font = '16px Inter, sans-serif';
-  ctx.fillStyle = '#000';  // E-ink 1-bit: NO GRAY TEXT
-  ctx.fillText(data.date || '', 300, 50);
+  ctx.fillText(data.am_pm || (isPM ? 'PM' : 'AM'), 12 + clockWidth + 8, clockY + clockFontSize - 24);
   
-  // Weather box (V10 Spec Section 2.6) - Fixed layout to prevent overlap
-  // v1.28: Better separation between temp and condition
+  // v1.29: Day and date - LARGER, positioned closer to clock
+  const dayDateX = 12 + clockWidth + 50;  // Close to clock
+  ctx.font = 'bold 24px Inter, sans-serif';
+  ctx.fillText(data.day || '', dayDateX, clockY + 8);
+  ctx.font = '18px Inter, sans-serif';
+  ctx.fillText(data.date || '', dayDateX, clockY + 36);
+  
+  // v1.29: Service status indicator in header
+  const serviceStatus = data.service_status || (data.disruption ? 'DISRUPTIONS' : 'ALL SERVICES OK');
+  const hasDisruption = data.disruption || data.status_type === 'disruption' || serviceStatus.includes('DISRUPTION');
+  ctx.font = 'bold 9px Inter, sans-serif';
+  if (hasDisruption) {
+    // Black pill with white text for disruption
+    const statusText = '⚠ ' + serviceStatus.toUpperCase();
+    const statusWidth = ctx.measureText(statusText).width + 12;
+    ctx.fillStyle = '#000';
+    ctx.fillRect(dayDateX, clockY + 60, statusWidth, 16);
+    ctx.fillStyle = '#FFF';
+    ctx.fillText(statusText, dayDateX + 6, clockY + 64);
+  } else {
+    // Simple text for normal status
+    ctx.fillStyle = '#000';
+    ctx.fillText('✓ ' + serviceStatus.toUpperCase(), dayDateX, clockY + 64);
+  }
+  ctx.fillStyle = '#000';
+  
+  // v1.29: Weather box - cleaner layout with better separation
+  const weatherBoxX = 620;
+  const weatherBoxY = 8;
+  const weatherBoxW = 172;
+  const weatherBoxH = 82;
+  
   ctx.strokeStyle = '#000';
   ctx.lineWidth = 2;
-  ctx.strokeRect(644, 12, 140, 78);
+  ctx.strokeRect(weatherBoxX, weatherBoxY, weatherBoxW, weatherBoxH);
   
-  // Temperature - top portion, vertically centered in upper section
-  ctx.font = 'bold 36px Inter, sans-serif';
+  // Temperature - large, top of box
+  ctx.font = 'bold 40px Inter, sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText(`${data.temp || '--'}°`, 714, 32);
+  ctx.textBaseline = 'top';
+  ctx.fillText(`${data.temp || '--'}°`, weatherBoxX + weatherBoxW / 2, weatherBoxY + 4);
   
-  // Condition - separate line below temp with clear gap
-  ctx.font = '11px Inter, sans-serif';
-  const condition = (data.condition || '').slice(0, 14);  // Truncate if too long
-  ctx.fillText(condition, 714, 56);
-  ctx.textAlign = 'left';
+  // Condition - clearly separated below temp
+  ctx.font = '12px Inter, sans-serif';
+  let condition = data.condition || '';
+  // Truncate if too long
+  while (ctx.measureText(condition).width > weatherBoxW - 16 && condition.length > 3) {
+    condition = condition.slice(0, -1);
+  }
+  ctx.fillText(condition, weatherBoxX + weatherBoxW / 2, weatherBoxY + 48);
   
-  // Umbrella indicator (V10 Spec Section 2.7)
-  // Position: Inside weather box, bottom portion
-  // Fixed: Moved down to prevent overlap with condition text
+  // Umbrella indicator - bottom of weather box
   const needsUmbrella = data.rain_expected || data.precipitation > 30 || 
     (data.condition && /rain|shower|storm|drizzle/i.test(data.condition));
-  const umbrellaX = 648;  // Inside weather box (644 + 4px padding)
-  const umbrellaY = 70;   // Moved down from 68 to prevent overlap
-  const umbrellaW = 132;
-  const umbrellaH = 16;   // Slightly smaller to fit
+  const umbrellaY = weatherBoxY + weatherBoxH - 18;
   
+  ctx.font = 'bold 10px Inter, sans-serif';
   ctx.textBaseline = 'middle';
-  
   if (needsUmbrella) {
     ctx.fillStyle = '#000';
-    ctx.fillRect(umbrellaX, umbrellaY, umbrellaW, umbrellaH);
+    ctx.fillRect(weatherBoxX + 4, umbrellaY, weatherBoxW - 8, 14);
     ctx.fillStyle = '#FFF';
-    ctx.font = 'bold 9px Inter, sans-serif';
-    ctx.textAlign = 'center';
-    // Use text marker instead of emoji for e-ink compatibility
-    ctx.fillText('* BRING UMBRELLA', umbrellaX + umbrellaW / 2, umbrellaY + umbrellaH / 2);
+    ctx.fillText('BRING UMBRELLA', weatherBoxX + weatherBoxW / 2, umbrellaY + 7);
   } else {
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 1;
-    ctx.strokeRect(umbrellaX, umbrellaY, umbrellaW, umbrellaH);
+    ctx.strokeRect(weatherBoxX + 4, umbrellaY, weatherBoxW - 8, 14);
     ctx.fillStyle = '#000';
-    ctx.font = 'bold 9px Inter, sans-serif';
-    ctx.textAlign = 'center';
-    // Use text marker instead of emoji for e-ink compatibility
-    ctx.fillText('* NO UMBRELLA', umbrellaX + umbrellaW / 2, umbrellaY + umbrellaH / 2);
+    ctx.fillText('NO UMBRELLA', weatherBoxX + weatherBoxW / 2, umbrellaY + 7);
   }
+  
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = '#000';
@@ -1801,29 +1820,32 @@ export function renderFullScreen(data, prefs = {}) {
   // =========================================================================
   // =========================================================================
   // JOURNEY LEGS (V10 Spec Section 5) - Per Reference Design Images
-  // v1.28: Improved scaling with proper element positioning
+  // v1.29: Improved scaling, spacing, and time display
   // =========================================================================
   const legs = data.journey_legs || data.legs || [];
   
-  // v1.28: Calculate scale factor based on leg count (baseline 5 legs)
+  // v1.29: Calculate scale factor based on leg count (baseline 5 legs)
   const legCount = legs.length;
   const baseLegs = 5;
-  const scale = Math.min(1, Math.max(0.55, baseLegs / Math.max(legCount, 3)));
-  const titleSize = Math.max(11, Math.round(16 * scale));
-  const subtitleSize = Math.max(9, Math.round(12 * scale));
-  const iconSize = Math.max(18, Math.round(32 * scale));
-  const numberSize = Math.max(14, Math.round(24 * scale));
-  const departLabelSize = Math.max(5, Math.round(7 * scale));
-  const departTimeSize = Math.max(7, Math.round(11 * scale));
-  const durationSize = Math.max(14, Math.round(22 * scale));
-  const durationLabelSize = Math.max(6, Math.round(9 * scale));
+  const scale = Math.min(1, Math.max(0.58, baseLegs / Math.max(legCount, 3)));
+  const titleSize = Math.max(12, Math.round(16 * scale));
+  const subtitleSize = Math.max(10, Math.round(12 * scale));
+  const iconSize = Math.max(20, Math.round(32 * scale));
+  const numberSize = Math.max(16, Math.round(24 * scale));
+  const departLabelSize = Math.max(7, Math.round(9 * scale));  // v1.29: Larger DEPART labels
+  const departTimeSize = Math.max(10, Math.round(14 * scale));  // v1.29: Larger DEPART time
+  const durationSize = Math.max(16, Math.round(24 * scale));
+  const durationLabelSize = Math.max(7, Math.round(10 * scale));
   
-  // v1.28: Pre-calculate cumulative durations from leave time
+  // v1.29: Pre-calculate cumulative durations (for transit legs only)
   let cumulativeMinutes = 0;
   const cumulativeTimes = legs.map(leg => {
     cumulativeMinutes += (leg.minutes || leg.durationMinutes || 0);
     return cumulativeMinutes;
   });
+  
+  // v1.29: Identify transit leg types (use cumulative) vs walk (use duration)
+  const isTransitLeg = (type) => ['train', 'tram', 'bus', 'vline', 'ferry', 'coffee'].includes(type);
   
   // Count delayed legs for status bar (DELAY vs DELAYS)
   const delayedLegs = legs.filter(l => l.status === 'delayed' || l.delayMinutes > 0);
@@ -1995,38 +2017,36 @@ export function renderFullScreen(data, prefs = {}) {
     ctx.fillText(legSubtitle, textX, subtitleY);
     
     // -----------------------------------------------------------------------
-    // DEPART TIME COLUMN - v1.28: properly positioned within leg box
+    // DEPART TIME COLUMN - v1.29: Larger text, better spacing
     // -----------------------------------------------------------------------
     if (hasDepart) {
-      // v1.28: Center DEPART column in its allocated space
-      const departColCenter = zone.x + zone.w - timeBoxW - departColW / 2 - 4;
-      const departLabelY = zone.y + verticalPadding;
-      const departTimeY = zone.y + zone.h / 2 + departTimeSize / 4;
+      // v1.29: DEPART column with larger, more readable text
+      const departColCenter = zone.x + zone.w - timeBoxW - departColW / 2 - 2;
       
-      ctx.font = `${departLabelSize}px Inter, sans-serif`;
+      // Single "DEPART" label above time
+      ctx.font = `bold ${departLabelSize}px Inter, sans-serif`;
       ctx.textAlign = 'center';
-      ctx.fillText('PLANNED', departColCenter, departLabelY);
-      ctx.fillText('DEPART', departColCenter, departLabelY + departLabelSize + 1);
+      ctx.fillText('DEPART', departColCenter, zone.y + verticalPadding + 2);
+      
+      // Time directly below, larger and bold
       ctx.font = `bold ${departTimeSize}px Inter, sans-serif`;
-      ctx.fillText(leg.departTime, departColCenter, departTimeY);
+      ctx.fillText(leg.departTime, departColCenter, zone.y + verticalPadding + departLabelSize + departTimeSize);
       ctx.textAlign = 'left';
     }
     
     // -----------------------------------------------------------------------
     // TIME BOX (V10 Spec Section 5.6) - Per reference images
-    // - Normal: Black fill, white text
-    // - Delayed: White fill, dashed LEFT border only, black text
-    // - Skipped: White fill, dashed border all around, "—" text
-    // - Suspended: "CANCELLED" text (per ref image 6)
-    // - Diverted: White fill with vertical stripes continuation
-    // v1.28: Cumulative time from journey start, properly positioned
+    // v1.29: Walk legs show DURATION, transit legs show CUMULATIVE time
     // -----------------------------------------------------------------------
     const timeBoxX = zone.x + zone.w - timeBoxW;
-    const minOffset = Math.round(4 * scale);
-    const labelOffset = Math.round(10 * scale);
+    const minOffset = Math.round(3 * scale);
+    const labelOffset = Math.round(12 * scale);
     
-    // v1.28: Use cumulative time (total minutes from leave time to end of this leg)
-    const cumulativeMin = cumulativeTimes[idx];
+    // v1.29: Walk = individual duration, Transit/Coffee = cumulative from leave time
+    const isWalkLeg = leg.type === 'walk';
+    const displayMinutes = isWalkLeg 
+      ? (leg.minutes || leg.durationMinutes || 0) 
+      : cumulativeTimes[idx];
     
     if (isSuspended) {
       ctx.fillStyle = '#000';
@@ -2050,10 +2070,10 @@ export function renderFullScreen(data, prefs = {}) {
       ctx.font = `bold ${durationSize}px Inter, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      // v1.28: Show cumulative time from journey start
-      ctx.fillText(cumulativeMin.toString(), timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 - minOffset);
+      // v1.29: Walk=duration, Transit=cumulative
+      ctx.fillText(displayMinutes.toString(), timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 - minOffset);
       ctx.font = `${durationLabelSize}px Inter, sans-serif`;
-      ctx.fillText('MIN', timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 + labelOffset);
+      ctx.fillText(isWalkLeg ? 'MIN WALK' : 'MIN', timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 + labelOffset);
     } else if (isDelayed && leg.type !== 'walk') {
       ctx.fillStyle = '#FFF';
       ctx.fillRect(timeBoxX, zone.y, timeBoxW, zone.h);
@@ -2069,8 +2089,8 @@ export function renderFullScreen(data, prefs = {}) {
       ctx.font = `bold ${durationSize}px Inter, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      // v1.28: Show cumulative time from journey start
-      ctx.fillText(cumulativeMin.toString(), timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 - minOffset);
+      // v1.29: Walk=duration, Transit=cumulative
+      ctx.fillText(displayMinutes.toString(), timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 - minOffset);
       ctx.font = `${durationLabelSize}px Inter, sans-serif`;
       ctx.fillText('MIN', timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 + labelOffset);
     } else {
@@ -2080,11 +2100,11 @@ export function renderFullScreen(data, prefs = {}) {
       ctx.font = `bold ${durationSize}px Inter, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      // v1.28: Show cumulative time from journey start (coffee gets ~ prefix)
-      const displayMin = leg.type === 'coffee' ? `~${cumulativeMin}` : cumulativeMin.toString();
+      // v1.29: Walk=duration, Transit=cumulative (coffee gets ~ prefix)
+      const displayMin = leg.type === 'coffee' ? `~${displayMinutes}` : displayMinutes.toString();
       ctx.fillText(displayMin, timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 - minOffset);
       ctx.font = `${durationLabelSize}px Inter, sans-serif`;
-      ctx.fillText(leg.type === 'walk' ? 'MIN WALK' : 'MIN', timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 + labelOffset);
+      ctx.fillText(isWalkLeg ? 'MIN WALK' : 'MIN', timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 + labelOffset);
     }
     
     ctx.textAlign = 'left';
