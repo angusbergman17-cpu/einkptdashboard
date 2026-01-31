@@ -1,8 +1,8 @@
 # Commute Compute Development Rules
 
 **MANDATORY COMPLIANCE DOCUMENT**  
-**Version:** 1.6  
-**Last Updated:** 2026-01-30  
+**Version:** 1.7  
+**Last Updated:** 2026-01-31  
 **Copyright (c) 2026 Commute Compute System by Angus Bergman — Licensed under CC BY-NC 4.0**
 
 These rules govern all development on Commute Compute. Compliance is mandatory.
@@ -134,6 +134,7 @@ The system was previously known as "Commute Compute". Update any remaining refer
 - 5.3 Flashing Procedure
 - 5.4 Critical bb_epaper ESP32-C3 Findings (2026-01-29)
 - 5.5 ESP32-C3 Troubleshooting Guide (2026-01-30)
+- 5.6 **Locked Production Firmware: CC-FW-6.0-STABLE (2026-01-31)** 🔒
 </details>
 
 <details>
@@ -270,6 +271,7 @@ The system was previously known as "Commute Compute". Update any remaining refer
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.7 | 2026-01-31 | Angus Bergman | **LOCKED FIRMWARE**: Added Section 5.6 — CC-FW-6.0-STABLE locked production firmware. Hardware-verified working on TRMNL OG (commit 2f8d6cf). Documents exact flashing procedure, ESP32-C3 workarounds, modification policy. |
 | 1.6 | 2026-01-30 | Angus Bergman | **REBRAND**: Commute Compute → Commute Compute System. Added Section 0 (Naming Conventions). Updated all references: CCDashDesignV10, CC LiveDash. SmartCommute engine name retained. |
 | 1.5 | 2026-01-29 | Angus Bergman | Added: API Key Validation requirements (17.2) — mandatory validation for all API keys entered via admin panel including format checks, live testing, and user feedback requirements |
 | 1.4 | 2026-01-29 | Angus Bergman | Added: console.log forbidden term (1.1), 12-hour time code pattern (12.2), file naming consistency (13.5), forbidden terms grep verification (14.1.1) |
@@ -776,6 +778,109 @@ pio run -e trmnl -t erase && pio run -e trmnl -t upload
 | Guru Meditation Error | Various | Check stack trace, usually static init |
 | Display shows garbage | allocBuffer() called | Remove allocBuffer() calls |
 | Text rotated 90° | FONT_12x16 bug | Use FONT_8x8 only |
+
+### 5.6 Locked Production Firmware: CC-FW-6.0-STABLE (2026-01-31)
+
+**🔒 LOCKED FIRMWARE VERSION — Hardware Verified Working**
+
+**Official Name:** `CC-FW-6.0-STABLE`  
+**Version:** 6.0-stable-hardcoded  
+**Commit:** `2f8d6cf` (fix: Trigger full refresh after zone rendering)  
+**Verified On:** TRMNL OG hardware, 2026-01-31 12:00 AEDT  
+**Status:** ✅ PRODUCTION READY
+
+#### 5.6.1 Key Characteristics
+
+| Attribute | Value |
+|-----------|-------|
+| WiFi Mode | Hardcoded credentials (WiFiManager disabled) |
+| Server URL | Hardcoded to `https://einkptdashboard.vercel.app` |
+| Zone Fetching | Sequential per-zone HTTP requests |
+| BMP Rendering | Direct render via bb_epaper (no allocBuffer) |
+| Refresh Strategy | Full refresh after zone rendering |
+| SPI Mode | Bit-bang (speed=0) for ESP32-C3 compatibility |
+
+#### 5.6.2 Why WiFiManager/ArduinoJson Disabled
+
+| Library | Issue | Solution |
+|---------|-------|----------|
+| WiFiManager | Causes ESP32-C3 crash (0xbaad5678) due to static NVS init | Direct WiFi.begin() with hardcoded creds |
+| ArduinoJson | Causes stack corruption on ESP32-C3 | Manual JSON string parsing |
+
+#### 5.6.3 Exact Flashing Procedure (Verified Working)
+
+```bash
+# 1. Navigate to firmware directory
+cd ~/clawd/einkptdashboard/firmware
+
+# 2. Verify on correct commit
+git log --oneline -1
+# Should show: 2f8d6cf fix: Trigger full refresh after zone rendering
+
+# 3. Put TRMNL device in bootloader mode
+#    - Hold BOOT button
+#    - Press and release RESET button
+#    - Release BOOT button
+#    - Device should appear as USB serial device
+
+# 4. Build and flash (single command)
+pio run -e trmnl -t upload
+
+# 5. Monitor serial output (115200 baud via USB CDC)
+pio device monitor -b 115200
+
+# Expected output:
+# === Commute Compute v6.0-stable-hardcoded ===
+# NVS initialized
+# Display object created
+# Webhook: https://einkptdashboard.vercel.app (hardcoded)
+# Setup complete
+# Connecting to [SSID]...
+# Connected: [IP]
+# Sequential fetch from https://einkptdashboard.vercel.app (force=1)
+# Fetch header: ... OK
+# Fetch summary: ... OK
+# Fetch legs: ... OK
+# Fetch footer: ... OK
+# Rendered 5/5 zones
+# Zones rendered: 5, needsFull: yes
+# Doing full refresh...
+# Full refresh complete!
+```
+
+#### 5.6.4 Required platformio.ini Flags
+
+```ini
+[env:trmnl]
+platform = espressif32
+board = esp32-c3-devkitm-1
+framework = arduino
+monitor_speed = 115200
+upload_speed = 921600
+build_flags =
+    -D ARDUINO_USB_MODE=1
+    -D ARDUINO_USB_CDC_ON_BOOT=1
+lib_deps =
+    bitbank2/bb_epaper@^1.0.0
+```
+
+#### 5.6.5 Firmware File Locations
+
+| File | Purpose |
+|------|---------|
+| `firmware/src/main.cpp` | Main firmware source (CC-FW-6.0-STABLE) |
+| `firmware/include/config.h` | Pin definitions, timing constants |
+| `firmware/platformio.ini` | Build configuration |
+
+#### 5.6.6 Modification Policy
+
+**🔴 DO NOT MODIFY** the CC-FW-6.0-STABLE firmware without explicit approval.
+
+Any changes require:
+1. Explicit approval from project owner
+2. New version number (e.g., CC-FW-6.1-xxx)
+3. Hardware testing on physical TRMNL device
+4. Documentation update in this section
 
 ---
 
