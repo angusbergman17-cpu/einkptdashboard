@@ -737,10 +737,13 @@ function drawModeIcon(ctx, type, x, y, size = 32, outline = false) {
  * - Skipped/Coffee-skip: Dashed circle outline with black number inside
  * - Cancelled: Dashed circle with ✗
  */
-function drawLegNumber(ctx, number, x, y, status = 'normal', isSkippedCoffee = false) {
-  const size = 24;
+function drawLegNumber(ctx, number, x, y, status = 'normal', sizeParam = 24) {
+  // v1.20: Accept size parameter for scaling
+  const size = typeof sizeParam === 'number' ? sizeParam : 24;
+  const isSkippedCoffee = sizeParam === true;  // Backward compat: old boolean param
   const centerX = x + size / 2;
   const centerY = y + size / 2;
+  const fontSize = Math.max(10, Math.round(size * 0.54));
   
   ctx.fillStyle = '#000';
   
@@ -758,13 +761,13 @@ function drawLegNumber(ctx, number, x, y, status = 'normal', isSkippedCoffee = f
     // Number inside (black, no fill behind)
     if (status === 'cancelled') {
       ctx.fillStyle = '#000';
-      ctx.font = 'bold 14px Inter, sans-serif';
+      ctx.font = `bold ${fontSize}px Inter, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('✗', centerX, centerY);
     } else {
       ctx.fillStyle = '#000';
-      ctx.font = 'bold 13px Inter, sans-serif';
+      ctx.font = `bold ${fontSize}px Inter, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(number.toString(), centerX, centerY);
@@ -775,9 +778,9 @@ function drawLegNumber(ctx, number, x, y, status = 'normal', isSkippedCoffee = f
     ctx.arc(centerX, centerY, size / 2, 0, Math.PI * 2);
     ctx.fill();
     
-    // White number
+    // White number - v1.20: scaled font
     ctx.fillStyle = '#FFF';
-    ctx.font = 'bold 13px Inter, sans-serif';
+    ctx.font = `bold ${fontSize}px Inter, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(number.toString(), centerX, centerY);
@@ -870,10 +873,19 @@ function getDynamicLegZone(legIndex, totalLegs) {
 /**
  * Render a journey leg zone (V10 Spec Section 5)
  * Includes: leg number, mode icon, title, subtitle, duration box
+ * v1.20: Dynamic scaling based on leg height
  */
 function renderLegZone(ctx, leg, zone, legNumber = 1, isHighlighted = false) {
   const { x, y, w, h } = { x: 0, y: 0, w: zone.w, h: zone.h };
   const status = leg.status || 'normal';
+  
+  // v1.20: Calculate scale factor based on leg height (baseline 52px)
+  const baseHeight = 52;
+  const scale = Math.min(1, h / baseHeight);
+  const titleSize = Math.max(11, Math.round(16 * scale));
+  const subtitleSize = Math.max(9, Math.round(12 * scale));
+  const iconSize = Math.max(20, Math.round(32 * scale));
+  const numberSize = Math.max(16, Math.round(24 * scale));
   
   // Determine border style based on status (V10 Spec Section 5.1)
   let borderWidth = 2;
@@ -907,30 +919,35 @@ function renderLegZone(ctx, leg, zone, legNumber = 1, isHighlighted = false) {
     ctx.setLineDash([]);
   }
   
-  // Leg number circle (V10 Spec Section 5.2)
-  const numberX = x + 8;
-  const numberY = y + (h - 24) / 2;
-  drawLegNumber(ctx, legNumber, numberX, numberY, status);
+  // Leg number circle (V10 Spec Section 5.2) - scaled
+  const numberX = x + 6;
+  const numberY = y + (h - numberSize) / 2;
+  drawLegNumber(ctx, legNumber, numberX, numberY, status, numberSize);
   
-  // Mode icon (V10 Spec Section 5.3)
-  const iconX = x + 40;
-  const iconY = y + (h - 32) / 2;
+  // Mode icon (V10 Spec Section 5.3) - scaled
+  const iconX = x + 8 + numberSize + 4;
+  const iconY = y + (h - iconSize) / 2;
   
   // For skipped coffee, draw with reduced opacity effect (gray)
   if (leg.type === 'coffee' && !leg.canGet) {
     ctx.globalAlpha = 0.4;
   }
   
-  drawModeIcon(ctx, leg.type, iconX, iconY, 32);
+  drawModeIcon(ctx, leg.type, iconX, iconY, iconSize);
   ctx.globalAlpha = 1.0;
   
   // Main text area (1-bit: ALL text must be #000 or #FFF, no gray)
-  const textX = x + 82;
+  const textX = iconX + iconSize + 8;
   const textColor = isHighlighted ? '#FFF' : '#000';  // E-ink 1-bit: NO GRAY
   ctx.fillStyle = textColor;
   
+  // v1.20: Calculate vertical positions based on height
+  const textAreaHeight = h - 4;
+  const titleY = y + Math.round(textAreaHeight * 0.15);
+  const subtitleY = y + Math.round(textAreaHeight * 0.55);
+  
   // Title with status prefix (V10 Spec Section 5.4)
-  ctx.font = 'bold 16px Inter, sans-serif';
+  ctx.font = `bold ${titleSize}px Inter, sans-serif`;
   ctx.textBaseline = 'top';
   let titlePrefix = '';
   if (status === 'delayed') titlePrefix = '⏱ ';
@@ -939,42 +956,42 @@ function renderLegZone(ctx, leg, zone, legNumber = 1, isHighlighted = false) {
   else if (leg.type === 'coffee') titlePrefix = '☕ ';
   
   const title = titlePrefix + (leg.title || getLegTitle(leg));
-  ctx.fillText(title, textX, y + 6);
+  ctx.fillText(title, textX, titleY);
+  
+  // v1.20: Time box dimensions (scaled) - define early for DEPART positioning
+  const timeBoxW = Math.max(56, Math.round(72 * scale));
+  const timeBoxX = w - timeBoxW;
   
   // Subtitle (V10 Spec Section 5.5)
-  // Calculate max width to prevent overlap with DEPART column
+  // Calculate max width to prevent overlap with DEPART column and time box
   const hasDepart = ['train', 'tram', 'bus', 'vline', 'ferry'].includes(leg.type) && leg.departTime;
-  const subtitleMaxWidth = hasDepart ? (w - textX - 140) : (w - textX - 80);  // Leave room for DEPART/duration
+  const departColW = hasDepart ? 55 : 0;  // v1.20: narrower DEPART column
+  const subtitleMaxWidth = w - textX - timeBoxW - departColW - 8;
   
-  ctx.font = '12px Inter, sans-serif';
+  ctx.font = `${subtitleSize}px Inter, sans-serif`;
   let subtitle = leg.subtitle || getLegSubtitle(leg);
   
   // Truncate subtitle if too long
   while (ctx.measureText(subtitle).width > subtitleMaxWidth && subtitle.length > 10) {
     subtitle = subtitle.slice(0, -4) + '...';
   }
-  ctx.fillText(subtitle, textX, y + 26);
+  ctx.fillText(subtitle, textX, subtitleY);
   
-  // DEPART time column for transit legs (v1.18 - per user request)
-  // Shows when user should catch this service based on journey timing
-  // Position: Fixed at right edge of subtitle area, before duration box
+  // v1.20: DEPART column - positioned closer to time box
   if (hasDepart) {
-    const departX = w - 115;  // Moved left to prevent overlap with duration box
+    const departX = timeBoxX - 30;  // v1.20: closer to duration box
     ctx.fillStyle = textColor;
-    ctx.font = '7px Inter, sans-serif';
+    ctx.font = `${Math.max(6, Math.round(7 * scale))}px Inter, sans-serif`;
     ctx.textAlign = 'center';
-    ctx.globalAlpha = 0.6;
-    ctx.fillText('DEPART', departX, y + 8);
-    ctx.globalAlpha = 1.0;
-    ctx.font = 'bold 11px Inter, sans-serif';
-    ctx.fillText(leg.departTime, departX, y + 22);
+    ctx.fillText('DEPART', departX, titleY);
+    ctx.font = `bold ${Math.max(9, Math.round(11 * scale))}px Inter, sans-serif`;
+    ctx.fillText(leg.departTime, departX, subtitleY);
     ctx.textAlign = 'left';
   }
   
   // Time box (right side, fills to edge) - V10 Spec Section 5.6
-  const timeBoxW = 72;
+  // v1.20: timeBoxW and timeBoxX already defined above for DEPART positioning
   const timeBoxH = h;
-  const timeBoxX = w - timeBoxW;
   const timeBoxY = y;
   
   // Determine time box style
@@ -1001,9 +1018,10 @@ function renderLegZone(ctx, leg, zone, legNumber = 1, isHighlighted = false) {
     ctx.strokeRect(timeBoxX + 2, timeBoxY + 2, timeBoxW - 4, timeBoxH - 4);
     ctx.setLineDash([]);
     showDuration = false;
-    // Draw "—" for skipped
+    // Draw "—" for skipped - v1.20: scaled
+    const skipFontSize = Math.max(16, Math.round(22 * scale));
     ctx.fillStyle = '#000';  // E-ink 1-bit: NO GRAY
-    ctx.font = 'bold 22px Inter, sans-serif';
+    ctx.font = `bold ${skipFontSize}px Inter, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('—', timeBoxX + timeBoxW / 2, timeBoxY + timeBoxH / 2);
@@ -1017,19 +1035,25 @@ function renderLegZone(ctx, leg, zone, legNumber = 1, isHighlighted = false) {
       ctx.fillRect(timeBoxX, timeBoxY, timeBoxW, timeBoxH);
     }
     
+    // v1.20: Scale time text based on box height
+    const minFontSize = Math.max(16, Math.round(22 * scale));
+    const labelFontSize = Math.max(7, Math.round(9 * scale));
+    const minOffset = Math.round(8 * scale);
+    const labelOffset = Math.round(12 * scale);
+    
     // Time text
     ctx.fillStyle = timeBoxTextColor;
-    ctx.font = 'bold 22px Inter, sans-serif';
+    ctx.font = `bold ${minFontSize}px Inter, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     
     const minutes = leg.minutes ?? leg.durationMinutes ?? '--';
     const displayMin = leg.type === 'coffee' ? `~${minutes}` : minutes.toString();
-    ctx.fillText(displayMin, timeBoxX + timeBoxW / 2, timeBoxY + timeBoxH / 2 - 8);
+    ctx.fillText(displayMin, timeBoxX + timeBoxW / 2, timeBoxY + timeBoxH / 2 - minOffset);
     
-    ctx.font = '9px Inter, sans-serif';
+    ctx.font = `${labelFontSize}px Inter, sans-serif`;
     const timeLabel = leg.type === 'walk' ? 'MIN WALK' : 'MIN';
-    ctx.fillText(timeLabel, timeBoxX + timeBoxW / 2, timeBoxY + timeBoxH / 2 + 12);
+    ctx.fillText(timeLabel, timeBoxX + timeBoxW / 2, timeBoxY + timeBoxH / 2 + labelOffset);
   }
   
   // Reset
@@ -1259,9 +1283,14 @@ function renderHeaderWeather(data, prefs) {
   const temp = data.temp ?? data.temperature ?? '--';
   ctx.fillText(`${temp}°`, zone.w / 2, 8);
   
-  // Condition (centered below temp)
+  // Condition (centered below temp) - v1.20: truncate to prevent overlap
   ctx.font = '12px Inter, sans-serif';
-  ctx.fillText(data.condition || data.weather || '', zone.w / 2, 44);
+  let condition = data.condition || data.weather || '';
+  // Truncate if too long for box width
+  while (ctx.measureText(condition).width > zone.w - 16 && condition.length > 3) {
+    condition = condition.slice(0, -1);
+  }
+  ctx.fillText(condition, zone.w / 2, 44);
   
   // Umbrella indicator (V10 Spec Section 2.7)
   // Position: below weather box, 132×18px
