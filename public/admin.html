@@ -1604,63 +1604,136 @@
 
             <!-- Configured State - Summary View -->
             <div id="setup-configured" style="display: none;">
-                <!-- Journey Configuration Card -->
+                <!-- Journey Configuration Card - Inline Editable -->
                 <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(79, 178, 142, 0.1) 0%, rgba(102, 126, 234, 0.1) 100%); border-left: 4px solid #4fb28e;">
                     <div class="card-header" style="margin-bottom: 20px;">
                         <span class="card-icon">🗺️</span>
                         <h2>Your Commute</h2>
                         <a href="/setup-wizard.html" class="btn btn-secondary" style="margin-left: auto; padding: 8px 16px; font-size: 13px;">
-                            ✏️ Edit
+                            🔄 Full Wizard
                         </a>
                     </div>
 
                     <div style="display: grid; gap: 15px;">
-                        <!-- Route Summary -->
+                        <!-- Route Summary - Inline Editable -->
                         <div id="journey-route-summary" style="padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px;">
                             <div style="display: flex; flex-direction: column; gap: 12px;">
-                                <div style="display: flex; align-items: flex-start; gap: 12px;">
+                                <!-- HOME - Editable -->
+                                <div class="editable-row" style="display: flex; align-items: flex-start; gap: 12px;">
                                     <span style="font-size: 20px; width: 28px; text-align: center;">🏠</span>
                                     <div style="flex: 1;">
                                         <div style="font-size: 11px; opacity: 0.6; margin-bottom: 2px;">HOME</div>
-                                        <div id="summary-home" style="font-size: 14px; font-weight: 500;">Not configured</div>
+                                        <div id="summary-home-display" style="font-size: 14px; font-weight: 500; cursor: pointer;" onclick="toggleEditField('home')">
+                                            <span id="summary-home">Not configured</span>
+                                            <span style="margin-left: 8px; opacity: 0.5; font-size: 12px;">✏️</span>
+                                        </div>
+                                        <div id="edit-home-container" style="display: none; margin-top: 8px;">
+                                            <input type="text" id="edit-home-input" class="form-input" placeholder="Enter home address" style="margin-bottom: 8px;">
+                                            <div style="display: flex; gap: 8px;">
+                                                <button onclick="saveFieldEdit('home')" class="btn btn-success" style="padding: 6px 12px; font-size: 12px;">✓ Save</button>
+                                                <button onclick="cancelFieldEdit('home')" class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;">✗ Cancel</button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                                 
                                 <div style="border-left: 2px dashed rgba(255,255,255,0.2); margin-left: 13px; height: 8px;"></div>
                                 
-                                <div id="summary-cafe-row" style="display: none;">
-                                    <div style="display: flex; align-items: flex-start; gap: 12px;">
+                                <!-- COFFEE STOP - Editable with Toggle -->
+                                <div id="summary-cafe-row">
+                                    <div class="editable-row" style="display: flex; align-items: flex-start; gap: 12px;">
                                         <span style="font-size: 20px; width: 28px; text-align: center;">☕</span>
                                         <div style="flex: 1;">
-                                            <div style="font-size: 11px; opacity: 0.6; margin-bottom: 2px;">COFFEE STOP</div>
-                                            <div id="summary-cafe" style="font-size: 14px; font-weight: 500;">Not configured</div>
+                                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
+                                                <span style="font-size: 11px; opacity: 0.6;">COFFEE STOP</span>
+                                                <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                                                    <input type="checkbox" id="coffee-enabled-toggle" onchange="toggleCoffeeEnabled()" style="width: 14px; height: 14px; accent-color: #4fb28e;">
+                                                    <span style="font-size: 10px; opacity: 0.6;">Enabled</span>
+                                                </label>
+                                            </div>
+                                            <div id="summary-cafe-display" style="font-size: 14px; font-weight: 500; cursor: pointer;" onclick="toggleEditField('cafe')">
+                                                <span id="summary-cafe">Not configured</span>
+                                                <span style="margin-left: 8px; opacity: 0.5; font-size: 12px;">✏️</span>
+                                            </div>
+                                            <div id="edit-cafe-container" style="display: none; margin-top: 8px;">
+                                                <input type="text" id="edit-cafe-input" class="form-input" placeholder="Enter cafe name/address" style="margin-bottom: 8px;">
+                                                <div style="display: flex; gap: 8px;">
+                                                    <button onclick="saveFieldEdit('cafe')" class="btn btn-success" style="padding: 6px 12px; font-size: 12px;">✓ Save</button>
+                                                    <button onclick="cancelFieldEdit('cafe')" class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;">✗ Cancel</button>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                     <div style="border-left: 2px dashed rgba(255,255,255,0.2); margin-left: 13px; height: 8px;"></div>
                                 </div>
                                 
-                                <div style="display: flex; align-items: flex-start; gap: 12px;">
+                                <!-- WORK - Editable -->
+                                <div class="editable-row" style="display: flex; align-items: flex-start; gap: 12px;">
                                     <span style="font-size: 20px; width: 28px; text-align: center;">💼</span>
                                     <div style="flex: 1;">
                                         <div style="font-size: 11px; opacity: 0.6; margin-bottom: 2px;">WORK</div>
-                                        <div id="summary-work" style="font-size: 14px; font-weight: 500;">Not configured</div>
+                                        <div id="summary-work-display" style="font-size: 14px; font-weight: 500; cursor: pointer;" onclick="toggleEditField('work')">
+                                            <span id="summary-work">Not configured</span>
+                                            <span style="margin-left: 8px; opacity: 0.5; font-size: 12px;">✏️</span>
+                                        </div>
+                                        <div id="edit-work-container" style="display: none; margin-top: 8px;">
+                                            <input type="text" id="edit-work-input" class="form-input" placeholder="Enter work address" style="margin-bottom: 8px;">
+                                            <div style="display: flex; gap: 8px;">
+                                                <button onclick="saveFieldEdit('work')" class="btn btn-success" style="padding: 6px 12px; font-size: 12px;">✓ Save</button>
+                                                <button onclick="cancelFieldEdit('work')" class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;">✗ Cancel</button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Quick Stats -->
+                        <!-- Quick Stats - Editable -->
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;">
-                            <div style="padding: 15px; background: rgba(79, 178, 142, 0.15); border-radius: 10px; text-align: center;">
+                            <!-- Arrival Time - Editable -->
+                            <div style="padding: 15px; background: rgba(79, 178, 142, 0.15); border-radius: 10px; text-align: center; cursor: pointer;" onclick="toggleEditField('arrival')">
                                 <div style="font-size: 24px; margin-bottom: 5px;">⏰</div>
                                 <div style="font-size: 11px; opacity: 0.6; margin-bottom: 3px;">ARRIVE BY</div>
-                                <div id="summary-arrival" style="font-size: 18px; font-weight: 700;">9:00am</div>
+                                <div id="summary-arrival-display">
+                                    <span id="summary-arrival" style="font-size: 18px; font-weight: 700;">9:00am</span>
+                                    <span style="font-size: 10px; opacity: 0.5;"> ✏️</span>
+                                </div>
+                                <div id="edit-arrival-container" style="display: none; margin-top: 8px;" onclick="event.stopPropagation()">
+                                    <input type="time" id="edit-arrival-input" class="form-input" style="text-align: center; font-size: 14px; padding: 8px;">
+                                    <div style="display: flex; gap: 6px; justify-content: center; margin-top: 8px;">
+                                        <button onclick="saveFieldEdit('arrival'); event.stopPropagation();" class="btn btn-success" style="padding: 4px 10px; font-size: 11px;">✓</button>
+                                        <button onclick="cancelFieldEdit('arrival'); event.stopPropagation();" class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;">✗</button>
+                                    </div>
+                                </div>
                             </div>
-                            <div style="padding: 15px; background: rgba(102, 126, 234, 0.15); border-radius: 10px; text-align: center;">
+                            
+                            <!-- State - Editable -->
+                            <div style="padding: 15px; background: rgba(102, 126, 234, 0.15); border-radius: 10px; text-align: center; cursor: pointer;" onclick="toggleEditField('state')">
                                 <div style="font-size: 24px; margin-bottom: 5px;">📍</div>
                                 <div style="font-size: 11px; opacity: 0.6; margin-bottom: 3px;">STATE</div>
-                                <div id="summary-state" style="font-size: 18px; font-weight: 700;">VIC</div>
+                                <div id="summary-state-display">
+                                    <span id="summary-state" style="font-size: 18px; font-weight: 700;">VIC</span>
+                                    <span style="font-size: 10px; opacity: 0.5;"> ✏️</span>
+                                </div>
+                                <div id="edit-state-container" style="display: none; margin-top: 8px;" onclick="event.stopPropagation()">
+                                    <select id="edit-state-input" class="form-input" style="text-align: center; font-size: 14px; padding: 8px;">
+                                        <option value="VIC">VIC</option>
+                                        <option value="NSW">NSW</option>
+                                        <option value="QLD">QLD</option>
+                                        <option value="SA">SA</option>
+                                        <option value="WA">WA</option>
+                                        <option value="TAS">TAS</option>
+                                        <option value="NT">NT</option>
+                                        <option value="ACT">ACT</option>
+                                    </select>
+                                    <div style="display: flex; gap: 6px; justify-content: center; margin-top: 8px;">
+                                        <button onclick="saveFieldEdit('state'); event.stopPropagation();" class="btn btn-success" style="padding: 4px 10px; font-size: 11px;">✓</button>
+                                        <button onclick="cancelFieldEdit('state'); event.stopPropagation();" class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;">✗</button>
+                                    </div>
+                                </div>
                             </div>
+                            
+                            <!-- Mode - Read Only -->
                             <div style="padding: 15px; background: rgba(251, 191, 36, 0.15); border-radius: 10px; text-align: center;">
                                 <div style="font-size: 24px; margin-bottom: 5px;">☁️</div>
                                 <div style="font-size: 11px; opacity: 0.6; margin-bottom: 3px;">MODE</div>
@@ -1668,6 +1741,9 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Save All Changes Message -->
+                    <div id="inline-edit-message" style="display: none; margin-top: 16px; padding: 12px; border-radius: 8px; font-size: 13px;"></div>
                 </div>
 
                 <!-- Device Configuration Card -->
@@ -4395,6 +4471,7 @@
 
             // Load SmartCommute settings and e-ink preview
             loadSmartCommuteSettings();
+            loadInlineEditValues();
             loadEinkPreview();
             
             // Auto-refresh e-ink preview every 60 seconds (matches firmware refresh)
@@ -5993,6 +6070,165 @@
             if (document.getElementById('sc-walking-speed')) document.getElementById('sc-walking-speed').value = settings.walkingSpeed || 80;
             if (document.getElementById('sc-max-walk')) document.getElementById('sc-max-walk').value = settings.maxWalk || 600;
             if (document.getElementById('sc-multi-modal')) document.getElementById('sc-multi-modal').value = settings.multiModal || 'allow';
+        }
+
+        // ============================================
+        // Inline Edit Functions for Journey Config
+        // ============================================
+
+        // Toggle edit mode for a field
+        function toggleEditField(field) {
+            const container = document.getElementById(`edit-${field}-container`);
+            const display = document.getElementById(`summary-${field}-display`);
+            const input = document.getElementById(`edit-${field}-input`);
+            
+            if (!container) return;
+            
+            const isVisible = container.style.display !== 'none';
+            
+            // Hide all other edit containers first
+            ['home', 'cafe', 'work', 'arrival', 'state'].forEach(f => {
+                const c = document.getElementById(`edit-${f}-container`);
+                const d = document.getElementById(`summary-${f}-display`);
+                if (c && f !== field) {
+                    c.style.display = 'none';
+                    if (d) d.style.display = 'block';
+                }
+            });
+            
+            if (isVisible) {
+                container.style.display = 'none';
+                if (display) display.style.display = 'block';
+            } else {
+                container.style.display = 'block';
+                if (display) display.style.display = 'none';
+                
+                // Pre-fill input with current value
+                const config = JSON.parse(localStorage.getItem('cc-config') || '{}');
+                if (field === 'home') input.value = config.addresses?.home || '';
+                else if (field === 'cafe') input.value = config.addresses?.cafe || '';
+                else if (field === 'work') input.value = config.addresses?.work || '';
+                else if (field === 'arrival') input.value = config.arrivalTime || '09:00';
+                else if (field === 'state') input.value = config.state || 'VIC';
+                
+                input.focus();
+            }
+        }
+
+        // Cancel field edit
+        function cancelFieldEdit(field) {
+            const container = document.getElementById(`edit-${field}-container`);
+            const display = document.getElementById(`summary-${field}-display`);
+            if (container) container.style.display = 'none';
+            if (display) display.style.display = 'block';
+        }
+
+        // Save field edit
+        function saveFieldEdit(field) {
+            const input = document.getElementById(`edit-${field}-input`);
+            const value = input?.value?.trim();
+            
+            if (!value && field !== 'cafe') {
+                showInlineEditMessage('⚠️ Value cannot be empty', 'warning');
+                return;
+            }
+            
+            // Get current config
+            const config = JSON.parse(localStorage.getItem('cc-config') || '{}');
+            if (!config.addresses) config.addresses = {};
+            
+            // Update the specific field
+            if (field === 'home') {
+                config.addresses.home = value;
+                document.getElementById('summary-home').textContent = value || 'Not configured';
+            } else if (field === 'cafe') {
+                config.addresses.cafe = value;
+                document.getElementById('summary-cafe').textContent = value || 'Not configured';
+            } else if (field === 'work') {
+                config.addresses.work = value;
+                document.getElementById('summary-work').textContent = value || 'Not configured';
+            } else if (field === 'arrival') {
+                config.arrivalTime = value;
+                // Convert 24h to 12h display
+                const [h, m] = value.split(':').map(Number);
+                const ampm = h >= 12 ? 'pm' : 'am';
+                const h12 = h % 12 || 12;
+                document.getElementById('summary-arrival').textContent = `${h12}:${m.toString().padStart(2, '0')}${ampm}`;
+            } else if (field === 'state') {
+                config.state = value;
+                document.getElementById('summary-state').textContent = value;
+            }
+            
+            // Save to localStorage
+            localStorage.setItem('cc-config', JSON.stringify(config));
+            localStorage.setItem('cc-configured', 'true');
+            
+            // Close edit mode
+            cancelFieldEdit(field);
+            
+            // Show success
+            showInlineEditMessage('✅ Saved! Refresh preview to see changes.', 'success');
+            
+            // Optionally refresh routes and preview
+            if (['home', 'work', 'cafe'].includes(field)) {
+                setTimeout(() => {
+                    refreshRouteAlternatives();
+                }, 500);
+            }
+        }
+
+        // Toggle coffee enabled
+        function toggleCoffeeEnabled() {
+            const checkbox = document.getElementById('coffee-enabled-toggle');
+            const config = JSON.parse(localStorage.getItem('cc-config') || '{}');
+            config.coffeeEnabled = checkbox.checked;
+            localStorage.setItem('cc-config', JSON.stringify(config));
+            
+            // Update UI
+            const cafeDisplay = document.getElementById('summary-cafe-display');
+            if (cafeDisplay) {
+                cafeDisplay.style.opacity = checkbox.checked ? '1' : '0.5';
+            }
+            
+            showInlineEditMessage(checkbox.checked ? '☕ Coffee stop enabled' : '☕ Coffee stop disabled', 'info');
+        }
+
+        // Show inline edit message
+        function showInlineEditMessage(text, type = 'info') {
+            const msg = document.getElementById('inline-edit-message');
+            if (!msg) return;
+            
+            const colors = {
+                success: 'rgba(34, 197, 94, 0.2)',
+                warning: 'rgba(251, 191, 36, 0.2)',
+                error: 'rgba(239, 68, 68, 0.2)',
+                info: 'rgba(102, 126, 234, 0.2)'
+            };
+            
+            msg.style.display = 'block';
+            msg.style.background = colors[type] || colors.info;
+            msg.textContent = text;
+            
+            setTimeout(() => {
+                msg.style.display = 'none';
+            }, 3000);
+        }
+
+        // Load inline edit values on page load
+        function loadInlineEditValues() {
+            const config = JSON.parse(localStorage.getItem('cc-config') || '{}');
+            
+            // Set checkbox state
+            const coffeeCheckbox = document.getElementById('coffee-enabled-toggle');
+            if (coffeeCheckbox) {
+                coffeeCheckbox.checked = config.coffeeEnabled !== false;
+            }
+            
+            // Update display opacity based on coffee enabled
+            const cafeDisplay = document.getElementById('summary-cafe-display');
+            if (cafeDisplay) {
+                cafeDisplay.style.opacity = config.coffeeEnabled !== false ? '1' : '0.5';
+            }
         }
 
         // ============================================
