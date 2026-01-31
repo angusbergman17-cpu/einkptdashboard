@@ -112,8 +112,10 @@ function buildJourneyLegs(route, transitData, coffeeDecision) {
     // Handle coffee leg state based on coffee decision
     // V10 Spec Section 5.5: Coffee subtitle must be "✓ TIME FOR COFFEE" or "✗ SKIP — Running late"
     if (leg.type === 'coffee') {
+      baseLeg.canGet = coffeeDecision.canGet;  // Pass to renderer for styling
       if (!coffeeDecision.canGet) {
         baseLeg.state = 'skip';
+        baseLeg.status = 'skipped';  // Also set status for renderer
         baseLeg.subtitle = '✗ SKIP — Running late';
         legNumber--; // Don't increment for skipped leg
       } else {
@@ -128,7 +130,13 @@ function buildJourneyLegs(route, transitData, coffeeDecision) {
         baseLeg.minutes = liveData.minutes;
         if (liveData.isDelayed) {
           baseLeg.state = 'delayed';
+          baseLeg.status = 'delayed';  // Also set status for renderer compatibility
+          baseLeg.delayMinutes = liveData.delayMinutes;  // Pass delay amount for time box styling
           baseLeg.subtitle = `+${liveData.delayMinutes} MIN • ${baseLeg.subtitle}`;
+        }
+        // Pass next departures for subtitle
+        if (liveData.nextDepartures) {
+          baseLeg.nextDepartures = liveData.nextDepartures;
         }
       }
     }
