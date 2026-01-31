@@ -456,19 +456,31 @@ unsigned long getBackoffDelay() {
 // Forward declaration for immediate zone rendering
 bool decodeAndDrawZone(Zone& zone);
 
-// Zone IDs in render order
-const char* ZONE_IDS[] = {"header", "divider", "summary", "legs", "footer"};
+// Zone definitions with fixed positions (V10 spec)
+struct ZoneDef {
+    const char* id;
+    int x, y, w, h;
+};
+
+const ZoneDef ZONE_DEFS[] = {
+    {"header",  0,   0, 800,  94},
+    {"divider", 0,  94, 800,   2},
+    {"summary", 0,  96, 800,  28},
+    {"legs",    0, 132, 800, 316},
+    {"footer",  0, 448, 800,  32}
+};
 const int NUM_ZONES = 5;
 
-bool fetchSingleZone(const char* baseUrl, const char* zoneId, bool forceAll) {
+bool fetchAndRenderZone(const char* baseUrl, const ZoneDef& def, bool forceAll) {
     WiFiClientSecure client;
     client.setInsecure();
     HTTPClient http;
     
-    String url = String(baseUrl) + "/api/zone/" + zoneId;
+    // /api/zone/[id] returns raw BMP directly
+    String url = String(baseUrl) + "/api/zone/" + def.id;
     if (forceAll) url += "?force=true";
     
-    Serial.printf("Fetch zone %s: %s\n", zoneId, url.c_str());
+    Serial.printf("Fetch %s: %s\n", def.id, url.c_str());
     http.setTimeout(15000);
     
     if (!http.begin(client, url)) {
@@ -479,64 +491,48 @@ bool fetchSingleZone(const char* baseUrl, const char* zoneId, bool forceAll) {
     http.addHeader("User-Agent", "CommuteCompute/" FIRMWARE_VERSION);
     int code = http.GET();
     
+    if (code == 304) {
+        Serial.println("  Not modified (304)");
+        return true;  // Zone unchanged, success
+    }
+    
     if (code != 200) {
         Serial.printf("  HTTP error: %d\n", code);
         http.end();
         return false;
     }
     
-    String payload = http.getString();
+    // Get raw BMP data size
+    int contentLen = http.getSize();
+    Serial.printf("  BMP size: %d bytes, heap: %d\n", contentLen, ESP.getFreeHeap());
+    
+    if (contentLen <= 0 || contentLen > ZONE_BMP_MAX_SIZE) {
+        Serial.printf("  Size issue: %d (max %d)\n", contentLen, ZONE_BMP_MAX_SIZE);
+        http.end();
+        return false;
+    }
+    
+    // Read directly into BMP buffer
+    WiFiClient* stream = http.getStreamPtr();
+    int bytesRead = stream->readBytes(zoneBmpBuffer, contentLen);
     http.end();
     
-    if (payload.length() == 0) {
-        Serial.println("  Empty response");
+    if (bytesRead != contentLen) {
+        Serial.printf("  Read incomplete: %d/%d\n", bytesRead, contentLen);
         return false;
     }
     
-    // Parse single zone response
-    Zone zone;
-    strncpy(zone.id, zoneId, ZONE_ID_MAX_LEN - 1);
-    zone.x = jsonGetInt(payload, "x");
-    zone.y = jsonGetInt(payload, "y");
-    zone.w = jsonGetInt(payload, "w");
-    zone.h = jsonGetInt(payload, "h");
-    zone.changed = jsonGetBool(payload, "changed");
-    
-    Serial.printf("  Zone: x=%d y=%d w=%d h=%d changed=%d\n", 
-                  zone.x, zone.y, zone.w, zone.h, zone.changed);
-    
-    if (!zone.changed) {
-        Serial.println("  Zone unchanged, skipping");
-        return true;  // Success but no render needed
-    }
-    
-    // Allocate buffer if needed
-    if (!sharedZoneDataBuffer) {
-        sharedZoneDataBuffer = (char*)malloc(ZONE_DATA_MAX_LEN);
-        if (!sharedZoneDataBuffer) {
-            Serial.println("  ERROR: Failed to allocate buffer");
-            return false;
-        }
-    }
-    
-    // Extract data directly (payload is smaller now - single zone)
-    String data = jsonGetString(payload, "data");
-    Serial.printf("  Data: %d bytes, heap: %d\n", data.length(), ESP.getFreeHeap());
-    
-    if (data.length() == 0 || data.length() >= ZONE_DATA_MAX_LEN) {
-        Serial.printf("  Data size issue: %d\n", data.length());
+    // Verify BMP header
+    if (zoneBmpBuffer[0] != 'B' || zoneBmpBuffer[1] != 'M') {
+        Serial.println("  Invalid BMP header");
         return false;
     }
     
-    strcpy(sharedZoneDataBuffer, data.c_str());
-    zone.data = sharedZoneDataBuffer;
-    zone.dataLen = data.length();
+    // Render to display
+    int result = bbep->loadBMP(zoneBmpBuffer, def.x, def.y, BBEP_BLACK, BBEP_WHITE);
+    Serial.printf("  Rendered at (%d,%d): %s\n", def.x, def.y, result == BBEP_SUCCESS ? "OK" : "FAILED");
     
-    // Render immediately
-    bool rendered = decodeAndDrawZone(zone);
-    Serial.printf("  Rendered: %s\n", rendered ? "OK" : "FAILED");
-    
-    return rendered;
+    return result == BBEP_SUCCESS;
 }
 
 bool fetchZoneUpdates(bool forceAll) {
@@ -554,7 +550,7 @@ bool fetchZoneUpdates(bool forceAll) {
     
     int rendered = 0;
     for (int i = 0; i < NUM_ZONES; i++) {
-        if (fetchSingleZone(baseUrl.c_str(), ZONE_IDS[i], forceAll)) {
+        if (fetchAndRenderZone(baseUrl.c_str(), ZONE_DEFS[i], forceAll)) {
             rendered++;
         }
         yield();  // Let WiFi/system tasks run
