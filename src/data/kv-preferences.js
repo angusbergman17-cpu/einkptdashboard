@@ -27,9 +27,27 @@ const memoryStore = new Map();
 
 /**
  * Check if Vercel KV is available
+ * Vercel KV / Upstash may use different env var names depending on setup
  */
 function isKvAvailable() {
-  return !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+  // Check all possible Vercel KV / Upstash env var combinations
+  const hasRestApi = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+  const hasKvUrl = !!process.env.KV_URL;
+  const hasRedisUrl = !!process.env.REDIS_URL;
+  
+  return hasRestApi || hasKvUrl || hasRedisUrl;
+}
+
+/**
+ * Get all KV-related env vars for debugging
+ */
+export function getKvEnvStatus() {
+  return {
+    KV_REST_API_URL: process.env.KV_REST_API_URL ? 'set' : 'missing',
+    KV_REST_API_TOKEN: process.env.KV_REST_API_TOKEN ? 'set' : 'missing',
+    KV_URL: process.env.KV_URL ? 'set' : 'missing',
+    REDIS_URL: process.env.REDIS_URL ? 'set' : 'missing'
+  };
 }
 
 /**

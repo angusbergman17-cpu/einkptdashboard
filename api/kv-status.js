@@ -8,20 +8,18 @@
  * Licensed under CC BY-NC 4.0
  */
 
-import { getStorageStatus, getTransitApiKey } from '../src/data/kv-preferences.js';
+import { getStorageStatus, getTransitApiKey, getKvEnvStatus } from '../src/data/kv-preferences.js';
 
 export default async function handler(req, res) {
   try {
     const status = await getStorageStatus();
     const transitKey = await getTransitApiKey();
+    const envStatus = getKvEnvStatus();
     
     res.json({
       kv: {
         available: status.kvAvailable,
-        envVars: {
-          KV_REST_API_URL: process.env.KV_REST_API_URL ? 'set' : 'missing',
-          KV_REST_API_TOKEN: process.env.KV_REST_API_TOKEN ? 'set' : 'missing'
-        }
+        envVars: envStatus
       },
       storage: {
         hasTransitKey: status.hasTransitKey,
