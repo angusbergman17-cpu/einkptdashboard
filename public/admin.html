@@ -5431,6 +5431,39 @@
             'kindle-pw5': { name: 'Kindle Paperwhite 5', width: 1236, height: 1648, orientation: 'portrait' }
         };
 
+        // Sync localStorage config to Vercel KV storage
+        // Ensures server has latest config for rendering
+        async function syncConfigToKV() {
+            const config = JSON.parse(localStorage.getItem('cc-config') || '{}');
+            const transitKey = localStorage.getItem('cc-transit-api-key') || config.api?.key || '';
+            const googleKey = localStorage.getItem('cc-google-places-key') || '';
+            
+            // Only sync if we have some config
+            if (!config.addresses?.home && !transitKey) {
+                console.log('[Admin] No config to sync to KV');
+                return false;
+            }
+            
+            try {
+                const response = await fetch(BASE_URL + '/api/sync-config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        transitKey: transitKey,
+                        googleKey: googleKey,
+                        state: config.state || 'VIC',
+                        preferences: config
+                    })
+                });
+                const result = await response.json();
+                console.log('[Admin] KV sync result:', result);
+                return result.success;
+            } catch (error) {
+                console.warn('[Admin] KV sync failed:', error);
+                return false;
+            }
+        }
+
         // Load actual e-ink display image from CCDash renderer
         async function loadSmartCommuteOutput(forceRefresh = false) {
             loadEinkPreview(forceRefresh);
@@ -5438,6 +5471,9 @@
 
         // Load E-Ink preview image from /api/screen
         async function loadEinkPreview(forceRefresh = false) {
+            // Sync config to KV before loading (ensures server has latest data)
+            await syncConfigToKV();
+            
             const config = JSON.parse(localStorage.getItem('cc-config') || '{}');
             const device = config.device || localStorage.getItem('cc-device') || 'trmnl-og';
             const deviceConfig = DEVICE_CONFIGS[device] || DEVICE_CONFIGS['trmnl-og'];
