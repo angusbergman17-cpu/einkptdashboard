@@ -12,12 +12,13 @@
 
 import { getDepartures, getDisruptions, getWeather } from '../src/services/opendata-client.js';
 import SmartCommute from '../src/engines/smart-commute.js';
-import { getTransitApiKey } from '../src/data/kv-preferences.js';
+import { getTransitApiKey, getPreferences, getUserState } from '../src/data/kv-preferences.js';
 import { renderFullDashboard } from '../src/services/ccdash-renderer.js';
 import { getScenario, getScenarioNames } from '../src/services/journey-scenarios.js';
 
-// Singleton engine instance (initialized once)
+// Engine cache - re-initialized when preferences change
 let journeyEngine = null;
+let lastPrefsHash = null;
 
 /**
  * Get Melbourne local time
@@ -48,13 +49,44 @@ function formatDateParts(date) {
 }
 
 /**
- * Initialize the Smart Journey Engine
+ * Initialize the Smart Journey Engine with KV preferences
+ * Per Zero-Config: preferences come from Vercel KV (synced from Setup Wizard)
  */
 async function getEngine() {
-  if (!journeyEngine) {
+  // Load preferences from KV storage
+  const kvPrefs = await getPreferences();
+  const state = await getUserState();
+  const transitKey = await getTransitApiKey();
+  
+  // Build preferences object for SmartCommute
+  const preferences = {
+    ...kvPrefs,
+    state,
+    homeAddress: kvPrefs.addresses?.home || '',
+    workAddress: kvPrefs.addresses?.work || '',
+    cafeAddress: kvPrefs.addresses?.cafe || '',
+    homeLocation: kvPrefs.locations?.home,
+    workLocation: kvPrefs.locations?.work,
+    cafeLocation: kvPrefs.locations?.cafe,
+    arrivalTime: kvPrefs.journey?.arrivalTime || '09:00',
+    coffeeEnabled: kvPrefs.journey?.coffeeEnabled !== false,
+    api: { key: transitKey },
+    transitApiKey: transitKey
+  };
+  
+  // Create hash to detect preference changes
+  const prefsHash = JSON.stringify({ state, home: preferences.homeAddress, work: preferences.workAddress });
+  
+  // Re-initialize engine if preferences changed or no engine exists
+  if (!journeyEngine || prefsHash !== lastPrefsHash) {
+    console.log(`[screen] Initializing SmartCommute engine with KV preferences`);
+    console.log(`[screen] State: ${state}, Home: ${preferences.homeAddress?.substring(0, 30) || 'not set'}...`);
+    
     journeyEngine = new SmartCommute();
-    await journeyEngine.initialize();
+    await journeyEngine.initialize(preferences);
+    lastPrefsHash = prefsHash;
   }
+  
   return journeyEngine;
 }
 
@@ -581,6 +613,13 @@ export default async function handler(req, res) {
     const route = engine.getSelectedRoute();
     const locations = engine.getLocations();
     const config = engine.journeyConfig;
+    
+    // If no journey configured, fall back to random mode for preview
+    // This ensures the Live Data tab shows something useful even before full config
+    if (!locations.home?.address && !route?.legs?.length) {
+      console.log('[screen] No journey configured - falling back to random mode');
+      return handleRandomJourney(req, res);
+    }
     
     // Fetch live data from sources
     const trainStopId = parseInt(process.env.TRAIN_STOP_ID) || 1071;
