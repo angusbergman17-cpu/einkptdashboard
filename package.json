@@ -11,7 +11,11 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "test": "node tests/test-opendata-auth.js",
-    "test:journey": "node src/journey-display/test.js"
+    "test:journey": "node src/journey-display/test.js",
+    "monitor": "node monitor/monitor.mjs",
+    "monitor:continuous": "node monitor/monitor.mjs --continuous",
+    "monitor:watch": "node monitor/monitor.mjs --watch",
+    "monitor:report": "node monitor/monitor.mjs --report"
   },
   "dependencies": {
     "@napi-rs/canvas": "^0.1.88",

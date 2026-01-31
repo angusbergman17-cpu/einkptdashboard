@@ -7297,17 +7297,17 @@ app.post('/api/pair/:code', (req, res) => {
   
   // Generate device-specific webhook URL
   const deviceToken = require('crypto').randomBytes(16).toString('hex');
-  const generatedWebhookUrl = webhookUrl || \`\${protocol}://\${host}/api/screen?deviceId=\${deviceToken}\`;
-  
+  const generatedWebhookUrl = webhookUrl || `${protocol}://${host}/api/screen?deviceId=${deviceToken}`;
+
   entry.status = 'paired';
   entry.webhookUrl = generatedWebhookUrl;
   pairingCodes.set(code, entry);
-  
-  console.log(\`[PAIR] Code \${code} configured with webhook: \${generatedWebhookUrl}\`);
+
+  console.log(`[PAIR] Code ${code} configured with webhook: ${generatedWebhookUrl}`);
   res.json({
     success: true,
     status: 'configured',
-    message: \`Device code \${code} configured.\`,
+    message: `Device code ${code} configured.`,
     webhookUrl: generatedWebhookUrl
   });
 });
