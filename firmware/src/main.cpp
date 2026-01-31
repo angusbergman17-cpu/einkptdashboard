@@ -21,11 +21,10 @@
 #define SCREEN_W 800
 #define SCREEN_H 480
 #define MAX_ZONES 6
-#define ZONE_BMP_MAX_SIZE 32000
+#define ZONE_BMP_MAX_SIZE 25000  // Decoded BMP (legs zone is ~800*316/8 = 31KB raw)
 #define ZONE_ID_MAX_LEN 32
-// Legs zone is ~42KB base64, header is ~12KB
-// Use single shared buffer instead of per-zone buffers
-#define ZONE_DATA_MAX_LEN 50000
+// Legs zone is ~42KB base64. Allocate lazily to save RAM for HTTP response.
+#define ZONE_DATA_MAX_LEN 45000
 #define FIRMWARE_VERSION "6.0-stable-hardcoded"
 
 // Default server for pairing API
@@ -441,11 +440,8 @@ void initDisplay() {
 }
 
 void initZoneBuffers() {
-    // Single shared buffer for zone data (saves RAM on ESP32-C3)
-    sharedZoneDataBuffer = (char*)malloc(ZONE_DATA_MAX_LEN);
-    if (!sharedZoneDataBuffer) {
-        Serial.println("ERROR: Failed to allocate zone data buffer");
-    }
+    // Zone data buffer allocated lazily during fetch to save RAM for HTTP response
+    sharedZoneDataBuffer = nullptr;  // Will be allocated when needed
     for (int i = 0; i < MAX_ZONES; i++) {
         zones[i].data = nullptr;
         zones[i].id[0] = '\0';
@@ -486,17 +482,24 @@ bool fetchZoneUpdates(bool forceAll) {
     }
     
     http.addHeader("User-Agent", "CommuteCompute/" FIRMWARE_VERSION);
+    
+    Serial.printf("Free heap before request: %d\n", ESP.getFreeHeap());
     int code = http.GET();
+    Serial.printf("HTTP code: %d\n", code);
     
     if (code != 200) {
+        Serial.printf("HTTP error: %d\n", code);
         http.end();
         return false;
     }
     
+    int contentLen = http.getSize();
+    Serial.printf("Content-Length: %d, Free heap: %d\n", contentLen, ESP.getFreeHeap());
+    
     String payload = http.getString();
     http.end();
     
-    Serial.printf("Payload size: %d bytes\n", payload.length());
+    Serial.printf("Payload size: %d bytes, Free heap: %d\n", payload.length(), ESP.getFreeHeap());
     
     // Manual JSON parsing - find zones array
     // Format: {"zones":[{...},{...}]}
@@ -563,6 +566,13 @@ bool fetchZoneUpdates(bool forceAll) {
         Serial.printf("  Data length: %d\n", data.length());
         
         bool rendered = false;
+        // Allocate shared buffer on first use (lazy allocation to save RAM for HTTP)
+        if (!sharedZoneDataBuffer) {
+            sharedZoneDataBuffer = (char*)malloc(ZONE_DATA_MAX_LEN);
+            if (!sharedZoneDataBuffer) {
+                Serial.println("  ERROR: Failed to allocate zone buffer");
+            }
+        }
         if (data.length() > 0 && sharedZoneDataBuffer && data.length() < ZONE_DATA_MAX_LEN) {
             strcpy(sharedZoneDataBuffer, data.c_str());
             zone.data = sharedZoneDataBuffer;
