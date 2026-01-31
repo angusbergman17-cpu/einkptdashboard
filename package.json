@@ -17,7 +17,8 @@
     "monitor:watch": "node monitor/monitor.mjs --watch",
     "monitor:report": "node monitor/monitor.mjs --report",
     "monitor:compliance": "node monitor/spec-compliance.mjs",
-    "monitor:full": "node monitor/monitor.mjs && node monitor/spec-compliance.mjs"
+    "monitor:semantic": "node monitor/semantic-audit.mjs",
+    "monitor:full": "node monitor/monitor.mjs && node monitor/spec-compliance.mjs && node monitor/semantic-audit.mjs"
   },
   "dependencies": {
     "@napi-rs/canvas": "^0.1.88",
