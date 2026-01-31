@@ -1,7 +1,7 @@
 # Commute Compute Development Rules
 
 **MANDATORY COMPLIANCE DOCUMENT**  
-**Version:** 1.12  
+**Version:** 1.13  
 **Last Updated:** 2026-01-31  
 **Copyright (c) 2026 Commute Compute System by Angus Bergman — Licensed under CC BY-NC 4.0**
 
@@ -292,12 +292,26 @@ The system was previously known as "Commute Compute". Update any remaining refer
 - 22.8 Consistency Checklist
 </details>
 
+<details>
+<summary><strong>Section 23: SmartCommute Data Flow Requirements</strong></summary>
+
+- 23.1 GTFS-RT Stop ID Architecture
+- 23.2 Departure Data Flow
+- 23.3 Citybound Detection Logic
+- 23.4 Departure Output Schema
+- 23.5 Line Name Extraction
+- 23.6 Fallback Data Requirements
+- 23.7 Journey Leg Construction
+- 23.8 Pre-Deployment Verification
+</details>
+
 ---
 
 ## 📜 Version History
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.13 | 2026-01-31 | Angus Bergman | **SMARTCOMMUTE DATA FLOW**: Added Section 23 — mandatory data flow requirements for SmartCommute engine. GTFS-RT stop ID architecture (direction-specific IDs), citybound detection logic (isCityLoopStop), departure output schema, line name extraction, journey leg construction, fallback data requirements, pre-deployment verification tests. Added Section 17.4 (No Hardcoded Personal Information) for turnkey compliance. |
 | 1.12 | 2026-01-31 | Angus Bergman | **ADMIN PANEL UI/UX BRANDING**: Added Section 22 — mandatory branding rules for admin panel. Color palette, typography (Inter font), NO EMOJIS (use SVG icons), card styles, spacing, buttons, form inputs, readability requirements. Includes consistency checklist. |
 | 1.11 | 2026-01-31 | Angus Bergman | **FIRMWARE REQUIREMENTS**: Added to Section 5.2 — (1) Power cycle reboot support (device boots correctly when power disconnected/reconnected). (2) Firmware version must be displayed on screen for visual troubleshooting. |
 | 1.10 | 2026-01-31 | Angus Bergman | **UI CONSISTENCY TESTING**: Added Section 14.4 — mandatory testing checklist for UI changes. Covers: Setup Wizard steps, Admin Panel tabs, internal links, Quick Links, terminology consistency, localStorage key consistency, endpoint consistency, systematic testing order. |
@@ -2401,6 +2415,297 @@ Before deploying UI changes, verify:
 - [ ] Spacing is consistent (use defined values)
 - [ ] Interactive elements have hover/focus states
 - [ ] Text is readable (contrast, line-height, spacing)
+
+---
+
+## 🚆 Section 23: SmartCommute Data Flow Requirements (MANDATORY)
+
+**🔴 CRITICAL**: SmartCommute is the core journey calculation engine. All data flow must follow these exact patterns.
+
+### 23.1 GTFS-RT Stop ID Architecture
+
+**Principle:** GTFS-RT uses direction-specific stop IDs. Each platform at a station has a unique ID.
+
+#### 23.1.1 Stop ID Selection Rules
+
+| Scenario | Stop ID Source | Fallback |
+|----------|---------------|----------|
+| User configured | `preferences.trainStopId` | — |
+| Auto-detected | `detectTrainStopId()` | null → fallback data |
+| Not configured | null | Use scheduled/fallback timetable |
+
+#### 23.1.2 Melbourne Metro Stop ID Patterns
+
+```
+Station Platform Types:
+├── Citybound platforms → Trains TO City Loop (Parliament, Melbourne Central, etc.)
+├── Outbound platforms  → Trains FROM City (to suburbs)
+└── Terminus platforms  → End-of-line stations
+
+City Loop Terminus Stop IDs:
+├── 26xxx  → City Loop stations (Parliament, Melbourne Central, Flagstaff, Southern Cross)
+├── 12204  → Flinders Street (certain platforms)
+└── 12205  → Flinders Street (certain platforms)
+```
+
+#### 23.1.3 Example: South Yarra Station
+
+| Stop ID | Platform | Direction | Destination |
+|---------|----------|-----------|-------------|
+| `12179` | PKM/CBE citybound | → City | Parliament via City Loop |
+| `14295` | FKN citybound | → City | Flinders Street |
+| `14271` | SHM outbound | → Suburbs | Sandringham |
+
+**⚠️ CRITICAL:** Using wrong stop ID = wrong direction = useless journey data.
+
+### 23.2 Departure Data Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        SMARTCOMMUTE DATA FLOW                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌──────────────┐     ┌──────────────┐     ┌──────────────┐                │
+│  │ User Config  │────▶│ Stop ID      │────▶│ GTFS-RT API  │                │
+│  │ (Setup Wiz)  │     │ Resolution   │     │ TripUpdates  │                │
+│  └──────────────┘     └──────────────┘     └──────────────┘                │
+│         │                    │                    │                         │
+│         ▼                    ▼                    ▼                         │
+│  ┌──────────────┐     ┌──────────────┐     ┌──────────────┐                │
+│  │ trainStopId  │     │ detectTrain  │     │ StopTime     │                │
+│  │ tramStopId   │     │ StopId()     │     │ Updates[]    │                │
+│  └──────────────┘     └──────────────┘     └──────────────┘                │
+│                              │                    │                         │
+│                              ▼                    ▼                         │
+│                       ┌──────────────┐     ┌──────────────┐                │
+│                       │ null?        │────▶│ processGtfs  │                │
+│                       │ Use fallback │     │ RtDepartures │                │
+│                       └──────────────┘     └──────────────┘                │
+│                                                   │                         │
+│                                                   ▼                         │
+│                                            ┌──────────────┐                │
+│                                            │ Departure[]  │                │
+│                                            │ with:        │                │
+│                                            │ - minutes    │                │
+│                                            │ - destination│                │
+│                                            │ - isCitybound│                │
+│                                            │ - routeId    │                │
+│                                            │ - finalStop  │                │
+│                                            └──────────────┘                │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 23.3 Citybound Detection Logic
+
+**Implementation Pattern (MANDATORY):**
+
+```javascript
+/**
+ * Check if a stop ID is in the Melbourne City Loop area
+ * City Loop stations: Parliament, Melbourne Central, Flagstaff, Southern Cross
+ */
+function isCityLoopStop(stopId) {
+  if (!stopId) return false;
+  // City Loop terminus stops: 26xxx = City Loop, 12204/12205 = Flinders St
+  return stopId.startsWith('26') || stopId === '12204' || stopId === '12205';
+}
+
+/**
+ * Process GTFS-RT departures with citybound detection
+ */
+function processGtfsRtDepartures(feed, stopId) {
+  for (const entity of feed.entity) {
+    const tripUpdate = entity.tripUpdate;
+    const stops = tripUpdate.stopTimeUpdate;
+    
+    // Get FINAL stop of trip (actual terminus)
+    const finalStop = stops[stops.length - 1]?.stopId;
+    
+    // Determine if citybound based on terminus
+    const isCitybound = isCityLoopStop(finalStop);
+    
+    // Set destination: "City Loop" for citybound, line name for outbound
+    const destination = isCitybound ? 'City Loop' : getLineName(routeId);
+    
+    departures.push({
+      minutes,
+      destination,      // "City Loop" or "Sandringham", "Frankston", etc.
+      isCitybound,      // true/false flag
+      finalStop,        // Actual terminus stop ID
+      routeId,          // Line identifier (e.g., "aus:vic:vic-02-PKM:")
+      // ... other fields
+    });
+  }
+}
+```
+
+### 23.4 Departure Output Schema
+
+**Required Fields (all departures MUST include):**
+
+| Field | Type | Description | Example |
+|-------|------|-------------|---------|
+| `minutes` | number | Minutes until departure | `5` |
+| `destination` | string | Display destination | `"City Loop"` or `"Sandringham"` |
+| `isCitybound` | boolean | Direction flag | `true` |
+| `finalStop` | string | Terminus stop ID | `"26506"` |
+| `routeId` | string | GTFS route identifier | `"aus:vic:vic-02-PKM:"` |
+| `isLive` | boolean | Live vs scheduled data | `true` |
+| `delay` | number | Delay in minutes | `0` |
+| `isDelayed` | boolean | Delay flag (>1 min) | `false` |
+| `source` | string | Data source identifier | `"gtfs-rt"` |
+
+**Optional Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `headsign` | string | Trip headsign from GTFS |
+| `platform` | string | Platform number |
+| `tripId` | string | GTFS trip identifier |
+
+### 23.5 Line Name Extraction
+
+**Pattern for extracting line name from GTFS route ID:**
+
+```javascript
+function getLineName(routeId) {
+  if (!routeId) return 'Unknown';
+  
+  // GTFS route ID format: "aus:vic:vic-02-XXX:"
+  // Extract the line code (XXX)
+  const match = routeId.match(/vic-\d+-([A-Z]+)/i);
+  if (!match) return routeId;
+  
+  const lineCode = match[1].toUpperCase();
+  
+  // Map line codes to display names
+  const lineNames = {
+    'PKM': 'Pakenham',
+    'CBE': 'Cranbourne', 
+    'FKN': 'Frankston',
+    'SHM': 'Sandringham',
+    'GLW': 'Glen Waverley',
+    'ALM': 'Alamein',
+    'BEL': 'Belgrave',
+    'LIL': 'Lilydale',
+    'HBE': 'Hurstbridge',
+    'MER': 'Mernda',
+    'CRB': 'Craigieburn',
+    'SUN': 'Sunbury',
+    'UPF': 'Upfield',
+    'WER': 'Werribee',
+    'WIL': 'Williamstown',
+    'STY': 'Stony Point'
+  };
+  
+  return lineNames[lineCode] || lineCode;
+}
+```
+
+### 23.6 Fallback Data Requirements
+
+When live GTFS-RT data unavailable, fallback to scheduled timetables:
+
+| Condition | Action |
+|-----------|--------|
+| No API key | Use `fallback-timetables.js` |
+| Stop ID null | Log warning, return empty array |
+| API error | Return scheduled data with `isLive: false` |
+| No departures | Return empty array (not mock data) |
+
+**Fallback Data Schema:**
+
+```javascript
+// Fallback departures MUST match live schema
+{
+  minutes: 10,
+  destination: 'City Loop',  // Must use same naming
+  isCitybound: true,
+  isLive: false,             // Mark as scheduled
+  source: 'fallback',        // Identify data source
+  delay: 0,
+  isDelayed: false
+}
+```
+
+### 23.7 Journey Leg Construction
+
+**SmartCommute builds journey legs from departure data:**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    JOURNEY LEG STRUCTURE                         │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  Leg 1: WALK (home → cafe)                                      │
+│  ├── type: 'walk'                                               │
+│  ├── from: 'home'                                               │
+│  ├── to: cafeName                                               │
+│  └── minutes: 3-5 (user configured)                             │
+│                                                                 │
+│  Leg 2: COFFEE (optional)                                       │
+│  ├── type: 'coffee'                                             │
+│  ├── location: cafeName                                         │
+│  ├── minutes: 4-5 (user configured)                             │
+│  └── canGet: CoffeeDecision result                              │
+│                                                                 │
+│  Leg 3: WALK (cafe → station)                                   │
+│  ├── type: 'walk'                                               │
+│  ├── from: 'cafe'                                               │
+│  ├── to: nearestStation                                         │
+│  └── minutes: 2-8 (user configured)                             │
+│                                                                 │
+│  Leg 4: TRAIN/TRAM (transit)                                    │
+│  ├── type: 'train' | 'tram'                                     │
+│  ├── routeNumber: line name or route number                     │
+│  ├── origin: { name, stopId }                                   │
+│  ├── destination: { name, stopId }                              │
+│  ├── minutes: from GTFS-RT                                      │
+│  ├── nextDepartures: [5, 12, 20] (upcoming times)               │
+│  └── isCitybound: from departure data                           │
+│                                                                 │
+│  Leg 5: WALK (station → work)                                   │
+│  ├── type: 'walk'                                               │
+│  ├── from: destStation                                          │
+│  ├── to: 'work'                                                 │
+│  └── minutes: 5-15 (user configured)                            │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 23.8 Pre-Deployment Verification
+
+**Test these scenarios before ANY SmartCommute deployment:**
+
+```bash
+# 1. Verify citybound detection
+node -e "
+import('./src/services/opendata-client.js').then(async m => {
+  const deps = await m.getDepartures(12179, 0, {apiKey: 'YOUR_KEY'});
+  console.log('Citybound test:', deps[0]?.destination, deps[0]?.isCitybound);
+  // Expected: 'City Loop', true
+});
+"
+
+# 2. Verify outbound detection  
+node -e "
+import('./src/services/opendata-client.js').then(async m => {
+  const deps = await m.getDepartures(14271, 0, {apiKey: 'YOUR_KEY'});
+  console.log('Outbound test:', deps[0]?.destination, deps[0]?.isCitybound);
+  // Expected: 'Sandringham', false
+});
+"
+
+# 3. Verify null stop handling
+node -e "
+import('./src/services/opendata-client.js').then(async m => {
+  const deps = await m.getDepartures(null, 0, {});
+  console.log('Null stop test:', deps.length);
+  // Expected: 0 (empty array, no crash)
+});
+"
+```
 
 ---
 
