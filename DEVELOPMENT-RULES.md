@@ -1,7 +1,7 @@
 # Commute Compute Development Rules
 
 **MANDATORY COMPLIANCE DOCUMENT**  
-**Version:** 1.14  
+**Version:** 1.15  
 **Last Updated:** 2026-01-31  
 **Copyright (c) 2026 Commute Compute System by Angus Bergman — Licensed under CC BY-NC 4.0**
 
@@ -184,6 +184,7 @@ The system was previously known as "Commute Compute". Update any remaining refer
 - 10.1 Output Format
 - 10.2 Memory Constraints (ESP32-C3)
 - 10.3 Zone-Based Partial Refresh
+- 10.4 Font Loading in Vercel Serverless (v1.15)
 </details>
 
 <details>
@@ -216,6 +217,7 @@ The system was previously known as "Commute Compute". Update any remaining refer
 - 13.3 No Magic Numbers
 - 13.4 Code Comments
 - 13.5 File Naming Consistency
+- 13.6 Admin Panel JavaScript Patterns (v1.15)
 </details>
 
 <details>
@@ -327,6 +329,7 @@ The system was previously known as "Commute Compute". Update any remaining refer
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.15 | 2026-01-31 | Angus Bergman | **SERVERLESS RENDERING & ADMIN PANEL FIXES**: (1) Added Section 10.4 — Font loading in Vercel serverless (try multiple paths: process.cwd, __dirname, /var/task). (2) Added Section 13.6 — Admin Panel JavaScript patterns (Image preload pattern to avoid onerror on empty src; KV sync before server requests). (3) Screen API now reads journey config from KV storage with random fallback when unconfigured. |
 | 1.14 | 2026-01-31 | Angus Bergman | **SYSTEM ARCHITECTURE PRINCIPLES**: Added Section 24 — complete architecture principles from ARCHITECTURE.md v4.0. Core principles (self-hosted, zero-config, no TRMNL cloud, server-side rendering, privacy-first, multi-state, free-tier). Distribution model, layer architecture, data flow, Vercel KV storage architecture, security model, free-tier architecture, multi-device support (CC LiveDash™), required endpoints, locked technology stack. |
 | 1.13 | 2026-01-31 | Angus Bergman | **SMARTCOMMUTE DATA FLOW**: Added Section 23 — mandatory data flow requirements for SmartCommute engine. GTFS-RT stop ID architecture (direction-specific IDs), citybound detection logic (isCityLoopStop), departure output schema, line name extraction, journey leg construction, fallback data requirements, pre-deployment verification tests. Added Section 17.4 (No Hardcoded Personal Information) for turnkey compliance. |
 | 1.12 | 2026-01-31 | Angus Bergman | **ADMIN PANEL UI/UX BRANDING**: Added Section 22 — mandatory branding rules for admin panel. Color palette, typography (Inter font), NO EMOJIS (use SVG icons), card styles, spacing, buttons, form inputs, readability requirements. Includes consistency checklist. |
@@ -1341,6 +1344,52 @@ Content must be readable at arm's length on an 800×480 display. Test contrast, 
 4. Firmware fetches zones in batches (6 max)
 5. Firmware applies partial refresh per zone
 
+### 10.4 Font Loading in Vercel Serverless (v1.15)
+
+**🔴 CRITICAL:** Fonts must be loaded before rendering text in serverless functions.
+
+In Vercel's serverless environment, font files may be located at different paths depending on the deployment. Always try multiple paths:
+
+```javascript
+// ✅ CORRECT - Try multiple paths for font loading
+const possiblePaths = [
+  path.join(process.cwd(), 'fonts'),           // Vercel serverless standard
+  path.join(__dirname, '../../fonts'),          // Relative to src/services
+  '/var/task/fonts'                              // Vercel absolute path
+];
+
+for (const fontsDir of possiblePaths) {
+  if (fs.existsSync(path.join(fontsDir, 'Inter-Bold.ttf'))) {
+    GlobalFonts.registerFromPath(path.join(fontsDir, 'Inter-Bold.ttf'), 'Inter Bold');
+    GlobalFonts.registerFromPath(path.join(fontsDir, 'Inter-Regular.ttf'), 'Inter');
+    break;
+  }
+}
+
+// ❌ WRONG - Single path assumption
+const fontsDir = path.join(__dirname, '../../fonts');  // May fail in serverless
+```
+
+**Font Family Fallbacks:**
+```javascript
+// ✅ CORRECT - Always include fallback
+ctx.font = 'bold 16px Inter, sans-serif';
+
+// ❌ WRONG - No fallback (silent failure if font missing)
+ctx.font = 'bold 16px Inter';
+```
+
+**Vercel Configuration:** Ensure `vercel.json` includes fonts in `includeFiles`:
+```json
+{
+  "functions": {
+    "api/screen.js": {
+      "includeFiles": "src/**,fonts/**"
+    }
+  }
+}
+```
+
 ---
 
 ## 📡 Section 11: API & Data Rules
@@ -1589,6 +1638,51 @@ Files should use consistent terminology aligned with the correct API naming (Sec
 | `ptv-service.js` | `opendata-service.js` |
 
 **Note:** Filenames containing "ptv" are acceptable when referring to PTV stop IDs or route types (Transport Victoria's internal naming), but API client/service files should use neutral terminology.
+
+### 13.6 Admin Panel JavaScript Patterns (v1.15)
+
+**Image Loading - Never Set Empty src:**
+```javascript
+// ❌ WRONG - Triggers onerror callback immediately
+previewImage.src = '';  // <-- This fires onerror!
+setTimeout(() => {
+    previewImage.src = actualUrl;  // Too late, error state already shown
+}, 50);
+
+// ✅ CORRECT - Use Image() preload pattern
+const newImage = new Image();
+newImage.onload = function() {
+    previewImage.src = actualUrl;
+    handleImageLoad();
+};
+newImage.onerror = function() {
+    handleImageError();
+};
+newImage.src = actualUrl;  // Start loading
+```
+
+**KV Sync Before Server Requests:**
+When the admin panel needs server-rendered content (like CCDash preview), sync localStorage to KV first:
+```javascript
+// ✅ CORRECT - Sync before loading preview
+async function loadEinkPreview() {
+    await syncConfigToKV();  // Ensure server has latest config
+    const imageUrl = `${BASE_URL}/api/screen?t=${Date.now()}`;
+    // ... load image
+}
+
+async function syncConfigToKV() {
+    const config = JSON.parse(localStorage.getItem('cc-config') || '{}');
+    await fetch('/api/sync-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            transitKey: localStorage.getItem('cc-transit-api-key'),
+            preferences: config
+        })
+    });
+}
+```
 
 ---
 
