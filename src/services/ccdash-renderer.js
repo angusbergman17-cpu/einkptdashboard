@@ -1,16 +1,21 @@
 /**
- * @deprecated CCDashRendererV13 - DEPRECATED
+ * CCDash™ Renderer (Consolidated v2.0)
+ * Primary renderer for Commute Compute System dashboards.
+ * Implements CCDashDesignV10 specification.
  * 
- * This file is deprecated. Use ccdash-renderer.js instead.
- * All functionality has been consolidated into the main CCDash renderer.
+ * Consolidates functionality from:
+ * - ccdash-renderer-v13.js (primary renderer)
+ * - zone-renderer.js (zone-based refresh)
+ * - zone-renderer-tiered.js (tiered refresh intervals)
  * 
- * USE INSTEAD: import { renderSingleZone, renderFullScreen } from './ccdash-renderer.js'
+ * Per DEVELOPMENT-RULES.md Section 24: Single source of truth for rendering.
  * 
- * Deprecated on: 2026-01-31
- * Per DEVELOPMENT-RULES.md Section 24: Single source of truth
- * 
- * Original: CCDashRendererV13 - Implements CCDashDesignV10 Specification
- * Clean, modern PIDS-style display for e-ink
+ * Features:
+ * - Full screen rendering (800×480)
+ * - Zone-based partial refresh
+ * - Tiered refresh support (1/2/5 min intervals)
+ * - 1-bit BMP output for e-ink
+ * - SVG mode icons (walk, train, tram, coffee)
  * 
  * Layout (800x480):
  * ┌─────────────────────────────────────────────────────────────────────┐
@@ -50,6 +55,46 @@ try {
 } catch (e) {
   console.log('ℹ️  Using system fonts');
 }
+
+// =============================================================================
+// TIERED REFRESH CONFIGURATION (merged from zone-renderer-tiered.js)
+// =============================================================================
+
+/**
+ * Refresh tier configuration
+ * - Tier 1 (1 min): Time-critical zones (clock, status, leg times)
+ * - Tier 2 (2 min): Content zones (weather, leg content)
+ * - Tier 3 (5 min): Static zones (location)
+ * - Full refresh: 10 minutes
+ */
+export const TIER_CONFIG = {
+  1: {
+    interval: 60000,  // 1 minute
+    zones: ['header.time', 'status', 'leg1.time', 'leg2.time', 'leg3.time', 'leg4.time', 'leg5.time']
+  },
+  2: {
+    interval: 120000, // 2 minutes
+    zones: ['header.weather', 'header.dayDate', 'footer', 'leg1', 'leg2', 'leg3', 'leg4', 'leg5']
+  },
+  3: {
+    interval: 300000, // 5 minutes
+    zones: ['header.location']
+  },
+  full: {
+    interval: 600000  // 10 minutes
+  }
+};
+
+/**
+ * Get zones for a specific refresh tier
+ */
+export function getZonesForTier(tier) {
+  return TIER_CONFIG[tier]?.zones || [];
+}
+
+// =============================================================================
+// ZONE DEFINITIONS
+// =============================================================================
 
 // Zone definitions for the new layout
 export const ZONES = {
@@ -717,12 +762,44 @@ export function renderFullScreen(data, prefs = {}) {
   return canvas.toBuffer('image/png');
 }
 
+// =============================================================================
+// BACKWARD COMPATIBILITY (aliases for zone-renderer.js)
+// =============================================================================
+
+export function renderZones(data, forceAll = false) {
+  const zones = getChangedZones(data, forceAll);
+  const result = {};
+  for (const zoneId of zones) {
+    result[zoneId] = renderSingleZone(zoneId, data);
+  }
+  return result;
+}
+
+export function renderFullDashboard(data) {
+  return renderFullScreen(data);
+}
+
+export { ZONES as ZONES_V10 };
+
+// =============================================================================
+// EXPORTS
+// =============================================================================
+
 export default {
+  // Zone definitions
   ZONES,
+  TIER_CONFIG,
+  
+  // Primary API
   renderSingleZone,
+  renderFullScreen,
+  renderZones,
+  renderFullDashboard,
+  
+  // Zone utilities
   getActiveZones,
   getChangedZones,
   getZoneDefinition,
-  clearCache,
-  renderFullScreen
+  getZonesForTier,
+  clearCache
 };

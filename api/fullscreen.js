@@ -14,7 +14,7 @@
 import { createCanvas } from '@napi-rs/canvas';
 import { getDepartures, getDisruptions, getWeather } from '../src/services/opendata-client.js';
 import SmartCommute from '../src/engines/smart-commute.js';
-import CCDashRendererV13 from '../src/services/ccdash-renderer-v13.js';
+import CCDashRendererV13 from '../src/services/ccdash-renderer.js';
 import PreferencesManager from '../src/data/preferences-manager.js';
 
 const WIDTH = 800;

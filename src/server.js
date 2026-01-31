@@ -38,8 +38,8 @@ import safeguards from './utils/deployment-safeguards.js';
 import { decodeConfigToken, encodeConfigToken, generateWebhookUrl } from './utils/config-token.js';
 import { renderDashboard, renderTestPattern } from "./services/image-renderer.js";
 import { renderZones, clearCache as clearZoneCache, ZONES } from "./services/zone-renderer.js";
-import { getChangedZones as getChangedZonesV12, renderSingleZone as renderSingleZoneV12, getZoneDefinition as getZoneDefV12, ZONES as ZONES_V12, clearCache as clearZoneCacheV12 } from "./services/zone-renderer-v12.js";
-import { getChangedZones as getChangedZonesCCDash, renderSingleZone as renderSingleZoneCCDash, getZoneDefinition as getZoneDefCCDash, getActiveZones as getActiveZonesCCDash, ZONES as ZONES_CCDASH, clearCache as clearZoneCacheCCDash, renderFullScreen as renderFullScreenCCDash } from "./services/ccdash-renderer-v13.js";
+import { getChangedZones as getChangedZonesV12, renderSingleZone as renderSingleZoneV12, getZoneDefinition as getZoneDefV12, ZONES as ZONES_V12, clearCache as clearZoneCacheV12 } from "./services/ccdash-renderer.js";
+import { getChangedZones as getChangedZonesCCDash, renderSingleZone as renderSingleZoneCCDash, getZoneDefinition as getZoneDefCCDash, getActiveZones as getActiveZonesCCDash, ZONES as ZONES_CCDASH, clearCache as clearZoneCacheCCDash, renderFullScreen as renderFullScreenCCDash } from "./services/ccdash-renderer.js";
 import SmartCommute from "./engines/smart-commute.js";
 
 // Setup error handlers early (before any async operations)

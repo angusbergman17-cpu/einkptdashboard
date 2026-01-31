@@ -19,7 +19,7 @@
 import { getDepartures, getDisruptions, getWeather } from '../src/services/opendata-client.js';
 import SmartCommute from '../src/engines/smart-commute.js';
 import { getTransitApiKey } from '../src/data/kv-preferences.js';
-import { renderZones, clearCache, ZONES } from '../src/services/zone-renderer.js';
+import { renderZones, clearCache, ZONES } from '../src/services/ccdash-renderer.js';
 import { getScenario, getScenarioNames } from '../src/services/journey-scenarios.js';
 import { generateRandomJourney } from '../src/services/random-journey.js';
 import PreferencesManager from '../src/data/preferences-manager.js';

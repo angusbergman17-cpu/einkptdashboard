@@ -1,5 +1,15 @@
 /**
- * Zone Renderer - V10 Smart Journey Dashboard
+ * @deprecated Zone Renderer - DEPRECATED
+ * 
+ * This file is deprecated. Use ccdash-renderer.js instead.
+ * All functionality has been consolidated into the main CCDash renderer.
+ * 
+ * USE INSTEAD: import { renderZones, renderFullDashboard } from './ccdash-renderer.js'
+ * 
+ * Deprecated on: 2026-01-31
+ * Per DEVELOPMENT-RULES.md Section 24: Single source of truth
+ * 
+ * Original: Zone Renderer - V10 Smart Journey Dashboard
  * Matches Commute Compute v10 Design Spec EXACTLY
  * 
  * Layout (800×480):
@@ -12,6 +22,8 @@
  * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
  */
+
+console.warn('[DEPRECATED] zone-renderer.js is deprecated. Use ccdash-renderer.js instead.');
 
 import { createCanvas, GlobalFonts } from '@napi-rs/canvas';
 import path from 'path';
