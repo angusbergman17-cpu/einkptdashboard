@@ -1746,115 +1746,225 @@
         </div>
 
 
-                <!-- Live Data Tab -->
+        <!-- Live Data Tab - Rebuilt per Section 22 Branding Rules -->
         <div id="tab-live" class="tab-content active">
-            <!-- Unconfigured Placeholder (shown until setup complete) -->
+            <!-- SVG Icon Definitions -->
+            <svg style="display: none;">
+                <defs>
+                    <symbol id="icon-train" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 11V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4M4 11v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4M4 11h16M8 19v2M16 19v2M9 7h6M9 11h.01M15 11h.01"/>
+                    </symbol>
+                    <symbol id="icon-tram" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M5 9V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v4M5 9v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9M5 9h14M8 17v2M16 17v2M12 3v2M8 13h.01M16 13h.01"/>
+                    </symbol>
+                    <symbol id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+                    </symbol>
+                    <symbol id="icon-coffee" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 8h1a4 4 0 1 1 0 8h-1M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8zM6 2v2M10 2v2M14 2v2"/>
+                    </symbol>
+                    <symbol id="icon-route" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/>
+                    </symbol>
+                    <symbol id="icon-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                    </symbol>
+                    <symbol id="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 6L9 17l-5-5"/>
+                    </symbol>
+                    <symbol id="icon-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01"/>
+                    </symbol>
+                    <symbol id="icon-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                    </symbol>
+                    <symbol id="icon-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </symbol>
+                </defs>
+            </svg>
+
+            <!-- Unconfigured State -->
             <div id="live-data-unconfigured" style="display: none; text-align: center; padding: 60px 20px;">
-                <div style="font-size: 60px; margin-bottom: 20px; opacity: 0.3;">🚆</div>
-                <h2 style="margin-bottom: 15px; opacity: 0.9;">Live Data Not Available Yet</h2>
-                <p style="opacity: 0.7; margin-bottom: 30px; max-width: 500px; margin-left: auto; margin-right: auto; line-height: 1.6;">
-                    Complete the journey setup first to see live transit data, departure times, and journey recommendations.
+                <svg width="80" height="80" style="opacity: 0.3; margin-bottom: 20px; color: #4fb28e;"><use href="#icon-route"/></svg>
+                <h2 style="margin-bottom: 15px; font-size: 24px; font-weight: 600; color: #f1f5f9;">Journey Not Configured</h2>
+                <p style="opacity: 0.7; margin-bottom: 30px; max-width: 500px; margin-left: auto; margin-right: auto; line-height: 1.6; font-size: 15px; color: #94a3b8;">
+                    Complete the setup wizard to configure your commute. The SmartCommute engine will calculate optimal routes and departure times.
                 </p>
                 <button class="btn btn-primary" onclick="showTab('setup', this)" style="padding: 12px 30px; font-size: 16px;">
-                    → Go to Setup
+                    Configure Journey
                 </button>
             </div>
 
-            <!-- Live Data Content (shown after configuration) -->
+            <!-- Configured State -->
             <div id="live-data-configured">
-                <!-- Data Source Indicator Banner -->
-                <div id="data-source-indicator" style="margin-bottom: 20px; padding: 18px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 15px;">
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <span id="data-source-icon" style="font-size: 28px;">🔴</span>
+                <!-- SmartCommute Status Banner -->
+                <div id="smartcommute-status-banner" style="margin-bottom: 20px; padding: 18px 20px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 15px; background: linear-gradient(135deg, rgba(79, 178, 142, 0.15) 0%, rgba(34, 197, 94, 0.15) 100%); border-left: 4px solid #4fb28e;">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div id="smartcommute-status-icon" style="width: 32px; height: 32px; border-radius: 50%; background: #22c55e; display: flex; align-items: center; justify-content: center;">
+                            <svg width="18" height="18" style="color: white;"><use href="#icon-check"/></svg>
+                        </div>
                         <div>
-                            <div id="data-source-title" style="font-weight: 700; font-size: 16px; margin-bottom: 4px;">Using Fallback Timetable Data</div>
-                            <div id="data-source-subtitle" style="font-size: 13px; opacity: 0.85;">Configure API keys in API Settings to enable real-time updates</div>
+                            <div id="smartcommute-status-title" style="font-weight: 700; font-size: 16px; margin-bottom: 4px; color: #f1f5f9;">SmartCommute Active</div>
+                            <div id="smartcommute-status-subtitle" style="font-size: 13px; color: #94a3b8;">Real-time journey calculation enabled</div>
                         </div>
                     </div>
-                    <button id="data-source-action-btn" class="btn btn-secondary" onclick="showTab('api', this)" style="padding: 10px 20px; font-size: 14px; white-space: nowrap;">
-                        → API Settings
+                    <button id="refresh-data-btn" class="btn btn-secondary" onclick="refreshLiveData()" style="padding: 10px 20px; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+                        <svg width="16" height="16"><use href="#icon-refresh"/></svg>
+                        Refresh
                     </button>
                 </div>
 
-                <!-- Configuration Status Banner -->
-                <div id="config-status-banner" style="margin-bottom: 20px; padding: 15px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-radius: 12px; border-left: 4px solid #4fb28e;">
-                    <div style="font-weight: 700; margin-bottom: 8px; font-size: 14px;">📡 Live Data Configuration</div>
-                    <div id="config-summary" style="font-size: 13px; opacity: 0.9; line-height: 1.6;">Loading configuration...</div>
+                <!-- Journey Configuration Summary -->
+                <div id="journey-config-banner" style="margin-bottom: 20px; padding: 16px 20px; background: rgba(30, 41, 59, 0.8); border-radius: 12px; border-left: 4px solid #667eea;">
+                    <div style="font-weight: 600; margin-bottom: 8px; font-size: 14px; color: #f1f5f9; display: flex; align-items: center; gap: 8px;">
+                        <svg width="16" height="16" style="color: #667eea;"><use href="#icon-route"/></svg>
+                        Journey Configuration
+                    </div>
+                    <div id="journey-config-summary" style="font-size: 13px; color: #94a3b8; line-height: 1.6;">Loading configuration...</div>
                 </div>
 
-                <div class="grid">
-                <!-- Train Departures -->
-                <div class="card">
-                    <div class="card-header">
-                        <span class="card-icon">🚆</span>
-                        <h2 id="train-station-name">Train Departures</h2>
-                        <span class="status-badge" id="train-status">●</span>
+                <!-- Main Data Grid -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                    
+                    <!-- Train Departures Card -->
+                    <div class="card" style="background: rgba(30, 41, 59, 0.8); border-radius: 12px; padding: 20px; border-left: 4px solid #4fb28e;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(79, 178, 142, 0.2); display: flex; align-items: center; justify-content: center;">
+                                    <svg width="22" height="22" style="color: #4fb28e;"><use href="#icon-train"/></svg>
+                                </div>
+                                <div>
+                                    <h3 style="font-size: 16px; font-weight: 600; color: #f1f5f9; margin: 0;" id="train-station-name">Train Departures</h3>
+                                    <span style="font-size: 12px; color: #94a3b8;" id="train-station-subtitle">Loading...</span>
+                                </div>
+                            </div>
+                            <span id="train-status-badge" style="padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; background: rgba(79, 178, 142, 0.2); color: #4fb28e;">Live</span>
+                        </div>
+                        <div id="train-departures" style="min-height: 100px;">
+                            <div class="loading" style="display: flex; align-items: center; justify-content: center; gap: 10px; padding: 30px; color: #94a3b8;">
+                                <div class="spinner"></div>
+                                <span>Loading departures...</span>
+                            </div>
+                        </div>
                     </div>
-                    <div id="train-departures">
-                        <div class="loading"><div class="spinner"></div>Loading...</div>
+
+                    <!-- Tram Departures Card -->
+                    <div class="card" style="background: rgba(30, 41, 59, 0.8); border-radius: 12px; padding: 20px; border-left: 4px solid #667eea;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(102, 126, 234, 0.2); display: flex; align-items: center; justify-content: center;">
+                                    <svg width="22" height="22" style="color: #667eea;"><use href="#icon-tram"/></svg>
+                                </div>
+                                <div>
+                                    <h3 style="font-size: 16px; font-weight: 600; color: #f1f5f9; margin: 0;" id="tram-station-name">Tram Departures</h3>
+                                    <span style="font-size: 12px; color: #94a3b8;" id="tram-station-subtitle">Loading...</span>
+                                </div>
+                            </div>
+                            <span id="tram-status-badge" style="padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; background: rgba(102, 126, 234, 0.2); color: #667eea;">Live</span>
+                        </div>
+                        <div id="tram-departures" style="min-height: 100px;">
+                            <div class="loading" style="display: flex; align-items: center; justify-content: center; gap: 10px; padding: 30px; color: #94a3b8;">
+                                <div class="spinner"></div>
+                                <span>Loading departures...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Weather Card -->
+                    <div class="card" style="background: rgba(30, 41, 59, 0.8); border-radius: 12px; padding: 20px; border-left: 4px solid #fbbf24;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(251, 191, 36, 0.2); display: flex; align-items: center; justify-content: center;">
+                                    <svg width="22" height="22" style="color: #fbbf24;"><use href="#icon-sun"/></svg>
+                                </div>
+                                <div>
+                                    <h3 style="font-size: 16px; font-weight: 600; color: #f1f5f9; margin: 0;" id="weather-location-name">Weather</h3>
+                                    <span style="font-size: 12px; color: #94a3b8;" id="weather-source">Bureau of Meteorology</span>
+                                </div>
+                            </div>
+                            <span style="padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; background: rgba(251, 191, 36, 0.2); color: #fbbf24;">BOM</span>
+                        </div>
+                        <div id="weather-display" style="min-height: 80px;">
+                            <div class="loading" style="display: flex; align-items: center; justify-content: center; gap: 10px; padding: 30px; color: #94a3b8;">
+                                <div class="spinner"></div>
+                                <span>Loading weather...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Coffee Decision Card -->
+                    <div class="card" style="background: rgba(30, 41, 59, 0.8); border-radius: 12px; padding: 20px; border-left: 4px solid #a78bfa;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(167, 139, 250, 0.2); display: flex; align-items: center; justify-content: center;">
+                                    <svg width="22" height="22" style="color: #a78bfa;"><use href="#icon-coffee"/></svg>
+                                </div>
+                                <div>
+                                    <h3 style="font-size: 16px; font-weight: 600; color: #f1f5f9; margin: 0;">Coffee Decision</h3>
+                                    <span style="font-size: 12px; color: #94a3b8;">SmartCommute recommendation</span>
+                                </div>
+                            </div>
+                            <span id="coffee-status-badge" style="padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; background: rgba(167, 139, 250, 0.2); color: #a78bfa;">Auto</span>
+                        </div>
+                        <div id="coffee-decision" style="min-height: 80px;">
+                            <div class="loading" style="display: flex; align-items: center; justify-content: center; gap: 10px; padding: 30px; color: #94a3b8;">
+                                <div class="spinner"></div>
+                                <span>Calculating...</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Tram Departures -->
-                <div class="card">
-                    <div class="card-header">
-                        <span class="card-icon">🚊</span>
-                        <h2 id="tram-station-name">Tram Departures</h2>
-                        <span class="status-badge" id="tram-status">●</span>
+                <!-- SmartCommute Journey Summary -->
+                <div class="card" style="margin-top: 20px; background: rgba(30, 41, 59, 0.8); border-radius: 12px; padding: 20px; border-left: 4px solid #4fb28e;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(79, 178, 142, 0.2); display: flex; align-items: center; justify-content: center;">
+                                <svg width="22" height="22" style="color: #4fb28e;"><use href="#icon-clock"/></svg>
+                            </div>
+                            <div>
+                                <h3 style="font-size: 16px; font-weight: 600; color: #f1f5f9; margin: 0;">Today's Journey</h3>
+                                <span style="font-size: 12px; color: #94a3b8;">SmartCommute calculated route</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary" onclick="recalculateJourney()" style="padding: 8px 16px; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                            <svg width="14" height="14"><use href="#icon-refresh"/></svg>
+                            Recalculate
+                        </button>
                     </div>
-                    <div id="tram-departures">
-                        <div class="loading"><div class="spinner"></div>Loading...</div>
+                    <div id="journey-summary" style="min-height: 60px;">
+                        <div style="padding: 20px; text-align: center; color: #94a3b8; font-size: 14px;">
+                            Journey summary will appear here after calculation
+                        </div>
                     </div>
                 </div>
 
-                <!-- Weather -->
-                <div class="card">
-                    <div class="card-header">
-                        <span class="card-icon">🌤️</span>
-                        <h2 id="weather-location-name">Weather</h2>
-                        <span class="status-badge status-live" id="weather-source">BOM</span>
+                <!-- Data Sources Footer -->
+                <div style="margin-top: 20px; padding: 16px 20px; background: rgba(15, 23, 42, 0.5); border-radius: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                    <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+                        <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #94a3b8;">
+                            <svg width="14" height="14" style="color: #4fb28e;"><use href="#icon-check"/></svg>
+                            <span>SmartCommute Engine v3.0</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #94a3b8;">
+                            <svg width="14" height="14" style="color: #4fb28e;"><use href="#icon-check"/></svg>
+                            <span>CCDash Renderer v13</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #94a3b8;">
+                            <svg width="14" height="14" style="color: #667eea;"><use href="#icon-settings"/></svg>
+                            <span id="data-last-updated">Last updated: --</span>
+                        </div>
                     </div>
-                    <div id="weather-display">
-                        <div class="loading"><div class="spinner"></div>Loading...</div>
-                    </div>
-                </div>
-
-                <!-- Coffee Decision -->
-                <div class="card">
-                    <div class="card-header">
-                        <span class="card-icon" style="color: var(--accent);">C</span>
-                        <h2>Coffee Decision</h2>
-                        <span class="status-badge" id="coffee-status">●</span>
-                    </div>
-                    <div id="coffee-decision" class="coffee-decision">
-                        <div class="loading"><div class="spinner"></div>Loading...</div>
-                    </div>
+                    <button class="btn btn-secondary" onclick="showTab('api', this)" style="padding: 8px 16px; font-size: 12px;">
+                        API Settings
+                    </button>
                 </div>
             </div>
-
-            <!-- API Status Dashboard -->
-            <div class="card" style="margin-top: 20px;">
-                <div class="card-header">
-                    <span class="card-icon">🔌</span>
-                    <h2>API Status & Configuration</h2>
-                </div>
-                <div id="api-status-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
-                    <div class="loading"><div class="spinner"></div>Loading API status...</div>
-                </div>
-            </div>
-
-            <!-- Journey Summary -->
-            <div class="card" id="journey-summary-card" style="display: none;">
-                <div class="card-header">
-                    <span class="card-icon" style="color: var(--accent);">R</span>
-                    <h2>Today's Journey</h2>
-                </div>
-                <div id="journey-summary"></div>
-            </div>
-            </div><!-- end live-data-configured -->
         </div>
 
-        <!-- API Settings Tab - Rebuilt to use Setup Wizard data -->
+
+                <!-- API Settings Tab - Rebuilt to use Setup Wizard data -->
         <div id="tab-api" class="tab-content">
             <!-- Not Configured State -->
             <div id="api-not-configured" style="display: none; text-align: center; padding: 60px 20px;">
@@ -4586,28 +4696,182 @@
         }
         
         function updateConfigSummary(prefs) {
+            // Update the old config-summary element (if exists)
             const summaryEl = document.getElementById('config-summary');
             if (summaryEl && prefs) {
                 const parts = [];
-                if (prefs.addresses?.home) parts.push(`🏠 ${prefs.addresses.home}`);
-                if (prefs.addresses?.work) parts.push(`💼 ${prefs.addresses.work}`);
-                if (prefs.addresses?.cafe) parts.push(`☕ ${prefs.addresses.cafe}`);
-                if (prefs.journey?.arrivalTime) parts.push(`⏰ Arrive by ${formatTime12h(prefs.journey.arrivalTime)}`);
-                if (prefs.state) parts.push(`📍 ${prefs.state}`);
-                if (prefs.apiMode) parts.push(`☁️ ${prefs.apiMode === 'cached' ? 'Free Mode' : 'Live Mode'}`);
+                if (prefs.addresses?.home) parts.push(`Home: ${prefs.addresses.home}`);
+                if (prefs.addresses?.work) parts.push(`Work: ${prefs.addresses.work}`);
+                if (prefs.addresses?.cafe) parts.push(`Cafe: ${prefs.addresses.cafe}`);
+                if (prefs.journey?.arrivalTime) parts.push(`Arrive by ${formatTime12h(prefs.journey.arrivalTime)}`);
+                if (prefs.state) parts.push(prefs.state);
+                if (prefs.apiMode) parts.push(prefs.apiMode === 'cached' ? 'Free Mode' : 'Live Mode');
                 
                 if (parts.length > 0) {
                     summaryEl.innerHTML = parts.join(' • ');
                 } else {
-                    summaryEl.innerHTML = 'No configuration yet. <a href="/setup-wizard.html" style="color: #4fb28e;">Complete setup →</a>';
+                    summaryEl.innerHTML = 'No configuration yet. <a href="/setup-wizard.html" style="color: #4fb28e;">Complete setup</a>';
                 }
             }
+            
+            // Update the new Live Data tab journey config summary
+            updateLiveDataJourneyConfig(prefs);
             
             // Also update the new Setup & Journey tab summary
             updateSetupTabSummary(prefs);
             
             // Also update the API Settings tab
             updateApiSettingsTab(prefs);
+        }
+        
+        // Update Live Data tab journey configuration display
+        function updateLiveDataJourneyConfig(prefs) {
+            const summaryEl = document.getElementById('journey-config-summary');
+            const unconfigured = document.getElementById('live-data-unconfigured');
+            const configured = document.getElementById('live-data-configured');
+            
+            const hasConfig = prefs && (prefs.addresses?.home || prefs.addresses?.work);
+            
+            if (unconfigured && configured) {
+                unconfigured.style.display = hasConfig ? 'none' : 'block';
+                configured.style.display = hasConfig ? 'block' : 'none';
+            }
+            
+            if (summaryEl && prefs && hasConfig) {
+                const parts = [];
+                if (prefs.addresses?.home) parts.push(`<strong>Home:</strong> ${prefs.addresses.home}`);
+                if (prefs.addresses?.cafe) parts.push(`<strong>Coffee:</strong> ${prefs.addresses.cafe}`);
+                if (prefs.addresses?.work) parts.push(`<strong>Work:</strong> ${prefs.addresses.work}`);
+                if (prefs.journey?.arrivalTime) parts.push(`<strong>Arrive:</strong> ${formatTime12h(prefs.journey.arrivalTime)}`);
+                if (prefs.state) parts.push(`<strong>State:</strong> ${prefs.state}`);
+                
+                summaryEl.innerHTML = parts.join(' &bull; ');
+            }
+            
+            // Update SmartCommute status based on API validation
+            updateSmartCommuteStatus(prefs);
+        }
+        
+        // Update SmartCommute status banner
+        function updateSmartCommuteStatus(prefs) {
+            const banner = document.getElementById('smartcommute-status-banner');
+            const iconContainer = document.getElementById('smartcommute-status-icon');
+            const title = document.getElementById('smartcommute-status-title');
+            const subtitle = document.getElementById('smartcommute-status-subtitle');
+            
+            if (!banner) return;
+            
+            const transitValidated = localStorage.getItem('cc-transit-api-validated') === 'true';
+            const hasTransitKey = !!localStorage.getItem('cc-transit-api-key');
+            
+            if (hasTransitKey && transitValidated) {
+                banner.style.background = 'linear-gradient(135deg, rgba(79, 178, 142, 0.15) 0%, rgba(34, 197, 94, 0.15) 100%)';
+                banner.style.borderLeftColor = '#4fb28e';
+                iconContainer.style.background = '#22c55e';
+                iconContainer.innerHTML = '<svg width="18" height="18" style="color: white;"><use href="#icon-check"/></svg>';
+                title.textContent = 'SmartCommute Active';
+                subtitle.textContent = 'Real-time journey calculation enabled';
+            } else if (hasTransitKey) {
+                banner.style.background = 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.15) 100%)';
+                banner.style.borderLeftColor = '#fbbf24';
+                iconContainer.style.background = '#fbbf24';
+                iconContainer.innerHTML = '<svg width="18" height="18" style="color: white;"><use href="#icon-alert"/></svg>';
+                title.textContent = 'API Key Pending';
+                subtitle.textContent = 'Validate your API key in API Settings';
+            } else {
+                banner.style.background = 'linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%)';
+                banner.style.borderLeftColor = '#667eea';
+                iconContainer.style.background = '#667eea';
+                iconContainer.innerHTML = '<svg width="18" height="18" style="color: white;"><use href="#icon-clock"/></svg>';
+                title.textContent = 'Using Timetable Data';
+                subtitle.textContent = 'Add API key for real-time updates';
+            }
+        }
+        
+        // Refresh Live Data (called by refresh button)
+        function refreshLiveData() {
+            const btn = document.getElementById('refresh-data-btn');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<svg width="16" height="16" class="spinning"><use href="#icon-refresh"/></svg> Refreshing...';
+            }
+            
+            loadAllData().then(() => {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<svg width="16" height="16"><use href="#icon-refresh"/></svg> Refresh';
+                }
+                
+                // Update last updated timestamp
+                const lastUpdated = document.getElementById('data-last-updated');
+                if (lastUpdated) {
+                    const now = new Date();
+                    lastUpdated.textContent = `Last updated: ${now.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}`;
+                }
+            });
+        }
+        
+        // Recalculate journey (calls SmartCommute engine)
+        async function recalculateJourney() {
+            const config = JSON.parse(localStorage.getItem('cc-config') || '{}');
+            const journeySummary = document.getElementById('journey-summary');
+            
+            if (journeySummary) {
+                journeySummary.innerHTML = '<div style="padding: 20px; text-align: center; color: #94a3b8;">Calculating optimal route...</div>';
+            }
+            
+            try {
+                // Call the SmartCommute calculation endpoint
+                const response = await fetch(BASE_URL + '/api/calculate-journey', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        home: config.addresses?.home,
+                        work: config.addresses?.work,
+                        cafe: config.addresses?.cafe,
+                        arrivalTime: config.journey?.arrivalTime || '09:00',
+                        includesCoffee: config.journey?.coffeeEnabled !== false
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success && journeySummary) {
+                    journeySummary.innerHTML = formatJourneySummary(result.journey);
+                } else {
+                    throw new Error(result.error || 'Calculation failed');
+                }
+            } catch (error) {
+                console.error('Journey calculation error:', error);
+                if (journeySummary) {
+                    journeySummary.innerHTML = `<div style="padding: 20px; text-align: center; color: #ef4444;">Unable to calculate journey: ${error.message}</div>`;
+                }
+            }
+        }
+        
+        // Format journey summary for display
+        function formatJourneySummary(journey) {
+            if (!journey || !journey.legs) {
+                return '<div style="padding: 20px; text-align: center; color: #94a3b8;">No journey data available</div>';
+            }
+            
+            let html = '<div style="display: flex; flex-direction: column; gap: 12px;">';
+            
+            journey.legs.forEach((leg, index) => {
+                html += `
+                    <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                        <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(79, 178, 142, 0.2); display: flex; align-items: center; justify-content: center; color: #4fb28e; font-weight: 600; font-size: 14px;">${index + 1}</div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 500; color: #f1f5f9; font-size: 14px;">${leg.description || leg.mode}</div>
+                            <div style="font-size: 12px; color: #94a3b8;">${leg.duration || ''}</div>
+                        </div>
+                        <div style="font-size: 14px; font-weight: 600; color: #4fb28e;">${leg.time || ''}</div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            return html;
         }
         
         // Populate the rebuilt Setup & Journey tab from localStorage config
