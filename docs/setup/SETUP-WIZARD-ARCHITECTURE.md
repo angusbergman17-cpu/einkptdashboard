@@ -787,13 +787,47 @@ Vercel automatically maps files in `/api/` to endpoints:
 | `/api/admin/generate-webhook.js` | `POST /api/admin/generate-webhook` |
 | `/api/device/[token].js` | `GET /api/device/{token}` |
 
-### No Persistent Storage
+### Persistent Storage via Vercel KV
 
-- ❌ Cannot write to filesystem
+**As of v1.8, Commute Compute uses Vercel KV for persistent API key storage.**
+
+| Storage Type | Usage |
+|--------------|-------|
+| Vercel KV (Redis) | API keys, preferences — persists across deployments |
+| URL Config Token | Journey config, addresses — embedded in device webhook |
+
+#### KV Setup Required
+
+1. Vercel Dashboard → Project → **Storage** → Create **KV** Database
+2. Region: **Sydney, Australia (Southeast)**
+3. Plan: **Redis/30 MB** (free tier)
+4. Name: `CCKV`
+5. **Redeploy** after creation
+
+See [DEVELOPMENT-RULES.md Section 3.6](../../DEVELOPMENT-RULES.md#36-vercel-kv-setup-required) for full details.
+
+#### Storage Architecture
+
+```
+┌──────────────────────────────────────────────────────────┐
+│                    PERSISTENT (KV)                        │
+│  API keys, preferences — saved via Admin Panel            │
+│  Retrieved by: getTransitApiKey(), getPreferences()       │
+└──────────────────────────────────────────────────────────┘
+                            +
+┌──────────────────────────────────────────────────────────┐
+│                   STATELESS (URL Token)                   │
+│  Journey config, addresses — embedded in device webhook   │
+│  Decoded by: /api/device/[token].js                       │
+└──────────────────────────────────────────────────────────┘
+```
+
+#### Legacy Constraints (Still Apply)
+
+- ❌ Cannot write to filesystem in serverless
 - ❌ Cannot use in-memory state between requests
-- ❌ Cannot use database without external service
-- ✅ Must encode all config in URL token
-- ✅ Stateless request handling
+- ✅ KV provides persistent key-value storage
+- ✅ URL token provides device-specific config
 
 ### Getting Base URL
 

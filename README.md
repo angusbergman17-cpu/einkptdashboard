@@ -123,7 +123,23 @@ Commute Compute uses a **fully self-hosted distribution model** — each user de
 
 Your server will be live at: `https://[your-project-name].vercel.app`
 
-### Step 2: Run the Setup Wizard
+### Step 2: Set Up Vercel KV Storage
+
+**Required for API key persistence (Zero-Config compliant).**
+
+1. In Vercel Dashboard, go to your project → **Storage** tab
+2. Click **Create Database** → Select **KV** (Redis)
+3. Choose region: **Sydney, Australia (Southeast)** recommended for AU users
+4. Select plan: **Redis/30 MB** (free tier — plenty for config storage)
+5. Name it (e.g., `CCKV` or `commute-compute-kv`)
+6. Click **Create**
+7. Vercel auto-connects and injects `KV_REST_API_URL` and `KV_REST_API_TOKEN`
+8. **Redeploy** your project to pick up the KV environment variables:
+   - Go to **Deployments** → click ⋮ on latest → **Redeploy**
+
+> **Why KV?** Per Zero-Config architecture, API keys are stored server-side in persistent storage. No manual environment variable configuration required.
+
+### Step 3: Run the Setup Wizard
 
 Open your server URL:
 
@@ -144,7 +160,7 @@ The **Setup Wizard** guides you through:
 4. 🔑 Transit API key (optional — works with fallback timetables)
 5. ⏰ Arrival time and coffee preferences
 
-### Step 3: Flash Custom Firmware
+### Step 4: Flash Custom Firmware
 
 **⚠️ TRMNL devices require CCFirm™ custom firmware.**
 

@@ -114,6 +114,7 @@ The system was previously known as "Commute Compute". Update any remaining refer
 - 3.3 Config Token Structure
 - 3.4 Implementation
 - 3.5 Benefits
+- 3.6 Vercel KV Setup (Required)
 </details>
 
 <details>
@@ -505,6 +506,61 @@ const apiKey = process.env.ODATA_API_KEY;  // User must configure server
 - Zero-config deployment (no environment variables needed)
 - Self-contained devices (config travels with request)
 - Privacy (API keys stay with device owner)
+
+### 3.6 Vercel KV Setup (Required)
+
+**Vercel KV provides persistent storage for API keys — no manual environment variable configuration.**
+
+#### 3.6.1 Setup Steps
+
+1. **Create KV Database:**
+   - Vercel Dashboard → Your Project → **Storage** tab
+   - Click **Create Database** → Select **KV** (Redis)
+   
+2. **Configure Database:**
+   - Region: **Sydney, Australia (Southeast)** (recommended for AU latency)
+   - Plan: **Redis/30 MB** (free tier)
+   - Name: `CCKV` or `commute-compute-kv`
+   
+3. **Connect to Project:**
+   - Click **Create** — Vercel auto-connects to your project
+   - Injects `KV_REST_API_URL` and `KV_REST_API_TOKEN` automatically
+   
+4. **Redeploy:**
+   - Deployments → ⋮ → **Redeploy**
+   - Or push any commit to trigger rebuild
+
+#### 3.6.2 Architecture
+
+```
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│   Admin Panel   │────▶│   /api/save-    │────▶│   Vercel KV     │
+│   Enter API Key │     │   transit-key   │     │   (Persistent)  │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+                                                        │
+                                                        ▼
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│   /api/zones    │────▶│ getTransitApi   │────▶│   Load from KV  │
+│   (Direct call) │     │ Key()           │     │   (No env vars) │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+```
+
+#### 3.6.3 Storage Keys
+
+| Key | Description |
+|-----|-------------|
+| `cc:api:transit_key` | Transport Victoria OpenData API key |
+| `cc:api:google_key` | Google Places API key |
+| `cc:state` | User's state (VIC, NSW, QLD) |
+| `cc:preferences` | Full preferences object |
+
+#### 3.6.4 Fallback Behavior
+
+| Scenario | Behavior |
+|----------|----------|
+| KV connected, key saved | ✅ Live Transport Victoria data |
+| KV connected, no key | ⚠️ Fallback to timetable data |
+| KV not connected | ⚠️ In-memory only (dev mode) |
 
 ---
 
