@@ -12,7 +12,9 @@
  * Licensed under CC BY-NC 4.0
  */
 
+// Try @vercel/kv first, fall back to @upstash/redis
 import { kv } from '@vercel/kv';
+import { Redis } from '@upstash/redis';
 
 // Keys for stored preferences
 const KEYS = {
@@ -25,17 +27,53 @@ const KEYS = {
 // In-memory fallback for local development (no KV configured)
 const memoryStore = new Map();
 
+// Initialize Upstash Redis client if available
+let upstashClient = null;
+
+function getUpstashClient() {
+  if (upstashClient) return upstashClient;
+  
+  // Try Upstash REST env vars
+  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+    upstashClient = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN
+    });
+    return upstashClient;
+  }
+  
+  // Try to parse REST URL from REDIS_URL (Upstash format: rediss://default:TOKEN@HOST:PORT)
+  if (process.env.REDIS_URL) {
+    try {
+      const url = new URL(process.env.REDIS_URL);
+      // Upstash REDIS_URL format: rediss://default:TOKEN@region.upstash.io:PORT
+      const restUrl = `https://${url.hostname}`;
+      const token = url.password;
+      if (token && url.hostname.includes('upstash')) {
+        upstashClient = new Redis({ url: restUrl, token });
+        return upstashClient;
+      }
+    } catch (e) {
+      console.log('[kv] Could not parse REDIS_URL for REST client');
+    }
+  }
+  
+  return null;
+}
+
 /**
  * Check if Vercel KV is available
  * Vercel KV / Upstash may use different env var names depending on setup
  */
 function isKvAvailable() {
-  // Check all possible Vercel KV / Upstash env var combinations
-  const hasRestApi = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
-  const hasKvUrl = !!process.env.KV_URL;
+  // Check Vercel KV standard vars
+  const hasVercelKv = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+  // Check Upstash direct vars
+  const hasUpstash = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
+  // Check if we can derive REST from REDIS_URL
   const hasRedisUrl = !!process.env.REDIS_URL;
   
-  return hasRestApi || hasKvUrl || hasRedisUrl;
+  return hasVercelKv || hasUpstash || hasRedisUrl;
 }
 
 /**
@@ -43,11 +81,28 @@ function isKvAvailable() {
  */
 export function getKvEnvStatus() {
   return {
+    // Vercel KV standard
     KV_REST_API_URL: process.env.KV_REST_API_URL ? 'set' : 'missing',
     KV_REST_API_TOKEN: process.env.KV_REST_API_TOKEN ? 'set' : 'missing',
     KV_URL: process.env.KV_URL ? 'set' : 'missing',
+    // Upstash direct
+    UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL ? 'set' : 'missing',
+    UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN ? 'set' : 'missing',
+    // Native Redis
     REDIS_URL: process.env.REDIS_URL ? 'set' : 'missing'
   };
+}
+
+/**
+ * Get the active KV client (Vercel KV or Upstash)
+ */
+function getClient() {
+  // Prefer @vercel/kv if standard env vars are set
+  if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
+    return kv;
+  }
+  // Fall back to Upstash client
+  return getUpstashClient();
 }
 
 /**
@@ -57,13 +112,17 @@ export function getKvEnvStatus() {
  */
 async function get(key) {
   try {
-    if (isKvAvailable()) {
-      return await kv.get(key);
+    const client = getClient();
+    if (client) {
+      const value = await client.get(key);
+      console.log(`[kv] GET ${key}: ${value ? 'found' : 'null'}`);
+      return value;
     }
+    console.log(`[kv] GET ${key}: using memory fallback`);
     return memoryStore.get(key) || null;
   } catch (error) {
     console.error(`[kv-preferences] Error getting ${key}:`, error.message);
-    return null;
+    return memoryStore.get(key) || null;
   }
 }
 
@@ -75,14 +134,18 @@ async function get(key) {
  */
 async function set(key, value) {
   try {
-    if (isKvAvailable()) {
-      await kv.set(key, value);
+    const client = getClient();
+    if (client) {
+      await client.set(key, value);
+      console.log(`[kv] SET ${key}: saved to KV`);
       return true;
     }
+    console.log(`[kv] SET ${key}: using memory fallback`);
     memoryStore.set(key, value);
     return true;
   } catch (error) {
     console.error(`[kv-preferences] Error setting ${key}:`, error.message);
+    memoryStore.set(key, value);
     return false;
   }
 }
