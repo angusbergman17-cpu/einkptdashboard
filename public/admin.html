@@ -1548,6 +1548,9 @@
         <symbol id="icon-tv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/>
         </symbol>
+        <symbol id="icon-tablet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>
+        </symbol>
         <symbol id="icon-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
         </symbol>
@@ -5251,7 +5254,7 @@
 
             // Transit Authority API
             apiCards.push(createApiCard(
-                '🚆',
+                '<svg class="icon"><use href="#icon-train"/></svg>',
                 apis.transitAuthority.name,
                 apis.transitAuthority.configured ? 'Configured' : 'Not Configured',
                 apis.transitAuthority.status,
@@ -7134,7 +7137,7 @@
             status.style.display = 'block';
             status.style.background = 'rgba(113, 128, 150, 0.2)';
             status.style.color = '#cbd5e1';
-            status.innerHTML = '⏳ Saving and testing API key...';
+            status.innerHTML = 'Loading... Saving and testing API key...';
 
             try {
                 const response = await fetch(BASE_URL + '/admin/apis/force-save-google-places', {
@@ -7514,7 +7517,7 @@
                         const data = await response.json();
 
                         if (data.results && data.results.length > 0) {
-                            const source = data.source === 'google' ? '🔵 Google Places' : '🟢 OpenStreetMap';
+                            const source = data.source === 'google' ? 'Google Places' : 'OpenStreetMap';
                             suggestions.innerHTML = data.results.map(r => `
                                 <div class="autocomplete-item" onclick="selectAddress('${inputId}', '${suggestionsId}', '${(r.display_name || '').replace(/'/g, "\\'")}', ${r.lat || 0}, ${r.lon || 0}, '${r.place_id || ''}')">
                                     ${r.display_name}
@@ -7652,7 +7655,7 @@
         // ============= SIMPLIFIED JOURNEY PLANNER =============
         async function calculateSimpleRoute() {
             const btn = document.getElementById('calc-btn-text');
-            btn.textContent = '⏳ Calculating...';
+            btn.textContent = 'Loading... Calculating...';
 
             const homeAddr = document.getElementById('home-address').value;
             const cafeAddr = document.getElementById('cafe-address').value;
@@ -7661,7 +7664,7 @@
 
             if (!homeAddr || !workAddr) {
                 showMessage('planner-message', 'Please enter home and work addresses', 'error');
-                btn.textContent = '🗺️ Calculate Route';
+                btn.innerHTML = '<svg class="icon icon-sm"><use href="#icon-map"/></svg> Calculate Route';
                 return;
             }
 
@@ -7689,7 +7692,7 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    showMessage('planner-message', '✅ Route calculated!', 'success');
+                    showMessage('planner-message', 'Route calculated successfully!', 'success');
                     displayRouteResult(result);
                 } else {
                     showMessage('planner-message', result.error || 'Failed to calculate route', 'error');
@@ -7698,7 +7701,7 @@
                 showMessage('planner-message', 'Error: ' + e.message, 'error');
             }
 
-            btn.textContent = '🗺️ Calculate Route';
+            btn.innerHTML = '<svg class="icon icon-sm"><use href="#icon-map"/></svg> Calculate Route';
         }
 
         function displayRouteResult(result) {
@@ -7742,10 +7745,11 @@
             if (journey.segments && journey.segments.length > 0) {
                 html += '<div style="margin-top: 20px;"><div style="font-weight: 600; margin-bottom: 15px; font-size: 16px;">Journey Timeline:</div>';
                 journey.segments.forEach(seg => {
-                    const icon = seg.type === 'walk' ? '🚶' : seg.type === 'coffee' ? '☕' : seg.type === 'train' ? '🚆' : seg.type === 'tram' ? '🚊' : seg.type === 'bus' ? '🚌' : '⏱️';
+                    const iconMap = { walk: 'walk', coffee: 'coffee', train: 'train', tram: 'tram', bus: 'bus' };
+                    const iconName = iconMap[seg.type] || 'clock';
                     html += `
                         <div style="display: flex; align-items: center; gap: 15px; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 10px;">
-                            <div style="font-size: 24px;">${icon}</div>
+                            <div><svg class="icon icon-lg"><use href="#icon-${iconName}"/></svg></div>
                             <div style="flex: 1;">
                                 <div style="font-weight: 500;">${seg.from || seg.location || ''} ${seg.to ? '→ ' + seg.to : ''}</div>
                                 <div style="font-size: 13px; opacity: 0.7;">${seg.type} · ${seg.duration} min ${seg.departure ? '· ' + seg.departure : ''}</div>
@@ -7915,7 +7919,7 @@
                     <div style="margin-top: 25px; padding: 15px; background: rgba(79, 178, 142, 0.2); border-radius: 8px; text-align: center;">
                         <strong>All data points work together intelligently to answer:</strong><br>
                         <span style="font-size: 18px; display: block; margin-top: 10px;">
-                            ☕ "Can I get coffee, or should I go direct?"
+                            <svg class="icon"><use href="#icon-coffee"/></svg> "Can I get coffee, or should I go direct?"
                         </span>
                     </div>
                 </div>
@@ -8011,9 +8015,9 @@
                 a.click();
                 document.body.removeChild(a);
                 window.URL.revokeObjectURL(url);
-                alert('✅ Decision log exported successfully!');
+                alert('Decision log exported successfully!');
             } catch (error) {
-                alert('❌ Error exporting decision log: ' + error.message);
+                alert('Error: Error exporting decision log: ' + error.message);
             }
         }
 
@@ -8028,13 +8032,13 @@
             if (!message.trim()) {
                 status.style.display = 'block';
                 status.style.color = '#fc8181';
-                status.textContent = '❌ Please enter a message';
+                status.textContent = 'Error: Please enter a message';
                 return;
             }
 
             status.style.display = 'block';
             status.style.color = '#334155';
-            status.textContent = '📤 Sending...';
+            status.textContent = 'Sending... Sending...';
 
             try {
                 const response = await fetch(BASE_URL + '/api/feedback', {
@@ -8053,7 +8057,7 @@
 
                 if (result.success) {
                     status.style.color = '#22c55e';
-                    status.textContent = '✅ Feedback sent successfully! Thank you for your input.';
+                    status.textContent = 'Feedback sent successfully! Thank you for your input.';
                     // Clear form
                     document.getElementById('feedback-name').value = '';
                     document.getElementById('feedback-email').value = '';
@@ -8063,7 +8067,7 @@
                 }
             } catch (error) {
                 status.style.color = '#fc8181';
-                status.textContent = `❌ Error: ${error.message}`;
+                status.textContent = `Error: Error: ${error.message}`;
             }
         }
 
@@ -8080,7 +8084,7 @@
                 return;
             }
 
-            btn.innerHTML = '⏳ Clearing caches...';
+            btn.innerHTML = 'Loading... Clearing caches...';
             btn.disabled = true;
 
             try {
@@ -8091,7 +8095,7 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    btn.innerHTML = '✅ Caches Cleared!';
+                    btn.innerHTML = '<svg class="icon icon-sm"><use href="#icon-check-circle"/></svg> Caches Cleared!';
                     btn.style.background = '#22c55e';
 
                     setTimeout(() => {
@@ -8105,7 +8109,7 @@
                     throw new Error(result.error || 'Failed to clear caches');
                 }
             } catch (error) {
-                btn.innerHTML = '❌ Error';
+                btn.innerHTML = 'Error: Error';
                 btn.style.background = '#fc8181';
 
                 setTimeout(() => {
@@ -8123,7 +8127,7 @@
          */
         function confirmFullSystemReset() {
             const confirmed = confirm(
-                '⚠️ COMPLETE SYSTEM RESET ⚠️\n\n' +
+                'COMPLETE SYSTEM RESET\n\n' +
                 'This action will:\n' +
                 '• DELETE ALL user data (addresses, preferences, API keys)\n' +
                 '• CLEAR ALL caches\n' +
@@ -8139,7 +8143,7 @@
 
             // Second confirmation for safety
             const finalConfirm = confirm(
-                '⚠️ FINAL WARNING ⚠️\n\n' +
+                'FINAL WARNING\n\n' +
                 'This is your last chance to cancel.\n\n' +
                 'All your data will be permanently deleted.\n\n' +
                 'Type exactly "DELETE" in the next prompt to proceed, or click Cancel to abort.'
@@ -8166,7 +8170,7 @@
          */
         async function performFullSystemReset() {
             const btn = document.getElementById('full-reset-btn');
-            btn.innerHTML = '⏳ Wiping data and restarting server...';
+            btn.innerHTML = 'Loading... Wiping data and restarting server...';
             btn.disabled = true;
             btn.style.opacity = '0.6';
 
@@ -8180,7 +8184,7 @@
 
                 if (result.success) {
                     // Show success message
-                    btn.innerHTML = '✅ Reset Complete! Server Restarting...';
+                    btn.innerHTML = '<svg class="icon icon-sm"><use href="#icon-check-circle"/></svg> Reset Complete! Server Restarting...';
                     btn.style.background = '#22c55e';
 
                     // Show countdown and redirect
@@ -8188,7 +8192,7 @@
                     const countdownInterval = setInterval(() => {
                         countdown--;
                         if (countdown > 0) {
-                            btn.innerHTML = `✅ Server restarting... Redirecting to Setup in ${countdown}s`;
+                            btn.innerHTML = `<svg class="icon icon-sm"><use href="#icon-check-circle"/></svg> Server restarting... Redirecting to Setup in ${countdown}s`;
                         } else {
                             clearInterval(countdownInterval);
                             window.location.href = '/setup';
@@ -8198,11 +8202,11 @@
                     throw new Error(result.error || 'Reset failed');
                 }
             } catch (error) {
-                btn.innerHTML = '❌ Error: ' + error.message;
+                btn.innerHTML = 'Error: Error: ' + error.message;
                 btn.style.background = '#fc8181';
 
                 setTimeout(() => {
-                    btn.innerHTML = '⚠️ WIPE ALL DATA & RESTART SERVER';
+                    btn.innerHTML = '<svg class="icon icon-sm"><use href="#icon-warning"/></svg> WIPE ALL DATA & RESTART SERVER';
                     btn.style.background = '';
                     btn.disabled = false;
                     btn.style.opacity = '1';
@@ -8426,7 +8430,7 @@
                 messageDiv.style.display = 'block';
                 messageDiv.style.background = 'rgba(239, 68, 68, 0.2)';
                 messageDiv.style.color = '#fca5a5';
-                messageDiv.innerHTML = '❌ Please enter your Google Places API key';
+                messageDiv.innerHTML = 'Error: Please enter your Google Places API key';
                 return;
             }
 
@@ -8435,7 +8439,7 @@
                 messageDiv.style.display = 'block';
                 messageDiv.style.background = 'rgba(251, 191, 36, 0.2)';
                 messageDiv.style.color = '#fbbf24';
-                messageDiv.innerHTML = '⏳ Saving API key...';
+                messageDiv.innerHTML = 'Loading... Saving API key...';
 
                 // Save to additional APIs endpoint
                 const response = await fetch('/admin/apis/additional', {
@@ -8454,7 +8458,7 @@
                     messageDiv.style.background = 'rgba(16, 185, 129, 0.2)';
                     messageDiv.style.color = '#6ee7b7';
                     messageDiv.innerHTML = `
-                        ✅ Google Places API key saved successfully!
+                        <svg class="icon icon-sm"><use href="#icon-check-circle"/></svg> Google Places API key saved successfully!
                         <br><small>Reloading system in 3 seconds...</small>
                     `;
 
@@ -8465,14 +8469,14 @@
                 } else {
                     messageDiv.style.background = 'rgba(239, 68, 68, 0.2)';
                     messageDiv.style.color = '#fca5a5';
-                    messageDiv.innerHTML = `❌ Failed to save: ${result.message || 'Unknown error'}`;
+                    messageDiv.innerHTML = `Error: Failed to save: ${result.message || 'Unknown error'}`;
                 }
             } catch (error) {
                 console.error('Error saving Google API key:', error);
                 messageDiv.style.display = 'block';
                 messageDiv.style.background = 'rgba(239, 68, 68, 0.2)';
                 messageDiv.style.color = '#fca5a5';
-                messageDiv.innerHTML = `❌ Error: ${error.message}`;
+                messageDiv.innerHTML = `Error: Error: ${error.message}`;
             }
         }
 
@@ -8499,7 +8503,7 @@
                     display: '7.5" E-ink',
                     chip: 'ESP32',
                     ppi: 117,
-                    icon: '📺',
+                    icon: '<svg class="icon icon-sm"><use href="#icon-tv"/></svg>',
                     jailbreakRequired: false,
                     firmwarePath: '/firmware/src/main.cpp'
                 },
@@ -8509,7 +8513,7 @@
                     orientation: 'Portrait',
                     display: '6" E-ink (Carta)',
                     ppi: 300,
-                    icon: '📖',
+                    icon: '<svg class="icon icon-sm"><use href="#icon-tablet"/></svg>',
                     jailbreakRequired: true,
                     firmwarePath: '/firmware/kindle/kindle-pw3/'
                 },
@@ -8519,7 +8523,7 @@
                     orientation: 'Portrait',
                     display: '6" E-ink (Carta 1100)',
                     ppi: 300,
-                    icon: '📖',
+                    icon: '<svg class="icon icon-sm"><use href="#icon-tablet"/></svg>',
                     jailbreakRequired: true,
                     firmwarePath: '/firmware/kindle/kindle-pw4/'
                 },
@@ -8529,7 +8533,7 @@
                     orientation: 'Portrait',
                     display: '6.8" E-ink (Carta 1200)',
                     ppi: 300,
-                    icon: '📖',
+                    icon: '<svg class="icon icon-sm"><use href="#icon-tablet"/></svg>',
                     jailbreakRequired: true,
                     firmwarePath: '/firmware/kindle/kindle-pw5/'
                 },
@@ -8539,7 +8543,7 @@
                     orientation: 'Portrait',
                     display: '6" E-ink (Pearl)',
                     ppi: 167,
-                    icon: '📕',
+                    icon: '<svg class="icon icon-sm"><use href="#icon-tablet"/></svg>',
                     jailbreakRequired: true,
                     firmwarePath: '/firmware/kindle/kindle-basic-10/'
                 },
@@ -8549,7 +8553,7 @@
                     orientation: 'Portrait',
                     display: '6" E-ink (Carta 1200)',
                     ppi: 300,
-                    icon: '📖',
+                    icon: '<svg class="icon icon-sm"><use href="#icon-tablet"/></svg>',
                     jailbreakRequired: true,
                     firmwarePath: '/firmware/kindle/kindle-11/'
                 }
@@ -8576,7 +8580,7 @@
                 infoHTML += `
                     <div style="margin-top: 10px; padding: 10px; background: rgba(234, 88, 12, 0.15); border: 1px solid rgba(234, 88, 12, 0.4); border-radius: 6px;">
                         <div style="font-weight: 600; font-size: 12px; color: #f97316; margin-bottom: 5px;">
-                            ⚠️ Jailbreak Required (WinterBreak)
+                            <svg class="icon icon-sm" style="fill: #f97316;"><use href="#icon-warning"/></svg> Jailbreak Required (WinterBreak)
                         </div>
                         <div style="font-size: 11px; opacity: 0.9; line-height: 1.5;">
                             Requires Kindle firmware 5.18.0 or earlier.<br>
@@ -8622,7 +8626,7 @@
 
                 // Validate CC Display X is not selected (not yet compatible)
                 if (trmnlModel === 'trmnl-x') {
-                    showMessage('setup-message', '❌ CC Display X is not yet compatible. Please select CC Display OG or use a different device.', 'error');
+                    showMessage('setup-message', 'Error: CC Display X is not yet compatible. Please select CC Display OG or use a different device.', 'error');
                     return;
                 }
             }
@@ -8652,7 +8656,7 @@
                         if (statusDiv) {
                             statusDiv.style.display = 'block';
                             statusDiv.style.background = 'rgba(34, 197, 94, 0.2)';
-                            statusDiv.innerHTML = '✅ Transport API key saved';
+                            statusDiv.innerHTML = '<svg class="icon icon-sm"><use href="#icon-check-circle"/></svg> Transport API key saved';
                         }
                     }
                 } catch (e) {
@@ -8677,15 +8681,15 @@
             }
 
             if (!homeAddress) {
-                showMessage('setup-message', '❌ Please enter your home address', 'error');
+                showMessage('setup-message', 'Error: Please enter your home address', 'error');
                 return;
             }
             if (!workAddress) {
-                showMessage('setup-message', '❌ Please enter your work address', 'error');
+                showMessage('setup-message', 'Error: Please enter your work address', 'error');
                 return;
             }
             if (!arrivalTime) {
-                showMessage('setup-message', '❌ Please enter your arrival time', 'error');
+                showMessage('setup-message', 'Error: Please enter your arrival time', 'error');
                 return;
             }
 
@@ -8731,7 +8735,7 @@
                     }
                 };
 
-                console.log('📤 Sending request to /admin/smart-setup:', setupData);
+                console.log('Sending... Sending request to /admin/smart-setup:', setupData);
                 progressText.textContent = 'Detecting your state and nearby transit stops...';
 
                 // Call smart setup endpoint that will:
@@ -8753,7 +8757,7 @@
                 console.log('📥 Response data:', result);
 
                 if (result.success) {
-                    progressText.textContent = '✅ Journey configured! Loading Live Data...';
+                    progressText.textContent = 'Journey configured! Loading Live Data...';
 
                     // Hide progress after brief display
                     setTimeout(() => {
@@ -8766,20 +8770,20 @@
                     setupMessage.style.display = 'block';
                     setupMessage.innerHTML = `
                         <div style="padding: 20px;">
-                            <div style="font-size: 24px; margin-bottom: 15px;">✅ Journey Configured for ${result.state || 'Your Location'}!</div>
+                            <div style="font-size: 24px; margin-bottom: 15px;"><svg class="icon icon-lg"><use href="#icon-check-circle"/></svg> Journey Configured for ${result.state || 'Your Location'}!</div>
 
                             <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                                <div style="font-weight: 600; margin-bottom: 10px;">📍 Your Journey:</div>
+                                <div style="font-weight: 600; margin-bottom: 10px;"><svg class="icon"><use href="#icon-pin"/></svg> Your Journey:</div>
                                 <div style="font-size: 14px; line-height: 1.8;">
-                                    <div>🏠 <strong>Home:</strong> ${result.homeStop || 'Not available'}</div>
-                                    <div>💼 <strong>Work:</strong> ${result.workStop || 'Not available'}</div>
-                                    <div>🚆 <strong>Transit Mode:</strong> ${result.routeMode || 'Auto-detected'}</div>
-                                    <div>📊 <strong>Stops Found:</strong> ${result.stopsFound || 0} stops in your area</div>
+                                    <div><svg class="icon icon-sm"><use href="#icon-home"/></svg> <strong>Home:</strong> ${result.homeStop || 'Not available'}</div>
+                                    <div><svg class="icon icon-sm"><use href="#icon-briefcase"/></svg> <strong>Work:</strong> ${result.workStop || 'Not available'}</div>
+                                    <div><svg class="icon icon-sm"><use href="#icon-train"/></svg> <strong>Transit Mode:</strong> ${result.routeMode || 'Auto-detected'}</div>
+                                    <div><svg class="icon icon-sm"><use href="#icon-chart"/></svg> <strong>Stops Found:</strong> ${result.stopsFound || 0} stops in your area</div>
                                 </div>
                             </div>
 
                             <div style="background: rgba(251, 191, 36, 0.15); padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #fbbf24;">
-                                <div style="font-weight: 600; margin-bottom: 8px;">🔴 Using Fallback Timetable Data</div>
+                                <div style="font-weight: 600; margin-bottom: 8px;">Warning: Using Fallback Timetable Data</div>
                                 <div style="font-size: 13px; opacity: 0.9; line-height: 1.6;">
                                     Your journey is configured and working! Currently using static timetable data.
                                     For real-time updates, add your API keys in the next step.
@@ -8789,15 +8793,15 @@
                             <div style="font-weight: 600; margin-bottom: 10px;">What's Next?</div>
                             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                                 <button class="btn btn-primary" onclick="showTab('api', this)" style="flex: 1; min-width: 200px;">
-                                    🔑 Configure API Keys for Live Data
+                                    <svg class="icon icon-sm"><use href="#icon-key"/></svg> Configure API Keys for Live Data
                                 </button>
                                 <button class="btn btn-secondary" onclick="showTab('live', this)" style="flex: 1; min-width: 200px;">
-                                    👀 View Journey with Fallback Data
+                                    Preview: View Journey with Fallback Data
                                 </button>
                             </div>
 
                             <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 12px; opacity: 0.7;">
-                                <strong>💡 Tip:</strong> The system works great with fallback data! API keys are optional and just add real-time arrival updates.
+                                <strong>Tip: Tip:</strong> The system works great with fallback data! API keys are optional and just add real-time arrival updates.
                             </div>
                         </div>
                     `;
@@ -8805,16 +8809,16 @@
                     // Scroll to message
                     setupMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 } else {
-                    console.error('❌ Setup failed:', result.message);
+                    console.error('Error: Setup failed:', result.message);
                     progressDiv.style.display = 'none';
                     showToast('error', 'Setup Failed', result.message || 'Setup failed. Please try again.');
-                    showMessage('setup-message', '❌ ' + (result.message || 'Setup failed. Please try again.'), 'error');
+                    showMessage('setup-message', 'Error: ' + (result.message || 'Setup failed. Please try again.'), 'error');
                 }
             } catch (error) {
-                console.error('❌ Setup error:', error);
+                console.error('Error: Setup error:', error);
                 progressDiv.style.display = 'none';
                 showToast('error', 'Setup Error', error.message || 'An unexpected error occurred. Check console for details.');
-                showMessage('setup-message', '❌ Error: ' + error.message + '<br>Check browser console for details.', 'error');
+                showMessage('setup-message', 'Error: Error: ' + error.message + '<br>Check browser console for details.', 'error');
             }
         }
 
@@ -8894,7 +8898,7 @@
                             dropdown.style.display = 'block';
                         }
                     } catch (error) {
-                        console.error('❌ Address search error:', error);
+                        console.error('Error: Address search error:', error);
                         dropdown.innerHTML = `
                             <div class="autocomplete-item" style="color: #fc8181;">
                                 Search error: ${error.message}<br>
