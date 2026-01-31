@@ -1630,12 +1630,13 @@ export function renderFullScreen(data, prefs = {}) {
   // Measure clock width for AM/PM positioning
   const clockWidth = ctx.measureText(displayTime).width;
   
-  // AM/PM indicator - right after clock, bottom-aligned
-  ctx.font = 'bold 18px Inter, sans-serif';
-  ctx.fillText(data.am_pm || (isPM ? 'PM' : 'AM'), 12 + clockWidth + 6, clockY + clockFontSize - 22);
+  // v1.36: AM/PM indicator - aligned with top of coffee/weather boxes
+  ctx.font = 'bold 22px Inter, sans-serif';
+  const amPmX = 12 + clockWidth + 8;
+  ctx.fillText(data.am_pm || (isPM ? 'PM' : 'AM'), amPmX, 6);
   
-  // v1.31: Day and date - top right of clock area
-  const dayDateX = 12 + clockWidth + 40;
+  // v1.36: Day and date - to the right of AM/PM
+  const dayDateX = amPmX + 50;
   ctx.font = 'bold 20px Inter, sans-serif';
   ctx.fillText(data.day || '', dayDateX, 6);
   ctx.font = '14px Inter, sans-serif';
