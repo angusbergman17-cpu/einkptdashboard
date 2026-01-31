@@ -1630,10 +1630,10 @@ export function renderFullScreen(data, prefs = {}) {
   // Measure clock width for AM/PM positioning
   const clockWidth = ctx.measureText(displayTime).width;
   
-  // v1.36: AM/PM indicator - aligned with top of coffee/weather boxes
+  // v1.37: AM/PM indicator - aligned with BOTTOM of coffee/weather boxes (y=90)
   ctx.font = 'bold 22px Inter, sans-serif';
   const amPmX = 12 + clockWidth + 8;
-  ctx.fillText(data.am_pm || (isPM ? 'PM' : 'AM'), amPmX, 6);
+  ctx.fillText(data.am_pm || (isPM ? 'PM' : 'AM'), amPmX, 90 - 22);  // Bottom aligned at y=90
   
   // v1.36: Day and date - to the right of AM/PM
   const dayDateX = amPmX + 50;
@@ -1871,16 +1871,9 @@ export function renderFullScreen(data, prefs = {}) {
   const isEarly = diffMins < -5;
   const isOnTime = !isLate && !isEarly;
   
-  // Draw status bar background
+  // v1.37: Status bar - full black, no white outline
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 96, 800, 28);
-  
-  // Add white border if late (V10 Amendment)
-  if (isLate) {
-    ctx.strokeStyle = '#FFF';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(2, 98, 796, 24);
-  }
   
   ctx.fillStyle = '#FFF';
   ctx.font = 'bold 13px Inter, sans-serif';
