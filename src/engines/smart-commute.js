@@ -956,9 +956,14 @@ export class SmartCommute {
       let totalMinutes = 0;
       
       if (includeCoffee) {
-        legs.push({ type: 'walk', to: 'cafe', from: 'home', minutes: 3 });
-        legs.push({ type: 'coffee', location: locations.cafe?.name || 'Cafe', minutes: 4 });
-        legs.push({ type: 'walk', to: `${modeName} stop`, minutes: walkToStop });
+        // Extract cafe name from location data (v1.18 fix)
+        const cafeName = locations.cafe?.name || 
+                        locations.cafe?.formattedAddress?.split(',')[0] ||
+                        locations.cafe?.address?.split(',')[0] ||
+                        'Cafe';
+        legs.push({ type: 'walk', to: 'cafe', from: 'home', minutes: 3, cafeName });
+        legs.push({ type: 'coffee', location: cafeName, cafeName, minutes: 4 });
+        legs.push({ type: 'walk', to: `${modeName} stop`, minutes: walkToStop, stopName: homeStop.name });
         totalMinutes += 7 + walkToStop;
       } else {
         legs.push({ type: 'walk', to: `${modeName} stop`, minutes: walkToStop });
@@ -1025,17 +1030,38 @@ export class SmartCommute {
       if (totalMinutes > 45) continue;
       
       const legs = [];
+      // Extract cafe name (v1.18 fix)
+      const cafeName = locations.cafe?.name || 
+                      locations.cafe?.formattedAddress?.split(',')[0] ||
+                      locations.cafe?.address?.split(',')[0] ||
+                      'Cafe';
+      
       if (includeCoffee) {
-        legs.push({ type: 'walk', to: 'cafe', minutes: walkToCafe });
-        legs.push({ type: 'coffee', location: locations.cafe?.name || 'Cafe', minutes: coffeeTime });
-        legs.push({ type: 'walk', to: 'tram stop', minutes: walkToTram });
+        legs.push({ type: 'walk', to: 'cafe', minutes: walkToCafe, cafeName });
+        legs.push({ type: 'coffee', location: cafeName, cafeName, minutes: coffeeTime });
+        legs.push({ type: 'walk', to: 'tram stop', minutes: walkToTram, stopName: homeTram.name });
       } else {
-        legs.push({ type: 'walk', to: 'tram stop', minutes: walkToTram });
+        legs.push({ type: 'walk', to: 'tram stop', minutes: walkToTram, stopName: homeTram.name });
       }
       
-      legs.push({ type: 'tram', routeNumber: homeTram.route_number || '58', origin: { name: homeTram.name }, destination: { name: trainStation.name }, minutes: tramTime });
-      legs.push({ type: 'walk', to: 'train platform', minutes: walkToTrain });
-      legs.push({ type: 'train', routeNumber: workTrain.route_number || 'City Loop', origin: { name: trainStation.name }, destination: { name: workTrain.name }, minutes: trainTime });
+      legs.push({ 
+        type: 'tram', 
+        routeNumber: homeTram.route_number || '58', 
+        origin: { name: homeTram.name }, 
+        destination: { name: trainStation.name }, 
+        originStop: homeTram.name,
+        minutes: tramTime 
+      });
+      legs.push({ type: 'walk', to: 'train platform', minutes: walkToTrain, stationName: trainStation.name });
+      legs.push({ 
+        type: 'train', 
+        routeNumber: workTrain.route_number || '', 
+        lineName: workTrain.line_name || workTrain.route_name || '',
+        origin: { name: trainStation.name }, 
+        destination: { name: workTrain.name },
+        originStation: trainStation.name,
+        minutes: trainTime 
+      });
       legs.push({ type: 'walk', to: 'work', minutes: walkToWork });
       
       routes.push({
@@ -1067,10 +1093,22 @@ export class SmartCommute {
   getHardcodedRoutes(locations, includeCoffee) {
     const routes = [];
     
-    // Extract names from user config (NO hardcoded location names)
-    const cafeName = locations?.cafe?.name || locations?.cafe?.address?.split(',')[0] || 'Cafe';
-    const homeArea = locations?.home?.address?.split(',')[1]?.trim() || 'home';
-    const workArea = locations?.work?.address?.split(',')[1]?.trim() || 'work';
+    // Extract names from user config (NO hardcoded location names) - v1.18 improved extraction
+    const cafeName = locations?.cafe?.name || 
+                    locations?.cafe?.formattedAddress?.split(',')[0] ||
+                    locations?.cafe?.address?.split(',')[0] || 
+                    'Cafe';
+    const homeArea = locations?.home?.suburb ||
+                    locations?.home?.address?.split(',')[1]?.trim() || 
+                    'home';
+    const workArea = locations?.work?.suburb ||
+                    locations?.work?.address?.split(',')[1]?.trim() || 
+                    'work';
+    
+    // Extract nearby stop names from config if available
+    const nearestTramStop = locations?.cafe?.nearbyStops?.tram?.name || `Toorak Rd`;
+    const nearestTrainStation = locations?.home?.nearbyStops?.train?.name || `${homeArea} Station`;
+    const workStation = locations?.work?.nearbyStops?.train?.name || `Parliament`;
     
     // =========================================================================
     // ROUTE 1: Coffee + Tram + Train (PREFERRED multi-modal pattern)
@@ -1085,11 +1123,13 @@ export class SmartCommute {
         type: 'preferred',
         totalMinutes: 35,
         legs: [
-          { type: 'walk', to: cafeName, from: 'home', minutes: 3, fromHome: true },
-          { type: 'coffee', location: cafeName, minutes: 5, canGet: true },
-          { type: 'tram', origin: { name: `Near ${cafeName}` }, destination: { name: 'Station' }, minutes: 10 },
-          { type: 'train', origin: { name: 'Station' }, destination: { name: `${workArea} Station` }, minutes: 12 },
-          { type: 'walk', to: 'office', minutes: 5 }
+          { type: 'walk', to: 'cafe', from: 'home', minutes: 3, fromHome: true, cafeName, destinationName: cafeName },
+          { type: 'coffee', location: cafeName, cafeName, minutes: 5, canGet: true },
+          { type: 'walk', to: 'tram stop', minutes: 2, stopName: nearestTramStop },
+          { type: 'tram', routeNumber: '58', origin: { name: nearestTramStop }, destination: { name: nearestTrainStation }, originStop: nearestTramStop, minutes: 6 },
+          { type: 'walk', to: 'train platform', minutes: 2, stationName: nearestTrainStation },
+          { type: 'train', origin: { name: nearestTrainStation }, destination: { name: workStation }, originStation: nearestTrainStation, minutes: 8 },
+          { type: 'walk', to: 'work', minutes: 5 }
         ]
       });
     }
@@ -1106,11 +1146,11 @@ export class SmartCommute {
         type: 'standard',
         totalMinutes: 30,
         legs: [
-          { type: 'walk', to: cafeName, from: 'home', minutes: 4, fromHome: true },
-          { type: 'coffee', location: cafeName, minutes: 5, canGet: true },
-          { type: 'walk', to: 'station', from: cafeName, minutes: 5 },
-          { type: 'train', origin: { name: `${homeArea} Station` }, destination: { name: `${workArea} Station` }, minutes: 10 },
-          { type: 'walk', to: 'office', minutes: 6 }
+          { type: 'walk', to: 'cafe', from: 'home', minutes: 4, fromHome: true, cafeName, destinationName: cafeName },
+          { type: 'coffee', location: cafeName, cafeName, minutes: 5, canGet: true },
+          { type: 'walk', to: 'train platform', from: cafeName, minutes: 5, stationName: nearestTrainStation },
+          { type: 'train', origin: { name: nearestTrainStation }, destination: { name: workStation }, originStation: nearestTrainStation, minutes: 10 },
+          { type: 'walk', to: 'work', minutes: 6 }
         ]
       });
     }

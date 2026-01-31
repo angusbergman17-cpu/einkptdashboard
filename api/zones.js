@@ -70,31 +70,58 @@ async function getEngine(preferences = {}) {
 }
 
 /**
- * Build leg title
+ * Build leg title with actual location names (v1.18 fix)
  */
 function buildLegTitle(leg) {
   const cap = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
   
+  // Extract short name from address (e.g., "Norman South Yarra, Toorak Road" → "Norman")
+  const extractName = (location) => {
+    if (!location) return null;
+    if (location.name) return location.name;
+    if (typeof location === 'string') {
+      const parts = location.split(',');
+      return parts[0]?.trim() || location;
+    }
+    if (location.address) {
+      const parts = location.address.split(',');
+      return parts[0]?.trim() || location.address;
+    }
+    return null;
+  };
+  
   switch (leg.type) {
     case 'walk': {
       const dest = leg.to || leg.destination?.name;
+      if (leg.destinationName) return `Walk to ${leg.destinationName}`;
+      if (dest === 'cafe' && leg.cafeName) return `Walk to ${leg.cafeName}`;
       if (dest === 'cafe') return 'Walk to Cafe';
       if (dest === 'work') return 'Walk to Office';
+      if (dest === 'tram stop' && leg.stopName) return `Walk to ${leg.stopName}`;
+      if (dest === 'train platform' && leg.stationName) return `Walk to ${leg.stationName}`;
       if (dest === 'tram stop') return 'Walk to Tram Stop';
       if (dest === 'train platform') return 'Walk to Platform';
       return `Walk to ${cap(dest) || 'Station'}`;
     }
-    case 'coffee':
-      return `Coffee at ${leg.location || 'Cafe'}`;
-    case 'train':
-      return `Train to ${leg.destination?.name || 'City'}`;
+    case 'coffee': {
+      const cafeName = extractName(leg.location) || leg.cafeName || leg.name || 'Cafe';
+      return `Coffee at ${cafeName}`;
+    }
+    case 'train': {
+      const lineName = leg.lineName || leg.routeNumber || '';
+      const destName = leg.destination?.name || 'City';
+      if (lineName) return `${lineName} to ${destName}`;
+      return `Train to ${destName}`;
+    }
     case 'tram': {
       const num = leg.routeNumber ? `Tram ${leg.routeNumber}` : 'Tram';
-      return `${num} to ${leg.destination?.name || 'City'}`;
+      const destName = leg.destination?.name || 'City';
+      return `${num} to ${destName}`;
     }
     case 'bus': {
       const num = leg.routeNumber ? `Bus ${leg.routeNumber}` : 'Bus';
-      return `${num} to ${leg.destination?.name || 'City'}`;
+      const destName = leg.destination?.name || 'City';
+      return `${num} to ${destName}`;
     }
     default:
       return leg.title || 'Continue';
@@ -102,7 +129,7 @@ function buildLegTitle(leg) {
 }
 
 /**
- * Build leg subtitle with live data
+ * Build leg subtitle with origin/stop names (v1.18 fix)
  */
 function buildLegSubtitle(leg, transitData) {
   switch (leg.type) {
@@ -110,21 +137,45 @@ function buildLegSubtitle(leg, transitData) {
       const mins = leg.minutes || leg.durationMinutes || 0;
       if (leg.to === 'work') return `${mins} min walk`;
       if (leg.to === 'cafe') return 'From home';
+      if (leg.origin?.name) return leg.origin.name;
       return `${mins} min walk`;
     }
     case 'coffee':
       return 'TIME FOR COFFEE';
-    case 'train':
-    case 'tram':
-    case 'bus': {
-      const departures = leg.type === 'train' ? (transitData?.trains || []) :
-                         leg.type === 'tram' ? (transitData?.trams || []) : [];
-      const lineName = leg.routeNumber || '';
+    case 'train': {
+      const parts = [];
+      const lineName = leg.lineName || leg.routeNumber || '';
+      const originName = leg.origin?.name || leg.originStation || '';
+      if (lineName) parts.push(lineName);
+      if (originName) parts.push(originName);
+      const departures = transitData?.trains || [];
       if (departures.length > 0) {
         const times = departures.slice(0, 3).map(d => d.minutes).join(', ');
-        return lineName ? `${lineName} • Next: ${times} min` : `Next: ${times} min`;
+        parts.push(`Next: ${times} min`);
       }
-      return lineName || leg.origin?.name || '';
+      return parts.join(' • ') || 'Platform';
+    }
+    case 'tram': {
+      const parts = [];
+      const originName = leg.origin?.name || leg.originStop || '';
+      if (originName) parts.push(originName);
+      const departures = transitData?.trams || [];
+      if (departures.length > 0) {
+        const times = departures.slice(0, 3).map(d => d.minutes).join(', ');
+        parts.push(`Next: ${times} min`);
+      }
+      return parts.join(' • ') || 'Tram stop';
+    }
+    case 'bus': {
+      const parts = [];
+      const originName = leg.origin?.name || leg.originStop || '';
+      if (originName) parts.push(originName);
+      const departures = transitData?.buses || [];
+      if (departures.length > 0) {
+        const times = departures.slice(0, 3).map(d => d.minutes).join(', ');
+        parts.push(`Next: ${times} min`);
+      }
+      return parts.join(' • ') || 'Bus stop';
     }
     default:
       return leg.subtitle || '';

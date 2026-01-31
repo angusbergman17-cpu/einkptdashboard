@@ -186,32 +186,70 @@ function buildJourneyLegs(route, transitData, coffeeDecision, currentTime) {
 }
 
 /**
- * Build leg title
+ * Build leg title with actual location names (v1.18 fix)
  */
 function buildLegTitle(leg) {
   // Capitalize first letter helper
   const cap = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
   
+  // Extract short name from address (e.g., "Norman South Yarra, Toorak Road" → "Norman")
+  const extractName = (location) => {
+    if (!location) return null;
+    // If it has a name field, use it
+    if (location.name) return location.name;
+    // If it's a string address, extract first part before comma
+    if (typeof location === 'string') {
+      const parts = location.split(',');
+      return parts[0]?.trim() || location;
+    }
+    // If it has address field, extract name from it
+    if (location.address) {
+      const parts = location.address.split(',');
+      return parts[0]?.trim() || location.address;
+    }
+    return null;
+  };
+  
   switch (leg.type) {
     case 'walk': {
       const dest = leg.to || leg.destination?.name;
+      // Use actual destination name if available
+      if (leg.destinationName) return `Walk to ${leg.destinationName}`;
+      if (dest === 'cafe' && leg.cafeName) return `Walk to ${leg.cafeName}`;
       if (dest === 'cafe') return 'Walk to Cafe';
       if (dest === 'work') return 'Walk to Office';
+      if (dest === 'tram stop' && leg.stopName) return `Walk to ${leg.stopName}`;
+      if (dest === 'train platform' && leg.stationName) return `Walk to ${leg.stationName}`;
       if (dest === 'tram stop') return 'Walk to Tram Stop';
       if (dest === 'train platform') return 'Walk to Platform';
       return `Walk to ${cap(dest) || 'Station'}`;
     }
-    case 'coffee':
-      return `Coffee at ${leg.location || 'Cafe'}`;
-    case 'train':
-      return `Train to ${leg.destination?.name || 'City'}`;
+    case 'coffee': {
+      // Extract cafe name from location data
+      const cafeName = extractName(leg.location) || 
+                       leg.cafeName || 
+                       leg.name ||
+                       'Cafe';
+      return `Coffee at ${cafeName}`;
+    }
+    case 'train': {
+      // Include line name if available (e.g., "Sandringham Line to Parliament")
+      const lineName = leg.lineName || leg.routeNumber || '';
+      const destName = leg.destination?.name || 'City';
+      if (lineName) {
+        return `${lineName} to ${destName}`;
+      }
+      return `Train to ${destName}`;
+    }
     case 'tram': {
       const num = leg.routeNumber ? `Tram ${leg.routeNumber}` : 'Tram';
-      return `${num} to ${leg.destination?.name || 'City'}`;
+      const destName = leg.destination?.name || 'City';
+      return `${num} to ${destName}`;
     }
     case 'bus': {
       const num = leg.routeNumber ? `Bus ${leg.routeNumber}` : 'Bus';
-      return `${num} to ${leg.destination?.name || 'City'}`;
+      const destName = leg.destination?.name || 'City';
+      return `${num} to ${destName}`;
     }
     default:
       return leg.title || 'Continue';
@@ -219,30 +257,68 @@ function buildLegTitle(leg) {
 }
 
 /**
- * Build leg subtitle with live data
+ * Build leg subtitle with live data and origin/stop names (v1.18 fix)
  */
 function buildLegSubtitle(leg, transitData) {
   switch (leg.type) {
     case 'walk': {
       const mins = leg.minutes || leg.durationMinutes || 0;
+      // Show destination details for walk
       if (leg.to === 'work') return `${mins} min walk`;
       if (leg.to === 'cafe') return 'From home';
       if (leg.origin?.name) return leg.origin.name;
+      if (leg.fromStation) return `From ${leg.fromStation}`;
       return `${mins} min walk`;
     }
     case 'coffee':
       return 'TIME FOR COFFEE';
-    case 'train':
-    case 'tram':
-    case 'bus': {
+    case 'train': {
+      // Show line name + origin station + next departures
+      // e.g., "Sandringham • From South Yarra • Next: 5, 12 min"
+      const parts = [];
+      const lineName = leg.lineName || leg.routeNumber || '';
+      const originName = leg.origin?.name || leg.originStation || '';
+      
+      if (lineName) parts.push(lineName);
+      if (originName) parts.push(originName);
+      
       const departures = findDeparturesForLeg(leg, transitData);
-      const lineName = leg.routeNumber || '';
       if (departures.length > 0) {
         const times = departures.slice(0, 3).map(d => d.minutes).join(', ');
-        return lineName ? `${lineName} • Next: ${times} min` : `Next: ${times} min`;
+        parts.push(`Next: ${times} min`);
       }
-      if (lineName) return lineName;
-      return leg.origin?.name || '';
+      
+      return parts.join(' • ') || 'Platform';
+    }
+    case 'tram': {
+      // Show route + origin stop + next departures
+      // e.g., "Route 58 • Chapel St • Next: 4, 12 min"
+      const parts = [];
+      const originName = leg.origin?.name || leg.originStop || '';
+      
+      if (originName) parts.push(originName);
+      
+      const departures = findDeparturesForLeg(leg, transitData);
+      if (departures.length > 0) {
+        const times = departures.slice(0, 3).map(d => d.minutes).join(', ');
+        parts.push(`Next: ${times} min`);
+      }
+      
+      return parts.join(' • ') || 'Tram stop';
+    }
+    case 'bus': {
+      const parts = [];
+      const originName = leg.origin?.name || leg.originStop || '';
+      
+      if (originName) parts.push(originName);
+      
+      const departures = findDeparturesForLeg(leg, transitData);
+      if (departures.length > 0) {
+        const times = departures.slice(0, 3).map(d => d.minutes).join(', ');
+        parts.push(`Next: ${times} min`);
+      }
+      
+      return parts.join(' • ') || 'Bus stop';
     }
     default:
       return leg.subtitle || '';
