@@ -5616,8 +5616,8 @@
 
         // Load E-Ink preview image from /api/screen
         async function loadEinkPreview(forceRefresh = false) {
-            // Sync config to KV before loading (ensures server has latest data)
-            await syncConfigToKV();
+            // Sync config to KV in background (non-blocking)
+            syncConfigToKV().catch(e => console.warn('[Admin] KV sync error:', e));
             
             const config = JSON.parse(localStorage.getItem('cc-config') || '{}');
             const device = config.device || localStorage.getItem('cc-device') || 'trmnl-og';
@@ -5650,17 +5650,29 @@
             if (previewImage) {
                 // Create a new Image object to preload the image
                 const newImage = new Image();
+                
+                // Add timeout for slow connections (30 seconds)
+                const loadTimeout = setTimeout(() => {
+                    console.error('[Admin] E-ink preview load timeout');
+                    handleEinkImageError('Timeout - try refreshing');
+                }, 30000);
+                
                 newImage.onload = function() {
+                    clearTimeout(loadTimeout);
                     // Only set the src once loaded to avoid flicker
                     previewImage.src = imageUrl;
                     previewImage.style.width = Math.min(deviceConfig.width, 760) + 'px';
                     previewImage.style.height = 'auto';
                     handleEinkImageLoad();
                 };
-                newImage.onerror = function() {
-                    handleEinkImageError();
+                newImage.onerror = function(e) {
+                    clearTimeout(loadTimeout);
+                    console.error('[Admin] E-ink preview load error:', e);
+                    handleEinkImageError('Failed to load - check console');
                 };
+                
                 // Start loading the image
+                console.log('[Admin] Loading e-ink preview from:', imageUrl);
                 newImage.src = imageUrl;
             }
             
@@ -5750,14 +5762,18 @@
         }
 
         // Handle image load error
-        function handleEinkImageError() {
+        function handleEinkImageError(errorMsg = 'Failed to load display') {
             const loadingOverlay = document.getElementById('eink-loading-overlay');
             if (loadingOverlay) {
                 loadingOverlay.innerHTML = `
                     <div style="text-align: center; color: #ef4444;">
                         <div style="font-size: 32px; margin-bottom: 10px;">⚠️</div>
-                        <div style="font-size: 14px; margin-bottom: 8px;">Failed to load display</div>
-                        <div style="font-size: 12px; opacity: 0.7;">Check journey configuration</div>
+                        <div style="font-size: 14px; margin-bottom: 8px;">${sanitize(errorMsg)}</div>
+                        <div style="font-size: 12px; opacity: 0.7;">
+                            <button onclick="loadEinkPreview(true)" style="background: rgba(79, 178, 142, 0.2); border: 1px solid #4fb28e; color: #4fb28e; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 10px;">
+                                Try Again
+                            </button>
+                        </div>
                     </div>
                 `;
             }
