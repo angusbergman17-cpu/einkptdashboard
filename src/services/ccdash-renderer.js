@@ -1794,8 +1794,22 @@ export function renderFullScreen(data, prefs = {}) {
   // =========================================================================
   // =========================================================================
   // JOURNEY LEGS (V10 Spec Section 5) - Per Reference Design Images
+  // v1.27: Add scaling based on leg count
   // =========================================================================
   const legs = data.journey_legs || data.legs || [];
+  
+  // v1.27: Calculate scale factor based on leg count (baseline 5 legs)
+  const legCount = legs.length;
+  const baseLegs = 5;
+  const scale = Math.min(1, Math.max(0.6, baseLegs / Math.max(legCount, 3)));
+  const titleSize = Math.max(11, Math.round(16 * scale));
+  const subtitleSize = Math.max(9, Math.round(12 * scale));
+  const iconSize = Math.max(20, Math.round(32 * scale));
+  const numberSize = Math.max(16, Math.round(24 * scale));
+  const departLabelSize = Math.max(5, Math.round(7 * scale));
+  const departTimeSize = Math.max(8, Math.round(11 * scale));
+  const durationSize = Math.max(16, Math.round(22 * scale));
+  const durationLabelSize = Math.max(7, Math.round(9 * scale));
   
   // Count delayed legs for status bar (DELAY vs DELAYS)
   const delayedLegs = legs.filter(l => l.status === 'delayed' || l.delayMinutes > 0);
@@ -1889,75 +1903,56 @@ export function renderFullScreen(data, prefs = {}) {
     // - Normal: Filled black circle with white number
     // - Skipped: Dashed circle outline with black number
     // - Suspended: Dashed circle with X (per ref image 6)
+    // v1.27: scaled leg numbers
     // -----------------------------------------------------------------------
     if (isSuspended) {
-      // Draw X in dashed circle for suspended (per ref image 6)
-      drawLegNumber(ctx, 'X', zone.x + 8, zone.y + (zone.h - 24) / 2, 'cancelled', false);
+      drawLegNumber(ctx, 'X', zone.x + 6, zone.y + (zone.h - numberSize) / 2, 'cancelled', numberSize);
     } else {
-      drawLegNumber(ctx, legNum, zone.x + 8, zone.y + (zone.h - 24) / 2, status, isSkippedCoffee);
+      drawLegNumber(ctx, legNum, zone.x + 6, zone.y + (zone.h - numberSize) / 2, status, numberSize);
     }
     
     // -----------------------------------------------------------------------
-    // MODE ICON (V10 Spec Section 5.3)
+    // MODE ICON (V10 Spec Section 5.3) - v1.27: scaled
     // - Normal: Filled solid icons
     // - Delayed/Skipped/Suspended/Diverted: Outline icons
     // -----------------------------------------------------------------------
     const useOutlineIcon = isDelayed || isSkippedCoffee || isSuspended || isDiverted;
-    drawModeIcon(ctx, leg.type, zone.x + 40, zone.y + (zone.h - 32) / 2, 32, useOutlineIcon);
+    const iconX = zone.x + 8 + numberSize + 6;
+    drawModeIcon(ctx, leg.type, iconX, zone.y + (zone.h - iconSize) / 2, iconSize, useOutlineIcon);
     
     // -----------------------------------------------------------------------
-    // TITLE (V10 Spec Section 5.4) - Per reference images
-    // - Delayed: ⏱ prefix
-    // - Suspended: ⚠ prefix (per ref image 6)
-    // - Diverted: ↩ prefix (per ref image 8)
-    // - Coffee: ☕ prefix
+    // TITLE (V10 Spec Section 5.4) - v1.27: scaled, no emoji prefixes
     // -----------------------------------------------------------------------
     ctx.fillStyle = '#000';
-    ctx.font = 'bold 16px Inter, sans-serif';
+    ctx.font = `bold ${titleSize}px Inter, sans-serif`;
     ctx.textBaseline = 'top';
     
-    let titlePrefix = '';
-    // Diversion walks also get ↩ prefix (per ref image 8 - leg 3)
-    const isDiversionWalk = leg.type === 'walk' && leg.isDiversion;
-    // Replacement bus gets ⏱ prefix (per ref image 6)
-    const isReplacementBus = leg.type === 'bus' && leg.isReplacement;
-    
-    if (isSuspended) titlePrefix = '⚠ ';
-    else if (isDiverted || isDiversionWalk) titlePrefix = '↩ ';
-    else if (isReplacementBus) titlePrefix = '⏱ ';
-    else if (isDelayed && leg.type !== 'walk') titlePrefix = '⏱ ';
-    else if (leg.type === 'coffee' && isCoffeeCanGet) titlePrefix = '☕ ';
+    // v1.27: Calculate text position based on scaled elements
+    const textX = iconX + iconSize + 8;
+    const titleY = zone.y + Math.round(zone.h * 0.12);
+    const subtitleY = zone.y + Math.round(zone.h * 0.52);
     
     if (idx === 0) leg.isFirst = true;
     const legTitle = leg.title || getLegTitle(leg);
-    ctx.fillText(titlePrefix + legTitle, zone.x + 82, zone.y + 6);
+    ctx.fillText(legTitle, textX, titleY);
     
     // -----------------------------------------------------------------------
-    // SUBTITLE (V10 Spec Section 5.5) - Per reference images
-    // - Coffee can-get: "✓ TIME FOR COFFEE" or "✓ EXTRA TIME — Disruption"
-    // - Coffee skip: "✗ SKIP — Running late"
-    // - Suspended: "SUSPENDED — [reason]" (per ref image 6)
-    // - Diverted: "Next: X, Y min • [diverted stop]" (per ref image 8)
-    // - Transit delayed: "+X MIN • Next: X, Y min"
+    // SUBTITLE (V10 Spec Section 5.5) - v1.27: scaled
     // -----------------------------------------------------------------------
-    ctx.font = '12px Inter, sans-serif';
+    ctx.font = `${subtitleSize}px Inter, sans-serif`;
     let legSubtitle = leg.subtitle;
     
     if (!legSubtitle) {
       if (isExtraTimeCoffee) {
-        // Extra time due to disruption (per ref image 6)
         legSubtitle = '✓ EXTRA TIME — Disruption';
       } else if (isCoffeeCanGet) {
-        // Check for special day treats
         const dayOfWeek = new Date().getDay();
         legSubtitle = dayOfWeek === 5 ? '✓ FRIDAY TREAT' : '✓ TIME FOR COFFEE';
       } else if (isSkippedCoffee) {
         legSubtitle = '✗ SKIP — Running late';
       } else if (isSuspended) {
-        // Suspended: "SUSPENDED — [reason]" (per ref image 6)
         legSubtitle = `SUSPENDED — ${leg.reason || 'Service disruption'}`;
       } else if (isDiverted) {
-        // Diverted with stop info (per ref image 8)
         const nextTimes = leg.nextDepartures || [];
         const divertedStop = leg.divertedStop || '';
         legSubtitle = nextTimes.length > 0 
@@ -1971,29 +1966,28 @@ export function renderFullScreen(data, prefs = {}) {
         legSubtitle = getLegSubtitle(leg);
       }
     }
-    // Truncate subtitle if too long to prevent overlap
+    // v1.27: Calculate max width with scaled elements
     const hasDepart = ['train', 'tram', 'bus', 'vline', 'ferry'].includes(leg.type) && leg.departTime;
-    const subtitleMaxWidth = hasDepart ? (zone.w - 82 - 140) : (zone.w - 82 - 80);
+    const timeBoxW = Math.max(56, Math.round(72 * scale));
+    const departColW = hasDepart ? Math.max(40, Math.round(50 * scale)) : 0;
+    const subtitleMaxWidth = zone.w - textX - timeBoxW - departColW - 10;
     
     while (ctx.measureText(legSubtitle).width > subtitleMaxWidth && legSubtitle.length > 10) {
       legSubtitle = legSubtitle.slice(0, -4) + '...';
     }
-    ctx.fillText(legSubtitle, zone.x + 82, zone.y + 26);
+    ctx.fillText(legSubtitle, textX, subtitleY);
     
     // -----------------------------------------------------------------------
-    // DEPART TIME COLUMN (v1.18) - Per user request / EXPRESS image reference
-    // Shows when user should catch this service based on journey timing
-    // Position: Fixed position to prevent overlap
+    // DEPART TIME COLUMN - v1.27: scaled "PLANNED DEPART" indicator
     // -----------------------------------------------------------------------
     if (hasDepart) {
-      const departX = zone.x + zone.w - 115;  // Moved left to prevent overlap
-      ctx.font = '7px Inter, sans-serif';
+      const departX = zone.x + zone.w - timeBoxW - departColW / 2;
+      ctx.font = `${departLabelSize}px Inter, sans-serif`;
       ctx.textAlign = 'center';
-      ctx.globalAlpha = 0.6;
-      ctx.fillText('DEPART', departX, zone.y + 8);
-      ctx.globalAlpha = 1.0;
-      ctx.font = 'bold 11px Inter, sans-serif';
-      ctx.fillText(leg.departTime, departX, zone.y + 22);
+      ctx.fillText('PLANNED', departX, titleY);
+      ctx.fillText('DEPART', departX, titleY + departLabelSize + 1);
+      ctx.font = `bold ${departTimeSize}px Inter, sans-serif`;
+      ctx.fillText(leg.departTime, departX, subtitleY);
       ctx.textAlign = 'left';
     }
     
@@ -2004,46 +1998,41 @@ export function renderFullScreen(data, prefs = {}) {
     // - Skipped: White fill, dashed border all around, "—" text
     // - Suspended: "CANCELLED" text (per ref image 6)
     // - Diverted: White fill with vertical stripes continuation
+    // v1.27: All time box text scaled
     // -----------------------------------------------------------------------
-    const timeBoxW = 72;
     const timeBoxX = zone.x + zone.w - timeBoxW;
+    const minOffset = Math.round(6 * scale);
+    const labelOffset = Math.round(14 * scale);
     
     if (isSuspended) {
-      // Suspended: "CANCELLED" in time box (per ref image 6)
-      // No background fill - stripes continue through
       ctx.fillStyle = '#000';
-      ctx.font = 'bold 11px Inter, sans-serif';
+      ctx.font = `bold ${Math.round(11 * scale)}px Inter, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('CANCELLED', timeBoxX + timeBoxW / 2, zone.y + zone.h / 2);
     } else if (isSkippedCoffee) {
-      // Skipped coffee: dashed border all around, "—" (per ref image 1 - leg 2)
       ctx.strokeStyle = '#000';
       ctx.lineWidth = 2;
       ctx.setLineDash([4, 4]);
       ctx.strokeRect(timeBoxX + 2, zone.y + 2, timeBoxW - 4, zone.h - 4);
       ctx.setLineDash([]);
       ctx.fillStyle = '#000';
-      ctx.font = 'bold 22px Inter, sans-serif';
+      ctx.font = `bold ${durationSize}px Inter, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('—', timeBoxX + timeBoxW / 2, zone.y + zone.h / 2);
     } else if (isDiverted) {
-      // Diverted: normal time display but stripes continue (per ref image 8)
       ctx.fillStyle = '#000';
-      ctx.font = 'bold 22px Inter, sans-serif';
+      ctx.font = `bold ${durationSize}px Inter, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       const minutes = leg.minutes || leg.durationMinutes || '--';
-      ctx.fillText(minutes.toString(), timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 - 6);
-      ctx.font = '9px Inter, sans-serif';
-      ctx.fillText('MIN', timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 + 14);
+      ctx.fillText(minutes.toString(), timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 - minOffset);
+      ctx.font = `${durationLabelSize}px Inter, sans-serif`;
+      ctx.fillText('MIN', timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 + labelOffset);
     } else if (isDelayed && leg.type !== 'walk') {
-      // Delayed transit: white background, dashed LEFT border only (per ref images 1,3)
       ctx.fillStyle = '#FFF';
       ctx.fillRect(timeBoxX, zone.y, timeBoxW, zone.h);
-      
-      // Dashed left border only
       ctx.strokeStyle = '#000';
       ctx.lineWidth = 3;
       ctx.setLineDash([6, 4]);
@@ -2052,29 +2041,26 @@ export function renderFullScreen(data, prefs = {}) {
       ctx.lineTo(timeBoxX, zone.y + zone.h);
       ctx.stroke();
       ctx.setLineDash([]);
-      
-      // Black text
       ctx.fillStyle = '#000';
-      ctx.font = 'bold 22px Inter, sans-serif';
+      ctx.font = `bold ${durationSize}px Inter, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       const minutes = leg.minutes || leg.durationMinutes || '--';
-      ctx.fillText(minutes.toString(), timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 - 6);
-      ctx.font = '9px Inter, sans-serif';
-      ctx.fillText('MIN', timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 + 14);
+      ctx.fillText(minutes.toString(), timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 - minOffset);
+      ctx.font = `${durationLabelSize}px Inter, sans-serif`;
+      ctx.fillText('MIN', timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 + labelOffset);
     } else {
-      // Normal: black fill, white text
       ctx.fillStyle = '#000';
       ctx.fillRect(timeBoxX, zone.y, timeBoxW, zone.h);
       ctx.fillStyle = '#FFF';
-      ctx.font = 'bold 22px Inter, sans-serif';
+      ctx.font = `bold ${durationSize}px Inter, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       const minutes = leg.minutes || leg.durationMinutes || '--';
       const displayMin = leg.type === 'coffee' ? `~${minutes}` : minutes.toString();
-      ctx.fillText(displayMin, timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 - 6);
-      ctx.font = '9px Inter, sans-serif';
-      ctx.fillText(leg.type === 'walk' ? 'MIN WALK' : 'MIN', timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 + 14);
+      ctx.fillText(displayMin, timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 - minOffset);
+      ctx.font = `${durationLabelSize}px Inter, sans-serif`;
+      ctx.fillText(leg.type === 'walk' ? 'MIN WALK' : 'MIN', timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 + labelOffset);
     }
     
     ctx.textAlign = 'left';
