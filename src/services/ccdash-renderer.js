@@ -1621,11 +1621,11 @@ export function renderFullScreen(data, prefs = {}) {
     displayTime = displayTime.replace(/\s*(am|pm)/gi, '');
   }
   
-  // v1.31: LARGE clock, positioned right against status bar
-  const clockFontSize = 72;
+  // v1.32: LARGER clock, right against status bar
+  const clockFontSize = 78;
   ctx.font = `bold ${clockFontSize}px Inter, sans-serif`;
-  const clockY = 94 - clockFontSize + 4;  // Bottom of clock touches status bar
-  ctx.fillText(displayTime, 12, clockY);
+  const clockY = 94 - clockFontSize + 2;  // Bottom of clock touches status bar
+  ctx.fillText(displayTime, 10, clockY);
   
   // Measure clock width for AM/PM positioning
   const clockWidth = ctx.measureText(displayTime).width;
@@ -1668,51 +1668,98 @@ export function renderFullScreen(data, prefs = {}) {
   ctx.fillStyle = '#000';
   ctx.textBaseline = 'top';
   
-  // v1.31: Check if route includes coffee
-  const journeyLegs = data.journey_legs || data.legs || [];
-  const coffeeLeg = journeyLegs.find(l => l.type === 'coffee' && l.canGet !== false);
-  const hasCoffee = !!coffeeLeg;
-  
-  // v1.31: COFFEE INDICATOR - large distinct box between service status and weather
-  if (hasCoffee) {
-    const coffeeBoxX = statusBoxX + statusBoxW + 12;
-    const coffeeBoxY = 4;
-    const coffeeBoxW = 190;
-    const coffeeBoxH = 86;
-    
-    // Black filled box for coffee
-    ctx.fillStyle = '#000';
-    ctx.fillRect(coffeeBoxX, coffeeBoxY, coffeeBoxW, coffeeBoxH);
-    
-    // Coffee icon (simple cup)
-    ctx.fillStyle = '#FFF';
-    ctx.font = 'bold 28px Inter, sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText('☕', coffeeBoxX + 8, coffeeBoxY + 12);
-    
-    // "GET A COFFEE" text
-    ctx.font = 'bold 14px Inter, sans-serif';
-    ctx.fillText('GET A COFFEE', coffeeBoxX + 44, coffeeBoxY + 16);
-    
-    // "ARRIVE BY" + time
-    ctx.font = '11px Inter, sans-serif';
-    ctx.fillText('+ ARRIVE BY', coffeeBoxX + 44, coffeeBoxY + 36);
-    
-    // Large arrival time
-    const arriveTime = data.arrive_by || data.arrivalTime || '--:--';
-    ctx.font = 'bold 26px Inter, sans-serif';
-    ctx.fillText(arriveTime, coffeeBoxX + 44, coffeeBoxY + 52);
-    
-    ctx.textAlign = 'left';
-    ctx.fillStyle = '#000';
-  }
-  
-  // v1.31: Weather box - positioned at far right
+  // v1.32: Weather box position (declared early for coffee box sizing)
   const weatherBoxX = 620;
   const weatherBoxY = 4;
   const weatherBoxW = 172;
   const weatherBoxH = 86;
   
+  // v1.32: Check if route includes coffee
+  const journeyLegs = data.journey_legs || data.legs || [];
+  const coffeeLegCanGet = journeyLegs.find(l => l.type === 'coffee' && l.canGet !== false);
+  const coffeeLegSkipped = journeyLegs.find(l => l.type === 'coffee' && l.canGet === false);
+  const hasCoffee = !!coffeeLegCanGet;
+  const coffeeSkipped = !!coffeeLegSkipped;
+  
+  // v1.32: COFFEE INDICATOR - larger box, spread to right edge before weather
+  const coffeeBoxX = statusBoxX + statusBoxW + 10;
+  const coffeeBoxY = 4;
+  const coffeeBoxW = weatherBoxX - coffeeBoxX - 8;  // Spread to weather box
+  const coffeeBoxH = 86;
+  
+  if (hasCoffee) {
+    // Black filled box for coffee
+    ctx.fillStyle = '#000';
+    ctx.fillRect(coffeeBoxX, coffeeBoxY, coffeeBoxW, coffeeBoxH);
+    
+    // Draw coffee cup icon (no emoji - pure shapes)
+    ctx.fillStyle = '#FFF';
+    ctx.strokeStyle = '#FFF';
+    ctx.lineWidth = 3;
+    // Cup body
+    ctx.fillRect(coffeeBoxX + 16, coffeeBoxY + 28, 28, 36);
+    // Handle
+    ctx.beginPath();
+    ctx.arc(coffeeBoxX + 44, coffeeBoxY + 44, 10, -Math.PI/2, Math.PI/2);
+    ctx.stroke();
+    // Steam lines
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 3; i++) {
+      ctx.beginPath();
+      ctx.moveTo(coffeeBoxX + 20 + i * 8, coffeeBoxY + 24);
+      ctx.quadraticCurveTo(coffeeBoxX + 24 + i * 8, coffeeBoxY + 16, coffeeBoxX + 20 + i * 8, coffeeBoxY + 10);
+      ctx.stroke();
+    }
+    
+    // "GET A COFFEE" text - larger
+    ctx.font = 'bold 18px Inter, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('GET A COFFEE', coffeeBoxX + 62, coffeeBoxY + 20);
+    
+    // "+ ARRIVE BY" + time
+    ctx.font = '12px Inter, sans-serif';
+    ctx.fillText('+ ARRIVE BY', coffeeBoxX + 62, coffeeBoxY + 42);
+    
+    // Large arrival time
+    const arriveTime = data.arrive_by || data.arrivalTime || '--:--';
+    ctx.font = 'bold 28px Inter, sans-serif';
+    ctx.fillText(arriveTime, coffeeBoxX + 62, coffeeBoxY + 58);
+    
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#000';
+  } else if (coffeeSkipped) {
+    // v1.32: "No time for coffee" box with sad face
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(coffeeBoxX, coffeeBoxY, coffeeBoxW, coffeeBoxH);
+    
+    // Sad face (simple drawn)
+    ctx.fillStyle = '#000';
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    // Face circle
+    ctx.beginPath();
+    ctx.arc(coffeeBoxX + 30, coffeeBoxY + 43, 22, 0, Math.PI * 2);
+    ctx.stroke();
+    // Eyes
+    ctx.fillRect(coffeeBoxX + 22, coffeeBoxY + 36, 4, 6);
+    ctx.fillRect(coffeeBoxX + 34, coffeeBoxY + 36, 4, 6);
+    // Sad mouth (frown)
+    ctx.beginPath();
+    ctx.arc(coffeeBoxX + 30, coffeeBoxY + 58, 10, Math.PI * 1.2, Math.PI * 1.8);
+    ctx.stroke();
+    
+    // "NO TIME FOR COFFEE" text
+    ctx.font = 'bold 16px Inter, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('NO TIME', coffeeBoxX + 62, coffeeBoxY + 28);
+    ctx.fillText('FOR COFFEE', coffeeBoxX + 62, coffeeBoxY + 48);
+    
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#000';
+  }
+  
+  // v1.32: Weather box - draw (position already declared above)
   ctx.strokeStyle = '#000';
   ctx.lineWidth = 2;
   ctx.strokeRect(weatherBoxX, weatherBoxY, weatherBoxW, weatherBoxH);
@@ -1950,29 +1997,29 @@ export function renderFullScreen(data, prefs = {}) {
     }
     
     // -----------------------------------------------------------------------
-    // BORDER (varies by state per reference images)
-    // - Normal: 2px solid
-    // - Coffee can-get: 3px solid (thicker)
-    // - Coffee skip: 2px dashed
+    // BORDER - v1.32: Thinner borders for easier glancing
+    // - Normal: 1px solid (thinner)
+    // - Coffee can-get: 2px solid
+    // - Coffee skip: 1px dashed
     // - Delayed: 2px dashed
-    // - Suspended/Diverted: 3px solid
+    // - Suspended/Diverted: 2px solid
     // -----------------------------------------------------------------------
     ctx.strokeStyle = '#000';
     
     if (isCoffeeCanGet) {
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 2;
       ctx.setLineDash([]);
     } else if (isSkippedCoffee) {
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 1;
       ctx.setLineDash([4, 4]);
     } else if (isDelayed) {
       ctx.lineWidth = 2;
       ctx.setLineDash([6, 4]);
     } else if (isSuspended || isDiverted) {
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 2;
       ctx.setLineDash([]);
     } else {
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 1;  // v1.32: Thinner normal borders
       ctx.setLineDash([]);
     }
     
