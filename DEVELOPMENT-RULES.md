@@ -1,7 +1,7 @@
 # Commute Compute Development Rules
 
 **MANDATORY COMPLIANCE DOCUMENT**  
-**Version:** 1.8  
+**Version:** 1.12  
 **Last Updated:** 2026-01-31  
 **Copyright (c) 2026 Commute Compute System by Angus Bergman — Licensed under CC BY-NC 4.0**
 
@@ -797,7 +797,7 @@ Commute Compute is designed for TRMNL e-ink display hardware with custom firmwar
 **Firmware Must:**
 - [ ] Connect to user's self-hosted server URL (configured via setup portal)
 - [ ] Fetch images from `/api/zones` or `/api/screen` endpoints
-- [ ] Support 20-second partial refresh cycle
+- [ ] Support 60-second partial refresh cycle
 - [ ] Implement zone-based partial updates
 - [ ] Use state machine architecture (no blocking in `setup()`)
 - [ ] Disable brownout detection
@@ -2611,9 +2611,9 @@ curl -s ... | head -c 1  # Should be "{" not "<"
 
 ---
 
-**Document Version:** 1.6  
+**Document Version:** 1.12  
 **Maintained By:** Angus Bergman  
-**Last Updated:** 2026-01-30
+**Last Updated:** 2026-01-31
 
 ---
 
