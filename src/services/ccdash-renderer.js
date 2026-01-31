@@ -976,15 +976,18 @@ function renderLegZone(ctx, leg, zone, legNumber = 1, isHighlighted = false) {
   }
   ctx.fillText(subtitle, textX, subtitleY);
   
-  // v1.20: DEPART column - positioned closer to time box
+  // v1.25: DEPART column - "Your planned departure" indicator
   if (hasDepart) {
-    const departX = timeBoxX - 30;  // v1.20: closer to duration box
+    const departX = timeBoxX - 35;  // Slightly more space for text
     ctx.fillStyle = textColor;
-    ctx.font = `${Math.max(6, Math.round(7 * scale))}px Inter, sans-serif`;
+    // Two-line label: "PLANNED" / "DEPART"
+    ctx.font = `${Math.max(5, Math.round(6 * scale))}px Inter, sans-serif`;
     ctx.textAlign = 'center';
-    ctx.fillText('DEPART', departX, titleY);
+    ctx.fillText('PLANNED', departX, titleY - 2);
+    ctx.fillText('DEPART', departX, titleY + Math.max(6, Math.round(7 * scale)));
+    // Time below
     ctx.font = `bold ${Math.max(9, Math.round(11 * scale))}px Inter, sans-serif`;
-    ctx.fillText(leg.departTime, departX, subtitleY);
+    ctx.fillText(leg.departTime, departX, subtitleY + 2);
     ctx.textAlign = 'left';
   }
   
