@@ -568,7 +568,7 @@ export class SmartCommute {
           timestamp: new Date().toISOString()
         };
       } catch (error) {
-        console.log(`⚠️ PTV API error: ${error.message}`);
+        console.log(`⚠️ Transport API error: ${error.message}`);
         throw error; // Let caller handle fallback
       }
     }

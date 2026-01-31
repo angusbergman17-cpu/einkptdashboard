@@ -4,7 +4,7 @@
  * Uses Transport Victoria OpenData API with KeyId header authentication (UUID format API key)
  * Format: Protobuf (decoded via gtfs-realtime-bindings)
  *
- * UPDATED 2026-01-27: PTV OpenData API endpoints have changed!
+ * UPDATED 2026-01-27: Transport Victoria OpenData API endpoints have changed!
  * Old: https://opendata.transport.vic.gov.au/gtfsr/...
  * New: https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1/...
  *
@@ -57,34 +57,34 @@ function makeHeaders(apiKey) {
 async function fetchGtfsR({ url, apiKey, timeoutMs = 15000 }) {
   const headers = makeHeaders(apiKey);
 
-  console.log(`PTV Fetching: ${url}`);
-  console.log(`PTV API Key: ${apiKey ? apiKey.substring(0, 8) + '...' : 'NOT PROVIDED'}`);
+  console.log(`[opendata] Fetching: ${url}`);
+  console.log(`[opendata] API Key: ${apiKey ? apiKey.substring(0, 8) + '...' : 'NOT PROVIDED'}`);
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const res = await fetch(url, { headers, signal: controller.signal });
-    console.log(`PTV Response: ${res.status} ${res.statusText}`);
+    console.log(`[opendata] Response: ${res.status} ${res.statusText}`);
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");
-      console.error(`PTV API Error: ${res.status} - ${text.substring(0, 200)}`);
+      console.error(`[opendata] API Error: ${res.status} - ${text.substring(0, 200)}`);
       throw new Error(`OpenData API ${res.status} ${res.statusText}`);
     }
     
     const arrayBuffer = await res.arrayBuffer();
-    console.log(`PTV Received ${arrayBuffer.byteLength} bytes of protobuf data`);
+    console.log(`[opendata] Received ${arrayBuffer.byteLength} bytes of protobuf data`);
 
     const feed = GtfsRealtimeBindings.transit_realtime.FeedMessage.decode(
       new Uint8Array(arrayBuffer)
     );
     
-    console.log(`PTV Decoded ${feed.entity?.length || 0} entities`);
+    console.log(`[opendata] Decoded ${feed.entity?.length || 0} entities`);
     return feed;
   } catch (err) {
     if (err.name === 'AbortError') {
-      console.error(`PTV Request timeout after ${timeoutMs}ms`);
+      console.error(`[opendata] Request timeout after ${timeoutMs}ms`);
       throw new Error(`OpenData API timeout`);
     }
     throw err;
