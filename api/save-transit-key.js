@@ -13,6 +13,7 @@
  */
 
 import PreferencesManager from '../src/data/preferences-manager.js';
+import { setTransitApiKey, setUserState } from '../src/data/kv-preferences.js';
 
 // Transit authority validation endpoints
 const TRANSIT_VALIDATORS = {
@@ -229,6 +230,12 @@ export default async function handler(req, res) {
     // Validation passed - save to preferences
     console.log(`[save-transit-key] ✅ Validation passed, saving key...`);
     
+    // Per Section 11.8: Save to KV storage (Zero-Config compliant)
+    const kvSaved = await setTransitApiKey(apiKey.trim());
+    await setUserState(state);
+    console.log(`[save-transit-key] KV storage: ${kvSaved ? 'saved' : 'fallback (no KV)'}`);
+    
+    // Also save to local preferences (for development/local use)
     const prefs = new PreferencesManager();
     await prefs.load();
 
