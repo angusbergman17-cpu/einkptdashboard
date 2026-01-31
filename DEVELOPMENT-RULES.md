@@ -1,7 +1,7 @@
 # Commute Compute Development Rules
 
 **MANDATORY COMPLIANCE DOCUMENT**  
-**Version:** 1.13  
+**Version:** 1.14  
 **Last Updated:** 2026-01-31  
 **Copyright (c) 2026 Commute Compute System by Angus Bergman — Licensed under CC BY-NC 4.0**
 
@@ -305,12 +305,29 @@ The system was previously known as "Commute Compute". Update any remaining refer
 - 23.8 Pre-Deployment Verification
 </details>
 
+<details>
+<summary><strong>Section 24: System Architecture Principles</strong></summary>
+
+- 24.1 Core Principles
+- 24.2 Distribution Model
+- 24.3 Layer Architecture
+- 24.4 Data Flow Requirements
+- 24.5 Caching Strategy
+- 24.6 Vercel KV Storage Architecture
+- 24.7 Security Model
+- 24.8 Free-Tier Architecture
+- 24.9 Multi-Device Support (CC LiveDash™)
+- 24.10 Required API Endpoints
+- 24.11 Technology Stack (LOCKED)
+</details>
+
 ---
 
 ## 📜 Version History
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.14 | 2026-01-31 | Angus Bergman | **SYSTEM ARCHITECTURE PRINCIPLES**: Added Section 24 — complete architecture principles from ARCHITECTURE.md v4.0. Core principles (self-hosted, zero-config, no TRMNL cloud, server-side rendering, privacy-first, multi-state, free-tier). Distribution model, layer architecture, data flow, Vercel KV storage architecture, security model, free-tier architecture, multi-device support (CC LiveDash™), required endpoints, locked technology stack. |
 | 1.13 | 2026-01-31 | Angus Bergman | **SMARTCOMMUTE DATA FLOW**: Added Section 23 — mandatory data flow requirements for SmartCommute engine. GTFS-RT stop ID architecture (direction-specific IDs), citybound detection logic (isCityLoopStop), departure output schema, line name extraction, journey leg construction, fallback data requirements, pre-deployment verification tests. Added Section 17.4 (No Hardcoded Personal Information) for turnkey compliance. |
 | 1.12 | 2026-01-31 | Angus Bergman | **ADMIN PANEL UI/UX BRANDING**: Added Section 22 — mandatory branding rules for admin panel. Color palette, typography (Inter font), NO EMOJIS (use SVG icons), card styles, spacing, buttons, form inputs, readability requirements. Includes consistency checklist. |
 | 1.11 | 2026-01-31 | Angus Bergman | **FIRMWARE REQUIREMENTS**: Added to Section 5.2 — (1) Power cycle reboot support (device boots correctly when power disconnected/reconnected). (2) Firmware version must be displayed on screen for visual troubleshooting. |
@@ -2706,6 +2723,282 @@ import('./src/services/opendata-client.js').then(async m => {
 });
 "
 ```
+
+---
+
+## 🏗️ Section 24: System Architecture Principles (MANDATORY)
+
+**🔴 CRITICAL**: These principles govern the entire Commute Compute System architecture. All development MUST comply.
+
+### 24.1 Core Principles
+
+| Principle | Implementation | Violation = Reject PR |
+|-----------|----------------|----------------------|
+| **Self-Hosted** | User owns server, device, and API keys | ❌ No central servers |
+| **Zero-Config** | No environment variables — config via Setup Wizard + Vercel KV | ❌ No `.env` files |
+| **No TRMNL Cloud** | Custom firmware only — never contacts usetrmnl.com | ❌ No stock firmware |
+| **Server-Side Rendering** | All computation on server — device receives images | ❌ No client-side logic |
+| **Privacy-First** | Commute data stays on user's server | ❌ No analytics/tracking |
+| **Multi-State** | Supports all Australian states/territories | ❌ No VIC-only code |
+| **Free-Tier** | Entire system usable for free | ❌ No required paid APIs |
+
+### 24.2 Distribution Model
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    SELF-HOSTED DISTRIBUTION MODEL                        │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│   Official Repo  ──Fork──▶  User's Repo  ──Deploy──▶  User's Vercel    │
+│                                                              │           │
+│                                                              ▼           │
+│   ┌───────────────────────────────────────────────────────────────────┐ │
+│   │                     USER'S SERVER                                  │ │
+│   │  SmartCommute™ ──▶ CC LiveDash™ ──▶ Config Token (API keys)       │ │
+│   └───────────────────────────────────────────────────────────────────┘ │
+│                                    │                                     │
+│                                    ▼                                     │
+│   ┌───────────────────────────────────────────────────────────────────┐ │
+│   │                     USER'S DEVICE (CCFirm™)                        │ │
+│   │  - Fetches from user's Vercel URL ONLY                            │ │
+│   │  - Receives 1-bit BMP zones                                        │ │
+│   │  - 60-second partial refresh cycle                                 │ │
+│   └───────────────────────────────────────────────────────────────────┘ │
+│                                                                          │
+│   ✅ Complete data isolation — no shared infrastructure                  │
+│   ✅ User owns API keys — stored in Vercel KV                           │
+│   ✅ No central server — each deployment is independent                  │
+│   ❌ NO usetrmnl.com dependency — custom firmware required               │
+└──────────────────────────────────────────────────────────────────────────┘
+```
+
+### 24.3 Layer Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                           PRESENTATION LAYER                             │
+│  Setup Wizard │ Admin Panel │ Simulator │ Preview │ Help                │
+├─────────────────────────────────────────────────────────────────────────┤
+│                             API LAYER                                    │
+│  /api/zones │ /api/livedash │ /api/screen │ /api/admin/* │ /api/health │
+├─────────────────────────────────────────────────────────────────────────┤
+│                           SERVICE LAYER                                  │
+│  SmartCommute™ │ CC LiveDash™ │ Zone Renderer │ Weather (BOM)          │
+├─────────────────────────────────────────────────────────────────────────┤
+│                            CORE LAYER                                    │
+│  CoffeeDecision │ Route Planner │ Journey Engine │ Decision Logger      │
+├─────────────────────────────────────────────────────────────────────────┤
+│                            DATA LAYER                                    │
+│  OpenData Client │ GTFS Static │ Vercel KV │ Fallback Timetables        │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### 24.4 Data Flow Requirements
+
+```
+┌───────────────────────────────────────────────────────────────────────────┐
+│                              DATA FLOW                                     │
+├───────────────────────────────────────────────────────────────────────────┤
+│                                                                           │
+│  Transport Victoria ──(30s cache)──▶ opendata-client.js                  │
+│  OpenData API                              │                              │
+│  (GTFS-RT)                    ┌───────────┼───────────┐                  │
+│                               │           │           │                   │
+│                               ▼           ▼           ▼                   │
+│                        weather-bom  smart-commute  coffee-decision        │
+│                        (5min cache)      .js           .js                │
+│                               │           │           │                   │
+│                               └───────────┼───────────┘                  │
+│                                           │                               │
+│                                           ▼                               │
+│                                  Dashboard Service                        │
+│                                  (data aggregation)                       │
+│                                           │                               │
+│                     ┌─────────────────────┼─────────────────────┐        │
+│                     │                     │                     │         │
+│                     ▼                     ▼                     ▼         │
+│              zone-renderer          livedash           journey-display   │
+│              (1-bit BMP)         (multi-device)          (web view)      │
+│                     │                     │                     │         │
+│                     ▼                     ▼                     ▼         │
+│               /api/zones           /api/livedash         /api/screen     │
+│              (TRMNL BMP)          (All devices)         (Full PNG)       │
+│                                                                           │
+└───────────────────────────────────────────────────────────────────────────┘
+```
+
+### 24.5 Caching Strategy (MANDATORY)
+
+| Data Source | Cache TTL | Reason |
+|-------------|-----------|--------|
+| GTFS-RT Trip Updates | 30 seconds | Real-time accuracy |
+| GTFS-RT Service Alerts | 5 minutes | Changes infrequently |
+| Static GTFS | 24 hours | Schedule data |
+| Weather (BOM) | 5 minutes | Adequate freshness |
+| Geocoding results | Permanent (in KV) | Cached at setup time |
+| Cafe business hours | Permanent (in KV) | Cached at setup time |
+
+### 24.6 Vercel KV Storage Architecture
+
+**🔴 CRITICAL**: All persistent data MUST use Vercel KV storage. No environment variables for API keys.
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         VERCEL KV STORAGE                                │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  ┌──────────────────────┐     ┌──────────────────────┐                  │
+│  │  Setup Wizard        │────▶│  POST /api/save-     │                  │
+│  │  (enters API keys)   │     │  transit-key         │                  │
+│  └──────────────────────┘     └──────────┬───────────┘                  │
+│                                          │                               │
+│                                          ▼                               │
+│  ┌──────────────────────────────────────────────────────────────────┐   │
+│  │                      VERCEL KV STORE                              │   │
+│  │                                                                   │   │
+│  │  transit-api-key: "ce606b90-9ffb-43e8-bcd7-..."                  │   │
+│  │  google-api-key:  "AIzaSy..."                                     │   │
+│  │  preferences:     { addresses: {...}, journey: {...} }            │   │
+│  │  device-config:   { webhookUrl: "...", deviceId: "..." }          │   │
+│  │                                                                   │   │
+│  └──────────────────────────────────────────────────────────────────┘   │
+│                                          │                               │
+│                                          ▼                               │
+│  ┌──────────────────────┐     ┌──────────────────────┐                  │
+│  │  /api/zones          │────▶│  getTransitApiKey()  │                  │
+│  │  (runtime request)   │     │  reads from KV       │                  │
+│  └──────────────────────┘     └──────────────────────┘                  │
+│                                                                          │
+│  ✅ Zero-Config: No environment variables needed                         │
+│  ✅ Secure: Keys stored in Vercel's encrypted KV                        │
+│  ✅ Portable: Config moves with Vercel project                           │
+│  ✅ Serverless: No persistent storage required                           │
+└──────────────────────────────────────────────────────────────────────────┘
+```
+
+#### 24.6.1 KV Key Naming Convention
+
+| Key | Type | Purpose |
+|-----|------|---------|
+| `transit-api-key` | string | Transport Victoria OpenData API key |
+| `google-api-key` | string | Google Places API key (optional) |
+| `preferences` | JSON | User preferences from Setup Wizard |
+| `device-config` | JSON | Device configuration |
+| `last-validated` | timestamp | Last API key validation time |
+
+#### 24.6.2 KV Access Pattern
+
+```javascript
+// CORRECT: Read API key from Vercel KV
+import { kv } from '@vercel/kv';
+
+async function getTransitApiKey() {
+  const key = await kv.get('transit-api-key');
+  if (!key) {
+    console.log('[KV] No transit API key configured');
+    return null;
+  }
+  return key;
+}
+
+// WRONG: Environment variables
+// ❌ const apiKey = process.env.TRANSIT_API_KEY;
+```
+
+### 24.7 Security Model
+
+#### 24.7.1 Zero-Config Security
+
+| Principle | Implementation |
+|-----------|----------------|
+| No server-side secrets | API keys in Vercel KV (user's project) |
+| Token in URL | Device webhook URL contains config token |
+| User owns keys | Keys never stored on central server |
+| Self-contained | Each deployment is fully isolated |
+
+#### 24.7.2 XSS Protection (MANDATORY)
+
+```javascript
+// MANDATORY in all HTML rendering
+function sanitize(str) {
+    if (str === null || str === undefined) return '';
+    if (typeof str !== 'string') str = String(str);
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#x27;',
+        '/': '&#x2F;',
+        '`': '&#x60;',
+        '=': '&#x3D;'
+    };
+    return str.replace(/[&<>"'`=/]/g, c => map[c]);
+}
+```
+
+### 24.8 Free-Tier Architecture
+
+**Principle:** The entire system MUST be usable for free by any user.
+
+| Service | Status | Cost | Fallback |
+|---------|--------|------|----------|
+| Vercel Hosting | ✅ Required | FREE | — |
+| Transport Victoria OpenData | ✅ Required | FREE | Fallback timetables |
+| BOM Weather | ✅ Required | FREE | — |
+| OpenStreetMap Nominatim | ✅ Fallback | FREE | Primary for geocoding |
+| Google Places | ⚠️ Optional | PAID | OSM fallback required |
+
+#### 24.8.1 Setup-Time Caching
+
+```
+SETUP (one-time API calls)          RUNTIME (zero API calls in Free Mode)
+──────────────────────────          ─────────────────────────────────────
+1. User enters addresses     →      Vercel KV contains:
+2. Geocode via OSM/Google    →      • Home/work/cafe lat/lon (cached)
+3. Cache cafe business hours →      • Cafe business hours (cached)
+4. Store in Vercel KV        →      • All user preferences
+                             
+                                    Dashboard reads from KV only.
+                                    NO external geocoding at runtime.
+```
+
+### 24.9 Multi-Device Support (CC LiveDash™)
+
+| Device | Resolution | Format | Orientation |
+|--------|-----------|--------|-------------|
+| `trmnl-og` | 800×480 | 1-bit BMP | Landscape |
+| `trmnl-mini` | 400×300 | 1-bit BMP | Landscape |
+| `kindle-pw3` | 1072×1448 | 8-bit PNG | Portrait |
+| `kindle-pw5` | 1236×1648 | 8-bit PNG | Portrait |
+| `kindle-basic` | 600×800 | 8-bit PNG | Portrait |
+| `inkplate-6` | 800×600 | 1-bit BMP | Landscape |
+| `inkplate-10` | 1200×825 | 1-bit BMP | Landscape |
+| `web` | 800×480 | PNG | Landscape |
+
+### 24.10 Required API Endpoints
+
+| Endpoint | Purpose | Required |
+|----------|---------|----------|
+| `/api/zones` | Zone data for TRMNL | ✅ MANDATORY |
+| `/api/screen` | PNG for webhook/preview | ✅ MANDATORY |
+| `/api/livedash` | Multi-device renderer | ✅ MANDATORY |
+| `/api/health` | Health check | ✅ MANDATORY |
+| `/api/status` | Server status | ✅ MANDATORY |
+| `/api/admin/*` | Setup endpoints | ✅ MANDATORY |
+| `/api/save-transit-key` | API key validation | ✅ MANDATORY |
+| `/api/save-google-key` | Google key validation | ⚠️ Optional |
+
+### 24.11 Technology Stack (LOCKED)
+
+| Layer | Technology | Alternatives Prohibited |
+|-------|------------|------------------------|
+| **Server** | Node.js 18+, Express, Vercel Serverless | ❌ No Deno, Bun |
+| **Rendering** | @napi-rs/canvas, 1-bit BMP | ❌ No node-canvas |
+| **Data** | Transport Victoria OpenData (GTFS-RT) | ❌ No scraping |
+| **Storage** | Vercel KV | ❌ No environment variables |
+| **Firmware** | ESP32-C3, PlatformIO, C++ | ❌ No Arduino IDE |
+| **Fonts** | Inter (bundled TTF) | ❌ No system fonts |
 
 ---
 
