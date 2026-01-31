@@ -92,21 +92,52 @@ async function getEngine() {
 
 /**
  * Build journey legs from engine route with live transit data
+ * Now includes cumulative timing and DEPART times (v1.18)
  */
-function buildJourneyLegs(route, transitData, coffeeDecision) {
+function buildJourneyLegs(route, transitData, coffeeDecision, currentTime) {
   if (!route?.legs) return [];
   
   const legs = [];
   let legNumber = 1;
+  let cumulativeMinutes = 0;  // Minutes from journey start
+  
+  // Parse current time for DEPART calculation
+  const now = currentTime || new Date(new Date().toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
+  const nowMins = now.getHours() * 60 + now.getMinutes();
   
   for (const leg of route.legs) {
+    const legDuration = leg.minutes || leg.durationMinutes || 0;
+    
+    // Calculate when user arrives at this leg's starting point
+    const arriveAtLegMins = nowMins + cumulativeMinutes;
+    const arriveAtLegH = Math.floor(arriveAtLegMins / 60) % 24;
+    const arriveAtLegM = arriveAtLegMins % 60;
+    
+    // Format as 12-hour time
+    const arriveH12 = arriveAtLegH % 12 || 12;
+    const arriveAmPm = arriveAtLegH >= 12 ? 'pm' : 'am';
+    const arriveTime = `${arriveH12}:${arriveAtLegM.toString().padStart(2, '0')}${arriveAmPm}`;
+    
+    // Calculate depart time (for transit legs, this is when the service leaves)
+    const departMins = arriveAtLegMins;
+    const departH = Math.floor(departMins / 60) % 24;
+    const departM = departMins % 60;
+    const departH12 = departH % 12 || 12;
+    const departAmPm = departH >= 12 ? 'pm' : 'am';
+    const departTime = `${departH12}:${departM.toString().padStart(2, '0')}${departAmPm}`;
+    
     const baseLeg = {
       number: legNumber++,
       type: leg.type,
       title: buildLegTitle(leg),
       subtitle: buildLegSubtitle(leg, transitData),
-      minutes: leg.minutes || leg.durationMinutes || 0,
-      state: 'normal'
+      minutes: legDuration,
+      state: 'normal',
+      // New timing fields (v1.18)
+      cumulativeMinutes,           // Minutes from journey start to reach this leg
+      catchInMinutes: cumulativeMinutes, // Same as cumulative for clarity
+      arriveTime,                  // When user arrives at this leg's start point
+      departTime                   // When user departs on this leg (for transit legs)
     };
     
     // Handle coffee leg state based on coffee decision
@@ -116,10 +147,12 @@ function buildJourneyLegs(route, transitData, coffeeDecision) {
       if (!coffeeDecision.canGet) {
         baseLeg.state = 'skip';
         baseLeg.status = 'skipped';  // Also set status for renderer
-        baseLeg.subtitle = '✗ SKIP — Running late';
+        baseLeg.cafeClosed = coffeeDecision.cafeClosed;
+        baseLeg.skipReason = coffeeDecision.skipReason;
+        baseLeg.subtitle = coffeeDecision.subtext || '✗ SKIP — Running late';
         legNumber--; // Don't increment for skipped leg
       } else {
-        baseLeg.subtitle = '✓ TIME FOR COFFEE';
+        baseLeg.subtitle = coffeeDecision.subtext || '✓ TIME FOR COFFEE';
       }
     }
     
@@ -142,6 +175,11 @@ function buildJourneyLegs(route, transitData, coffeeDecision) {
     }
     
     legs.push(baseLeg);
+    
+    // Accumulate time (skip skipped legs)
+    if (baseLeg.state !== 'skip') {
+      cumulativeMinutes += legDuration;
+    }
   }
   
   return legs;
@@ -706,8 +744,8 @@ export default async function handler(req, res) {
     // Get coffee decision from engine
     const coffeeDecision = engine.calculateCoffeeDecision(transitData, route?.legs || []);
     
-    // Build journey legs (Data Model)
-    const journeyLegs = buildJourneyLegs(route, transitData, coffeeDecision);
+    // Build journey legs with cumulative timing (Data Model v1.18)
+    const journeyLegs = buildJourneyLegs(route, transitData, coffeeDecision, now);
     const totalMinutes = calculateTotalMinutes(journeyLegs);
     let statusType = getStatusType(journeyLegs, transitData.disruptions);
     

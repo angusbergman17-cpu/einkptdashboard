@@ -946,6 +946,21 @@ function renderLegZone(ctx, leg, zone, legNumber = 1, isHighlighted = false) {
   const subtitle = leg.subtitle || getLegSubtitle(leg);
   ctx.fillText(subtitle, textX, y + 26);
   
+  // DEPART time column for transit legs (v1.18 - per user request)
+  // Shows when user should catch this service based on journey timing
+  if (['train', 'tram', 'bus', 'vline', 'ferry'].includes(leg.type) && leg.departTime) {
+    const departX = w - 150;  // Position before duration box
+    ctx.fillStyle = textColor;
+    ctx.font = '8px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.globalAlpha = 0.7;
+    ctx.fillText('DEPART', departX, y + 10);
+    ctx.globalAlpha = 1.0;
+    ctx.font = 'bold 14px Inter, sans-serif';
+    ctx.fillText(leg.departTime, departX, y + 26);
+    ctx.textAlign = 'left';
+  }
+  
   // Time box (right side, fills to edge) - V10 Spec Section 5.6
   const timeBoxW = 72;
   const timeBoxH = h;
@@ -1907,6 +1922,23 @@ export function renderFullScreen(data, prefs = {}) {
       }
     }
     ctx.fillText(legSubtitle, zone.x + 82, zone.y + 26);
+    
+    // -----------------------------------------------------------------------
+    // DEPART TIME COLUMN (v1.18) - Per user request / EXPRESS image reference
+    // Shows when user should catch this service based on journey timing
+    // Position: Between subtitle and duration box
+    // -----------------------------------------------------------------------
+    if (['train', 'tram', 'bus', 'vline', 'ferry'].includes(leg.type) && leg.departTime) {
+      const departX = zone.x + zone.w - 145;  // Position before duration box
+      ctx.font = '8px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.globalAlpha = 0.6;
+      ctx.fillText('DEPART', departX, zone.y + 8);
+      ctx.globalAlpha = 1.0;
+      ctx.font = 'bold 14px Inter, sans-serif';
+      ctx.fillText(leg.departTime, departX, zone.y + 26);
+      ctx.textAlign = 'left';
+    }
     
     // -----------------------------------------------------------------------
     // TIME BOX (V10 Spec Section 5.6) - Per reference images
