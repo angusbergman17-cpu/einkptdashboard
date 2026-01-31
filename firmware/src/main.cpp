@@ -25,7 +25,7 @@
 #define ZONE_ID_MAX_LEN 32
 // Legs zone is ~42KB base64. Allocate lazily to save RAM for HTTP response.
 #define ZONE_DATA_MAX_LEN 45000
-#define FIRMWARE_VERSION "6.0-stable-hardcoded"
+#define FIRMWARE_VERSION "6.1-antigoast"
 
 // Default server for pairing API
 #define DEFAULT_SERVER "https://einkptdashboard.vercel.app"
@@ -234,10 +234,56 @@ void loop() {
                     initialDrawDone = true;
                     Serial.println("Full refresh complete!");
                 } else {
-                    // Partial refresh - flash the screen then update
-                    Serial.println("Doing partial refresh...");
+                    // Partial refresh with anti-ghosting for changed zones
+                    Serial.println("Doing partial refresh with anti-ghost...");
+                    
+                    // Count changed zones
+                    int changedCount = 0;
+                    for (int i = 0; i < NUM_ZONES; i++) {
+                        if (zoneChanged[i]) changedCount++;
+                    }
+                    
+                    if (changedCount > 0) {
+                        // Anti-ghost: flash black
+                        Serial.printf("Anti-ghost: %d zones -> BLACK\n", changedCount);
+                        for (int i = 0; i < NUM_ZONES; i++) {
+                            if (zoneChanged[i]) {
+                                bbep->fillRect(ZONE_DEFS[i].x, ZONE_DEFS[i].y, 
+                                              ZONE_DEFS[i].w, ZONE_DEFS[i].h, BBEP_BLACK);
+                            }
+                        }
+                        bbep->refresh(REFRESH_PARTIAL, true);
+                        delay(50);
+                        
+                        // Anti-ghost: flash white
+                        Serial.printf("Anti-ghost: %d zones -> WHITE\n", changedCount);
+                        for (int i = 0; i < NUM_ZONES; i++) {
+                            if (zoneChanged[i]) {
+                                bbep->fillRect(ZONE_DEFS[i].x, ZONE_DEFS[i].y, 
+                                              ZONE_DEFS[i].w, ZONE_DEFS[i].h, BBEP_WHITE);
+                            }
+                        }
+                        bbep->refresh(REFRESH_PARTIAL, true);
+                        delay(50);
+                        
+                        // Re-fetch and render changed zones (content was overwritten)
+                        String baseUrl = String(webhookUrl);
+                        int apiIndex = baseUrl.indexOf("/api/device/");
+                        if (apiIndex > 0) baseUrl = baseUrl.substring(0, apiIndex);
+                        
+                        Serial.println("Re-rendering changed zones...");
+                        for (int i = 0; i < NUM_ZONES; i++) {
+                            if (zoneChanged[i]) {
+                                fetchAndRenderZone(baseUrl.c_str(), ZONE_DEFS[i], false);
+                            }
+                            yield();
+                        }
+                    }
+                    
+                    // Final partial refresh with actual content
                     bbep->refresh(REFRESH_PARTIAL, true);
                     partialRefreshCount++;
+                    Serial.println("Partial refresh complete!");
                 }
             }
             
@@ -471,7 +517,11 @@ const ZoneDef ZONE_DEFS[] = {
 };
 const int NUM_ZONES = 5;
 
-bool fetchAndRenderZone(const char* baseUrl, const ZoneDef& def, bool forceAll) {
+// Track which zones changed for anti-ghosting
+bool zoneChanged[NUM_ZONES] = {false};
+
+// Returns: 0 = failed, 1 = unchanged (304), 2 = changed and rendered
+int fetchAndRenderZone(const char* baseUrl, const ZoneDef& def, bool forceAll) {
     WiFiClientSecure client;
     client.setInsecure();
     HTTPClient http;
@@ -485,7 +535,7 @@ bool fetchAndRenderZone(const char* baseUrl, const ZoneDef& def, bool forceAll) 
     
     if (!http.begin(client, url)) {
         Serial.println("  HTTP begin failed");
-        return false;
+        return 0;
     }
     
     http.addHeader("User-Agent", "CommuteCompute/" FIRMWARE_VERSION);
@@ -493,13 +543,14 @@ bool fetchAndRenderZone(const char* baseUrl, const ZoneDef& def, bool forceAll) 
     
     if (code == 304) {
         Serial.println("  Not modified (304)");
-        return true;  // Zone unchanged, success
+        http.end();
+        return 1;  // Zone unchanged, success
     }
     
     if (code != 200) {
         Serial.printf("  HTTP error: %d\n", code);
         http.end();
-        return false;
+        return 0;
     }
     
     // Get raw BMP data size
@@ -509,7 +560,7 @@ bool fetchAndRenderZone(const char* baseUrl, const ZoneDef& def, bool forceAll) 
     if (contentLen <= 0 || contentLen > ZONE_BMP_MAX_SIZE) {
         Serial.printf("  Size issue: %d (max %d)\n", contentLen, ZONE_BMP_MAX_SIZE);
         http.end();
-        return false;
+        return 0;
     }
     
     // Read directly into BMP buffer
@@ -519,20 +570,20 @@ bool fetchAndRenderZone(const char* baseUrl, const ZoneDef& def, bool forceAll) 
     
     if (bytesRead != contentLen) {
         Serial.printf("  Read incomplete: %d/%d\n", bytesRead, contentLen);
-        return false;
+        return 0;
     }
     
     // Verify BMP header
     if (zoneBmpBuffer[0] != 'B' || zoneBmpBuffer[1] != 'M') {
         Serial.println("  Invalid BMP header");
-        return false;
+        return 0;
     }
     
-    // Render to display
+    // Render to display buffer (not refreshed yet)
     int result = bbep->loadBMP(zoneBmpBuffer, def.x, def.y, BBEP_BLACK, BBEP_WHITE);
     Serial.printf("  Rendered at (%d,%d): %s\n", def.x, def.y, result == BBEP_SUCCESS ? "OK" : "FAILED");
     
-    return result == BBEP_SUCCESS;
+    return result == BBEP_SUCCESS ? 2 : 0;  // 2 = changed and rendered
 }
 
 bool fetchZoneUpdates(bool forceAll) {
@@ -548,10 +599,16 @@ bool fetchZoneUpdates(bool forceAll) {
     Serial.printf("Sequential fetch from %s (force=%d)\n", baseUrl.c_str(), forceAll);
     Serial.printf("Free heap: %d\n", ESP.getFreeHeap());
     
+    // Reset change tracking
     int rendered = 0;
+    int changed = 0;
     for (int i = 0; i < NUM_ZONES; i++) {
-        if (fetchAndRenderZone(baseUrl.c_str(), ZONE_DEFS[i], forceAll)) {
-            rendered++;
+        zoneChanged[i] = false;
+        int result = fetchAndRenderZone(baseUrl.c_str(), ZONE_DEFS[i], forceAll);
+        if (result > 0) rendered++;      // 1 or 2 = success
+        if (result == 2) {
+            zoneChanged[i] = true;       // 2 = changed
+            changed++;
         }
         yield();  // Let WiFi/system tasks run
     }
@@ -559,8 +616,42 @@ bool fetchZoneUpdates(bool forceAll) {
     // Store count for refresh logic
     zoneCount = rendered;
     
-    Serial.printf("Rendered %d/%d zones\n", rendered, NUM_ZONES);
+    Serial.printf("Rendered %d/%d zones, %d changed\n", rendered, NUM_ZONES, changed);
     return rendered > 0;
+}
+
+// Anti-ghosting: flash changed zones black then white before partial refresh
+void doAntiGhostFlash() {
+    int changedCount = 0;
+    for (int i = 0; i < NUM_ZONES; i++) {
+        if (zoneChanged[i]) changedCount++;
+    }
+    
+    if (changedCount == 0) return;
+    
+    Serial.printf("Anti-ghost flash for %d zones\n", changedCount);
+    
+    // Step 1: Fill all changed zones with BLACK
+    for (int i = 0; i < NUM_ZONES; i++) {
+        if (zoneChanged[i]) {
+            bbep->fillRect(ZONE_DEFS[i].x, ZONE_DEFS[i].y, 
+                          ZONE_DEFS[i].w, ZONE_DEFS[i].h, BBEP_BLACK);
+        }
+    }
+    bbep->refresh(REFRESH_PARTIAL, true);
+    delay(100);
+    
+    // Step 2: Fill all changed zones with WHITE
+    for (int i = 0; i < NUM_ZONES; i++) {
+        if (zoneChanged[i]) {
+            bbep->fillRect(ZONE_DEFS[i].x, ZONE_DEFS[i].y, 
+                          ZONE_DEFS[i].w, ZONE_DEFS[i].h, BBEP_WHITE);
+        }
+    }
+    bbep->refresh(REFRESH_PARTIAL, true);
+    delay(100);
+    
+    Serial.println("Anti-ghost complete");
 }
 
 bool decodeAndDrawZone(Zone& zone) {
