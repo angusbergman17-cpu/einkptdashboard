@@ -1648,16 +1648,17 @@ export function renderFullScreen(data, prefs = {}) {
     serviceStatus.toUpperCase().includes('DISRUPTION') || serviceStatus.toUpperCase().includes('DELAY');
   const isLiveData = data.isLive !== false && data.dataSource !== 'scheduled';  // Default to live unless specified
   
+  // v1.38: Service status and data status - same size boxes
   const statusBoxX = dayDateX;
   const statusBoxY = 46;
   const statusBoxW = 115;
-  const statusBoxH = 18;
+  const statusBoxH = 16;
   
-  // Data source indicator (below status box)
+  // Data source indicator (below status box) - same size
   const dataBoxY = statusBoxY + statusBoxH + 2;
-  const dataBoxH = 14;
+  const dataBoxH = 16;
   
-  ctx.font = 'bold 9px Inter, sans-serif';
+  ctx.font = 'bold 8px Inter, sans-serif';
   ctx.textBaseline = 'middle';
   
   // Service status box
@@ -1668,14 +1669,14 @@ export function renderFullScreen(data, prefs = {}) {
     ctx.fillText('⚠ DISRUPTIONS', statusBoxX + 6, statusBoxY + statusBoxH / 2);
   } else {
     ctx.strokeStyle = '#000';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 1;
     ctx.strokeRect(statusBoxX, statusBoxY, statusBoxW, statusBoxH);
     ctx.fillStyle = '#000';
     ctx.fillText('✓ SERVICES OK', statusBoxX + 6, statusBoxY + statusBoxH / 2);
   }
   
-  // v1.34: Data source indicator - "LIVE DATA" or "TIMETABLE FALLBACK"
-  ctx.font = 'bold 7px Inter, sans-serif';
+  // Data source indicator - same size as service status
+  ctx.font = 'bold 8px Inter, sans-serif';
   if (isLiveData) {
     ctx.fillStyle = '#000';
     ctx.fillRect(statusBoxX, dataBoxY, statusBoxW, dataBoxH);
@@ -2287,14 +2288,18 @@ export function renderFullScreen(data, prefs = {}) {
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'left';
   
+  // v1.38: Show destination with address (e.g., "WORK — 80 COLLINS ST")
   let footerDest = (data.destination || 'WORK').toUpperCase();
+  const destAddress = data.destination_address || data.workAddress || data.address || '';
   const isHomeDestination = data.destinationType === 'home' || 
                             data.isReverseCommute || 
                             data.destination?.toLowerCase().includes('home') ||
                             footerDest.includes('HOME');
   
   if (isHomeDestination && !footerDest.startsWith('HOME')) {
-    footerDest = `HOME — ${footerDest}`;
+    footerDest = `HOME — ${destAddress || footerDest}`.toUpperCase();
+  } else if (destAddress && !footerDest.includes(destAddress.toUpperCase())) {
+    footerDest = `${footerDest} — ${destAddress}`.toUpperCase();
   }
   ctx.fillText(footerDest, 16, 464);
   
