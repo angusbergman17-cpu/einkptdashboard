@@ -1346,23 +1346,25 @@ export function renderFullScreen(data, prefs = {}) {
   ctx.textAlign = 'left';
   
   // Umbrella indicator (V10 Spec Section 2.7)
+  // Position: right: 20px, top: 68px, size: 132×18px
   const needsUmbrella = data.rain_expected || data.precipitation > 30 || 
     (data.condition && /rain|shower|storm|drizzle/i.test(data.condition));
+  const umbrellaX = 800 - 20 - 132;  // 648px per spec
   const umbrellaY = 68;
   if (needsUmbrella) {
     ctx.fillStyle = '#000';
-    ctx.fillRect(652, umbrellaY, 132, 18);
+    ctx.fillRect(umbrellaX, umbrellaY, 132, 18);
     ctx.fillStyle = '#FFF';
     ctx.font = 'bold 10px Inter, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('🌧 BRING UMBRELLA', 718, umbrellaY + 10);
+    ctx.fillText('🌧 BRING UMBRELLA', umbrellaX + 66, umbrellaY + 12);
   } else {
-    ctx.strokeRect(652, umbrellaY, 132, 18);
+    ctx.strokeRect(umbrellaX, umbrellaY, 132, 18);
     ctx.fillStyle = '#000';
     ctx.font = 'bold 10px Inter, sans-serif';
     ctx.textAlign = 'center';
     const icon = /cloud|overcast/i.test(data.condition || '') ? '☁' : '☀';
-    ctx.fillText(`${icon} NO UMBRELLA`, 718, umbrellaY + 10);
+    ctx.fillText(`${icon} NO UMBRELLA`, umbrellaX + 66, umbrellaY + 12);
   }
   ctx.textAlign = 'left';
   ctx.fillStyle = '#000';

@@ -110,13 +110,14 @@ function buildJourneyLegs(route, transitData, coffeeDecision) {
     };
     
     // Handle coffee leg state based on coffee decision
+    // V10 Spec Section 5.5: Coffee subtitle must be "✓ TIME FOR COFFEE" or "✗ SKIP — Running late"
     if (leg.type === 'coffee') {
       if (!coffeeDecision.canGet) {
         baseLeg.state = 'skip';
-        baseLeg.subtitle = coffeeDecision.subtext || 'SKIP — No time';
+        baseLeg.subtitle = '✗ SKIP — Running late';
         legNumber--; // Don't increment for skipped leg
       } else {
-        baseLeg.subtitle = coffeeDecision.subtext || 'TIME FOR COFFEE';
+        baseLeg.subtitle = '✓ TIME FOR COFFEE';
       }
     }
     
