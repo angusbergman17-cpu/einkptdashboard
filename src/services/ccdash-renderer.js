@@ -920,12 +920,14 @@ function renderLegZone(ctx, leg, zone, legNumber = 1, isHighlighted = false) {
   }
   
   // Leg number circle (V10 Spec Section 5.2) - scaled
+  // v1.21: Fixed positioning - consistent spacing
   const numberX = x + 6;
   const numberY = y + (h - numberSize) / 2;
   drawLegNumber(ctx, legNumber, numberX, numberY, status, numberSize);
   
   // Mode icon (V10 Spec Section 5.3) - scaled
-  const iconX = x + 8 + numberSize + 4;
+  // v1.21: Icon starts right after number with 4px gap
+  const iconX = numberX + numberSize + 4;
   const iconY = y + (h - iconSize) / 2;
   
   // For skipped coffee, draw with reduced opacity effect (gray)
@@ -1270,27 +1272,28 @@ function renderHeaderWeather(data, prefs) {
   ctx.fillRect(0, 0, zone.w, zone.h);
   
   // Weather box border (V10 Spec Section 2.6)
+  // v1.21: Adjusted layout to prevent overlap
   ctx.strokeStyle = '#000';
   ctx.lineWidth = 2;
   ctx.strokeRect(2, 2, zone.w - 4, 60);
   
   ctx.fillStyle = '#000';
   
-  // Temperature (centered in box)
-  ctx.font = 'bold 34px Inter, sans-serif';
+  // Temperature (centered in box) - v1.21: reduced size
+  ctx.font = 'bold 28px Inter, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
   const temp = data.temp ?? data.temperature ?? '--';
-  ctx.fillText(`${temp}°`, zone.w / 2, 8);
+  ctx.fillText(`${temp}°`, zone.w / 2, 6);
   
-  // Condition (centered below temp) - v1.20: truncate to prevent overlap
-  ctx.font = '12px Inter, sans-serif';
+  // Condition (centered below temp) - v1.21: adjusted position, truncate
+  ctx.font = '11px Inter, sans-serif';
   let condition = data.condition || data.weather || '';
   // Truncate if too long for box width
-  while (ctx.measureText(condition).width > zone.w - 16 && condition.length > 3) {
+  while (ctx.measureText(condition).width > zone.w - 20 && condition.length > 3) {
     condition = condition.slice(0, -1);
   }
-  ctx.fillText(condition, zone.w / 2, 44);
+  ctx.fillText(condition, zone.w / 2, 38);
   
   // Umbrella indicator (V10 Spec Section 2.7)
   // Position: below weather box, 132×18px
