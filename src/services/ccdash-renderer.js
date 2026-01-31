@@ -1592,7 +1592,7 @@ export function renderFullScreen(data, prefs = {}) {
   
   // Re-render zones directly to main canvas for preview
   // =========================================================================
-  // HEADER (V10 Spec Section 2) - v1.30: Clock lower, service status box
+  // HEADER (V10 Spec Section 2) - v1.31: Clock at bottom, coffee indicator
   // =========================================================================
   ctx.fillStyle = '#000';
   ctx.textBaseline = 'top';
@@ -1621,71 +1621,107 @@ export function renderFullScreen(data, prefs = {}) {
     displayTime = displayTime.replace(/\s*(am|pm)/gi, '');
   }
   
-  // v1.30: LARGE clock, much lower - close to status bar
-  const clockFontSize = 76;
+  // v1.31: LARGE clock, positioned right against status bar
+  const clockFontSize = 72;
   ctx.font = `bold ${clockFontSize}px Inter, sans-serif`;
-  const clockY = 20;  // Position so bottom of clock is near status bar
+  const clockY = 94 - clockFontSize + 4;  // Bottom of clock touches status bar
   ctx.fillText(displayTime, 12, clockY);
   
   // Measure clock width for AM/PM positioning
   const clockWidth = ctx.measureText(displayTime).width;
   
   // AM/PM indicator - right after clock, bottom-aligned
+  ctx.font = 'bold 18px Inter, sans-serif';
+  ctx.fillText(data.am_pm || (isPM ? 'PM' : 'AM'), 12 + clockWidth + 6, clockY + clockFontSize - 22);
+  
+  // v1.31: Day and date - top right of clock area
+  const dayDateX = 12 + clockWidth + 40;
   ctx.font = 'bold 20px Inter, sans-serif';
-  ctx.fillText(data.am_pm || (isPM ? 'PM' : 'AM'), 12 + clockWidth + 6, clockY + clockFontSize - 26);
+  ctx.fillText(data.day || '', dayDateX, 6);
+  ctx.font = '14px Inter, sans-serif';
+  ctx.fillText(data.date || '', dayDateX, 28);
   
-  // v1.30: Day and date - positioned to the right
-  const dayDateX = 280;
-  ctx.font = 'bold 22px Inter, sans-serif';
-  ctx.fillText(data.day || '', dayDateX, 18);
-  ctx.font = '16px Inter, sans-serif';
-  ctx.fillText(data.date || '', dayDateX, 44);
-  
-  // v1.30: Service status in its own box to right of date
+  // v1.31: Service status box below day/date
   const serviceStatus = data.service_status || (data.disruption ? 'DISRUPTIONS' : 'OK');
   const hasDisruption = data.disruption || data.status_type === 'disruption' || 
     serviceStatus.toUpperCase().includes('DISRUPTION') || serviceStatus.toUpperCase().includes('DELAY');
   
   const statusBoxX = dayDateX;
-  const statusBoxY = 66;
-  const statusBoxW = 120;
-  const statusBoxH = 22;
+  const statusBoxY = 48;
+  const statusBoxW = 110;
+  const statusBoxH = 20;
   
-  ctx.font = 'bold 11px Inter, sans-serif';
+  ctx.font = 'bold 10px Inter, sans-serif';
+  ctx.textBaseline = 'middle';
   if (hasDisruption) {
-    // Black fill with white text for disruption
     ctx.fillStyle = '#000';
     ctx.fillRect(statusBoxX, statusBoxY, statusBoxW, statusBoxH);
     ctx.fillStyle = '#FFF';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('⚠ DISRUPTIONS', statusBoxX + 8, statusBoxY + statusBoxH / 2);
+    ctx.fillText('⚠ DISRUPTIONS', statusBoxX + 6, statusBoxY + statusBoxH / 2);
   } else {
-    // White fill with black border for OK
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 2;
     ctx.strokeRect(statusBoxX, statusBoxY, statusBoxW, statusBoxH);
     ctx.fillStyle = '#000';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('✓ SERVICES OK', statusBoxX + 8, statusBoxY + statusBoxH / 2);
+    ctx.fillText('✓ SERVICES OK', statusBoxX + 6, statusBoxY + statusBoxH / 2);
   }
   ctx.fillStyle = '#000';
   ctx.textBaseline = 'top';
   
-  // v1.30: Weather box - temp centered vertically
+  // v1.31: Check if route includes coffee
+  const journeyLegs = data.journey_legs || data.legs || [];
+  const coffeeLeg = journeyLegs.find(l => l.type === 'coffee' && l.canGet !== false);
+  const hasCoffee = !!coffeeLeg;
+  
+  // v1.31: COFFEE INDICATOR - large distinct box between service status and weather
+  if (hasCoffee) {
+    const coffeeBoxX = statusBoxX + statusBoxW + 12;
+    const coffeeBoxY = 4;
+    const coffeeBoxW = 190;
+    const coffeeBoxH = 86;
+    
+    // Black filled box for coffee
+    ctx.fillStyle = '#000';
+    ctx.fillRect(coffeeBoxX, coffeeBoxY, coffeeBoxW, coffeeBoxH);
+    
+    // Coffee icon (simple cup)
+    ctx.fillStyle = '#FFF';
+    ctx.font = 'bold 28px Inter, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('☕', coffeeBoxX + 8, coffeeBoxY + 12);
+    
+    // "GET A COFFEE" text
+    ctx.font = 'bold 14px Inter, sans-serif';
+    ctx.fillText('GET A COFFEE', coffeeBoxX + 44, coffeeBoxY + 16);
+    
+    // "ARRIVE BY" + time
+    ctx.font = '11px Inter, sans-serif';
+    ctx.fillText('+ ARRIVE BY', coffeeBoxX + 44, coffeeBoxY + 36);
+    
+    // Large arrival time
+    const arriveTime = data.arrive_by || data.arrivalTime || '--:--';
+    ctx.font = 'bold 26px Inter, sans-serif';
+    ctx.fillText(arriveTime, coffeeBoxX + 44, coffeeBoxY + 52);
+    
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#000';
+  }
+  
+  // v1.31: Weather box - positioned at far right
   const weatherBoxX = 620;
-  const weatherBoxY = 8;
+  const weatherBoxY = 4;
   const weatherBoxW = 172;
-  const weatherBoxH = 82;
+  const weatherBoxH = 86;
   
   ctx.strokeStyle = '#000';
   ctx.lineWidth = 2;
   ctx.strokeRect(weatherBoxX, weatherBoxY, weatherBoxW, weatherBoxH);
   
   // Temperature - centered in upper portion of box
-  ctx.font = 'bold 38px Inter, sans-serif';
+  ctx.font = 'bold 36px Inter, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(`${data.temp || '--'}°`, weatherBoxX + weatherBoxW / 2, weatherBoxY + 28);
+  ctx.fillText(`${data.temp || '--'}°`, weatherBoxX + weatherBoxW / 2, weatherBoxY + 26);
   
   // Condition - below temp
   ctx.font = '11px Inter, sans-serif';
@@ -1693,7 +1729,7 @@ export function renderFullScreen(data, prefs = {}) {
   while (ctx.measureText(condition).width > weatherBoxW - 16 && condition.length > 3) {
     condition = condition.slice(0, -1);
   }
-  ctx.fillText(condition, weatherBoxX + weatherBoxW / 2, weatherBoxY + 52);
+  ctx.fillText(condition, weatherBoxX + weatherBoxW / 2, weatherBoxY + 50);
   
   // Umbrella indicator - bottom of weather box
   const needsUmbrella = data.rain_expected || data.precipitation > 30 || 
