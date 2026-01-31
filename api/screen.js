@@ -438,8 +438,9 @@ const RANDOM_LOCATIONS = {
 
 /**
  * Generate random journey using SmartJourney patterns
+ * @param {number|null} targetLegs - Target number of legs (3-7), or null for random
  */
-function generateRandomJourney() {
+function generateRandomJourney(targetLegs = null) {
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
   
   const home = pick(RANDOM_LOCATIONS.homes);
@@ -450,9 +451,25 @@ function generateRandomJourney() {
   const rand = Math.random();
   const transitType = rand < 0.4 ? 'train' : rand < 0.8 ? 'tram' : 'bus';
   
-  // Random number of legs (3-5)
-  const includeCoffee = Math.random() > 0.25; // 75% chance of coffee
-  const includeTransfer = Math.random() > 0.6; // 40% chance of transfer
+  // v1.23: Support target leg count (3-7)
+  // Calculate what features to include based on target
+  let includeCoffee, includeTransfer, includeExtraWalk;
+  
+  if (targetLegs !== null && targetLegs >= 3 && targetLegs <= 7) {
+    // Target: 3 legs = walk + transit + walk (no coffee, no transfer)
+    // Target: 4 legs = walk + coffee + transit + walk OR walk + transit + transfer + walk
+    // Target: 5 legs = walk + coffee + walk + transit + walk
+    // Target: 6 legs = walk + coffee + walk + transit + transfer + walk
+    // Target: 7 legs = walk + coffee + walk + transit + walk + transit2 + walk
+    includeCoffee = targetLegs >= 4;
+    includeTransfer = targetLegs >= 6;
+    includeExtraWalk = targetLegs === 7;
+  } else {
+    // Random (original behavior)
+    includeCoffee = Math.random() > 0.25; // 75% chance of coffee
+    includeTransfer = Math.random() > 0.6; // 40% chance of transfer
+    includeExtraWalk = false;
+  }
   
   // Build legs dynamically
   const legs = [];
@@ -537,8 +554,8 @@ function generateRandomJourney() {
     });
   }
   
-  // Optional transfer
-  if (includeTransfer && transitType !== 'train') {
+  // Optional transfer (for 6+ legs)
+  if (includeTransfer) {
     const transferType = transitType === 'tram' ? 'train' : 'tram';
     legs.push({
       number: legNum++,
@@ -569,6 +586,18 @@ function generateRandomJourney() {
         state: 'normal'
       });
     }
+  }
+  
+  // v1.23: Extra walk for 7 legs
+  if (includeExtraWalk) {
+    legs.push({
+      number: legNum++,
+      type: 'walk',
+      title: 'Walk Through Mall',
+      subtitle: 'Bourke St Mall • Covered',
+      minutes: 2 + Math.floor(Math.random() * 2),
+      state: 'normal'
+    });
   }
   
   // Final walk to office
@@ -616,7 +645,9 @@ function generateRandomJourney() {
  */
 async function handleRandomJourney(req, res) {
   try {
-    const journey = generateRandomJourney();
+    // v1.23: Accept legs parameter for target leg count
+    const targetLegs = parseInt(req.query?.legs) || null;
+    const journey = generateRandomJourney(targetLegs);
     
     console.log(`[random] Generated journey: ${journey.origin} → ${journey.destination}`);
     console.log(`[random] ${journey.legs.length} legs, ${journey.totalDuration} min, transit: ${journey.transitType}`);
