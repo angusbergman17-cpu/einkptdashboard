@@ -96,6 +96,8 @@ function buildLegTitle(leg) {
       if (leg.destinationName) return `Walk to ${leg.destinationName}`;
       if (dest === 'cafe' && leg.cafeName) return `Walk to ${leg.cafeName}`;
       if (dest === 'cafe') return 'Walk to Cafe';
+      // v1.19: Use actual work address/name instead of generic "Office"
+      if (dest === 'work' && leg.workName) return `Walk to ${leg.workName}`;
       if (dest === 'work') return 'Walk to Office';
       if (dest === 'tram stop' && leg.stopName) return `Walk to ${leg.stopName}`;
       if (dest === 'train platform' && leg.stationName) return `Walk to ${leg.stationName}`;
@@ -129,9 +131,12 @@ function buildLegTitle(leg) {
 }
 
 /**
- * Build leg subtitle with origin/stop names (v1.18 fix)
+ * Build leg subtitle with origin/stop names (v1.19 fix)
+ * @param {object} leg - Journey leg data
+ * @param {object} transitData - Real-time departure data
+ * @param {number} arriveAtLegMins - Minutes until user arrives at this leg's start point
  */
-function buildLegSubtitle(leg, transitData) {
+function buildLegSubtitle(leg, transitData, arriveAtLegMins = 0) {
   switch (leg.type) {
     case 'walk': {
       const mins = leg.minutes || leg.durationMinutes || 0;
@@ -149,8 +154,10 @@ function buildLegSubtitle(leg, transitData) {
       if (lineName) parts.push(lineName);
       if (originName) parts.push(originName);
       const departures = transitData?.trains || [];
-      if (departures.length > 0) {
-        const times = departures.slice(0, 3).map(d => d.minutes).join(', ');
+      // v1.19: Filter to show only catchable departures (after user arrives at stop)
+      const catchable = departures.filter(d => d.minutes >= arriveAtLegMins);
+      if (catchable.length > 0) {
+        const times = catchable.slice(0, 3).map(d => d.minutes).join(', ');
         parts.push(`Next: ${times} min`);
       }
       return parts.join(' • ') || 'Platform';
@@ -160,8 +167,10 @@ function buildLegSubtitle(leg, transitData) {
       const originName = leg.origin?.name || leg.originStop || '';
       if (originName) parts.push(originName);
       const departures = transitData?.trams || [];
-      if (departures.length > 0) {
-        const times = departures.slice(0, 3).map(d => d.minutes).join(', ');
+      // v1.19: Filter to show only catchable departures
+      const catchable = departures.filter(d => d.minutes >= arriveAtLegMins);
+      if (catchable.length > 0) {
+        const times = catchable.slice(0, 3).map(d => d.minutes).join(', ');
         parts.push(`Next: ${times} min`);
       }
       return parts.join(' • ') || 'Tram stop';
@@ -171,8 +180,10 @@ function buildLegSubtitle(leg, transitData) {
       const originName = leg.origin?.name || leg.originStop || '';
       if (originName) parts.push(originName);
       const departures = transitData?.buses || [];
-      if (departures.length > 0) {
-        const times = departures.slice(0, 3).map(d => d.minutes).join(', ');
+      // v1.19: Filter to show only catchable departures
+      const catchable = departures.filter(d => d.minutes >= arriveAtLegMins);
+      if (catchable.length > 0) {
+        const times = catchable.slice(0, 3).map(d => d.minutes).join(', ');
         parts.push(`Next: ${times} min`);
       }
       return parts.join(' • ') || 'Bus stop';
@@ -222,7 +233,7 @@ function buildJourneyLegs(route, transitData, coffeeDecision, currentTime) {
       number: legNumber++,
       type: leg.type,
       title: buildLegTitle(leg),
-      subtitle: buildLegSubtitle(leg, transitData),
+      subtitle: buildLegSubtitle(leg, transitData, cumulativeMinutes),  // v1.19: pass arrival time for catchable filtering
       minutes: legDuration,
       state: 'normal',
       // New timing fields (v1.18)

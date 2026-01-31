@@ -979,7 +979,11 @@ export class SmartCommute {
       });
       totalMinutes += transitTime;
       
-      legs.push({ type: 'walk', to: 'work', minutes: walkFromStop });
+      // v1.19: Include work name for display
+      const workName = locations?.work?.name || 
+                      locations?.work?.address?.split(',')[0]?.trim() || 
+                      'Office';
+      legs.push({ type: 'walk', to: 'work', minutes: walkFromStop, workName });
       totalMinutes += walkFromStop;
       
       routes.push({
@@ -1062,7 +1066,11 @@ export class SmartCommute {
         originStation: trainStation.name,
         minutes: trainTime 
       });
-      legs.push({ type: 'walk', to: 'work', minutes: walkToWork });
+      // v1.19: Include work name for display
+      const workName = locations?.work?.name || 
+                      locations?.work?.address?.split(',')[0]?.trim() || 
+                      'Office';
+      legs.push({ type: 'walk', to: 'work', minutes: walkToWork, workName });
       
       routes.push({
         id: `multi-tram-train-${trainStation.name.replace(/\s+/g, '-').toLowerCase()}`,
@@ -1093,22 +1101,33 @@ export class SmartCommute {
   getHardcodedRoutes(locations, includeCoffee) {
     const routes = [];
     
-    // Extract names from user config (NO hardcoded location names) - v1.18 improved extraction
+    // Extract names from user config (NO hardcoded location names) - v1.19 improved extraction
     const cafeName = locations?.cafe?.name || 
                     locations?.cafe?.formattedAddress?.split(',')[0] ||
                     locations?.cafe?.address?.split(',')[0] || 
                     'Cafe';
+    
+    // Extract suburb/area from address (e.g., "1 Clara St, South Yarra" → "South Yarra")
     const homeArea = locations?.home?.suburb ||
                     locations?.home?.address?.split(',')[1]?.trim() || 
-                    'home';
+                    null;
     const workArea = locations?.work?.suburb ||
                     locations?.work?.address?.split(',')[1]?.trim() || 
-                    'work';
+                    null;
+    
+    // Extract work address short name (e.g., "80 Collins Street" from full address)
+    const workAddressShort = locations?.work?.name ||
+                            locations?.work?.address?.split(',')[0]?.trim() ||
+                            'Office';
     
     // Extract nearby stop names from config if available
-    const nearestTramStop = locations?.cafe?.nearbyStops?.tram?.name || `Toorak Rd`;
-    const nearestTrainStation = locations?.home?.nearbyStops?.train?.name || `${homeArea} Station`;
-    const workStation = locations?.work?.nearbyStops?.train?.name || `Parliament`;
+    // NEVER use generic "home Station" - use actual station name or suburb-based name
+    const nearestTramStop = locations?.cafe?.nearbyStops?.tram?.name || 
+                           locations?.home?.nearbyStops?.tram?.name ||
+                           'Toorak Rd';
+    const nearestTrainStation = locations?.home?.nearbyStops?.train?.name || 
+                               (homeArea ? `${homeArea} Station` : 'South Yarra Station');
+    const workStation = locations?.work?.nearbyStops?.train?.name || 'Parliament';
     
     // =========================================================================
     // ROUTE 1: Coffee + Tram + Train (PREFERRED multi-modal pattern)
@@ -1129,7 +1148,7 @@ export class SmartCommute {
           { type: 'tram', routeNumber: '58', origin: { name: nearestTramStop }, destination: { name: nearestTrainStation }, originStop: nearestTramStop, minutes: 6 },
           { type: 'walk', to: 'train platform', minutes: 2, stationName: nearestTrainStation },
           { type: 'train', origin: { name: nearestTrainStation }, destination: { name: workStation }, originStation: nearestTrainStation, minutes: 8 },
-          { type: 'walk', to: 'work', minutes: 5 }
+          { type: 'walk', to: 'work', minutes: 5, workName: workAddressShort }
         ]
       });
     }
@@ -1150,7 +1169,7 @@ export class SmartCommute {
           { type: 'coffee', location: cafeName, cafeName, minutes: 5, canGet: true },
           { type: 'walk', to: 'train platform', from: cafeName, minutes: 5, stationName: nearestTrainStation },
           { type: 'train', origin: { name: nearestTrainStation }, destination: { name: workStation }, originStation: nearestTrainStation, minutes: 10 },
-          { type: 'walk', to: 'work', minutes: 6 }
+          { type: 'walk', to: 'work', minutes: 6, workName: workAddressShort }
         ]
       });
     }
@@ -1166,9 +1185,9 @@ export class SmartCommute {
       type: 'direct',
       totalMinutes: 22,
       legs: [
-        { type: 'walk', to: 'station', from: 'home', minutes: 7, fromHome: true },
-        { type: 'train', origin: { name: `${homeArea} Station` }, destination: { name: `${workArea} Station` }, minutes: 10 },
-        { type: 'walk', to: 'office', minutes: 5 }
+        { type: 'walk', to: 'station', from: 'home', minutes: 7, fromHome: true, stationName: nearestTrainStation },
+        { type: 'train', origin: { name: nearestTrainStation }, destination: { name: workStation }, minutes: 10 },
+        { type: 'walk', to: 'work', minutes: 5, workName: workAddressShort }
       ]
     });
     
@@ -1183,10 +1202,10 @@ export class SmartCommute {
       type: 'transfer',
       totalMinutes: 28,
       legs: [
-        { type: 'walk', to: 'tram stop', from: 'home', minutes: 4, fromHome: true },
-        { type: 'tram', origin: { name: homeArea }, destination: { name: 'Station' }, minutes: 10 },
-        { type: 'train', origin: { name: 'Station' }, destination: { name: `${workArea} Station` }, minutes: 10 },
-        { type: 'walk', to: 'office', minutes: 4 }
+        { type: 'walk', to: 'tram stop', from: 'home', minutes: 4, fromHome: true, stopName: nearestTramStop },
+        { type: 'tram', origin: { name: nearestTramStop }, destination: { name: nearestTrainStation }, minutes: 10 },
+        { type: 'train', origin: { name: nearestTrainStation }, destination: { name: workStation }, minutes: 10 },
+        { type: 'walk', to: 'work', minutes: 4, workName: workAddressShort }
       ]
     });
     
@@ -1201,8 +1220,8 @@ export class SmartCommute {
       type: 'express',
       totalMinutes: 20,
       legs: [
-        { type: 'tram', origin: { name: homeArea }, destination: { name: workArea }, minutes: 14, fromHome: true },
-        { type: 'walk', to: 'office', minutes: 6 }
+        { type: 'tram', origin: { name: nearestTramStop }, destination: { name: workArea || 'CBD' }, minutes: 14, fromHome: true },
+        { type: 'walk', to: 'work', minutes: 6, workName: workAddressShort }
       ]
     });
     
@@ -1218,8 +1237,8 @@ export class SmartCommute {
       totalMinutes: 30,
       legs: [
         { type: 'walk', to: 'bus stop', from: 'home', minutes: 4, fromHome: true },
-        { type: 'bus', origin: { name: homeArea }, destination: { name: workArea }, minutes: 20 },
-        { type: 'walk', to: 'office', minutes: 6 }
+        { type: 'bus', origin: { name: homeArea || 'Home' }, destination: { name: workArea || 'CBD' }, minutes: 20 },
+        { type: 'walk', to: 'work', minutes: 6, workName: workAddressShort }
       ]
     });
     
