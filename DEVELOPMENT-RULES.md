@@ -277,6 +277,7 @@ The system was previously known as "Commute Compute". Update any remaining refer
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.11 | 2026-01-31 | Angus Bergman | **FIRMWARE POWER CYCLE**: Added requirement to Section 5.2 — firmware must support clean power cycle reboot (device boots correctly when power disconnected/reconnected, no stuck states). |
 | 1.10 | 2026-01-31 | Angus Bergman | **UI CONSISTENCY TESTING**: Added Section 14.4 — mandatory testing checklist for UI changes. Covers: Setup Wizard steps, Admin Panel tabs, internal links, Quick Links, terminology consistency, localStorage key consistency, endpoint consistency, systematic testing order. |
 | 1.9 | 2026-01-31 | Angus Bergman | **ADMIN PANEL LOCALSTORAGE ARCHITECTURE**: (1) Admin panel tabs rebuilt to read from localStorage (Setup Wizard saves here). (2) Device naming: Use "TRMNL Display (OG)" not "CC E-Ink Display". (3) Firmware disclaimer required for all device references. (4) API Settings auto-populates from wizard data. (5) Added Section 3.7 (Admin Panel localStorage Keys). |
 | 1.8 | 2026-01-31 | Angus Bergman | **FIRMWARE UPDATE + ZERO-CONFIG KV STORAGE**: (1) Updated locked firmware to CC-FW-6.1-60s (commit 7336929) — 60s refresh. (2) Implemented Vercel KV storage for API keys (Section 11.8) — direct endpoints now Zero-Config compliant, no env vars required. (3) Added `src/data/kv-preferences.js` for persistent KV storage. |
@@ -779,6 +780,7 @@ Commute Compute is designed for TRMNL e-ink display hardware with custom firmwar
 - [ ] Use state machine architecture (no blocking in `setup()`)
 - [ ] Disable brownout detection
 - [ ] Use `FONT_8x8` only (avoids rotation bugs)
+- [ ] **Support clean power cycle reboot** — device must boot correctly when power is disconnected and reconnected (no stuck states, no manual reset required)
 
 **Firmware Must NOT:**
 - [ ] Contact usetrmnl.com or trmnl.com
