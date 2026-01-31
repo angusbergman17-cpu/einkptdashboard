@@ -1,9 +1,15 @@
-# PTV-TRMNL Firmware Version
+# Commute Compute Firmware Version
 # Copyright (c) 2026 Angus Bergman - CC BY-NC 4.0
 
-VERSION=6.0
-BUILD_DATE=2026-01-29
+VERSION=6.1-60s
+BUILD_DATE=2026-01-31
 STATUS=PRODUCTION
+COMMIT=7336929
+
+# Changes from 6.0:
+# - Refresh interval: 20s → 60s
+# - Full refresh: 300s (5min)
+# - Consolidated FIRMWARE_VERSION to config.h
 
 # Anti-Brick Compliance: 12/12 (100%)
 # - Watchdog timer: 45s
