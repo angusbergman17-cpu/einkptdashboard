@@ -1,7 +1,7 @@
 # Commute Compute Development Rules
 
 **MANDATORY COMPLIANCE DOCUMENT**  
-**Version:** 1.17  
+**Version:** 1.18  
 **Last Updated:** 2026-01-31  
 **Copyright (c) 2026 Commute Compute System by Angus Bergman — Licensed under CC BY-NC 4.0**
 
@@ -319,8 +319,9 @@ The system was previously known as "Commute Compute". Update any remaining refer
 - 23.4 Departure Output Schema
 - 23.5 Line Name Extraction
 - 23.6 Fallback Data Requirements
-- 23.7 Journey Leg Construction
+- 23.7 Multi-Modal Journey Leg Construction (v1.18)
 - 23.8 Pre-Deployment Verification
+- 23.9 Alternative Route Detection (v1.18)
 </details>
 
 <details>
@@ -345,6 +346,7 @@ The system was previously known as "Commute Compute". Update any remaining refer
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.18 | 2026-01-31 | Angus Bergman | **MULTI-MODAL JOURNEY SUPPORT**: (1) Rewrote Section 23.7 — Multi-modal journey leg construction supporting N transit legs with interchange walks (Tram→Train, Bus→Train, etc.). (2) Added Section 23.9 — Alternative route detection (MANDATORY). Route discovery, scoring weights, multi-modal selection triggers. (3) Added delay accumulation across multiple transit legs. (4) Prohibition on hardcoded routes reinforced. Engine-only adaptation per Section 17.4. |
 | 1.15 | 2026-01-31 | Angus Bergman | **SERVERLESS RENDERING & ADMIN PANEL FIXES**: (1) Added Section 10.4 — Font loading in Vercel serverless (try multiple paths: process.cwd, __dirname, /var/task). (2) Added Section 13.6 — Admin Panel JavaScript patterns (Image preload pattern to avoid onerror on empty src; KV sync before server requests). (3) Screen API now reads journey config from KV storage with random fallback when unconfigured. |
 | 1.14 | 2026-01-31 | Angus Bergman | **SYSTEM ARCHITECTURE PRINCIPLES**: Added Section 24 — complete architecture principles from ARCHITECTURE.md v4.0. Core principles (self-hosted, zero-config, no TRMNL cloud, server-side rendering, privacy-first, multi-state, free-tier). Distribution model, layer architecture, data flow, Vercel KV storage architecture, security model, free-tier architecture, multi-device support (CC LiveDash™), required endpoints, locked technology stack. |
 | 1.13 | 2026-01-31 | Angus Bergman | **SMARTCOMMUTE DATA FLOW**: Added Section 23 — mandatory data flow requirements for SmartCommute engine. GTFS-RT stop ID architecture (direction-specific IDs), citybound detection logic (isCityLoopStop), departure output schema, line name extraction, journey leg construction, fallback data requirements, pre-deployment verification tests. Added Section 17.4 (No Hardcoded Personal Information) for turnkey compliance. |
@@ -2862,49 +2864,106 @@ When live GTFS-RT data unavailable, fallback to scheduled timetables:
 }
 ```
 
-### 23.7 Journey Leg Construction
+### 23.7 Multi-Modal Journey Leg Construction (v1.18)
 
-**SmartCommute builds journey legs from departure data:**
+**SmartCommute builds journey legs supporting N transit modes with interchange walks.**
+
+**🔴 CRITICAL:** Journey structure must support multi-modal routes (e.g., Tram → Train, Bus → Train).
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    JOURNEY LEG STRUCTURE                         │
+│              MULTI-MODAL JOURNEY LEG STRUCTURE                   │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  Leg 1: WALK (home → cafe)                                      │
+│  Leg 1: WALK (origin → first waypoint)                          │
 │  ├── type: 'walk'                                               │
-│  ├── from: 'home'                                               │
-│  ├── to: cafeName                                               │
-│  └── minutes: 3-5 (user configured)                             │
+│  ├── from: 'home' | 'work' | current_location                   │
+│  ├── to: cafe_name | first_stop_name                            │
+│  └── minutes: calculated from distance                          │
 │                                                                 │
-│  Leg 2: COFFEE (optional)                                       │
+│  Leg 2: COFFEE (optional, position: 'origin')                   │
 │  ├── type: 'coffee'                                             │
-│  ├── location: cafeName                                         │
-│  ├── minutes: 4-5 (user configured)                             │
-│  └── canGet: CoffeeDecision result                              │
+│  ├── location: cafe_name                                        │
+│  ├── minutes: user_configured (default: 5)                      │
+│  ├── canGet: CoffeeDecision result                              │
+│  └── reason: 'TIME FOR COFFEE' | 'EXTRA TIME — Disruption'      │
 │                                                                 │
-│  Leg 3: WALK (cafe → station)                                   │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │ REPEATING PATTERN: Walk + Transit (1 to N times)            ││
+│  ├─────────────────────────────────────────────────────────────┤│
+│  │                                                             ││
+│  │  Leg N: WALK (to transit stop)                              ││
+│  │  ├── type: 'walk'                                           ││
+│  │  ├── from: previous_location | 'cafe' | previous_stop       ││
+│  │  ├── to: stop_name                                          ││
+│  │  └── minutes: interchange_walk_time                         ││
+│  │                                                             ││
+│  │  Leg N+1: TRANSIT                                           ││
+│  │  ├── type: 'train' | 'tram' | 'bus' | 'ferry' | 'vline'     ││
+│  │  ├── routeNumber: line_name | route_number                  ││
+│  │  ├── origin: { name, stopId }                               ││
+│  │  ├── destination: { name, stopId }                          ││
+│  │  ├── minutes: from GTFS-RT                                  ││
+│  │  ├── nextDepartures: [5, 12, 20]                            ││
+│  │  ├── delay: delay_minutes | 0                               ││
+│  │  ├── isDelayed: boolean                                     ││
+│  │  ├── isSuspended: boolean                                   ││
+│  │  ├── isDiverted: boolean                                    ││
+│  │  ├── isExpress: boolean                                     ││
+│  │  └── replacement: { type: 'bus', details } | null           ││
+│  │                                                             ││
+│  └─────────────────────────────────────────────────────────────┘│
+│                                                                 │
+│  Final Leg: WALK (last stop → destination)                      │
 │  ├── type: 'walk'                                               │
-│  ├── from: 'cafe'                                               │
-│  ├── to: nearestStation                                         │
-│  └── minutes: 2-8 (user configured)                             │
+│  ├── from: last_stop_name                                       │
+│  ├── to: 'work' | 'home' | destination_name                     │
+│  └── minutes: calculated from distance                          │
 │                                                                 │
-│  Leg 4: TRAIN/TRAM (transit)                                    │
-│  ├── type: 'train' | 'tram'                                     │
-│  ├── routeNumber: line name or route number                     │
-│  ├── origin: { name, stopId }                                   │
-│  ├── destination: { name, stopId }                              │
-│  ├── minutes: from GTFS-RT                                      │
-│  ├── nextDepartures: [5, 12, 20] (upcoming times)               │
-│  └── isCitybound: from departure data                           │
-│                                                                 │
-│  Leg 5: WALK (station → work)                                   │
-│  ├── type: 'walk'                                               │
-│  ├── from: destStation                                          │
-│  ├── to: 'work'                                                 │
-│  └── minutes: 5-15 (user configured)                            │
+│  Optional Final: COFFEE (position: 'destination')               │
+│  ├── type: 'coffee'                                             │
+│  ├── location: cafe_name                                        │
+│  └── reason: 'FRIDAY TREAT' | 'TIME FOR COFFEE'                 │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
+```
+
+#### 23.7.1 Example: Multi-Modal Journey (Tram → Train)
+
+```javascript
+// Home → Coffee → Tram → Train → Work (7 legs)
+const journey = {
+  legs: [
+    { type: 'walk', from: 'home', to: 'Norman Cafe', minutes: 4 },
+    { type: 'coffee', location: 'Norman Cafe', minutes: 5, canGet: true, reason: 'TIME FOR COFFEE' },
+    { type: 'walk', from: 'Norman Cafe', to: 'Toorak Rd/Chapel St', minutes: 3 },
+    { type: 'tram', routeNumber: '58', origin: { name: 'Toorak Rd/Chapel St', stopId: '2505' }, 
+      destination: { name: 'South Yarra Stn', stopId: '2510' }, minutes: 6, nextDepartures: [3, 11, 19] },
+    { type: 'walk', from: 'South Yarra Stn tram stop', to: 'South Yarra Stn Platform 1', minutes: 2 },
+    { type: 'train', routeNumber: 'Sandringham', origin: { name: 'South Yarra', stopId: '12179' },
+      destination: { name: 'Parliament', stopId: '26506' }, minutes: 5, nextDepartures: [4, 12, 20] },
+    { type: 'walk', from: 'Parliament Station', to: 'work', minutes: 8 }
+  ],
+  totalMinutes: 33,
+  transitLegs: 2,  // Tram + Train
+  interchanges: 1
+};
+```
+
+#### 23.7.2 Delay Accumulation Across Transit Legs
+
+When multiple transit legs have delays, accumulate for status bar:
+
+```javascript
+const transitLegs = journey.legs.filter(l => ['train', 'tram', 'bus'].includes(l.type));
+const totalDelay = transitLegs.reduce((sum, leg) => sum + (leg.delay || 0), 0);
+
+// Status bar shows cumulative delay
+if (totalDelay > 0 && transitLegs.filter(l => l.isDelayed).length > 1) {
+  statusBar = `DELAYS → Arrive ${arrivalTime} (+${totalDelay} min)`;  // Plural
+} else if (totalDelay > 0) {
+  statusBar = `DELAY → Arrive ${arrivalTime} (+${totalDelay} min)`;   // Singular
+}
 ```
 
 ### 23.8 Pre-Deployment Verification
@@ -2938,6 +2997,164 @@ import('./src/services/opendata-client.js').then(async m => {
   // Expected: 0 (empty array, no crash)
 });
 "
+
+# 4. Verify multi-modal journey construction
+node -e "
+import('./src/services/journey-planner.js').then(async m => {
+  const journey = await m.planJourney({ 
+    origin: { lat: -37.8389, lng: 144.9931 },  // South Yarra
+    destination: { lat: -37.8136, lng: 144.9631 }  // CBD
+  });
+  console.log('Transit legs:', journey.transitLegs);
+  // Should support 1, 2, or more transit legs
+});
+"
+```
+
+### 23.9 Alternative Route Detection (MANDATORY)
+
+**🔴 CRITICAL:** SmartCommute MUST calculate multiple route alternatives and select the optimal one. Routes are engine-calculated, NEVER hardcoded.
+
+#### 23.9.1 Route Discovery Process
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      ALTERNATIVE ROUTE DISCOVERY                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  1. STOP DISCOVERY                                                          │
+│     ├── Find all transit stops within maxWalkDistance of ORIGIN             │
+│     ├── Find all transit stops within maxWalkDistance of DESTINATION        │
+│     └── Include: train stations, tram stops, bus stops                      │
+│                                                                             │
+│  2. ROUTE ENUMERATION                                                       │
+│     ├── Query GTFS for direct routes (single transit mode)                  │
+│     ├── Query GTFS for multi-modal routes (tram→train, bus→train, etc.)     │
+│     └── Include interchange options at major hubs                           │
+│                                                                             │
+│  3. ROUTE SCORING                                                           │
+│     ├── Calculate total time for each alternative                           │
+│     ├── Apply weights: time (40%), transfers (25%), walking (20%), rel (15%)│
+│     └── Adjust scores based on current conditions (delays, suspensions)     │
+│                                                                             │
+│  4. SELECTION                                                               │
+│     └── Return lowest-score route as primary, others as alternatives        │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### 23.9.2 Route Scoring Weights
+
+| Factor | Weight | Calculation |
+|--------|--------|-------------|
+| Total time | 40% | Sum of all leg durations (minutes) |
+| Transfers | 25% | +5 points per interchange |
+| Walking | 20% | Total walking minutes |
+| Reliability | 15% | Based on current delay/disruption status |
+
+#### 23.9.3 Multi-Modal Selection Triggers
+
+SmartCommute selects multi-modal route (e.g., Tram → Train) when:
+
+| Condition | Action |
+|-----------|--------|
+| Direct route suspended | Promote alternative with different modes |
+| Direct route delayed >10 min | Re-score alternatives with current delays |
+| Multi-modal faster than direct | Select multi-modal as primary |
+| User prefers specific modes | Weight those modes higher |
+| Interchange walk < maxWalkDistance | Include in alternatives |
+
+#### 23.9.4 Example: Engine-Calculated Alternatives
+
+```javascript
+// User config: Home (South Yarra) → Work (Collins St CBD)
+// Engine discovers these alternatives (NOT hardcoded):
+
+const alternatives = calculateAlternatives(origin, destination, preferences);
+
+// Result:
+[
+  { 
+    route: ['walk', 'train', 'walk'], 
+    modes: ['Sandringham'], 
+    score: 35, 
+    time: 32,
+    status: 'delayed +8 min'  // Current conditions
+  },
+  { 
+    route: ['walk', 'coffee', 'walk', 'train', 'walk'], 
+    modes: ['Sandringham'], 
+    score: 38, 
+    time: 47,
+    status: 'delayed +8 min'
+  },
+  { 
+    route: ['walk', 'coffee', 'walk', 'tram', 'walk', 'train', 'walk'], 
+    modes: ['Tram 58', 'Sandringham'], 
+    score: 36,  // Lower score due to avoiding delayed train segment
+    time: 44,
+    status: 'on time'
+  },
+  { 
+    route: ['walk', 'tram', 'walk'], 
+    modes: ['Tram 8'], 
+    score: 48, 
+    time: 38,
+    status: 'on time'
+  }
+]
+
+// Engine selects: Tram → Train (score 36) because Sandringham delay increases direct route score
+```
+
+#### 23.9.5 Prohibition: No Hardcoded Routes
+
+**🔴 FORBIDDEN:**
+```javascript
+// ❌ NEVER hardcode specific user routes
+if (userAddress.includes('South Yarra')) {
+  return predefinedSouthYarraRoute;
+}
+
+// ❌ NEVER hardcode specific route patterns
+const angusRoute = ['walk', 'coffee', 'tram', 'train', 'walk'];
+```
+
+**✅ CORRECT:**
+```javascript
+// ✅ Engine calculates all alternatives dynamically
+const alternatives = await discoverRoutes(origin, destination, {
+  maxWalkDistance: preferences.maxWalkDistance || 800,
+  preferredModes: preferences.preferredModes || ['train', 'tram', 'bus'],
+  includeMultiModal: true,
+  maxTransfers: 2
+});
+
+// ✅ Selection based on current conditions
+const optimal = selectOptimalRoute(alternatives, {
+  currentTime: Date.now(),
+  delays: await fetchCurrentDelays(),
+  suspensions: await fetchSuspensions()
+});
+```
+
+#### 23.9.6 Coffee Integration with Alternatives
+
+When coffee is enabled, engine evaluates coffee insertion for EACH alternative:
+
+```javascript
+for (const route of alternatives) {
+  const withCoffeeAtOrigin = insertCoffee(route, 'origin');
+  const withCoffeeAtDest = insertCoffee(route, 'destination');
+  
+  // Only include if arrival time still meets target
+  if (withCoffeeAtOrigin.arrivalTime <= targetArrival) {
+    alternatives.push(withCoffeeAtOrigin);
+  }
+  if (withCoffeeAtDest.arrivalTime <= targetArrival) {
+    alternatives.push(withCoffeeAtDest);
+  }
+}
 ```
 
 ---
