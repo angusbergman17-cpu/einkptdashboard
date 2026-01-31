@@ -456,157 +456,115 @@ unsigned long getBackoffDelay() {
 // Forward declaration for immediate zone rendering
 bool decodeAndDrawZone(Zone& zone);
 
-bool fetchZoneUpdates(bool forceAll) {
-    if (strlen(webhookUrl) == 0) return false;
-    
-    // Use stack-allocated client like working trmnl-direct code
+// Zone IDs in render order
+const char* ZONE_IDS[] = {"header", "divider", "summary", "legs", "footer"};
+const int NUM_ZONES = 5;
+
+bool fetchSingleZone(const char* baseUrl, const char* zoneId, bool forceAll) {
     WiFiClientSecure client;
     client.setInsecure();
     HTTPClient http;
     
-    // Extract base URL from webhook URL for zones API
+    String url = String(baseUrl) + "/api/zone/" + zoneId;
+    if (forceAll) url += "?force=true";
+    
+    Serial.printf("Fetch zone %s: %s\n", zoneId, url.c_str());
+    http.setTimeout(15000);
+    
+    if (!http.begin(client, url)) {
+        Serial.println("  HTTP begin failed");
+        return false;
+    }
+    
+    http.addHeader("User-Agent", "CommuteCompute/" FIRMWARE_VERSION);
+    int code = http.GET();
+    
+    if (code != 200) {
+        Serial.printf("  HTTP error: %d\n", code);
+        http.end();
+        return false;
+    }
+    
+    String payload = http.getString();
+    http.end();
+    
+    if (payload.length() == 0) {
+        Serial.println("  Empty response");
+        return false;
+    }
+    
+    // Parse single zone response
+    Zone zone;
+    strncpy(zone.id, zoneId, ZONE_ID_MAX_LEN - 1);
+    zone.x = jsonGetInt(payload, "x");
+    zone.y = jsonGetInt(payload, "y");
+    zone.w = jsonGetInt(payload, "w");
+    zone.h = jsonGetInt(payload, "h");
+    zone.changed = jsonGetBool(payload, "changed");
+    
+    Serial.printf("  Zone: x=%d y=%d w=%d h=%d changed=%d\n", 
+                  zone.x, zone.y, zone.w, zone.h, zone.changed);
+    
+    if (!zone.changed) {
+        Serial.println("  Zone unchanged, skipping");
+        return true;  // Success but no render needed
+    }
+    
+    // Allocate buffer if needed
+    if (!sharedZoneDataBuffer) {
+        sharedZoneDataBuffer = (char*)malloc(ZONE_DATA_MAX_LEN);
+        if (!sharedZoneDataBuffer) {
+            Serial.println("  ERROR: Failed to allocate buffer");
+            return false;
+        }
+    }
+    
+    // Extract data directly (payload is smaller now - single zone)
+    String data = jsonGetString(payload, "data");
+    Serial.printf("  Data: %d bytes, heap: %d\n", data.length(), ESP.getFreeHeap());
+    
+    if (data.length() == 0 || data.length() >= ZONE_DATA_MAX_LEN) {
+        Serial.printf("  Data size issue: %d\n", data.length());
+        return false;
+    }
+    
+    strcpy(sharedZoneDataBuffer, data.c_str());
+    zone.data = sharedZoneDataBuffer;
+    zone.dataLen = data.length();
+    
+    // Render immediately
+    bool rendered = decodeAndDrawZone(zone);
+    Serial.printf("  Rendered: %s\n", rendered ? "OK" : "FAILED");
+    
+    return rendered;
+}
+
+bool fetchZoneUpdates(bool forceAll) {
+    if (strlen(webhookUrl) == 0) return false;
+    
+    // Extract base URL from webhook URL
     String baseUrl = String(webhookUrl);
     int apiIndex = baseUrl.indexOf("/api/device/");
     if (apiIndex > 0) {
         baseUrl = baseUrl.substring(0, apiIndex);
     }
     
-    String url = baseUrl + "/api/zones?batch=0";
-    if (forceAll) url += "&force=true";
+    Serial.printf("Sequential fetch from %s (force=%d)\n", baseUrl.c_str(), forceAll);
+    Serial.printf("Free heap: %d\n", ESP.getFreeHeap());
     
-    Serial.printf("Fetch: %s\n", url.c_str());
-    http.setTimeout(30000);
-    
-    if (!http.begin(client, url)) {
-        return false;
-    }
-    
-    http.addHeader("User-Agent", "CommuteCompute/" FIRMWARE_VERSION);
-    
-    Serial.printf("Free heap before request: %d\n", ESP.getFreeHeap());
-    int code = http.GET();
-    Serial.printf("HTTP code: %d\n", code);
-    
-    if (code != 200) {
-        Serial.printf("HTTP error: %d\n", code);
-        http.end();
-        return false;
-    }
-    
-    int contentLen = http.getSize();
-    Serial.printf("Content-Length: %d, Free heap: %d\n", contentLen, ESP.getFreeHeap());
-    
-    String payload = http.getString();
-    http.end();
-    
-    Serial.printf("Payload size: %d bytes, Free heap: %d\n", payload.length(), ESP.getFreeHeap());
-    
-    // Manual JSON parsing - find zones array
-    // Format: {"zones":[{...},{...}]}
-    int zonesStart = payload.indexOf("\"zones\":[");
-    if (zonesStart < 0) {
-        Serial.println("ERROR: zones array not found in response");
-        Serial.printf("Response start: %.100s\n", payload.c_str());
-        return false;
-    }
-    zonesStart += 9; // Skip past "zones":[
-    
-    // Check if zones array is empty
-    if (payload[zonesStart] == ']') {
-        Serial.println("Zones array is empty");
-        return false;
-    }
-    
-    zoneCount = 0;
-    int pos = zonesStart;
-    
-    while (pos < payload.length() && zoneCount < MAX_ZONES) {
-        // Find start of zone object
-        int objStart = payload.indexOf("{", pos);
-        if (objStart < 0) break;
-        
-        // Find matching closing brace (handle nested strings with escaped chars)
-        int braceCount = 1;
-        int objEnd = objStart + 1;
-        bool inString = false;
-        while (objEnd < payload.length() && braceCount > 0) {
-            char c = payload[objEnd];
-            if (c == '\\' && inString) {
-                objEnd++; // Skip escaped char
-            } else if (c == '"') {
-                inString = !inString;
-            } else if (!inString) {
-                if (c == '{') braceCount++;
-                else if (c == '}') braceCount--;
-            }
-            objEnd++;
+    int rendered = 0;
+    for (int i = 0; i < NUM_ZONES; i++) {
+        if (fetchSingleZone(baseUrl.c_str(), ZONE_IDS[i], forceAll)) {
+            rendered++;
         }
-        
-        if (braceCount != 0) break;
-        
-        // Extract zone object
-        Serial.printf("Zone obj: %d-%d (%d bytes), heap: %d\n", objStart, objEnd, objEnd-objStart, ESP.getFreeHeap());
-        String zoneJson = payload.substring(objStart, objEnd);
-        
-        Zone& zone = zones[zoneCount];
-        String id = jsonGetString(zoneJson, "id");
-        strncpy(zone.id, id.c_str(), ZONE_ID_MAX_LEN - 1);
-        zone.id[ZONE_ID_MAX_LEN - 1] = '\0';
-        
-        zone.x = jsonGetInt(zoneJson, "x");
-        zone.y = jsonGetInt(zoneJson, "y");
-        zone.w = jsonGetInt(zoneJson, "w");
-        zone.h = jsonGetInt(zoneJson, "h");
-        zone.changed = jsonGetBool(zoneJson, "changed");
-        
-        Serial.printf("Zone %d: id=%s x=%d y=%d w=%d h=%d changed=%d\n", 
-                      zoneCount, zone.id, zone.x, zone.y, zone.w, zone.h, zone.changed);
-        
-        // Extract data field (base64 BMP) into shared buffer and render immediately
-        Serial.printf("  Extracting data (zoneJson len=%d)...\n", zoneJson.length());
-        String data = jsonGetString(zoneJson, "data");
-        Serial.printf("  Data extracted: %d bytes, heap: %d\n", data.length(), ESP.getFreeHeap());
-        
-        bool rendered = false;
-        // Allocate shared buffer on first use (lazy allocation to save RAM for HTTP)
-        if (!sharedZoneDataBuffer) {
-            sharedZoneDataBuffer = (char*)malloc(ZONE_DATA_MAX_LEN);
-            if (!sharedZoneDataBuffer) {
-                Serial.println("  ERROR: Failed to allocate zone buffer");
-            }
-        }
-        if (data.length() > 0 && sharedZoneDataBuffer && data.length() < ZONE_DATA_MAX_LEN) {
-            strcpy(sharedZoneDataBuffer, data.c_str());
-            zone.data = sharedZoneDataBuffer;
-            zone.dataLen = data.length();
-            
-            // Render zone immediately (before buffer gets reused)
-            if (zone.changed) {
-                rendered = decodeAndDrawZone(zone);
-                Serial.printf("  Rendered: %s\n", rendered ? "OK" : "FAILED");
-            }
-        } else {
-            zone.data = nullptr;
-            if (data.length() >= ZONE_DATA_MAX_LEN) {
-                Serial.printf("  ERROR: Data too large (%d > %d)\n", data.length(), ZONE_DATA_MAX_LEN);
-            }
-        }
-        
-        // Mark as processed (clear data pointer to save memory)
-        zone.data = nullptr;
-        zone.changed = rendered;  // Reuse changed flag to track if rendered
-        
-        zoneCount++;
-        pos = objEnd;
-        
-        // Check for end of array
-        if (payload.indexOf("]", pos) < payload.indexOf("{", pos) || payload.indexOf("{", pos) < 0) {
-            break;
-        }
+        yield();  // Let WiFi/system tasks run
     }
     
-    Serial.printf("Parsed and rendered %d zones\n", zoneCount);
-    return zoneCount > 0;
+    // Store count for refresh logic
+    zoneCount = rendered;
+    
+    Serial.printf("Rendered %d/%d zones\n", rendered, NUM_ZONES);
+    return rendered > 0;
 }
 
 bool decodeAndDrawZone(Zone& zone) {
