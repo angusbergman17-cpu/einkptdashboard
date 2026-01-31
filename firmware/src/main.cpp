@@ -21,9 +21,11 @@
 #define SCREEN_W 800
 #define SCREEN_H 480
 #define MAX_ZONES 6
-#define ZONE_BMP_MAX_SIZE 20000
+#define ZONE_BMP_MAX_SIZE 32000
 #define ZONE_ID_MAX_LEN 32
-#define ZONE_DATA_MAX_LEN 8000
+// Legs zone is ~42KB base64, header is ~12KB
+// Use single shared buffer instead of per-zone buffers
+#define ZONE_DATA_MAX_LEN 50000
 #define FIRMWARE_VERSION "6.0-stable-hardcoded"
 
 // Default server for pairing API
@@ -62,7 +64,8 @@ struct Zone {
 Zone zones[MAX_ZONES];
 int zoneCount = 0;
 uint8_t* zoneBmpBuffer = nullptr;
-char* zoneDataBuffers[MAX_ZONES] = {nullptr};
+// Single shared buffer for zone data (reused for each zone)
+char* sharedZoneDataBuffer = nullptr;
 
 // Simple JSON parsing helpers (ArduinoJson causes ESP32-C3 stack corruption)
 String jsonGetString(const String& json, const char* key) {
@@ -220,26 +223,26 @@ void loop() {
         if (fetchZoneUpdates(needsFull)) {
             consecutiveErrors = 0;
             
-            int changed = 0;
+            // Zones are already rendered during fetch (shared buffer approach)
+            // zone.changed now means "was successfully rendered"
+            int rendered = 0;
             for (int i = 0; i < zoneCount; i++) {
-                if (zones[i].changed && zones[i].data) {
-                    changed++;
-                    if (needsFull) {
-                        decodeAndDrawZone(zones[i]);
-                    } else {
-                        flashAndRefreshZone(zones[i]);
-                    }
+                if (zones[i].changed) rendered++;
+            }
+            
+            if (rendered > 0) {
+                if (needsFull) {
+                    doFullRefresh();
+                    lastFullRefresh = now;
+                    partialRefreshCount = 0;
+                    initialDrawDone = true;
+                } else {
+                    // Partial refresh already done per-zone during fetch
+                    partialRefreshCount++;
                 }
             }
             
-            if (needsFull && changed > 0) {
-                doFullRefresh();
-                lastFullRefresh = now;
-                partialRefreshCount = 0;
-                initialDrawDone = true;
-            }
-            
-            Serial.printf("Refresh: %d zones, full=%s\n", changed, needsFull ? "yes" : "no");
+            Serial.printf("Refresh: %d zones, full=%s\n", rendered, needsFull ? "yes" : "no");
         } else {
             consecutiveErrors++;
             lastErrorTime = now;
@@ -438,8 +441,12 @@ void initDisplay() {
 }
 
 void initZoneBuffers() {
+    // Single shared buffer for zone data (saves RAM on ESP32-C3)
+    sharedZoneDataBuffer = (char*)malloc(ZONE_DATA_MAX_LEN);
+    if (!sharedZoneDataBuffer) {
+        Serial.println("ERROR: Failed to allocate zone data buffer");
+    }
     for (int i = 0; i < MAX_ZONES; i++) {
-        zoneDataBuffers[i] = (char*)malloc(ZONE_DATA_MAX_LEN);
         zones[i].data = nullptr;
         zones[i].id[0] = '\0';
     }
@@ -449,6 +456,9 @@ unsigned long getBackoffDelay() {
     int capped = min(consecutiveErrors, MAX_BACKOFF_ERRORS);
     return (1UL << capped) * 1000UL;
 }
+
+// Forward declaration for immediate zone rendering
+bool decodeAndDrawZone(Zone& zone);
 
 bool fetchZoneUpdates(bool forceAll) {
     if (strlen(webhookUrl) == 0) return false;
@@ -548,20 +558,31 @@ bool fetchZoneUpdates(bool forceAll) {
         Serial.printf("Zone %d: id=%s x=%d y=%d w=%d h=%d changed=%d\n", 
                       zoneCount, zone.id, zone.x, zone.y, zone.w, zone.h, zone.changed);
         
-        // Extract data field (base64 BMP)
+        // Extract data field (base64 BMP) into shared buffer and render immediately
         String data = jsonGetString(zoneJson, "data");
         Serial.printf("  Data length: %d\n", data.length());
-        if (data.length() > 0 && zoneDataBuffers[zoneCount]) {
-            if (data.length() < ZONE_DATA_MAX_LEN) {
-                strcpy(zoneDataBuffers[zoneCount], data.c_str());
-                zone.data = zoneDataBuffers[zoneCount];
-                zone.dataLen = data.length();
-            } else {
-                zone.data = nullptr;
+        
+        bool rendered = false;
+        if (data.length() > 0 && sharedZoneDataBuffer && data.length() < ZONE_DATA_MAX_LEN) {
+            strcpy(sharedZoneDataBuffer, data.c_str());
+            zone.data = sharedZoneDataBuffer;
+            zone.dataLen = data.length();
+            
+            // Render zone immediately (before buffer gets reused)
+            if (zone.changed) {
+                rendered = decodeAndDrawZone(zone);
+                Serial.printf("  Rendered: %s\n", rendered ? "OK" : "FAILED");
             }
         } else {
             zone.data = nullptr;
+            if (data.length() >= ZONE_DATA_MAX_LEN) {
+                Serial.printf("  ERROR: Data too large (%d > %d)\n", data.length(), ZONE_DATA_MAX_LEN);
+            }
         }
+        
+        // Mark as processed (clear data pointer to save memory)
+        zone.data = nullptr;
+        zone.changed = rendered;  // Reuse changed flag to track if rendered
         
         zoneCount++;
         pos = objEnd;
@@ -572,7 +593,7 @@ bool fetchZoneUpdates(bool forceAll) {
         }
     }
     
-    Serial.printf("Parsed %d zones\n", zoneCount);
+    Serial.printf("Parsed and rendered %d zones\n", zoneCount);
     return zoneCount > 0;
 }
 
