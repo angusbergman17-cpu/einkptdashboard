@@ -223,6 +223,7 @@ The system was previously known as "Commute Compute". Update any remaining refer
   - 14.1.1 Forbidden Terms Verification
 - 14.2 Firmware Testing
 - 14.3 Server Testing
+- 14.4 UI Consistency Testing (MANDATORY for UI Changes)
 </details>
 
 <details>
@@ -276,6 +277,7 @@ The system was previously known as "Commute Compute". Update any remaining refer
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.10 | 2026-01-31 | Angus Bergman | **UI CONSISTENCY TESTING**: Added Section 14.4 — mandatory testing checklist for UI changes. Covers: Setup Wizard steps, Admin Panel tabs, internal links, Quick Links, terminology consistency, localStorage key consistency, endpoint consistency, systematic testing order. |
 | 1.9 | 2026-01-31 | Angus Bergman | **ADMIN PANEL LOCALSTORAGE ARCHITECTURE**: (1) Admin panel tabs rebuilt to read from localStorage (Setup Wizard saves here). (2) Device naming: Use "TRMNL Display (OG)" not "CC E-Ink Display". (3) Firmware disclaimer required for all device references. (4) API Settings auto-populates from wizard data. (5) Added Section 3.7 (Admin Panel localStorage Keys). |
 | 1.8 | 2026-01-31 | Angus Bergman | **FIRMWARE UPDATE + ZERO-CONFIG KV STORAGE**: (1) Updated locked firmware to CC-FW-6.1-60s (commit 7336929) — 60s refresh. (2) Implemented Vercel KV storage for API keys (Section 11.8) — direct endpoints now Zero-Config compliant, no env vars required. (3) Added `src/data/kv-preferences.js` for persistent KV storage. |
 | 1.7 | 2026-01-31 | Angus Bergman | **LOCKED FIRMWARE**: Added Section 5.6 — CC-FW-6.0-STABLE locked production firmware. Hardware-verified working on TRMNL OG (commit 2f8d6cf). Documents exact flashing procedure, ESP32-C3 workarounds, modification policy. |
@@ -1611,6 +1613,112 @@ curl http://localhost:3000/api/zones?ver=1
 curl http://localhost:3000/api/dashboard
 curl http://localhost:3000/api/health
 ```
+
+### 14.4 UI Consistency Testing (MANDATORY for UI Changes)
+
+**🚨 CRITICAL:** Any UI change must be tested systematically across ALL related components. Changes must flow correctly and link properly.
+
+#### 14.4.1 Change Propagation Checklist
+
+When changing terminology, endpoints, or UI elements, verify ALL of the following:
+
+**Setup Wizard Steps:**
+- [ ] Step 1: Google Places API Key
+- [ ] Step 2: Addresses (Home, Work, Cafe)
+- [ ] Step 3: Transit Authority selection
+- [ ] Step 4: Transit API Key (optional)
+- [ ] Step 5: Journey Preferences + Device Selection
+- [ ] Completion screen + redirect to Admin
+
+**Admin Panel Tabs:**
+- [ ] Setup & Journey tab (summary view)
+- [ ] API Settings tab (key status + editing)
+- [ ] Live Data tab (departures, weather, coffee)
+- [ ] Configuration tab (profiles, settings)
+- [ ] Architecture tab (system diagrams)
+- [ ] System & Support tab (help, status)
+
+**Links Within Each Tab:**
+- [ ] All internal links point to correct tabs/pages
+- [ ] All external links open correctly (target="_blank")
+- [ ] "Edit" buttons link to setup wizard
+- [ ] "Go to X" buttons switch to correct tab
+
+**Quick Links (footer of admin panel):**
+- [ ] Live Display → `/api/livedash?device=trmnl-og&format=html`
+- [ ] E-Ink Preview → `/preview.html`
+- [ ] CC Dashboard → `/admin.html`
+- [ ] Journey Visualizer → `/journey-display.html`
+- [ ] API Status → `/api/status`
+
+**Quick Link Target Pages:**
+- [ ] Each linked page loads without errors
+- [ ] Page uses consistent terminology
+- [ ] Page reads from correct localStorage keys
+- [ ] Back/navigation links work correctly
+
+#### 14.4.2 Terminology Consistency
+
+When renaming or changing terminology:
+
+```bash
+# Search for old terminology across all UI files
+grep -rn "OLD_TERM" public/*.html --include="*.html"
+grep -rn "OLD_TERM" public/*.js --include="*.js"
+
+# Verify new terminology is consistent
+grep -rn "NEW_TERM" public/*.html | wc -l  # Count occurrences
+```
+
+**Common areas to check:**
+- Page titles and headers
+- Button labels
+- Form labels and placeholders
+- Status messages and alerts
+- Error messages
+- Help text and tooltips
+
+#### 14.4.3 localStorage Key Consistency
+
+When changing localStorage keys, update ALL references:
+
+| File | What to check |
+|------|---------------|
+| `setup-wizard.html` | Where keys are SET |
+| `admin.html` | Where keys are READ |
+| `preview.html` | If it reads config |
+| `journey-display.html` | If it reads config |
+
+```bash
+# Find all localStorage references
+grep -rn "localStorage" public/*.html | grep -E "getItem|setItem"
+```
+
+#### 14.4.4 Endpoint Consistency
+
+When changing API endpoints:
+
+- [ ] Update all `fetch()` calls in UI files
+- [ ] Update Quick Links if endpoint URL changed
+- [ ] Update API documentation
+- [ ] Test endpoint returns expected format
+
+```bash
+# Find all fetch calls
+grep -rn "fetch.*api" public/*.html
+```
+
+#### 14.4.5 Systematic Testing Order
+
+Test changes in this order:
+
+1. **Setup Wizard Flow:** Complete Steps 1-5, verify data saved to localStorage
+2. **Admin Panel Load:** Verify all tabs populate from localStorage
+3. **Tab Navigation:** Click each tab, verify content loads
+4. **Internal Links:** Click every button/link within each tab
+5. **Quick Links:** Click each Quick Link, verify target page loads
+6. **Edit Flow:** Click Edit, make change, verify update propagates
+7. **Reset Flow:** Reset config, verify wizard required again
 
 ---
 
