@@ -1600,7 +1600,9 @@ export function renderFullScreen(data, prefs = {}) {
   ctx.fillText((data.location || 'HOME').toUpperCase(), 16, 8);
   
   // Convert to 12-hour format (DEVELOPMENT-RULES.md: 12-hour time MANDATORY)
-  ctx.font = 'bold 68px Inter, sans-serif';
+  // v1.28: Clock vertically centered on header bar (0-94px)
+  const clockFontSize = 68;
+  ctx.font = `bold ${clockFontSize}px Inter, sans-serif`;
   let displayTime = data.current_time || '--:--';
   let isPM = false;
   
@@ -1620,11 +1622,15 @@ export function renderFullScreen(data, prefs = {}) {
     displayTime = displayTime.replace(/\s*(am|pm)/gi, '');
   }
   
-  ctx.fillText(displayTime, 16, 22);
+  // v1.28: Center clock vertically in header area (header height 94px, location uses top 20px)
+  const headerClockAreaTop = 20;
+  const headerClockAreaHeight = 74;  // 94 - 20
+  const clockY = headerClockAreaTop + (headerClockAreaHeight - clockFontSize) / 2;
+  ctx.fillText(displayTime, 16, clockY);
   
-  // AM/PM indicator
+  // AM/PM indicator - positioned relative to clock
   ctx.font = 'bold 16px Inter, sans-serif';
-  ctx.fillText(data.am_pm || (isPM ? 'PM' : 'AM'), 200, 72);
+  ctx.fillText(data.am_pm || (isPM ? 'PM' : 'AM'), 200, clockY + clockFontSize - 16);
   
   // Day and date (1-bit: ALL text must be #000, no gray)
   ctx.font = 'bold 18px Inter, sans-serif';
@@ -1634,19 +1640,20 @@ export function renderFullScreen(data, prefs = {}) {
   ctx.fillText(data.date || '', 300, 50);
   
   // Weather box (V10 Spec Section 2.6) - Fixed layout to prevent overlap
+  // v1.28: Better separation between temp and condition
   ctx.strokeStyle = '#000';
   ctx.lineWidth = 2;
   ctx.strokeRect(644, 12, 140, 78);
   
-  // Temperature - top portion
-  ctx.font = 'bold 32px Inter, sans-serif';
+  // Temperature - top portion, vertically centered in upper section
+  ctx.font = 'bold 36px Inter, sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText(`${data.temp || '--'}°`, 714, 35);
+  ctx.fillText(`${data.temp || '--'}°`, 714, 32);
   
-  // Condition - middle, smaller font to fit
-  ctx.font = '10px Inter, sans-serif';
-  const condition = (data.condition || '').slice(0, 12);  // Truncate if too long
-  ctx.fillText(condition, 714, 52);
+  // Condition - separate line below temp with clear gap
+  ctx.font = '11px Inter, sans-serif';
+  const condition = (data.condition || '').slice(0, 14);  // Truncate if too long
+  ctx.fillText(condition, 714, 56);
   ctx.textAlign = 'left';
   
   // Umbrella indicator (V10 Spec Section 2.7)
@@ -1794,22 +1801,29 @@ export function renderFullScreen(data, prefs = {}) {
   // =========================================================================
   // =========================================================================
   // JOURNEY LEGS (V10 Spec Section 5) - Per Reference Design Images
-  // v1.27: Add scaling based on leg count
+  // v1.28: Improved scaling with proper element positioning
   // =========================================================================
   const legs = data.journey_legs || data.legs || [];
   
-  // v1.27: Calculate scale factor based on leg count (baseline 5 legs)
+  // v1.28: Calculate scale factor based on leg count (baseline 5 legs)
   const legCount = legs.length;
   const baseLegs = 5;
-  const scale = Math.min(1, Math.max(0.6, baseLegs / Math.max(legCount, 3)));
+  const scale = Math.min(1, Math.max(0.55, baseLegs / Math.max(legCount, 3)));
   const titleSize = Math.max(11, Math.round(16 * scale));
   const subtitleSize = Math.max(9, Math.round(12 * scale));
-  const iconSize = Math.max(20, Math.round(32 * scale));
-  const numberSize = Math.max(16, Math.round(24 * scale));
+  const iconSize = Math.max(18, Math.round(32 * scale));
+  const numberSize = Math.max(14, Math.round(24 * scale));
   const departLabelSize = Math.max(5, Math.round(7 * scale));
-  const departTimeSize = Math.max(8, Math.round(11 * scale));
-  const durationSize = Math.max(16, Math.round(22 * scale));
-  const durationLabelSize = Math.max(7, Math.round(9 * scale));
+  const departTimeSize = Math.max(7, Math.round(11 * scale));
+  const durationSize = Math.max(14, Math.round(22 * scale));
+  const durationLabelSize = Math.max(6, Math.round(9 * scale));
+  
+  // v1.28: Pre-calculate cumulative durations from leave time
+  let cumulativeMinutes = 0;
+  const cumulativeTimes = legs.map(leg => {
+    cumulativeMinutes += (leg.minutes || leg.durationMinutes || 0);
+    return cumulativeMinutes;
+  });
   
   // Count delayed legs for status bar (DELAY vs DELAYS)
   const delayedLegs = legs.filter(l => l.status === 'delayed' || l.delayMinutes > 0);
@@ -1921,16 +1935,19 @@ export function renderFullScreen(data, prefs = {}) {
     drawModeIcon(ctx, leg.type, iconX, zone.y + (zone.h - iconSize) / 2, iconSize, useOutlineIcon);
     
     // -----------------------------------------------------------------------
-    // TITLE (V10 Spec Section 5.4) - v1.27: scaled, no emoji prefixes
+    // TITLE (V10 Spec Section 5.4) - v1.28: proper vertical positioning
     // -----------------------------------------------------------------------
     ctx.fillStyle = '#000';
     ctx.font = `bold ${titleSize}px Inter, sans-serif`;
     ctx.textBaseline = 'top';
     
-    // v1.27: Calculate text position based on scaled elements
+    // v1.28: Calculate text position based on leg box height and scaled fonts
+    // Title and subtitle should be vertically distributed within the box
     const textX = iconX + iconSize + 8;
-    const titleY = zone.y + Math.round(zone.h * 0.12);
-    const subtitleY = zone.y + Math.round(zone.h * 0.52);
+    const verticalPadding = Math.max(4, Math.round(zone.h * 0.08));
+    const textAreaHeight = zone.h - verticalPadding * 2;
+    const titleY = zone.y + verticalPadding;
+    const subtitleY = zone.y + zone.h - verticalPadding - subtitleSize;
     
     if (idx === 0) leg.isFirst = true;
     const legTitle = leg.title || getLegTitle(leg);
@@ -1978,16 +1995,20 @@ export function renderFullScreen(data, prefs = {}) {
     ctx.fillText(legSubtitle, textX, subtitleY);
     
     // -----------------------------------------------------------------------
-    // DEPART TIME COLUMN - v1.27: scaled "PLANNED DEPART" indicator
+    // DEPART TIME COLUMN - v1.28: properly positioned within leg box
     // -----------------------------------------------------------------------
     if (hasDepart) {
-      const departX = zone.x + zone.w - timeBoxW - departColW / 2;
+      // v1.28: Center DEPART column in its allocated space
+      const departColCenter = zone.x + zone.w - timeBoxW - departColW / 2 - 4;
+      const departLabelY = zone.y + verticalPadding;
+      const departTimeY = zone.y + zone.h / 2 + departTimeSize / 4;
+      
       ctx.font = `${departLabelSize}px Inter, sans-serif`;
       ctx.textAlign = 'center';
-      ctx.fillText('PLANNED', departX, titleY);
-      ctx.fillText('DEPART', departX, titleY + departLabelSize + 1);
+      ctx.fillText('PLANNED', departColCenter, departLabelY);
+      ctx.fillText('DEPART', departColCenter, departLabelY + departLabelSize + 1);
       ctx.font = `bold ${departTimeSize}px Inter, sans-serif`;
-      ctx.fillText(leg.departTime, departX, subtitleY);
+      ctx.fillText(leg.departTime, departColCenter, departTimeY);
       ctx.textAlign = 'left';
     }
     
@@ -1998,11 +2019,14 @@ export function renderFullScreen(data, prefs = {}) {
     // - Skipped: White fill, dashed border all around, "—" text
     // - Suspended: "CANCELLED" text (per ref image 6)
     // - Diverted: White fill with vertical stripes continuation
-    // v1.27: All time box text scaled
+    // v1.28: Cumulative time from journey start, properly positioned
     // -----------------------------------------------------------------------
     const timeBoxX = zone.x + zone.w - timeBoxW;
-    const minOffset = Math.round(6 * scale);
-    const labelOffset = Math.round(14 * scale);
+    const minOffset = Math.round(4 * scale);
+    const labelOffset = Math.round(10 * scale);
+    
+    // v1.28: Use cumulative time (total minutes from leave time to end of this leg)
+    const cumulativeMin = cumulativeTimes[idx];
     
     if (isSuspended) {
       ctx.fillStyle = '#000';
@@ -2026,8 +2050,8 @@ export function renderFullScreen(data, prefs = {}) {
       ctx.font = `bold ${durationSize}px Inter, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      const minutes = leg.minutes || leg.durationMinutes || '--';
-      ctx.fillText(minutes.toString(), timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 - minOffset);
+      // v1.28: Show cumulative time from journey start
+      ctx.fillText(cumulativeMin.toString(), timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 - minOffset);
       ctx.font = `${durationLabelSize}px Inter, sans-serif`;
       ctx.fillText('MIN', timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 + labelOffset);
     } else if (isDelayed && leg.type !== 'walk') {
@@ -2045,8 +2069,8 @@ export function renderFullScreen(data, prefs = {}) {
       ctx.font = `bold ${durationSize}px Inter, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      const minutes = leg.minutes || leg.durationMinutes || '--';
-      ctx.fillText(minutes.toString(), timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 - minOffset);
+      // v1.28: Show cumulative time from journey start
+      ctx.fillText(cumulativeMin.toString(), timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 - minOffset);
       ctx.font = `${durationLabelSize}px Inter, sans-serif`;
       ctx.fillText('MIN', timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 + labelOffset);
     } else {
@@ -2056,8 +2080,8 @@ export function renderFullScreen(data, prefs = {}) {
       ctx.font = `bold ${durationSize}px Inter, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      const minutes = leg.minutes || leg.durationMinutes || '--';
-      const displayMin = leg.type === 'coffee' ? `~${minutes}` : minutes.toString();
+      // v1.28: Show cumulative time from journey start (coffee gets ~ prefix)
+      const displayMin = leg.type === 'coffee' ? `~${cumulativeMin}` : cumulativeMin.toString();
       ctx.fillText(displayMin, timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 - minOffset);
       ctx.font = `${durationLabelSize}px Inter, sans-serif`;
       ctx.fillText(leg.type === 'walk' ? 'MIN WALK' : 'MIN', timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 + labelOffset);
