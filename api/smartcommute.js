@@ -200,53 +200,64 @@ function buildCCDashLegs(result, prefs, now) {
     (!directDeparture || (coffeeDeparture.minutes - directDeparture.minutes) <= 10);
   
   if (canGetCoffee && coffeeEnabled) {
-    // Route with coffee
+    // Route with coffee - V10 Spec Section 5.5
     legs.push({
       type: 'walk',
       title: 'Walk to Cafe',
-      subtitle: shortenAddress(prefs.coffeeAddress) || 'Coffee shop',
+      to: 'cafe',
+      subtitle: `From home`,
+      isFirst: true,
       minutes: homeToCafe,
       state: 'normal'
     });
     
     legs.push({
       type: 'coffee',
-      title: 'COFFEE',
-      subtitle: '☕ TIME FOR COFFEE',
+      title: 'Coffee Stop',
+      location: shortenAddress(prefs.coffeeAddress) || 'Cafe',
+      subtitle: '✓ TIME FOR COFFEE',
       minutes: coffeeDuration,
+      canGet: true,
       state: 'normal'
     });
     
     legs.push({
       type: 'walk',
-      title: 'Walk to Station',
-      subtitle: 'From cafe',
+      title: 'Walk to Stop',
+      to: 'stop',
+      subtitle: shortenAddress(prefs.coffeeAddress) || '',
       minutes: cafeToStop,
       state: 'normal'
     });
   } else if (coffeeEnabled && !canGetCoffee) {
-    // Skip coffee
+    // Skip coffee - V10 Spec Section 5.1.3
     legs.push({
       type: 'walk',
-      title: 'Walk to Station',
-      subtitle: 'Direct from home',
+      title: 'Walk to Stop',
+      to: 'stop',
+      subtitle: 'From home',
+      isFirst: true,
       minutes: homeToStop,
       state: 'normal'
     });
     
     legs.push({
       type: 'coffee',
-      title: 'SKIP COFFEE',
-      subtitle: result.coffee?.subtext || 'No time',
+      title: 'Coffee Stop',
+      location: shortenAddress(prefs.coffeeAddress) || 'Cafe',
+      subtitle: '✗ SKIP — Running late',
       minutes: 0,
+      canGet: false,
       state: 'skip'
     });
   } else {
     // No coffee configured
     legs.push({
       type: 'walk',
-      title: 'Walk to Station',
+      title: 'Walk to Stop',
+      to: 'stop',
       subtitle: 'From home',
+      isFirst: true,
       minutes: homeToStop,
       state: 'normal'
     });
@@ -273,10 +284,30 @@ function buildCCDashLegs(result, prefs, now) {
       });
     }
     
+    // Build V10 spec subtitle: "[Line name] • Next: X, Y min"
+    const relevantDepartures = isTrainDep ? trains : trams;
+    const nextTimes = relevantDepartures.slice(0, 2).map(d => d.minutes);
+    let transitSubtitle = '';
+    if (primaryDeparture.lineName || primaryDeparture.routeName) {
+      transitSubtitle = primaryDeparture.lineName || primaryDeparture.routeName;
+      if (nextTimes.length > 0) transitSubtitle += ' • ';
+    }
+    if (nextTimes.length >= 2) {
+      transitSubtitle += `Next: ${nextTimes[0]}, ${nextTimes[1]} min`;
+    } else if (nextTimes.length === 1) {
+      transitSubtitle += `Next: ${nextTimes[0]} min`;
+    } else if (primaryDeparture.platform) {
+      transitSubtitle = `Platform ${primaryDeparture.platform}`;
+    }
+    
     legs.push({
       type,
       title: `${type === 'train' ? 'Train' : 'Tram'} → ${dest}`,
-      subtitle: primaryDeparture.platform ? `Platform ${primaryDeparture.platform}` : `Departs ${primaryDeparture.minutes} min`,
+      to: dest,
+      destination: { name: dest },
+      subtitle: transitSubtitle || `Departs ${primaryDeparture.minutes} min`,
+      nextDepartures: nextTimes,
+      platform: primaryDeparture.platform,
       minutes: type === 'train' ? 15 : 20, // Estimated ride time
       state: primaryDeparture.isDelayed ? 'delayed' : 'normal'
     });
@@ -291,10 +322,11 @@ function buildCCDashLegs(result, prefs, now) {
     });
   }
   
-  // Final walk to work
+  // Final walk to work - V10 Spec Section 5.5
   legs.push({
     type: 'walk',
     title: 'Walk to Work',
+    to: 'work',
     subtitle: shortenAddress(prefs.workAddress) || 'Destination',
     minutes: prefs.walkToWork || 5,
     state: 'normal'

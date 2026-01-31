@@ -1441,11 +1441,14 @@ export function renderFullScreen(data, prefs = {}) {
     else if (leg.type === 'coffee') titlePrefix = '☕ ';
     
     if (idx === 0) leg.isFirst = true;
-    ctx.fillText(titlePrefix + getLegTitle(leg), zone.x + 82, zone.y + 6);
+    // Use leg.title if explicitly set, otherwise generate from leg data
+    const legTitle = leg.title || getLegTitle(leg);
+    ctx.fillText(titlePrefix + legTitle, zone.x + 82, zone.y + 6);
     
-    // Subtitle (V10 Spec Section 5.5)
+    // Subtitle (V10 Spec Section 5.5) - use leg.subtitle if set
     ctx.font = '12px Inter, sans-serif';
-    ctx.fillText(getLegSubtitle(leg), zone.x + 82, zone.y + 26);
+    const legSubtitle = leg.subtitle || getLegSubtitle(leg);
+    ctx.fillText(legSubtitle, zone.x + 82, zone.y + 26);
     
     // Time box (V10 Spec Section 5.6)
     const timeBoxW = 72;
