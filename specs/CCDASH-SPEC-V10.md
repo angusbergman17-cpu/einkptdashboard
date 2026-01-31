@@ -117,24 +117,35 @@
 - **Position:** `top: 96px`
 - **Size:** Full width (800px), height: 28px
 - **Background:** #000 (black)
+- **Late Status Border:** When late, add 3px white border inside bar
 
 ### 4.1 Left Content
 - **Position:** `left: 16px, top: 101px`
 - **Font:** 13px, weight: 700, color: #fff
 
-| State | Format |
-|-------|--------|
-| Normal | "LEAVE NOW → Arrive HH:MM" or "LEAVE IN X MIN → Arrive HH:MM" |
-| Delay | "⏱ DELAY → Arrive HH:MM (+X min)" |
-| Disruption | "⚠ DISRUPTION → Arrive HH:MM (+X min)" |
-| Diversion | "⚠ TRAM DIVERSION → Arrive HH:MM (+X min)" |
+**Real-Time Arrival Calculation (Amendment 2026-01-31):**
+The arrival time shown is CALCULATED based on current time + total journey duration.
+
+| Status | Format |
+|--------|--------|
+| Early (>5 min before target) | "LEAVE NOW → Arrive HH:MM ✓" |
+| On Time (±5 min of target) | "LEAVE NOW → Arrive HH:MM ✓" |
+| Late (>5 min after target) | "⚠ LEAVE NOW → Arrive HH:MM" |
+| Delay | "⏱ DELAY → Arrive HH:MM" |
+| Disruption | "⚠ DISRUPTION → Arrive HH:MM" |
+| Diversion | "⚠ TRAM DIVERSION → Arrive HH:MM" |
 
 ### 4.2 Right Content
 - **Position:** `right: 16px, top: 101px`
 - **Font:** 13px, weight: 700, color: #fff
-- **Content:** Total journey time (e.g., "47 min", "92 min")
 
-**Source:** Journey planning API (calculated from all legs)
+| Status | Format | Example |
+|--------|--------|---------|
+| Early | "X min early" | "15 min early" |
+| On Time | "On time" | "On time" |
+| Late | "+X min late" | "+12 min late" |
+
+**Source:** Calculated from current time + total journey duration vs target arrival
 
 ---
 
@@ -330,17 +341,24 @@ For fewer legs, larger heights can be used (64px or 80px)
 ### 6.1 Destination Address
 - **Position:** `left: 16px, top: 454px`
 - **Font:** 16px, weight: 800, color: #fff
-- **Content:** Destination in UPPERCASE (optionally prefixed with "HOME — ")
+- **Content:** Destination in UPPERCASE
 
 ### 6.2 Arrive Label
-- **Position:** `right: 130px, top: 454px`
-- **Font:** 12px, color: #fff
-- **Content:** "ARRIVE"
+- **Position:** `right: 180px, top: 456px`
+- **Font:** 10px, color: #fff, opacity: 0.7
+- **Content:** "ARRIVE" (above calculated time)
 
-### 6.3 Arrival Time
-- **Position:** `right: 16px, top: 450px`
-- **Font:** 24px, weight: 900, color: #fff
-- **Format:** "HH:MM" (12-hour, no AM/PM in footer)
+### 6.3 Calculated Arrival Time (Amendment 2026-01-31)
+- **Position:** `right: 16px, top: 452px`
+- **Font:** 22px, weight: 900, color: #fff
+- **Format:** "HH:MM" (12-hour, no AM/PM)
+- **Content:** CALCULATED arrival time (current time + journey duration)
+
+### 6.4 Target Time Indicator (Amendment 2026-01-31)
+- **Position:** `right: 100px, top: 464px`
+- **Font:** 9px, color: #fff, opacity: 0.6
+- **Format:** "Target: HH:MM"
+- **Content:** User's configured target arrival time
 
 ---
 

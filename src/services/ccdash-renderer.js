@@ -1373,34 +1373,91 @@ export function renderFullScreen(data, prefs = {}) {
   ctx.fillRect(0, 94, 800, 2);
   
   // =========================================================================
-  // STATUS BAR (V10 Spec Section 4)
+  // STATUS BAR (V10 Spec Section 4) - Real-Time Arrival Amendment 2026-01-31
   // =========================================================================
+  
+  // Calculate real-time arrival: current time + total journey duration
+  const totalMinutes = data.total_minutes || data.totalMinutes || data.journeyDuration || 20;
+  const targetArrival = data.arrive_by || data.arrivalTime || '09:00';
+  
+  // Parse current time from display data or use now
+  let nowMins = 0;
+  if (data.current_time) {
+    const timeMatch = data.current_time.match(/(\d+):(\d+)/);
+    if (timeMatch) {
+      let hours = parseInt(timeMatch[1]);
+      const mins = parseInt(timeMatch[2]);
+      // Handle 12h format
+      if (data.current_time.toLowerCase().includes('pm') && hours < 12) hours += 12;
+      if (data.current_time.toLowerCase().includes('am') && hours === 12) hours = 0;
+      nowMins = hours * 60 + mins;
+    }
+  } else {
+    const now = new Date();
+    nowMins = now.getHours() * 60 + now.getMinutes();
+  }
+  
+  // Calculate arrival time (now + journey duration)
+  const arrivalMins = nowMins + totalMinutes;
+  const arrivalH = Math.floor(arrivalMins / 60) % 24;
+  const arrivalM = arrivalMins % 60;
+  const arrivalH12 = arrivalH % 12 || 12;
+  const arrivalAmPm = arrivalH >= 12 ? 'pm' : 'am';
+  const calculatedArrival = `${arrivalH12}:${arrivalM.toString().padStart(2, '0')}${arrivalAmPm}`;
+  
+  // Parse target arrival time
+  const [targetH, targetM] = targetArrival.split(':').map(Number);
+  const targetMins = (targetH || 9) * 60 + (targetM || 0);
+  
+  // Calculate difference (positive = late, negative = early)
+  const diffMins = arrivalMins - targetMins;
+  const isLate = diffMins > 5;
+  const isEarly = diffMins < -5;
+  const isOnTime = !isLate && !isEarly;
+  
+  // Draw status bar background
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 96, 800, 28);
+  
+  // Add white border if late (V10 Amendment)
+  if (isLate) {
+    ctx.strokeStyle = '#FFF';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(2, 98, 796, 24);
+  }
+  
   ctx.fillStyle = '#FFF';
   ctx.font = 'bold 13px Inter, sans-serif';
   ctx.textBaseline = 'middle';
   
-  // Left: Status message
-  const arriveBy = data.arrive_by || data.arrivalTime || '--:--';
-  const leaveIn = data.leave_in || data.leaveIn;
+  // Left: Status message with calculated arrival
   let statusText;
+  const statusIcon = isLate ? '⚠ ' : (isEarly || isOnTime ? '' : '');
+  const checkmark = (!isLate) ? ' ✓' : '';
+  
   if (data.status_type === 'disruption' || data.disruption) {
-    statusText = `⚠ DISRUPTION → Arrive ${arriveBy}`;
-  } else if (leaveIn !== undefined && leaveIn > 0) {
-    statusText = `LEAVE IN ${leaveIn} MIN → Arrive ${arriveBy}`;
+    statusText = `⚠ DISRUPTION → Arrive ${calculatedArrival}`;
   } else {
-    statusText = `LEAVE NOW → Arrive ${arriveBy}`;
+    statusText = `${statusIcon}LEAVE NOW → Arrive ${calculatedArrival}${checkmark}`;
   }
   ctx.fillText(statusText, 16, 110);
   
-  // Right: Total journey time
-  const totalMinutes = data.total_minutes || data.totalMinutes || data.journeyDuration;
-  if (totalMinutes) {
-    ctx.textAlign = 'right';
-    ctx.fillText(`${totalMinutes} min`, 784, 110);
-    ctx.textAlign = 'left';
+  // Right: Early/On-time/Late status (instead of total minutes)
+  ctx.textAlign = 'right';
+  let statusRight;
+  if (isEarly) {
+    statusRight = `${Math.abs(diffMins)} min early`;
+  } else if (isOnTime) {
+    statusRight = 'On time';
+  } else {
+    statusRight = `+${diffMins} min late`;
   }
+  ctx.fillText(statusRight, 784, 110);
+  ctx.textAlign = 'left';
+  
+  // Store calculated values for footer
+  data._calculatedArrival = calculatedArrival;
+  data._targetArrival = targetArrival;
   
   // =========================================================================
   // JOURNEY LEGS (V10 Spec Section 5)
@@ -1485,7 +1542,7 @@ export function renderFullScreen(data, prefs = {}) {
   });
   
   // =========================================================================
-  // FOOTER (V10 Spec Section 6)
+  // FOOTER (V10 Spec Section 6) - Real-Time Arrival Amendment 2026-01-31
   // =========================================================================
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 448, 800, 32);
@@ -1496,10 +1553,26 @@ export function renderFullScreen(data, prefs = {}) {
   ctx.textBaseline = 'middle';
   ctx.fillText(`ARRIVE at ${(data.destination || 'WORK').toUpperCase()}`, 16, 464);
   
-  // Arrival time (V10 Spec Section 6.3)
+  // Calculated arrival time (V10 Spec Section 6.3 Amendment)
   ctx.textAlign = 'right';
-  ctx.font = 'bold 24px Inter, sans-serif';
-  ctx.fillText(data.arrive_by || '--:--', 784, 464);
+  ctx.font = 'bold 22px Inter, sans-serif';
+  const footerArrival = data._calculatedArrival || data.arrive_by || '--:--';
+  ctx.fillText(footerArrival, 784, 458);
+  
+  // Target time indicator (V10 Spec Section 6.4 Amendment)
+  const targetTime = data._targetArrival || data.arrive_by || '09:00';
+  // Format target to 12h if needed
+  let targetDisplay = targetTime;
+  if (targetTime.includes(':') && !targetTime.includes('am') && !targetTime.includes('pm')) {
+    const [tH, tM] = targetTime.split(':').map(Number);
+    const tH12 = tH % 12 || 12;
+    const tAmPm = tH >= 12 ? 'pm' : 'am';
+    targetDisplay = `${tH12}:${(tM || 0).toString().padStart(2, '0')}${tAmPm}`;
+  }
+  ctx.font = '9px Inter, sans-serif';
+  ctx.globalAlpha = 0.6;
+  ctx.fillText(`Target: ${targetDisplay}`, 784, 472);
+  ctx.globalAlpha = 1.0;
   
   return canvas.toBuffer('image/png');
 }
