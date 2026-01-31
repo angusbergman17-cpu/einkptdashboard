@@ -851,77 +851,7 @@
             box-shadow: 0 4px 16px rgba(79, 178, 142, 0.4);
         }
 
-        /* Progressive UI Disclosure - Mode Toggle */
-        .mode-toggle-container {
-            margin-top: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-        }
-
-        .mode-toggle {
-            position: relative;
-            width: 56px;
-            height: 28px;
-            background: rgba(51, 65, 85, 0.6);
-            border-radius: 14px;
-            cursor: pointer;
-            transition: background 200ms;
-        }
-
-        .mode-toggle.advanced {
-            background: #4fb28e;
-        }
-
-        .mode-toggle-slider {
-            position: absolute;
-            top: 3px;
-            left: 3px;
-            width: 22px;
-            height: 22px;
-            background: #f1f5f9;
-            border-radius: 50%;
-            transition: transform 200ms;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-        }
-
-        .mode-toggle.advanced .mode-toggle-slider {
-            transform: translateX(28px);
-        }
-
-        .mode-label {
-            font-size: 13px;
-            font-weight: 500;
-            opacity: 0.6;
-            transition: opacity 200ms;
-        }
-
-        .mode-label.active {
-            opacity: 1;
-            color: #4fb28e;
-        }
-
-        /* Advanced-only elements (hidden in simple mode) */
-        .advanced-only {
-            display: none !important;
-        }
-
-        body.advanced-mode .advanced-only {
-            display: block !important;
-        }
-
-        body.advanced-mode .nav-tab.advanced-only {
-            display: inline-block !important;
-        }
-
-        body.advanced-mode .advanced-only.inline {
-            display: inline !important;
-        }
-
-        body.advanced-mode .advanced-only.flex {
-            display: flex !important;
-        }
+        /* All tabs always visible (no simple/advanced toggle) */
 
         /* Visual Enhancements - Status Indicators */
         .status-indicator {
@@ -1563,14 +1493,6 @@
             <div class="time-display" id="current-time">--:--:--</div>
             <div class="date-display" id="current-date">Loading...</div>
 
-            <!-- Mode Toggle -->
-            <div class="mode-toggle-container">
-                <span class="mode-label active" id="mode-label-simple">Simple</span>
-                <div class="mode-toggle" id="mode-toggle" onclick="toggleUIMode()">
-                    <div class="mode-toggle-slider"></div>
-                </div>
-                <span class="mode-label" id="mode-label-advanced">Advanced</span>
-            </div>
         </div>
 
 
@@ -1579,9 +1501,9 @@
             <button class="nav-tab" onclick="showTab('setup', this)">Setup & Journey</button>
             <button class="nav-tab" onclick="showTab('api', this)">API Settings</button>
             <button class="nav-tab active" onclick="showTab('live', this)">Live Data</button>
-            <button class="nav-tab advanced-only" onclick="showTab('config', this)">Configuration</button>
-            <button class="nav-tab advanced-only" onclick="showTab('architecture', this)">Architecture</button>
-            <button class="nav-tab advanced-only" onclick="showTab('system', this)">System & Support</button>
+            <button class="nav-tab" onclick="showTab('config', this)">Configuration</button>
+            <button class="nav-tab" onclick="showTab('architecture', this)">Architecture</button>
+            <button class="nav-tab" onclick="showTab('system', this)">System & Support</button>
         </div>
 
         <!-- Setup & Journey Tab - Rebuilt for localStorage config -->
@@ -1780,6 +1702,58 @@
                     </symbol>
                     <symbol id="icon-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </symbol>
+                    <!-- Additional icons for Configuration tab -->
+                    <symbol id="icon-list" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+                    </symbol>
+                    <symbol id="icon-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                    </symbol>
+                    <symbol id="icon-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                    </symbol>
+                    <symbol id="icon-key" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+                    </symbol>
+                    <symbol id="icon-timer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M5 3L2 6"/><path d="M22 6l-3-3"/><path d="M6 19l-2 2"/><path d="M18 19l2 2"/><path d="M12 3V1"/>
+                    </symbol>
+                    <symbol id="icon-smartphone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>
+                    </symbol>
+                    <symbol id="icon-radio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/>
+                    </symbol>
+                    <symbol id="icon-save" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+                    </symbol>
+                    <symbol id="icon-lightbulb" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/>
+                    </symbol>
+                    <symbol id="icon-wrench" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+                    </symbol>
+                    <symbol id="icon-database" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                    </symbol>
+                    <symbol id="icon-sliders" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
+                    </symbol>
+                    <symbol id="icon-zap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                    </symbol>
+                    <symbol id="icon-layers" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>
+                    </symbol>
+                    <symbol id="icon-cpu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/>
+                    </symbol>
+                    <symbol id="icon-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </symbol>
+                    <symbol id="icon-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
                     </symbol>
                 </defs>
             </svg>
@@ -2135,20 +2109,20 @@
 
                 <!-- Configuration Tab -->
         <div id="tab-config" class="tab-content">
-            <!-- Journey Profiles Management (Task #6) -->
-            <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-left: 4px solid #4fb28e;">
-                <div class="card-header">
-                    <span class="card-icon">📋</span>
-                    <h2>Journey Profiles</h2>
+            <!-- Journey Profiles Management -->
+            <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-radius: 12px; border-left: 4px solid #4fb28e;">
+                <div class="card-header" style="display: flex; align-items: center; gap: 12px;">
+                    <svg width="22" height="22" style="color: #4fb28e;"><use href="#icon-list"/></svg>
+                    <h2 style="margin: 0; font-size: 18px; font-weight: 600;">Journey Profiles</h2>
                 </div>
-                <p style="margin-bottom: 20px; opacity: 0.9; font-size: 14px;">
+                <p style="margin-bottom: 20px; opacity: 0.9; font-size: 14px; line-height: 1.5;">
                     Create multiple journey profiles for different routes, schedules, or scenarios.
                 </p>
 
                 <!-- Active Profile Display -->
-                <div id="active-profile-display" style="padding: 16px; background: rgba(34, 197, 94, 0.1); border-radius: 10px; border-left: 3px solid #22c55e; margin-bottom: 20px;">
+                <div id="active-profile-display" style="padding: 16px; background: rgba(34, 197, 94, 0.1); border-radius: 12px; border-left: 4px solid #22c55e; margin-bottom: 20px;">
                     <div style="font-weight: 600; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
-                        <span style="font-size: 20px;">✓</span>
+                        <svg width="18" height="18" style="color: #22c55e;"><use href="#icon-check"/></svg>
                         <span>Active: <span id="active-profile-name">Default Journey</span></span>
                     </div>
                     <div style="font-size: 13px; opacity: 0.9;">
@@ -2158,28 +2132,27 @@
 
                 <!-- Profile List -->
                 <div id="profiles-list" style="display: grid; gap: 12px; margin-bottom: 20px;">
-                    <!-- Profiles will be populated here -->
                     <div style="padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px; text-align: center; opacity: 0.6;">
                         Loading profiles...
                     </div>
                 </div>
 
-                <button class="btn btn-primary" onclick="showCreateProfileModal()">
-                    + Create New Profile
+                <button class="btn btn-primary" onclick="showCreateProfileModal()" style="display: flex; align-items: center; gap: 8px;">
+                    <svg width="16" height="16"><use href="#icon-route"/></svg>
+                    Create New Profile
                 </button>
             </div>
 
             <!-- Data Sources Overview -->
-            <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-left: 4px solid #4fb28e;">
-                <div class="card-header">
-                    <span class="card-icon">🌐</span>
-                    <h2>Active Data Sources</h2>
+            <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-radius: 12px; border-left: 4px solid #4fb28e;">
+                <div class="card-header" style="display: flex; align-items: center; gap: 12px;">
+                    <svg width="22" height="22" style="color: #667eea;"><use href="#icon-globe"/></svg>
+                    <h2 style="margin: 0; font-size: 18px; font-weight: 600;">Active Data Sources</h2>
                 </div>
-                <p style="margin-bottom: 20px; opacity: 0.9; font-size: 14px;">
+                <p style="margin-bottom: 20px; opacity: 0.9; font-size: 14px; line-height: 1.5;">
                     All external APIs and data sources currently used by the system
                 </p>
                 <div id="data-sources-list" style="display: grid; gap: 12px;">
-                    <!-- Will be populated dynamically -->
                     <div style="padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px; text-align: center; opacity: 0.6;">
                         Loading data sources...
                     </div>
@@ -2187,16 +2160,15 @@
             </div>
 
             <!-- User Configuration -->
-            <div class="card" style="margin-bottom: 20px;">
-                <div class="card-header">
-                    <span class="card-icon">👤</span>
-                    <h2>Your Journey Configuration</h2>
+            <div class="card" style="margin-bottom: 20px; background: rgba(30, 41, 59, 0.8); border-radius: 12px; border-left: 4px solid #4fb28e;">
+                <div class="card-header" style="display: flex; align-items: center; gap: 12px;">
+                    <svg width="22" height="22" style="color: #4fb28e;"><use href="#icon-user"/></svg>
+                    <h2 style="margin: 0; font-size: 18px; font-weight: 600;">Your Journey Configuration</h2>
                 </div>
-                <p style="margin-bottom: 20px; opacity: 0.9; font-size: 14px;">
+                <p style="margin-bottom: 20px; opacity: 0.9; font-size: 14px; line-height: 1.5;">
                     Addresses, stops, and preferences you've entered
                 </p>
                 <div id="user-config-display" style="display: grid; gap: 15px;">
-                    <!-- Will be populated dynamically -->
                     <div style="padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px; text-align: center; opacity: 0.6;">
                         No configuration yet. Complete setup first.
                     </div>
@@ -2204,23 +2176,26 @@
             </div>
 
             <!-- Note: API settings moved to API Settings tab -->
-            <div style="margin-bottom: 20px; padding: 16px; background: rgba(102, 126, 234, 0.1); border-radius: 10px; border-left: 4px solid #4fb28e;">
-                <div style="font-weight: 600; margin-bottom: 6px;">🔑 Looking for API Settings?</div>
-                <div style="font-size: 14px; opacity: 0.9;">
+            <div style="margin-bottom: 20px; padding: 16px; background: rgba(102, 126, 234, 0.1); border-radius: 12px; border-left: 4px solid #667eea;">
+                <div style="font-weight: 600; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                    <svg width="18" height="18" style="color: #667eea;"><use href="#icon-key"/></svg>
+                    <span>Looking for API Settings?</span>
+                </div>
+                <div style="font-size: 14px; opacity: 0.9; display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
                     API credentials have been moved to the <strong>API Settings</strong> tab for easier configuration.
-                    <button class="btn btn-secondary" onclick="showTab('api', this)" style="margin-left: 10px; padding: 6px 16px; font-size: 13px;">
-                        → Go to API Settings
+                    <button class="btn btn-secondary" onclick="showTab('api', this)" style="padding: 6px 16px; font-size: 13px;">
+                        Go to API Settings
                     </button>
                 </div>
             </div>
 
-            <!-- Refresh Rate Settings (Development Rules v1.0.15 Section Y) -->
-            <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(245, 158, 11, 0.1) 100%); border-left: 4px solid #fbbf24;">
-                <div class="card-header">
-                    <span class="card-icon">⏱️</span>
-                    <h2>Refresh Rate Settings</h2>
+            <!-- Refresh Rate Settings -->
+            <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(245, 158, 11, 0.1) 100%); border-radius: 12px; border-left: 4px solid #fbbf24;">
+                <div class="card-header" style="display: flex; align-items: center; gap: 12px;">
+                    <svg width="22" height="22" style="color: #fbbf24;"><use href="#icon-timer"/></svg>
+                    <h2 style="margin: 0; font-size: 18px; font-weight: 600;">Refresh Rate Settings</h2>
                 </div>
-                <p style="margin-bottom: 20px; opacity: 0.9; font-size: 14px;">
+                <p style="margin-bottom: 20px; opacity: 0.9; font-size: 14px; line-height: 1.5;">
                     Configure how often your device refreshes and the server recalculates your journey. Lower intervals increase accuracy but may reduce e-ink display lifespan.
                 </p>
 
@@ -2230,7 +2205,8 @@
                     <!-- Display Refresh -->
                     <div style="padding: 15px; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
                         <div style="font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
-                            <span>📱</span> Display Refresh Interval
+                            <svg width="18" height="18" style="color: #94a3b8;"><use href="#icon-smartphone"/></svg>
+                            <span>Display Refresh Interval</span>
                         </div>
                         <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 8px;">
                             <input type="number" id="display-refresh-value" class="form-input" style="flex: 1; max-width: 100px;" min="5" value="15">
@@ -2242,14 +2218,16 @@
                             <span id="display-refresh-note">Minimum: 15 minutes for CC E-Ink (e-ink protection)</span>
                         </small>
                         <div id="display-refresh-estimate" style="margin-top: 8px; padding: 8px; background: rgba(251, 191, 36, 0.1); border-radius: 4px; font-size: 11px; display: none;">
-                            📊 Estimated e-ink lifespan: <span id="eink-lifespan"></span> years
+                            <svg width="14" height="14" style="color: #fbbf24; vertical-align: middle; margin-right: 4px;"><use href="#icon-zap"/></svg>
+                            Estimated e-ink lifespan: <span id="eink-lifespan"></span> years
                         </div>
                     </div>
 
                     <!-- Journey Recalculation -->
                     <div style="padding: 15px; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
                         <div style="font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
-                            <span>🔄</span> Journey Recalculation
+                            <svg width="18" height="18" style="color: #94a3b8;"><use href="#icon-refresh"/></svg>
+                            <span>Journey Recalculation</span>
                         </div>
                         <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 8px;">
                             <input type="number" id="journey-recalc-value" class="form-input" style="flex: 1; max-width: 100px;" min="1" value="2">
@@ -2265,7 +2243,8 @@
                     <!-- Transit Data Fetch -->
                     <div style="padding: 15px; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
                         <div style="font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
-                            <span>🚂</span> Transit Data Fetch
+                            <svg width="18" height="18" style="color: #94a3b8;"><use href="#icon-train"/></svg>
+                            <span>Transit Data Fetch</span>
                         </div>
                         <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 8px;">
                             <input type="number" id="data-fetch-value" class="form-input" style="flex: 1; max-width: 100px;" min="10" value="30">
@@ -2279,9 +2258,10 @@
                     </div>
 
                     <!-- Webhook (Fixed) -->
-                    <div style="padding: 15px; background: rgba(79, 178, 142, 0.1); border-radius: 8px; border-left: 3px solid #4fb28e;">
+                    <div style="padding: 15px; background: rgba(79, 178, 142, 0.1); border-radius: 8px; border-left: 4px solid #4fb28e;">
                         <div style="font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
-                            <span>📡</span> Webhook Interval
+                            <svg width="18" height="18" style="color: #4fb28e;"><use href="#icon-radio"/></svg>
+                            <span>Webhook Interval</span>
                         </div>
                         <div style="font-size: 14px; opacity: 0.9; margin-bottom: 8px;">
                             <strong>Fixed:</strong> 15 minutes
@@ -2292,20 +2272,22 @@
                     </div>
                 </div>
 
-                <button class="btn btn-primary btn-block" onclick="saveRefreshSettings()" style="margin-top: 20px;">
-                    💾 Save Refresh Settings
+                <button class="btn btn-primary btn-block" onclick="saveRefreshSettings()" style="margin-top: 20px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <svg width="16" height="16"><use href="#icon-save"/></svg>
+                    Save Refresh Settings
                 </button>
 
-                <div style="margin-top: 15px; padding: 12px; background: rgba(59, 130, 246, 0.1); border-radius: 8px; border-left: 3px solid #4fb28e; font-size: 12px;">
-                    <strong>💡 Tip:</strong> Lower refresh intervals provide more up-to-date information but increase e-ink display wear. For daily commuting, 15-minute display refresh is recommended.
+                <div style="margin-top: 15px; padding: 12px; background: rgba(79, 178, 142, 0.1); border-radius: 8px; border-left: 4px solid #4fb28e; font-size: 12px; display: flex; align-items: flex-start; gap: 8px;">
+                    <svg width="16" height="16" style="color: #4fb28e; flex-shrink: 0; margin-top: 1px;"><use href="#icon-lightbulb"/></svg>
+                    <span><strong>Tip:</strong> Lower refresh intervals provide more up-to-date information but increase e-ink display wear. For daily commuting, 15-minute display refresh is recommended.</span>
                 </div>
             </div>
 
-            <div class="grid">
-                <div class="card">
-                    <div class="card-header">
-                        <span class="card-icon" style="color: var(--accent);">S</span>
-                        <h2>Display Settings</h2>
+            <div class="grid" style="gap: 20px;">
+                <div class="card" style="background: rgba(30, 41, 59, 0.8); border-radius: 12px; border-left: 4px solid #4fb28e;">
+                    <div class="card-header" style="display: flex; align-items: center; gap: 12px;">
+                        <svg width="22" height="22" style="color: #4fb28e;"><use href="#icon-sliders"/></svg>
+                        <h2 style="margin: 0; font-size: 18px; font-weight: 600;">Display Settings</h2>
                     </div>
                     <div class="checkbox-group">
                         <input type="checkbox" id="use-24-hour">
@@ -2315,17 +2297,26 @@
                         <input type="checkbox" id="show-walking-times" checked>
                         <label for="show-walking-times">Show walking times</label>
                     </div>
-                    <button class="btn" onclick="saveDisplaySettings()">Save Settings</button>
+                    <button class="btn" onclick="saveDisplaySettings()" style="display: flex; align-items: center; gap: 8px;">
+                        <svg width="16" height="16"><use href="#icon-save"/></svg>
+                        Save Settings
+                    </button>
                 </div>
 
-                <div class="card">
-                    <div class="card-header">
-                        <span class="card-icon">🛠️</span>
-                        <h2>Actions</h2>
+                <div class="card" style="background: rgba(30, 41, 59, 0.8); border-radius: 12px; border-left: 4px solid #667eea;">
+                    <div class="card-header" style="display: flex; align-items: center; gap: 12px;">
+                        <svg width="22" height="22" style="color: #667eea;"><use href="#icon-wrench"/></svg>
+                        <h2 style="margin: 0; font-size: 18px; font-weight: 600;">Actions</h2>
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 10px;">
-                        <button class="btn" onclick="refreshData()">Refresh Data</button>
-                        <button class="btn btn-secondary" onclick="clearCache()">Clear Cache</button>
+                        <button class="btn" onclick="refreshData()" style="display: flex; align-items: center; gap: 8px;">
+                            <svg width="16" height="16"><use href="#icon-refresh"/></svg>
+                            Refresh Data
+                        </button>
+                        <button class="btn btn-secondary" onclick="clearCache()" style="display: flex; align-items: center; gap: 8px;">
+                            <svg width="16" height="16"><use href="#icon-database"/></svg>
+                            Clear Cache
+                        </button>
                     </div>
                 </div>
             </div>
@@ -2333,10 +2324,10 @@
 
         <!-- Architecture Tab -->
         <div id="tab-architecture" class="tab-content">
-            <div class="card" style="margin-bottom: 2rem;">
-                <div class="card-header">
-                    <span class="card-icon">🏗️</span>
-                    <h2>System Architecture</h2>
+            <div class="card" style="margin-bottom: 2rem; border-radius: 12px; border-left: 4px solid #4fb28e;">
+                <div class="card-header" style="display: flex; align-items: center; gap: 12px;">
+                    <svg width="22" height="22" style="color: #4fb28e;"><use href="#icon-layers"/></svg>
+                    <h2 style="margin: 0; font-size: 18px; font-weight: 600;">System Architecture</h2>
                 </div>
                 <p style="margin-bottom: 1.5rem; color: #cbd5e1; line-height: 1.7;">
                     The Commute Compute system consists of a Node.js backend server that orchestrates real-time transit data collection,
@@ -2362,25 +2353,26 @@
         <!-- System & Support Tab -->
         <div id="tab-system" class="tab-content">
             <!-- System Architecture -->
-            <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%); border-left: 4px solid #4fb28e;">
-                <div class="card-header">
-                    <span class="card-icon">🧠</span>
-                    <h2>Complete System Architecture Map</h2>
+            <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%); border-radius: 12px; border-left: 4px solid #4fb28e;">
+                <div class="card-header" style="display: flex; align-items: center; gap: 12px;">
+                    <svg width="22" height="22" style="color: #4fb28e;"><use href="#icon-cpu"/></svg>
+                    <h2 style="margin: 0; font-size: 18px; font-weight: 600;">Complete System Architecture Map</h2>
                 </div>
                 <p style="margin-bottom: 15px; opacity: 0.9; font-size: 14px;">
                     Visual mind map showing data flow from setup wizard through server to e-ink device
                 </p>
-                <button class="btn btn-primary btn-block" onclick="toggleSystemArchitecture()" id="arch-toggle-btn" style="margin-bottom: 15px; font-size: 16px; font-weight: 600;">
-                    <span style="font-size: 20px;">🔍</span> Show Full Architecture Map
+                <button class="btn btn-primary btn-block" onclick="toggleSystemArchitecture()" id="arch-toggle-btn" style="margin-bottom: 15px; font-size: 16px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <svg width="20" height="20"><use href="#icon-search"/></svg>
+                    Show Full Architecture Map
                 </button>
                 <div id="architecture-viz" style="display: none; margin-top: 20px;"></div>
             </div>
 
             <!-- Victorian GTFS Realtime Data Viewer (Victoria only) -->
-            <div id="victoria-gtfs-viewer" class="card" style="display: none; margin-bottom: 20px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%); border-left: 4px solid #4fb28e;">
-                <div class="card-header">
-                    <span class="card-icon">🚂</span>
-                    <h2>Live GTFS Realtime Data Viewer (Victoria)</h2>
+            <div id="victoria-gtfs-viewer" class="card" style="display: none; margin-bottom: 20px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%); border-radius: 12px; border-left: 4px solid #4fb28e;">
+                <div class="card-header" style="display: flex; align-items: center; gap: 12px;">
+                    <svg width="22" height="22" style="color: #4fb28e;"><use href="#icon-train"/></svg>
+                    <h2 style="margin: 0; font-size: 18px; font-weight: 600;">Live GTFS Realtime Data Viewer (Victoria)</h2>
                 </div>
                 <p style="margin-bottom: 15px; opacity: 0.9; font-size: 14px;">
                     Real-time trip updates from Transport Victoria's OpenData portal - Metro trains only
@@ -2394,7 +2386,10 @@
                     style="border-radius: 8px; background: white; border: 1px solid rgba(255,255,255,0.1);">
                 </iframe>
                 <div style="margin-top: 15px; padding: 12px; background: rgba(102, 126, 234, 0.1); border-radius: 8px;">
-                    <p style="margin: 0 0 8px 0; font-size: 13px; font-weight: 600; opacity: 0.9;">📚 Resources:</p>
+                    <p style="margin: 0 0 8px 0; font-size: 13px; font-weight: 600; opacity: 0.9; display: flex; align-items: center; gap: 6px;">
+                        <svg width="16" height="16" style="color: #667eea;"><use href="#icon-book"/></svg>
+                        Resources:
+                    </p>
                     <ul style="margin: 0; padding-left: 20px; font-size: 12px; opacity: 0.8; line-height: 1.8;">
                         <li><a href="https://opendata.transport.vic.gov.au/dataset/gtfs-realtime" target="_blank" style="color: #4fb28e;">OpenData Portal - GTFS Realtime Dataset</a></li>
                         <li><a href="https://opendata.transport.vic.gov.au/dataset/2d9a7228-5b81-40d3-8075-ae7a3da42198/resource/0010d606-47bf-4abb-a04f-63add63a4d23/download/gtfsr_metro_train_trip_updates.openapi.json" target="_blank" style="color: #4fb28e;">OpenAPI Specification (JSON)</a></li>
@@ -2404,10 +2399,10 @@
             </div>
 
             <!-- Algorithm Intelligence -->
-            <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);">
-                <div class="card-header">
-                    <span class="card-icon">🤖</span>
-                    <h2>Algorithm Intelligence</h2>
+            <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%); border-radius: 12px; border-left: 4px solid #667eea;">
+                <div class="card-header" style="display: flex; align-items: center; gap: 12px;">
+                    <svg width="22" height="22" style="color: #667eea;"><use href="#icon-cpu"/></svg>
+                    <h2 style="margin: 0; font-size: 18px; font-weight: 600;">Algorithm Intelligence</h2>
                 </div>
                 <p style="margin-bottom: 20px; opacity: 0.9; font-size: 14px;">
                     What makes this system smart? Here's how our algorithms work together to optimize your journey.
@@ -3283,47 +3278,7 @@
 
         // ==================== END ONBOARDING SYSTEM ====================
 
-        // ==================== PROGRESSIVE UI DISCLOSURE ====================
-
-        function toggleUIMode() {
-            const body = document.body;
-            const toggle = document.getElementById('mode-toggle');
-            const simpleLabel = document.getElementById('mode-label-simple');
-            const advancedLabel = document.getElementById('mode-label-advanced');
-
-            const isAdvanced = body.classList.toggle('advanced-mode');
-
-            // Update toggle appearance
-            if (isAdvanced) {
-                toggle.classList.add('advanced');
-                simpleLabel.classList.remove('active');
-                advancedLabel.classList.add('active');
-            } else {
-                toggle.classList.remove('advanced');
-                simpleLabel.classList.add('active');
-                advancedLabel.classList.remove('active');
-            }
-
-            // Save preference
-            localStorage.setItem('cc-ui-mode', isAdvanced ? 'advanced' : 'simple');
-        }
-
-        function loadUIMode() {
-            const savedMode = localStorage.getItem('cc-ui-mode') || 'simple';
-            if (savedMode === 'advanced') {
-                const body = document.body;
-                const toggle = document.getElementById('mode-toggle');
-                const simpleLabel = document.getElementById('mode-label-simple');
-                const advancedLabel = document.getElementById('mode-label-advanced');
-
-                body.classList.add('advanced-mode');
-                toggle.classList.add('advanced');
-                simpleLabel.classList.remove('active');
-                advancedLabel.classList.add('active');
-            }
-        }
-
-        // ==================== END PROGRESSIVE UI DISCLOSURE ====================
+        // Progressive UI disclosure removed - all tabs always visible
 
         // ==================== TOAST NOTIFICATION SYSTEM ====================
 
@@ -3717,9 +3672,6 @@
             loadVersionInfo();
             loadAttributions();
             refreshInterval = setInterval(loadAllData, 30000);
-
-            // Load UI mode preference (simple/advanced)
-            loadUIMode();
 
             // Check if this is first visit and show onboarding
             checkFirstVisit();
