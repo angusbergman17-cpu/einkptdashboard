@@ -1983,83 +1983,92 @@
                     <div id="journey-config-summary" style="font-size: 13px; color: #94a3b8; line-height: 1.6;">Loading configuration...</div>
                 </div>
 
-                <!-- SmartCommute Engine Output Panel - CCDash Compatible Preview -->
-                <div id="smartcommute-output-panel" class="card" style="margin-bottom: 20px; background: #2a3d5f; border-radius: 12px; padding: 20px; border: 1px solid #3d5278;">
+                <!-- E-Ink Display Preview - Actual CCDash Rendered Output -->
+                <div id="eink-preview-panel" class="card" style="margin-bottom: 20px; background: #2a3d5f; border-radius: 12px; padding: 20px; border: 1px solid #3d5278;">
                     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
                         <div style="display: flex; align-items: center; gap: 12px;">
                             <div style="width: 40px; height: 40px; border-radius: 10px; background: #1a1a1a; display: flex; align-items: center; justify-content: center;">
-                                <svg width="22" height="22" style="color: white;"><use href="#icon-cpu"/></svg>
+                                <svg width="22" height="22" style="color: white;"><use href="#icon-smartphone"/></svg>
                             </div>
                             <div>
-                                <h3 style="font-size: 16px; font-weight: 600; color: #f1f5f9; margin: 0;">SmartCommute Output (CCDash Preview)</h3>
-                                <span style="font-size: 12px; color: #94a3b8;">1-bit e-ink compatible • <span id="sc-last-update">--</span></span>
+                                <h3 style="font-size: 16px; font-weight: 600; color: #f1f5f9; margin: 0;">E-Ink Display Preview</h3>
+                                <span style="font-size: 12px; color: #94a3b8;">
+                                    <span id="eink-device-name">TRMNL OG</span> • 
+                                    <span id="eink-dimensions">800×480</span> • 
+                                    <span id="eink-last-update">--</span>
+                                </span>
                             </div>
                         </div>
                         <div style="display: flex; gap: 8px; align-items: center;">
-                            <div id="sc-auto-refresh-indicator" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(34, 197, 94, 0.15); border-radius: 20px; font-size: 11px; color: #22c55e;">
+                            <div id="eink-live-indicator" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(34, 197, 94, 0.15); border-radius: 20px; font-size: 11px; color: #22c55e;">
                                 <div style="width: 8px; height: 8px; background: #22c55e; border-radius: 50%; animation: pulse 1.5s infinite;"></div>
                                 Live
                             </div>
-                            <button onclick="toggleSmartCommuteDetails()" class="btn btn-secondary" style="padding: 8px 14px; font-size: 12px;">
-                                <svg width="14" height="14"><use href="#icon-layers"/></svg>
-                                Raw
-                            </button>
-                            <button onclick="loadSmartCommuteOutput(true)" class="btn btn-secondary" style="padding: 8px 14px; font-size: 12px;">
+                            <button onclick="refreshEinkPreview()" class="btn btn-secondary" style="padding: 8px 14px; font-size: 12px;">
                                 <svg width="14" height="14"><use href="#icon-refresh"/></svg>
                                 Refresh
                             </button>
                         </div>
                     </div>
                     
-                    <!-- Real-Time Summary Cards -->
-                    <div id="smartcommute-summary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px;">
-                        <div style="padding: 14px; background: rgba(79, 178, 142, 0.15); border-radius: 10px; text-align: center; border: 1px solid rgba(79, 178, 142, 0.2);">
-                            <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.7; margin-bottom: 6px;">🚪 LEAVE NOW</div>
-                            <div id="sc-leave-time" style="font-size: 24px; font-weight: 700; color: #4fb28e;">--:--</div>
-                        </div>
-                        <div style="padding: 14px; background: rgba(102, 126, 234, 0.15); border-radius: 10px; text-align: center; border: 1px solid rgba(102, 126, 234, 0.2);">
-                            <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.7; margin-bottom: 6px;">📍 ARRIVE AT</div>
-                            <div id="sc-arrive-time" style="font-size: 24px; font-weight: 700; color: #667eea;">--:--</div>
-                        </div>
-                        <div style="padding: 14px; background: rgba(251, 191, 36, 0.15); border-radius: 10px; text-align: center; border: 1px solid rgba(251, 191, 36, 0.2);">
-                            <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.7; margin-bottom: 6px;">⏱️ TOTAL TIME</div>
-                            <div id="sc-total-time" style="font-size: 24px; font-weight: 700; color: #fbbf24;">-- min</div>
-                        </div>
-                        <div style="padding: 14px; background: rgba(167, 139, 250, 0.15); border-radius: 10px; text-align: center; border: 1px solid rgba(167, 139, 250, 0.2);">
-                            <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.7; margin-bottom: 6px;">☕ COFFEE?</div>
-                            <div id="sc-coffee-decision" style="font-size: 24px; font-weight: 700; color: #a78bfa;">--</div>
-                        </div>
-                    </div>
-
-                    <!-- Journey Legs Visual - CCDash E-Ink Preview -->
-                    <div id="smartcommute-legs" style="padding: 16px; background: #f5f5f0; border-radius: 4px; margin-bottom: 16px;">
-                        <div style="font-weight: 600; margin-bottom: 12px; font-size: 12px; color: #1a1a1a; display: flex; align-items: center; justify-content: space-between; text-transform: uppercase; letter-spacing: 0.5px;">
-                            <span>E-INK DISPLAY PREVIEW</span>
-                            <span id="sc-current-time" style="font-family: monospace; color: #1a1a1a;"></span>
-                        </div>
-                        <div id="sc-legs-display" style="display: flex; flex-direction: column; gap: 4px;">
-                            <div style="padding: 15px; text-align: center; color: #666; font-size: 13px; background: #f5f5f0; border: 2px solid #1a1a1a;">
-                                Loading CCDash output...
+                    <!-- Actual E-Ink Display Image from CCDash Renderer -->
+                    <div id="eink-display-container" style="background: #1a1a1a; border-radius: 8px; padding: 16px; display: flex; justify-content: center; align-items: center; min-height: 300px;">
+                        <div id="eink-image-wrapper" style="position: relative; box-shadow: 0 4px 20px rgba(0,0,0,0.5); border-radius: 4px; overflow: hidden;">
+                            <img id="eink-preview-image" 
+                                 src="" 
+                                 alt="E-Ink Display Preview" 
+                                 style="display: block; max-width: 100%; height: auto; background: #f5f5f0;"
+                                 onerror="handleEinkImageError()"
+                                 onload="handleEinkImageLoad()">
+                            <div id="eink-loading-overlay" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(26,26,26,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8;">
+                                <div class="spinner" style="margin-bottom: 12px;"></div>
+                                <span style="font-size: 13px;">Loading display...</span>
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Device & Firmware Info -->
+                    <div style="margin-top: 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+                        <div style="padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                            <div style="font-size: 10px; text-transform: uppercase; opacity: 0.6; margin-bottom: 4px;">Device</div>
+                            <div id="eink-device-info" style="font-size: 14px; font-weight: 600; color: #f1f5f9;">TRMNL Display (OG)</div>
+                        </div>
+                        <div style="padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                            <div style="font-size: 10px; text-transform: uppercase; opacity: 0.6; margin-bottom: 4px;">Resolution</div>
+                            <div id="eink-resolution-info" style="font-size: 14px; font-weight: 600; color: #f1f5f9;">800 × 480 px</div>
+                        </div>
+                        <div style="padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                            <div style="font-size: 10px; text-transform: uppercase; opacity: 0.6; margin-bottom: 4px;">Color Depth</div>
+                            <div style="font-size: 14px; font-weight: 600; color: #f1f5f9;">1-bit (B&W)</div>
+                        </div>
+                        <div style="padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                            <div style="font-size: 10px; text-transform: uppercase; opacity: 0.6; margin-bottom: 4px;">Firmware</div>
+                            <div style="font-size: 14px; font-weight: 600; color: #f1f5f9;">CC-FW-6.1-60s</div>
+                        </div>
+                    </div>
 
-                    <!-- Detailed Engine Output (collapsed by default) -->
-                    <details id="smartcommute-details" style="margin-top: 12px;">
+                    <!-- API Endpoint Info -->
+                    <details style="margin-top: 16px;">
                         <summary style="cursor: pointer; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; font-size: 13px; font-weight: 500; color: #94a3b8;">
                             <svg width="14" height="14" style="vertical-align: middle; margin-right: 6px;"><use href="#icon-database"/></svg>
-                            Raw Engine Output (Debug)
+                            API Endpoint & Raw Data
                         </summary>
-                        <div style="margin-top: 12px; padding: 16px; background: rgba(0,0,0,0.3); border-radius: 8px; font-family: 'Courier New', monospace; font-size: 11px; overflow-x: auto; max-height: 400px; overflow-y: auto;">
-                            <pre id="sc-raw-output" style="margin: 0; color: #94a3b8; white-space: pre-wrap; word-break: break-word;">Loading...</pre>
+                        <div style="margin-top: 12px; padding: 16px; background: rgba(0,0,0,0.3); border-radius: 8px;">
+                            <div style="margin-bottom: 12px;">
+                                <div style="font-size: 11px; opacity: 0.6; margin-bottom: 4px;">Image Source (what firmware fetches)</div>
+                                <code id="eink-api-url" style="font-size: 12px; color: #4fb28e; word-break: break-all;"></code>
+                            </div>
+                            <div style="font-family: 'Courier New', monospace; font-size: 11px; overflow-x: auto; max-height: 300px; overflow-y: auto;">
+                                <pre id="sc-raw-output" style="margin: 0; color: #94a3b8; white-space: pre-wrap; word-break: break-word;">Loading...</pre>
+                            </div>
                         </div>
                     </details>
 
-                    <!-- Preferences Quick Edit Link -->
+                    <!-- Edit Settings Link -->
                     <div style="margin-top: 16px; padding: 12px 16px; background: rgba(102, 126, 234, 0.1); border-radius: 8px; display: flex; align-items: center; justify-content: space-between; border: 1px dashed rgba(102, 126, 234, 0.3);">
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <svg width="18" height="18" style="color: #667eea;"><use href="#icon-sliders"/></svg>
-                            <span style="font-size: 13px; color: #94a3b8;">Want to adjust walking times, coffee duration, or mode preferences?</span>
+                            <span style="font-size: 13px; color: #94a3b8;">Adjust journey settings to see changes on display</span>
                         </div>
                         <button onclick="showTab('setup', this)" class="btn" style="padding: 8px 16px; font-size: 13px; background: #667eea;">
                             Edit SmartCommute Settings
@@ -4255,39 +4264,14 @@
             // Load profiles when on Config tab
             loadProfiles();
 
-            // Load SmartCommute settings and output
+            // Load SmartCommute settings and e-ink preview
             loadSmartCommuteSettings();
-            loadSmartCommuteOutput();
+            loadEinkPreview();
             
-            // Auto-refresh SmartCommute every 30 seconds for real-time view
+            // Auto-refresh e-ink preview every 60 seconds (matches firmware refresh)
             setInterval(() => {
-                loadSmartCommuteOutput(false);
-                // Update current time display
-                const timeEl = document.getElementById('sc-current-time');
-                const updateEl = document.getElementById('sc-last-update');
-                if (timeEl) {
-                    timeEl.textContent = new Date().toLocaleTimeString('en-AU', { 
-                        hour: 'numeric', minute: '2-digit', hour12: true 
-                    }).toLowerCase();
-                }
-                if (updateEl) {
-                    updateEl.textContent = 'Updated ' + new Date().toLocaleTimeString('en-AU', { 
-                        hour: 'numeric', minute: '2-digit', hour12: true 
-                    }).toLowerCase();
-                }
-            }, 30000);
-            
-            // Initial time display
-            const timeEl = document.getElementById('sc-current-time');
-            const updateEl = document.getElementById('sc-last-update');
-            if (timeEl) {
-                timeEl.textContent = new Date().toLocaleTimeString('en-AU', { 
-                    hour: 'numeric', minute: '2-digit', hour12: true 
-                }).toLowerCase();
-            }
-            if (updateEl) {
-                updateEl.textContent = 'Loading...';
-            }
+                loadEinkPreview(false);
+            }, 60000);
         });
 
         // Load version control info
@@ -5437,31 +5421,74 @@
         }
 
         // ============================================
-        // SmartCommute Engine Output Functions
+        // E-Ink Display Preview Functions
         // ============================================
 
-        // Load SmartCommute engine output and display it
+        // Device configurations (matches firmware)
+        const DEVICE_CONFIGS = {
+            'trmnl-og': { name: 'TRMNL Display (OG)', width: 800, height: 480, orientation: 'landscape' },
+            'trmnl-mini': { name: 'TRMNL Display (Mini)', width: 400, height: 300, orientation: 'landscape' },
+            'kindle-pw3': { name: 'Kindle Paperwhite 3', width: 758, height: 1024, orientation: 'portrait' },
+            'kindle-pw4': { name: 'Kindle Paperwhite 4', width: 1072, height: 1448, orientation: 'portrait' },
+            'kindle-pw5': { name: 'Kindle Paperwhite 5', width: 1236, height: 1648, orientation: 'portrait' }
+        };
+
+        // Load actual e-ink display image from CCDash renderer
         async function loadSmartCommuteOutput(forceRefresh = false) {
+            loadEinkPreview(forceRefresh);
+        }
+
+        // Load E-Ink preview image from /api/screen or /api/livedash
+        async function loadEinkPreview(forceRefresh = false) {
             const config = JSON.parse(localStorage.getItem('cc-config') || '{}');
-            const legsDisplay = document.getElementById('sc-legs-display');
+            const device = config.device || localStorage.getItem('cc-device') || 'trmnl-og';
+            const deviceConfig = DEVICE_CONFIGS[device] || DEVICE_CONFIGS['trmnl-og'];
+            
+            // Update device info display
+            updateDeviceInfo(device, deviceConfig);
+            
+            // Show loading state
+            const loadingOverlay = document.getElementById('eink-loading-overlay');
+            const previewImage = document.getElementById('eink-preview-image');
+            if (loadingOverlay) loadingOverlay.style.display = 'flex';
+            
+            // Build the API URL based on device
+            const webhookUrl = config.webhookUrl || localStorage.getItem('cc-webhook-url');
+            let imageUrl;
+            
+            if (webhookUrl) {
+                // Use the configured webhook URL (what firmware actually fetches)
+                imageUrl = webhookUrl + (forceRefresh ? `?t=${Date.now()}` : '');
+            } else {
+                // Use /api/screen endpoint with device type
+                const baseUrl = BASE_URL || window.location.origin;
+                imageUrl = `${baseUrl}/api/screen?device=${device}&format=png&t=${Date.now()}`;
+            }
+            
+            // Update API URL display
+            const apiUrlEl = document.getElementById('eink-api-url');
+            if (apiUrlEl) apiUrlEl.textContent = imageUrl;
+            
+            // Set image source
+            if (previewImage) {
+                previewImage.src = imageUrl;
+                // Set dimensions based on device
+                previewImage.style.width = Math.min(deviceConfig.width, 760) + 'px';
+                previewImage.style.height = 'auto';
+            }
+            
+            // Also load raw SmartCommute data for the debug panel
+            loadSmartCommuteRawData(forceRefresh);
+        }
+
+        // Load raw SmartCommute data for debug panel
+        async function loadSmartCommuteRawData(forceRefresh = false) {
+            const config = JSON.parse(localStorage.getItem('cc-config') || '{}');
             const rawOutput = document.getElementById('sc-raw-output');
             
-            if (!config.addresses?.home && !config.addresses?.work) {
-                if (legsDisplay) {
-                    legsDisplay.innerHTML = '<div style="padding: 15px; text-align: center; color: #94a3b8; font-size: 13px;">Configure your journey in Setup to see SmartCommute output</div>';
-                }
-                return;
-            }
-            
-            if (legsDisplay) {
-                legsDisplay.innerHTML = '<div style="padding: 15px; text-align: center; color: #94a3b8; font-size: 13px;"><div class="spinner" style="margin: 0 auto 10px;"></div>Calculating journey...</div>';
-            }
-
             try {
-                // Get SmartCommute settings from localStorage
                 const scSettings = JSON.parse(localStorage.getItem('cc-smartcommute-settings') || '{}');
                 
-                // Build request with user preferences
                 const requestBody = {
                     home: config.addresses?.home,
                     work: config.addresses?.work,
@@ -5470,7 +5497,6 @@
                     state: config.state || 'VIC',
                     coffeeEnabled: config.journey?.coffeeEnabled !== false,
                     forceRefresh: forceRefresh,
-                    // SmartCommute settings
                     walkingTimes: {
                         homeToStop: scSettings.homeToStop || 5,
                         homeToCafe: scSettings.homeToCafe || 5,
@@ -5487,11 +5513,6 @@
                         tram: scSettings.preferTram !== false,
                         bus: scSettings.preferBus || false,
                         minimizeWalking: scSettings.minimizeWalking !== false
-                    },
-                    advanced: {
-                        walkingSpeed: scSettings.walkingSpeed || 80,
-                        maxWalkingDistance: scSettings.maxWalk || 600,
-                        multiModal: scSettings.multiModal || 'allow'
                     }
                 };
 
@@ -5502,214 +5523,67 @@
                 });
 
                 const result = await response.json();
-
-                // Update summary cards
-                updateSmartCommuteSummary(result);
-
-                // Update journey legs display
-                updateSmartCommuteLegs(result);
-
-                // Update raw output
+                
                 if (rawOutput) {
                     rawOutput.textContent = JSON.stringify(result, null, 2);
                 }
-                
-                // Update timestamp
-                const updateEl = document.getElementById('sc-last-update');
-                const timeEl = document.getElementById('sc-current-time');
-                if (updateEl) {
-                    updateEl.textContent = 'Updated ' + new Date().toLocaleTimeString('en-AU', { 
-                        hour: 'numeric', minute: '2-digit', hour12: true 
-                    }).toLowerCase();
-                }
-                if (timeEl) {
-                    timeEl.textContent = result.localTime || new Date().toLocaleTimeString('en-AU', { 
-                        hour: 'numeric', minute: '2-digit', hour12: true 
-                    }).toLowerCase();
-                }
 
             } catch (error) {
-                console.error('SmartCommute load error:', error);
-                if (legsDisplay) {
-                    legsDisplay.innerHTML = `<div style="padding: 15px; text-align: center; color: #ef4444; font-size: 13px;">Error loading SmartCommute data: ${error.message}</div>`;
-                }
+                console.error('SmartCommute raw data error:', error);
                 if (rawOutput) {
                     rawOutput.textContent = `Error: ${error.message}`;
                 }
             }
         }
 
-        // Update SmartCommute summary cards - CCDash compatible format
-        function updateSmartCommuteSummary(result) {
-            const leaveTime = document.getElementById('sc-leave-time');
-            const arriveTime = document.getElementById('sc-arrive-time');
-            const totalTime = document.getElementById('sc-total-time');
-            const coffeeDecision = document.getElementById('sc-coffee-decision');
+        // Update device info in the panel
+        function updateDeviceInfo(device, deviceConfig) {
+            const deviceNameEl = document.getElementById('eink-device-name');
+            const dimensionsEl = document.getElementById('eink-dimensions');
+            const deviceInfoEl = document.getElementById('eink-device-info');
+            const resolutionInfoEl = document.getElementById('eink-resolution-info');
+            
+            if (deviceNameEl) deviceNameEl.textContent = deviceConfig.name;
+            if (dimensionsEl) dimensionsEl.textContent = `${deviceConfig.width}×${deviceConfig.height}`;
+            if (deviceInfoEl) deviceInfoEl.textContent = deviceConfig.name;
+            if (resolutionInfoEl) resolutionInfoEl.textContent = `${deviceConfig.width} × ${deviceConfig.height} px`;
+        }
 
-            if (result.success && result.summary) {
-                const summary = result.summary;
-                
-                // Current time (leave now)
-                if (leaveTime) {
-                    leaveTime.textContent = result.current_time || 'NOW';
-                }
-                
-                // Arrival time
-                if (arriveTime) {
-                    arriveTime.textContent = summary.arriveAt || '--:--';
-                    arriveTime.style.color = summary.status === 'late' ? '#ef4444' : 
-                                             summary.status === 'early' ? '#22c55e' : '#667eea';
-                }
-                
-                // Total journey time
-                if (totalTime) {
-                    totalTime.textContent = summary.totalMinutes ? `${summary.totalMinutes} min` : '-- min';
-                }
-                
-                // Coffee decision (CCDash format)
-                if (coffeeDecision) {
-                    const coffee = result.coffee;
-                    coffeeDecision.textContent = coffee?.canGet ? 'YES' : 'NO';
-                    coffeeDecision.style.color = coffee?.canGet ? '#22c55e' : '#ef4444';
-                    coffeeDecision.title = coffee?.subtext || '';
-                }
-            } else if (result.fallbackMode) {
-                if (leaveTime) leaveTime.textContent = result.current_time || 'NOW';
-                if (arriveTime) arriveTime.textContent = '--:--';
-                if (totalTime) totalTime.textContent = '-- min';
-                if (coffeeDecision) {
-                    coffeeDecision.textContent = 'N/A';
-                    coffeeDecision.style.color = '#94a3b8';
-                }
+        // Handle image load success
+        function handleEinkImageLoad() {
+            const loadingOverlay = document.getElementById('eink-loading-overlay');
+            const lastUpdateEl = document.getElementById('eink-last-update');
+            
+            if (loadingOverlay) loadingOverlay.style.display = 'none';
+            if (lastUpdateEl) {
+                lastUpdateEl.textContent = 'Updated ' + new Date().toLocaleTimeString('en-AU', { 
+                    hour: 'numeric', minute: '2-digit', hour12: true 
+                }).toLowerCase();
             }
         }
 
-        // Update SmartCommute legs display - CCDash compatible format
-        // Matches 1-bit e-ink rendering style: {type, title, subtitle, minutes, state}
-        function updateSmartCommuteLegs(result) {
-            const legsDisplay = document.getElementById('sc-legs-display');
-            if (!legsDisplay) return;
-
-            const legs = result.journey_legs;
-            const statusBar = result.status_bar;
-
-            if (result.success && legs?.length > 0) {
-                // CCDash mode icons (matches e-ink display)
-                const modeIcons = {
-                    walk: '🚶', coffee: '☕', tram: '🚊', train: '🚆',
-                    bus: '🚌', wait: '⏱️', transit: '🚇', vline: '🚄'
-                };
-                
-                let html = '';
-                
-                // Status bar (matches CCDash status bar zone)
-                if (statusBar) {
-                    const barBg = statusBar.hasDisruption ? '#000' : '#1a1a1a';
-                    const barColor = statusBar.hasDisruption ? '#fff' : '#f1f5f9';
-                    html += `
-                        <div style="padding: 10px 16px; background: ${barBg}; color: ${barColor}; font-weight: 600; font-size: 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; border-radius: 4px;">
-                            ${statusBar.icon ? `<span style="font-size: 16px;">${statusBar.icon}</span>` : ''}
-                            <span>${statusBar.text}</span>
-                        </div>
-                    `;
-                }
-                
-                // Next departure (if available)
-                if (result.nextDeparture) {
-                    const dep = result.nextDeparture;
-                    const countdownColor = dep.minutes <= 3 ? '#ef4444' : '#4fb28e';
-                    html += `
-                        <div style="padding: 12px 16px; background: #f5f5f0; border: 2px solid #1a1a1a; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
-                            <div>
-                                <div style="font-size: 11px; color: #666; text-transform: uppercase;">NEXT ${dep.mode.toUpperCase()}</div>
-                                <div style="font-size: 15px; font-weight: 600; color: #1a1a1a;">${dep.destination}</div>
-                            </div>
-                            <div style="text-align: right;">
-                                <div style="font-size: 28px; font-weight: 700; color: ${countdownColor};">${dep.minutes} MIN</div>
-                                <div style="font-size: 11px; color: #666;">${dep.departureTime}</div>
-                            </div>
-                        </div>
-                    `;
-                }
-                
-                // Journey legs (CCDash format: type, title, subtitle, minutes, state)
-                legs.forEach((leg, index) => {
-                    const icon = modeIcons[leg.type] || '📍';
-                    const isSkip = leg.state === 'skip';
-                    const isDelayed = leg.state === 'delayed';
-                    const isCancelled = leg.state === 'cancelled';
-                    
-                    // Style based on state (matches CCDash leg states)
-                    let borderStyle = '2px solid #1a1a1a';
-                    let bgStyle = '#f5f5f0';
-                    let textColor = '#1a1a1a';
-                    
-                    if (isSkip) {
-                        borderStyle = '2px dashed #888';
-                        bgStyle = '#f5f5f0';
-                        textColor = '#888';
-                    } else if (isCancelled) {
-                        borderStyle = '2px solid #888';
-                        bgStyle = 'repeating-linear-gradient(135deg, #f5f5f0, #f5f5f0 10px, #ccc 10px, #ccc 11px)';
-                    } else if (isDelayed) {
-                        borderStyle = '2px dashed #888';
-                    }
-                    
-                    html += `
-                        <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: ${bgStyle}; border: ${borderStyle}; margin-bottom: 4px;">
-                            <div style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
-                                ${icon}
-                            </div>
-                            <div style="flex: 1; min-width: 0;">
-                                <div style="font-weight: 600; font-size: 15px; color: ${textColor};">${leg.title}</div>
-                                <div style="font-size: 12px; color: #666;">${leg.subtitle || ''}</div>
-                            </div>
-                            ${leg.minutes > 0 ? `
-                            <div style="background: #1a1a1a; color: #fff; padding: 8px 12px; text-align: center; min-width: 60px;">
-                                <div style="font-size: 18px; font-weight: 700;">${leg.minutes}</div>
-                                <div style="font-size: 9px; text-transform: uppercase;">${leg.type === 'walk' ? 'MIN WALK' : 'MIN'}</div>
-                            </div>
-                            ` : isSkip ? `
-                            <div style="padding: 8px 12px; text-align: center; color: #888; font-size: 11px;">
-                                SKIP
-                            </div>
-                            ` : ''}
-                        </div>
-                    `;
-                });
-                
-                // Footer (arrival info)
-                if (result.footer) {
-                    html += `
-                        <div style="margin-top: 12px; padding: 10px 16px; background: #1a1a1a; color: #fff; display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
-                            <span style="text-transform: uppercase;">${result.footer.destination}</span>
-                            <span style="font-weight: 600;">ARRIVE ${result.footer.arriveTime}</span>
-                        </div>
-                    `;
-                }
-
-                legsDisplay.innerHTML = html;
-
-            } else if (result.fallbackMode) {
-                legsDisplay.innerHTML = `
-                    <div style="padding: 20px; background: #f5f5f0; border: 2px solid #1a1a1a; text-align: center;">
-                        <div style="font-size: 28px; margin-bottom: 10px;">📋</div>
-                        <div style="font-weight: 600; font-size: 15px; color: #1a1a1a; margin-bottom: 6px;">USING TIMETABLE DATA</div>
-                        <div style="font-size: 12px; color: #666;">Add Transit API key for real-time</div>
+        // Handle image load error
+        function handleEinkImageError() {
+            const loadingOverlay = document.getElementById('eink-loading-overlay');
+            if (loadingOverlay) {
+                loadingOverlay.innerHTML = `
+                    <div style="text-align: center; color: #ef4444;">
+                        <div style="font-size: 32px; margin-bottom: 10px;">⚠️</div>
+                        <div style="font-size: 14px; margin-bottom: 8px;">Failed to load display</div>
+                        <div style="font-size: 12px; opacity: 0.7;">Check journey configuration</div>
                     </div>
                 `;
-            } else if (result.error) {
-                legsDisplay.innerHTML = `
-                    <div style="padding: 20px; background: #f5f5f0; border: 2px solid #1a1a1a; text-align: center;">
-                        <div style="font-size: 28px; margin-bottom: 10px;">⚠️</div>
-                        <div style="font-weight: 600; font-size: 15px; color: #1a1a1a; margin-bottom: 6px;">ERROR</div>
-                        <div style="font-size: 12px; color: #666;">${result.error}</div>
-                    </div>
-                `;
-            } else {
-                legsDisplay.innerHTML = '<div style="padding: 20px; text-align: center; color: #666; font-size: 13px; background: #f5f5f0; border: 2px solid #1a1a1a;">Configure journey in Setup</div>';
             }
         }
+
+        // Refresh e-ink preview
+        function refreshEinkPreview() {
+            loadEinkPreview(true);
+        }
+
+        // Legacy compatibility
+        function updateSmartCommuteSummary(result) {}
+        function updateSmartCommuteLegs(result) {}
 
         // Toggle SmartCommute details panel
         function toggleSmartCommuteDetails() {
