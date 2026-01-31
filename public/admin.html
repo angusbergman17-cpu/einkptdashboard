@@ -1643,6 +1643,158 @@
                     </div>
                 </div>
 
+                <!-- SmartCommute Settings Card -->
+                <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(79, 178, 142, 0.08) 0%, rgba(102, 126, 234, 0.08) 100%); border-radius: 12px; border: 1px solid rgba(79, 178, 142, 0.2);">
+                    <div class="card-header" style="margin-bottom: 20px;">
+                        <span class="card-icon">
+                            <svg width="20" height="20" style="color: #4fb28e;"><use href="#icon-cpu"/></svg>
+                        </span>
+                        <h2>SmartCommute Settings</h2>
+                    </div>
+                    <p style="margin-bottom: 20px; font-size: 13px; opacity: 0.8; line-height: 1.6;">
+                        Fine-tune how the SmartCommute engine calculates your optimal journey. These settings affect departure time recommendations and coffee feasibility.
+                    </p>
+
+                    <!-- Walking Times Section -->
+                    <div style="padding: 16px; background: rgba(0,0,0,0.2); border-radius: 10px; margin-bottom: 16px;">
+                        <div style="font-weight: 600; margin-bottom: 12px; font-size: 14px; display: flex; align-items: center; gap: 8px; color: #f1f5f9;">
+                            <svg width="16" height="16" style="color: #4fb28e;"><use href="#icon-route"/></svg>
+                            Walking Times
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label" style="font-size: 12px;">Home to Transit Stop</label>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <input type="number" id="sc-home-to-stop" class="form-input" min="1" max="30" value="5" style="flex: 1;">
+                                    <span style="font-size: 12px; opacity: 0.7;">min</span>
+                                </div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label" style="font-size: 12px;">Home to Coffee Shop</label>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <input type="number" id="sc-home-to-cafe" class="form-input" min="1" max="30" value="5" style="flex: 1;">
+                                    <span style="font-size: 12px; opacity: 0.7;">min</span>
+                                </div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label" style="font-size: 12px;">Coffee Shop to Transit</label>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <input type="number" id="sc-cafe-to-stop" class="form-input" min="1" max="30" value="2" style="flex: 1;">
+                                    <span style="font-size: 12px; opacity: 0.7;">min</span>
+                                </div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label" style="font-size: 12px;">Final Stop to Work</label>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <input type="number" id="sc-stop-to-work" class="form-input" min="1" max="30" value="5" style="flex: 1;">
+                                    <span style="font-size: 12px; opacity: 0.7;">min</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Coffee Settings Section -->
+                    <div style="padding: 16px; background: rgba(167, 139, 250, 0.1); border-radius: 10px; margin-bottom: 16px;">
+                        <div style="font-weight: 600; margin-bottom: 12px; font-size: 14px; display: flex; align-items: center; gap: 8px; color: #f1f5f9;">
+                            <svg width="16" height="16" style="color: #a78bfa;"><use href="#icon-coffee"/></svg>
+                            Coffee Settings
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label" style="font-size: 12px;">Coffee Duration (ordering + making)</label>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <input type="number" id="sc-coffee-duration" class="form-input" min="3" max="20" value="5" style="flex: 1;">
+                                    <span style="font-size: 12px; opacity: 0.7;">min</span>
+                                </div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label" style="font-size: 12px;">Minimum Buffer Time</label>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <input type="number" id="sc-buffer-time" class="form-input" min="1" max="15" value="3" style="flex: 1;">
+                                    <span style="font-size: 12px; opacity: 0.7;">min</span>
+                                </div>
+                                <small style="font-size: 10px; opacity: 0.6; display: block; margin-top: 4px;">Safety margin before departure</small>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label" style="font-size: 12px;">Coffee Position in Route</label>
+                                <select id="sc-coffee-position" class="form-input">
+                                    <option value="auto">Auto (SmartCommute decides)</option>
+                                    <option value="before">Before transit (on way to station)</option>
+                                    <option value="after">After transit (near work)</option>
+                                    <option value="never">Never include coffee</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Transit Mode Preferences -->
+                    <div style="padding: 16px; background: rgba(102, 126, 234, 0.1); border-radius: 10px; margin-bottom: 16px;">
+                        <div style="font-weight: 600; margin-bottom: 12px; font-size: 14px; display: flex; align-items: center; gap: 8px; color: #f1f5f9;">
+                            <svg width="16" height="16" style="color: #667eea;"><use href="#icon-train"/></svg>
+                            Transit Mode Preferences
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;">
+                            <label style="display: flex; align-items: center; gap: 10px; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; cursor: pointer;">
+                                <input type="checkbox" id="sc-prefer-train" checked style="width: 18px; height: 18px; accent-color: #4fb28e;">
+                                <span style="font-size: 13px;">🚃 Train</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 10px; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; cursor: pointer;">
+                                <input type="checkbox" id="sc-prefer-tram" checked style="width: 18px; height: 18px; accent-color: #4fb28e;">
+                                <span style="font-size: 13px;">🚊 Tram</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 10px; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; cursor: pointer;">
+                                <input type="checkbox" id="sc-prefer-bus" style="width: 18px; height: 18px; accent-color: #4fb28e;">
+                                <span style="font-size: 13px;">🚌 Bus</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 10px; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; cursor: pointer;">
+                                <input type="checkbox" id="sc-minimize-walking" checked style="width: 18px; height: 18px; accent-color: #4fb28e;">
+                                <span style="font-size: 13px;">🚶 Min Walking</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Advanced Options (collapsed) -->
+                    <details style="margin-bottom: 16px;">
+                        <summary style="cursor: pointer; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; font-size: 13px; font-weight: 500; color: #94a3b8;">
+                            <svg width="14" height="14" style="vertical-align: middle; margin-right: 6px;"><use href="#icon-sliders"/></svg>
+                            Advanced Options
+                        </summary>
+                        <div style="padding: 16px; margin-top: 12px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label class="form-label" style="font-size: 12px;">Walking Speed</label>
+                                    <select id="sc-walking-speed" class="form-input">
+                                        <option value="60">Slow (60m/min)</option>
+                                        <option value="80" selected>Normal (80m/min)</option>
+                                        <option value="100">Fast (100m/min)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label class="form-label" style="font-size: 12px;">Max Walking Distance</label>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <input type="number" id="sc-max-walk" class="form-input" min="100" max="2000" value="600" step="100" style="flex: 1;">
+                                        <span style="font-size: 12px; opacity: 0.7;">m</span>
+                                    </div>
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label class="form-label" style="font-size: 12px;">Multi-Modal Journeys</label>
+                                    <select id="sc-multi-modal" class="form-input">
+                                        <option value="allow">Allow (tram + train)</option>
+                                        <option value="prefer">Prefer single mode</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </details>
+
+                    <!-- Save Button -->
+                    <button onclick="saveSmartCommuteSettings()" class="btn btn-primary btn-block" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <svg width="16" height="16"><use href="#icon-save"/></svg>
+                        Save SmartCommute Settings
+                    </button>
+                    <div id="sc-settings-message" style="display: none; margin-top: 12px; padding: 12px; border-radius: 8px; font-size: 13px;"></div>
+                </div>
+
                 <!-- Quick Actions Card -->
                 <div class="card" style="background: rgba(255,255,255,0.03);">
                     <div class="card-header" style="margin-bottom: 15px;">
@@ -1818,11 +1970,94 @@
 
                 <!-- Journey Configuration Summary -->
                 <div id="journey-config-banner" style="margin-bottom: 20px; padding: 16px 20px; background: rgba(30, 41, 59, 0.8); border-radius: 12px; border-left: 4px solid #667eea;">
-                    <div style="font-weight: 600; margin-bottom: 8px; font-size: 14px; color: #f1f5f9; display: flex; align-items: center; gap: 8px;">
-                        <svg width="16" height="16" style="color: #667eea;"><use href="#icon-route"/></svg>
-                        Journey Configuration
+                    <div style="font-weight: 600; margin-bottom: 8px; font-size: 14px; color: #f1f5f9; display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <svg width="16" height="16" style="color: #667eea;"><use href="#icon-route"/></svg>
+                            Journey Configuration
+                        </div>
+                        <button onclick="showTab('setup', this)" class="btn btn-secondary" style="padding: 6px 14px; font-size: 12px; display: flex; align-items: center; gap: 6px;">
+                            <svg width="14" height="14"><use href="#icon-settings"/></svg>
+                            Edit Preferences
+                        </button>
                     </div>
                     <div id="journey-config-summary" style="font-size: 13px; color: #94a3b8; line-height: 1.6;">Loading configuration...</div>
+                </div>
+
+                <!-- SmartCommute Engine Output Panel -->
+                <div id="smartcommute-output-panel" class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(79, 178, 142, 0.08) 0%, rgba(102, 126, 234, 0.08) 100%); border-radius: 12px; padding: 20px; border: 1px solid rgba(79, 178, 142, 0.2);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #4fb28e 0%, #667eea 100%); display: flex; align-items: center; justify-content: center;">
+                                <svg width="22" height="22" style="color: white;"><use href="#icon-cpu"/></svg>
+                            </div>
+                            <div>
+                                <h3 style="font-size: 16px; font-weight: 600; color: #f1f5f9; margin: 0;">SmartCommute Engine Output</h3>
+                                <span style="font-size: 12px; color: #94a3b8;">Calculated journey based on your preferences</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button onclick="toggleSmartCommuteDetails()" class="btn btn-secondary" style="padding: 8px 14px; font-size: 12px;">
+                                <svg width="14" height="14"><use href="#icon-layers"/></svg>
+                                Details
+                            </button>
+                            <button onclick="loadSmartCommuteOutput(true)" class="btn btn-secondary" style="padding: 8px 14px; font-size: 12px;">
+                                <svg width="14" height="14"><use href="#icon-refresh"/></svg>
+                                Reload
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Engine Summary -->
+                    <div id="smartcommute-summary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px;">
+                        <div style="padding: 12px; background: rgba(79, 178, 142, 0.15); border-radius: 8px; text-align: center;">
+                            <div style="font-size: 11px; opacity: 0.7; margin-bottom: 4px;">LEAVE TIME</div>
+                            <div id="sc-leave-time" style="font-size: 20px; font-weight: 700; color: #4fb28e;">--:--</div>
+                        </div>
+                        <div style="padding: 12px; background: rgba(102, 126, 234, 0.15); border-radius: 8px; text-align: center;">
+                            <div style="font-size: 11px; opacity: 0.7; margin-bottom: 4px;">ARRIVE TIME</div>
+                            <div id="sc-arrive-time" style="font-size: 20px; font-weight: 700; color: #667eea;">--:--</div>
+                        </div>
+                        <div style="padding: 12px; background: rgba(251, 191, 36, 0.15); border-radius: 8px; text-align: center;">
+                            <div style="font-size: 11px; opacity: 0.7; margin-bottom: 4px;">TOTAL TIME</div>
+                            <div id="sc-total-time" style="font-size: 20px; font-weight: 700; color: #fbbf24;">-- min</div>
+                        </div>
+                        <div style="padding: 12px; background: rgba(167, 139, 250, 0.15); border-radius: 8px; text-align: center;">
+                            <div style="font-size: 11px; opacity: 0.7; margin-bottom: 4px;">COFFEE</div>
+                            <div id="sc-coffee-decision" style="font-size: 20px; font-weight: 700; color: #a78bfa;">--</div>
+                        </div>
+                    </div>
+
+                    <!-- Journey Legs Visual -->
+                    <div id="smartcommute-legs" style="padding: 16px; background: rgba(0,0,0,0.2); border-radius: 10px; margin-bottom: 16px;">
+                        <div style="font-weight: 600; margin-bottom: 12px; font-size: 13px; color: #94a3b8;">JOURNEY LEGS</div>
+                        <div id="sc-legs-display" style="display: flex; flex-direction: column; gap: 8px;">
+                            <div style="padding: 15px; text-align: center; color: #94a3b8; font-size: 13px;">
+                                Loading SmartCommute calculation...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Detailed Engine Output (collapsed by default) -->
+                    <details id="smartcommute-details" style="margin-top: 12px;">
+                        <summary style="cursor: pointer; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; font-size: 13px; font-weight: 500; color: #94a3b8;">
+                            <svg width="14" height="14" style="vertical-align: middle; margin-right: 6px;"><use href="#icon-database"/></svg>
+                            Raw Engine Output (Debug)
+                        </summary>
+                        <div style="margin-top: 12px; padding: 16px; background: rgba(0,0,0,0.3); border-radius: 8px; font-family: 'Courier New', monospace; font-size: 11px; overflow-x: auto; max-height: 400px; overflow-y: auto;">
+                            <pre id="sc-raw-output" style="margin: 0; color: #94a3b8; white-space: pre-wrap; word-break: break-word;">Loading...</pre>
+                        </div>
+                    </details>
+
+                    <!-- Preferences Quick Edit Link -->
+                    <div style="margin-top: 16px; padding: 12px 16px; background: rgba(102, 126, 234, 0.1); border-radius: 8px; display: flex; align-items: center; justify-content: space-between; border: 1px dashed rgba(102, 126, 234, 0.3);">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <svg width="18" height="18" style="color: #667eea;"><use href="#icon-sliders"/></svg>
+                            <span style="font-size: 13px; color: #94a3b8;">Want to adjust walking times, coffee duration, or mode preferences?</span>
+                        </div>
+                        <button onclick="showTab('setup', this)" class="btn" style="padding: 8px 16px; font-size: 13px; background: #667eea;">
+                            Edit SmartCommute Settings
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Main Data Grid -->
@@ -4012,6 +4247,10 @@
 
             // Load profiles when on Config tab
             loadProfiles();
+
+            // Load SmartCommute settings and output
+            loadSmartCommuteSettings();
+            loadSmartCommuteOutput();
         });
 
         // Load version control info
@@ -5159,6 +5398,266 @@
             html += '</div>';
             return html;
         }
+
+        // ============================================
+        // SmartCommute Engine Output Functions
+        // ============================================
+
+        // Load SmartCommute engine output and display it
+        async function loadSmartCommuteOutput(forceRefresh = false) {
+            const config = JSON.parse(localStorage.getItem('cc-config') || '{}');
+            const legsDisplay = document.getElementById('sc-legs-display');
+            const rawOutput = document.getElementById('sc-raw-output');
+            
+            if (!config.addresses?.home && !config.addresses?.work) {
+                if (legsDisplay) {
+                    legsDisplay.innerHTML = '<div style="padding: 15px; text-align: center; color: #94a3b8; font-size: 13px;">Configure your journey in Setup to see SmartCommute output</div>';
+                }
+                return;
+            }
+            
+            if (legsDisplay) {
+                legsDisplay.innerHTML = '<div style="padding: 15px; text-align: center; color: #94a3b8; font-size: 13px;"><div class="spinner" style="margin: 0 auto 10px;"></div>Calculating journey...</div>';
+            }
+
+            try {
+                // Get SmartCommute settings from localStorage
+                const scSettings = JSON.parse(localStorage.getItem('cc-smartcommute-settings') || '{}');
+                
+                // Build request with user preferences
+                const requestBody = {
+                    home: config.addresses?.home,
+                    work: config.addresses?.work,
+                    cafe: config.addresses?.cafe,
+                    arrivalTime: config.journey?.arrivalTime || '09:00',
+                    state: config.state || 'VIC',
+                    coffeeEnabled: config.journey?.coffeeEnabled !== false,
+                    forceRefresh: forceRefresh,
+                    // SmartCommute settings
+                    walkingTimes: {
+                        homeToStop: scSettings.homeToStop || 5,
+                        homeToCafe: scSettings.homeToCafe || 5,
+                        cafeToStop: scSettings.cafeToStop || 2,
+                        stopToWork: scSettings.stopToWork || 5
+                    },
+                    coffee: {
+                        duration: scSettings.coffeeDuration || 5,
+                        buffer: scSettings.bufferTime || 3,
+                        position: scSettings.coffeePosition || 'auto'
+                    },
+                    modes: {
+                        train: scSettings.preferTrain !== false,
+                        tram: scSettings.preferTram !== false,
+                        bus: scSettings.preferBus || false,
+                        minimizeWalking: scSettings.minimizeWalking !== false
+                    },
+                    advanced: {
+                        walkingSpeed: scSettings.walkingSpeed || 80,
+                        maxWalkingDistance: scSettings.maxWalk || 600,
+                        multiModal: scSettings.multiModal || 'allow'
+                    }
+                };
+
+                const response = await fetch(BASE_URL + '/api/smartcommute', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody)
+                });
+
+                const result = await response.json();
+
+                // Update summary cards
+                updateSmartCommuteSummary(result);
+
+                // Update journey legs display
+                updateSmartCommuteLegs(result);
+
+                // Update raw output
+                if (rawOutput) {
+                    rawOutput.textContent = JSON.stringify(result, null, 2);
+                }
+
+            } catch (error) {
+                console.error('SmartCommute load error:', error);
+                if (legsDisplay) {
+                    legsDisplay.innerHTML = `<div style="padding: 15px; text-align: center; color: #ef4444; font-size: 13px;">Error loading SmartCommute data: ${error.message}</div>`;
+                }
+                if (rawOutput) {
+                    rawOutput.textContent = `Error: ${error.message}`;
+                }
+            }
+        }
+
+        // Update SmartCommute summary cards
+        function updateSmartCommuteSummary(result) {
+            const leaveTime = document.getElementById('sc-leave-time');
+            const arriveTime = document.getElementById('sc-arrive-time');
+            const totalTime = document.getElementById('sc-total-time');
+            const coffeeDecision = document.getElementById('sc-coffee-decision');
+
+            if (result.success && result.journey) {
+                const journey = result.journey;
+                
+                if (leaveTime) leaveTime.textContent = formatTime12h(journey.leaveTime) || '--:--';
+                if (arriveTime) arriveTime.textContent = formatTime12h(journey.arriveTime) || '--:--';
+                if (totalTime) totalTime.textContent = journey.totalMinutes ? `${journey.totalMinutes} min` : '-- min';
+                if (coffeeDecision) {
+                    const coffee = result.coffee || journey.coffee;
+                    if (coffee) {
+                        coffeeDecision.textContent = coffee.canGet ? 'YES' : 'NO';
+                        coffeeDecision.style.color = coffee.canGet ? '#22c55e' : '#ef4444';
+                    } else {
+                        coffeeDecision.textContent = '--';
+                        coffeeDecision.style.color = '#a78bfa';
+                    }
+                }
+            } else if (result.fallbackMode) {
+                // Fallback data
+                if (leaveTime) leaveTime.textContent = '--:--';
+                if (arriveTime) arriveTime.textContent = formatTime12h(result.arrivalTime) || '--:--';
+                if (totalTime) totalTime.textContent = '-- min';
+                if (coffeeDecision) {
+                    coffeeDecision.textContent = 'N/A';
+                    coffeeDecision.style.color = '#94a3b8';
+                }
+            }
+        }
+
+        // Update SmartCommute legs display
+        function updateSmartCommuteLegs(result) {
+            const legsDisplay = document.getElementById('sc-legs-display');
+            if (!legsDisplay) return;
+
+            if (result.success && result.journey?.legs?.length > 0) {
+                const modeIcons = {
+                    walk: '🚶',
+                    train: '🚃',
+                    tram: '🚊',
+                    bus: '🚌',
+                    coffee: '☕',
+                    vline: '🚂'
+                };
+
+                let html = '';
+                result.journey.legs.forEach((leg, index) => {
+                    const icon = modeIcons[leg.mode?.toLowerCase()] || '📍';
+                    const isLast = index === result.journey.legs.length - 1;
+                    
+                    html += `
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(79, 178, 142, 0.2); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
+                                ${icon}
+                            </div>
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: 500; font-size: 14px; color: #f1f5f9;">${leg.description || leg.mode || 'Unknown'}</div>
+                                <div style="font-size: 12px; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${leg.details || ''}</div>
+                            </div>
+                            <div style="text-align: right; flex-shrink: 0;">
+                                <div style="font-weight: 700; font-size: 16px; color: #4fb28e;">${leg.duration || '--'} min</div>
+                                ${leg.time ? `<div style="font-size: 11px; color: #94a3b8;">${formatTime12h(leg.time)}</div>` : ''}
+                            </div>
+                        </div>
+                        ${!isLast ? '<div style="border-left: 2px dashed rgba(255,255,255,0.2); margin-left: 17px; height: 12px;"></div>' : ''}
+                    `;
+                });
+
+                legsDisplay.innerHTML = html;
+
+            } else if (result.fallbackMode) {
+                legsDisplay.innerHTML = `
+                    <div style="padding: 16px; background: rgba(251, 191, 36, 0.1); border-radius: 8px; text-align: center;">
+                        <div style="font-size: 24px; margin-bottom: 8px;">📋</div>
+                        <div style="font-weight: 600; color: #fbbf24; margin-bottom: 4px;">Using Timetable Data</div>
+                        <div style="font-size: 12px; color: #94a3b8;">Add a Transit API key for real-time journey calculation</div>
+                    </div>
+                `;
+            } else if (result.error) {
+                legsDisplay.innerHTML = `
+                    <div style="padding: 16px; background: rgba(239, 68, 68, 0.1); border-radius: 8px; text-align: center;">
+                        <div style="font-size: 24px; margin-bottom: 8px;">⚠️</div>
+                        <div style="font-weight: 600; color: #ef4444; margin-bottom: 4px;">Calculation Error</div>
+                        <div style="font-size: 12px; color: #94a3b8;">${result.error}</div>
+                    </div>
+                `;
+            } else {
+                legsDisplay.innerHTML = '<div style="padding: 15px; text-align: center; color: #94a3b8; font-size: 13px;">No journey data available</div>';
+            }
+        }
+
+        // Toggle SmartCommute details panel
+        function toggleSmartCommuteDetails() {
+            const details = document.getElementById('smartcommute-details');
+            if (details) {
+                details.open = !details.open;
+            }
+        }
+
+        // Save SmartCommute settings
+        function saveSmartCommuteSettings() {
+            const settings = {
+                homeToStop: parseInt(document.getElementById('sc-home-to-stop')?.value) || 5,
+                homeToCafe: parseInt(document.getElementById('sc-home-to-cafe')?.value) || 5,
+                cafeToStop: parseInt(document.getElementById('sc-cafe-to-stop')?.value) || 2,
+                stopToWork: parseInt(document.getElementById('sc-stop-to-work')?.value) || 5,
+                coffeeDuration: parseInt(document.getElementById('sc-coffee-duration')?.value) || 5,
+                bufferTime: parseInt(document.getElementById('sc-buffer-time')?.value) || 3,
+                coffeePosition: document.getElementById('sc-coffee-position')?.value || 'auto',
+                preferTrain: document.getElementById('sc-prefer-train')?.checked !== false,
+                preferTram: document.getElementById('sc-prefer-tram')?.checked !== false,
+                preferBus: document.getElementById('sc-prefer-bus')?.checked || false,
+                minimizeWalking: document.getElementById('sc-minimize-walking')?.checked !== false,
+                walkingSpeed: parseInt(document.getElementById('sc-walking-speed')?.value) || 80,
+                maxWalk: parseInt(document.getElementById('sc-max-walk')?.value) || 600,
+                multiModal: document.getElementById('sc-multi-modal')?.value || 'allow'
+            };
+
+            localStorage.setItem('cc-smartcommute-settings', JSON.stringify(settings));
+
+            // Also update the main config
+            const config = JSON.parse(localStorage.getItem('cc-config') || '{}');
+            config.smartcommute = settings;
+            localStorage.setItem('cc-config', JSON.stringify(config));
+
+            // Show success message
+            const msg = document.getElementById('sc-settings-message');
+            if (msg) {
+                msg.style.display = 'block';
+                msg.style.background = 'rgba(34, 197, 94, 0.2)';
+                msg.innerHTML = '✅ SmartCommute settings saved! <a href="#" onclick="loadSmartCommuteOutput(true); return false;" style="color: #4fb28e; text-decoration: underline;">Recalculate now</a>';
+                setTimeout(() => msg.style.display = 'none', 5000);
+            }
+        }
+
+        // Load SmartCommute settings into form
+        function loadSmartCommuteSettings() {
+            const settings = JSON.parse(localStorage.getItem('cc-smartcommute-settings') || '{}');
+            
+            // Walking times
+            if (document.getElementById('sc-home-to-stop')) document.getElementById('sc-home-to-stop').value = settings.homeToStop || 5;
+            if (document.getElementById('sc-home-to-cafe')) document.getElementById('sc-home-to-cafe').value = settings.homeToCafe || 5;
+            if (document.getElementById('sc-cafe-to-stop')) document.getElementById('sc-cafe-to-stop').value = settings.cafeToStop || 2;
+            if (document.getElementById('sc-stop-to-work')) document.getElementById('sc-stop-to-work').value = settings.stopToWork || 5;
+            
+            // Coffee settings
+            if (document.getElementById('sc-coffee-duration')) document.getElementById('sc-coffee-duration').value = settings.coffeeDuration || 5;
+            if (document.getElementById('sc-buffer-time')) document.getElementById('sc-buffer-time').value = settings.bufferTime || 3;
+            if (document.getElementById('sc-coffee-position')) document.getElementById('sc-coffee-position').value = settings.coffeePosition || 'auto';
+            
+            // Mode preferences
+            if (document.getElementById('sc-prefer-train')) document.getElementById('sc-prefer-train').checked = settings.preferTrain !== false;
+            if (document.getElementById('sc-prefer-tram')) document.getElementById('sc-prefer-tram').checked = settings.preferTram !== false;
+            if (document.getElementById('sc-prefer-bus')) document.getElementById('sc-prefer-bus').checked = settings.preferBus || false;
+            if (document.getElementById('sc-minimize-walking')) document.getElementById('sc-minimize-walking').checked = settings.minimizeWalking !== false;
+            
+            // Advanced
+            if (document.getElementById('sc-walking-speed')) document.getElementById('sc-walking-speed').value = settings.walkingSpeed || 80;
+            if (document.getElementById('sc-max-walk')) document.getElementById('sc-max-walk').value = settings.maxWalk || 600;
+            if (document.getElementById('sc-multi-modal')) document.getElementById('sc-multi-modal').value = settings.multiModal || 'allow';
+        }
+
+        // ============================================
+        // End SmartCommute Functions
+        // ============================================
         
         // Populate the rebuilt Setup & Journey tab from localStorage config
         function updateSetupTabSummary(prefs) {
