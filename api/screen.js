@@ -613,8 +613,28 @@ export default async function handler(req, res) {
       return handleDemoMode(req, res, demoScenario);
     }
     
-    // Get current time
-    const now = getMelbourneTime();
+    // =========================================================================
+    // SIMULATOR OVERRIDES - for testing SmartCommute engine
+    // =========================================================================
+    const simOverrides = {
+      home: req.query?.home,
+      work: req.query?.work,
+      cafe: req.query?.cafe,
+      arrivalTime: req.query?.arrivalTime,
+      simulatedTime: req.query?.simulatedTime,
+      status: req.query?.status,  // normal, delayed, disruption, suspended, diversion
+      weather: req.query?.weather  // auto, sunny, cloudy, rain, storm
+    };
+    const hasSimOverrides = Object.values(simOverrides).some(v => v);
+    
+    // Get current time (or simulated time for testing)
+    let now = getMelbourneTime();
+    if (simOverrides.simulatedTime) {
+      const [simH, simM] = simOverrides.simulatedTime.split(':').map(Number);
+      now = new Date(now);
+      now.setHours(simH, simM, 0, 0);
+      console.log(`[screen] Using simulated time: ${simOverrides.simulatedTime}`);
+    }
     const currentTime = formatTime(now);
     const { day, date } = formatDateParts(now);
     
@@ -648,17 +668,54 @@ export default async function handler(req, res) {
     
     const transitData = { trains, trams, disruptions };
     
+    // =========================================================================
+    // APPLY SIMULATOR OVERRIDES
+    // =========================================================================
+    let weatherData = weather;
+    if (simOverrides.weather && simOverrides.weather !== 'auto') {
+      const weatherPresets = {
+        sunny: { temp: 28, condition: 'Sunny', umbrella: false },
+        cloudy: { temp: 18, condition: 'Cloudy', umbrella: false },
+        rain: { temp: 15, condition: 'Rain', umbrella: true },
+        storm: { temp: 14, condition: 'Storm', umbrella: true }
+      };
+      weatherData = weatherPresets[simOverrides.weather] || weather;
+      console.log(`[screen] Using simulated weather: ${simOverrides.weather}`);
+    }
+    
+    // Apply status override to transit data
+    if (simOverrides.status && simOverrides.status !== 'normal') {
+      console.log(`[screen] Applying status override: ${simOverrides.status}`);
+      if (simOverrides.status === 'delayed') {
+        // Add delay to first transit leg
+        if (transitData.trains?.[0]) transitData.trains[0].isDelayed = true;
+        if (transitData.trains?.[0]) transitData.trains[0].delayMinutes = 5;
+      } else if (simOverrides.status === 'disruption') {
+        transitData.disruptions = [{ title: 'Major Disruption', description: 'Simulated disruption for testing' }];
+      }
+    }
+    
     // Get coffee decision from engine
     const coffeeDecision = engine.calculateCoffeeDecision(transitData, route?.legs || []);
     
     // Build journey legs (Data Model)
     const journeyLegs = buildJourneyLegs(route, transitData, coffeeDecision);
     const totalMinutes = calculateTotalMinutes(journeyLegs);
-    const statusType = getStatusType(journeyLegs, disruptions);
+    let statusType = getStatusType(journeyLegs, transitData.disruptions);
     
-    // Calculate timing
-    const arrivalTime = config?.journey?.arrivalTime || '09:00';
-    const [arrH, arrM] = arrivalTime.split(':').map(Number);
+    // Override status type if specified
+    if (simOverrides.status && simOverrides.status !== 'normal') {
+      statusType = simOverrides.status === 'disruption' ? 'disruption' : 
+                   simOverrides.status === 'delayed' ? 'delay' : statusType;
+    }
+    
+    // Build display values (use simulated overrides if provided)
+    const displayHome = simOverrides.home || locations.home?.address || process.env.HOME_ADDRESS || 'Home';
+    const displayWork = simOverrides.work || locations.work?.address || process.env.WORK_ADDRESS || 'Work';
+    const displayArrival = simOverrides.arrivalTime || config?.journey?.arrivalTime || '09:00';
+    
+    // Calculate timing using display arrival (respects simulator override)
+    const [arrH, arrM] = displayArrival.split(':').map(Number);
     const targetMins = arrH * 60 + arrM;
     const nowMins = now.getHours() * 60 + now.getMinutes();
     const leaveInMinutes = Math.max(0, targetMins - totalMinutes - nowMins);
@@ -670,22 +727,21 @@ export default async function handler(req, res) {
       delayMinutes = delayedLegs.reduce((sum, l) => sum + (l.delayMinutes || 0), 0);
     }
     
-    // Build Dashboard Data Model (per DEVELOPMENT-RULES.md)
     const dashboardData = {
-      location: locations.home?.address || process.env.HOME_ADDRESS || 'Home',
+      location: displayHome,
       current_time: currentTime,
       day,
       date,
-      temp: weather?.temp ?? '--',
-      condition: weather?.condition || 'N/A',
-      umbrella: weather?.umbrella || false,
+      temp: weatherData?.temp ?? '--',
+      condition: weatherData?.condition || 'N/A',
+      umbrella: weatherData?.umbrella || false,
       status_type: statusType,
       delay_minutes: delayMinutes,
-      arrive_by: arrivalTime,
+      arrive_by: displayArrival,
       total_minutes: totalMinutes,
       leave_in_minutes: leaveInMinutes > 0 ? leaveInMinutes : null,
       journey_legs: journeyLegs,
-      destination: locations.work?.address || process.env.WORK_ADDRESS || 'Work'
+      destination: displayWork
     };
     
     // Render to PNG (V10 Renderer)

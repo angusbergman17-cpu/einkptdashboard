@@ -1,67 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
+<!--
+    Commute Compute - Intelligent Transit Display System
+    Multi-Device Simulator with SmartCommute Engine Integration
+    
+    Copyright (c) 2026 Angus Bergman
+    Licensed under CC BY-NC 4.0
+    https://creativecommons.org/licenses/by-nc/4.0/
+-->
 <head>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <meta name="theme-color" content="#1a2744">
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Commute Compute Multi-Device Simulator</title>
+    <title>Commute Compute Simulator</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif; background: #1a2744; color: #f1f5f9; min-height: 100vh; padding: 20px; }
-        .container { max-width: 1600px; margin: 0 auto; }
-        header { text-align: center; margin-bottom: 20px; }
-        header h1 { font-size: 24px; margin-bottom: 8px; }
-        header p { color: #94a3b8; font-size: 14px; }
-        .device-selector { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
-        .device-btn { padding: 10px 16px; background: #243352; border: 1px solid #3d5278; border-radius: 4px; color: #f1f5f9; font-size: 13px; cursor: pointer; transition: border-color 0.15s; }
-        .device-btn:hover { border-color: #4fb28e; }
-        .device-btn.active { background: #4fb28e; border-color: #4fb28e; color: #1a2744; }
-        .main-layout { display: grid; grid-template-columns: 1fr 350px; gap: 20px; }
-        .display-wrapper { background: #2a3d5f; padding: 20px; border-radius: 4px; border: 1px solid #3d5278; display: flex; flex-direction: column; align-items: center; }
-        .display-info { display: flex; justify-content: space-between; width: 100%; margin-bottom: 15px; font-size: 12px; color: #64748b; }
-        .display-info span { background: #334155; padding: 4px 10px; border-radius: 4px; font-family: monospace; }
-        #eink-display { background: #f5f5f0; border: 3px solid #1a1a1a; border-radius: 4px; position: relative; overflow: hidden; box-shadow: inset 0 0 30px rgba(0,0,0,0.08); transition: width 0.3s, height 0.3s; }
-        .display-text { position: absolute; font-family: "Courier New", monospace; color: #1a1a1a; white-space: nowrap; }
-        .font-large { font-size: 18px; font-weight: bold; }
-        .font-medium { font-size: 14px; font-weight: bold; }
-        .font-small { font-size: 11px; }
-        .inverted { background: #1a1a1a; color: #f5f5f0; padding: 6px 12px; }
-        .rect-box { position: absolute; border: 2px solid #1a1a1a; }
-        .ghosting { opacity: 0.15; }
-        .controls { background: #2a3d5f; padding: 20px; border-radius: 4px; border: 1px solid #3d5278; max-height: 700px; overflow-y: auto; }
-        .controls h2 { font-size: 16px; margin-bottom: 15px; color: #4fb28e; }
-        .control-section { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #334155; }
-        .control-section:last-child { border-bottom: none; }
-        .control-section h3 { font-size: 12px; color: #94a3b8; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
-        .control-group { margin-bottom: 10px; }
-        .control-group label { display: block; font-size: 11px; color: #64748b; margin-bottom: 3px; }
-        .control-group input, .control-group select { width: 100%; padding: 8px 10px; background: #1a2744; border: 1px solid #334155; border-radius: 6px; color: #f8fafc; font-size: 13px; }
-        .control-group input:focus, .control-group select:focus { outline: none; border-color: #4fb28e; }
-        .button-row { display: flex; gap: 8px; margin-top: 15px; }
-        button { flex: 1; padding: 10px; background: #4fb28e; border: none; border-radius: 4px; color: #1a2744; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
-        button:hover { background: #5fcca0; }
-        button.secondary { background: #3d5278; color: #f1f5f9; }
-        button.secondary:hover { background: #4a6291; }
-        button.warning { background: #f59e0b; }
-        button.warning:hover { background: #d97706; }
-        .status-bar { margin-top: 20px; background: #1e293b; padding: 12px 20px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
-        .status-item { display: flex; align-items: center; gap: 6px; }
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; }
-        .status-dot.refreshing { background: #f59e0b; animation: pulse 0.5s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        .refresh-zones { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 10px; }
-        .zone { padding: 5px; background: #334155; border-radius: 4px; text-align: center; font-size: 10px; cursor: pointer; }
-        .zone.active { background: #4fb28e; }
-        .zone.dirty { background: #f59e0b; }
-        footer { text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #334155; color: #64748b; font-size: 12px; }
+        body { 
+            font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif; 
+            background: #1a2744; 
+            color: #f1f5f9; 
+            min-height: 100vh; 
+            padding: 20px;
+            padding-top: 76px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
         
         /* Global Navigation */
         .global-nav {
@@ -78,7 +47,6 @@
             z-index: 1000;
             backdrop-filter: blur(10px);
         }
-        
         .global-nav .nav-brand {
             display: flex;
             align-items: center;
@@ -88,14 +56,7 @@
             color: #f8fafc;
             text-decoration: none;
         }
-        
-        .global-nav .nav-brand span:first-child { font-size: 24px; }
-        
-        .global-nav .nav-links {
-            display: flex;
-            gap: 8px;
-        }
-        
+        .global-nav .nav-links { display: flex; gap: 8px; }
         .global-nav .nav-link {
             background: transparent;
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -107,258 +68,722 @@
             transition: all 0.2s;
             text-decoration: none;
         }
+        .global-nav .nav-link:hover { background: rgba(30, 41, 59, 0.8); color: #f8fafc; border-color: #4fb28e; }
+        .global-nav .nav-link.active { background: #4fb28e; color: white; border-color: #4fb28e; }
         
-        .global-nav .nav-link:hover {
-            background: rgba(30, 41, 59, 0.8);
+        header { text-align: center; margin-bottom: 20px; }
+        header h1 { font-size: 24px; margin-bottom: 8px; }
+        header p { color: #94a3b8; font-size: 14px; }
+        
+        .main-layout { display: grid; grid-template-columns: 1fr 380px; gap: 20px; }
+        @media (max-width: 1000px) { .main-layout { grid-template-columns: 1fr; } }
+        
+        .display-wrapper {
+            background: #2a3d5f;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #3d5278;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .display-info {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 15px;
+            font-size: 12px;
+            color: #64748b;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .display-info span {
+            background: #334155;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .display-info .live { background: #166534; color: #dcfce7; }
+        
+        #eink-display {
+            background: #f5f5f0;
+            border: 4px solid #1a1a1a;
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.08), 0 8px 32px rgba(0,0,0,0.3);
+        }
+        #eink-display img {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+        
+        .controls {
+            background: #2a3d5f;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #3d5278;
+            max-height: calc(100vh - 140px);
+            overflow-y: auto;
+        }
+        .controls h2 { font-size: 16px; margin-bottom: 15px; color: #4fb28e; }
+        .control-section {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #334155;
+        }
+        .control-section:last-child { border-bottom: none; }
+        .control-section h3 {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .control-group { margin-bottom: 12px; }
+        .control-group label {
+            display: block;
+            font-size: 11px;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+        .control-group input, .control-group select {
+            width: 100%;
+            padding: 10px 12px;
+            background: #1a2744;
+            border: 1px solid #334155;
+            border-radius: 6px;
             color: #f8fafc;
+            font-size: 13px;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+        .control-group input:focus, .control-group select:focus {
+            outline: none;
             border-color: #4fb28e;
         }
         
-        .global-nav .nav-link.active {
+        .button-row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+        button {
+            flex: 1;
+            padding: 12px;
             background: #4fb28e;
-            color: white;
-            border-color: #4fb28e;
+            border: none;
+            border-radius: 6px;
+            color: #1a2744;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-width: 100px;
         }
+        button:hover { background: #5fcca0; transform: translateY(-1px); }
+        button.secondary { background: #3d5278; color: #f1f5f9; }
+        button.secondary:hover { background: #4a6291; }
+        button.warning { background: #f59e0b; color: #1a2744; }
+        button.danger { background: #ef4444; color: white; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
         
-        body { padding-top: 56px; }
-        
-        @media (max-width: 600px) {
-            .global-nav .nav-links { display: none; }
+        .scenario-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 10px;
         }
-        
-        /* Accessibility: Skip Link */
-        .skip-link {
-            position: absolute;
-            top: -40px;
-            left: 0;
-            background: #4fb28e;
-            color: white;
-            padding: 8px 16px;
-            z-index: 1001;
-            text-decoration: none;
-            border-radius: 0 0 8px 0;
+        .scenario-btn {
+            padding: 10px 8px;
+            background: #334155;
+            border: 1px solid #475569;
+            border-radius: 6px;
+            color: #f1f5f9;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
         }
+        .scenario-btn:hover { background: #475569; border-color: #4fb28e; }
+        .scenario-btn.active { background: #4fb28e; color: #1a2744; border-color: #4fb28e; }
         
-        .skip-link:focus {
-            top: 0;
+        .status-bar {
+            margin-top: 20px;
+            background: #1e293b;
+            padding: 12px 20px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            flex-wrap: wrap;
+            gap: 10px;
         }
+        .status-item { display: flex; align-items: center; gap: 6px; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; }
+        .status-dot.loading { background: #f59e0b; animation: pulse 0.8s infinite; }
+        .status-dot.error { background: #ef4444; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
         
-        /* Focus visible for keyboard navigation */
-        *:focus-visible {
-            outline: 2px solid #4fb28e;
-            outline-offset: 2px;
+        .log-output {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            max-height: 150px;
+            overflow-y: auto;
+            margin-top: 10px;
         }
+        .log-output .log-line { margin-bottom: 4px; }
+        .log-output .log-time { color: #64748b; }
+        .log-output .log-info { color: #4fb28e; }
+        .log-output .log-warn { color: #f59e0b; }
+        .log-output .log-error { color: #ef4444; }
+        
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #334155;
+            color: #64748b;
+            font-size: 12px;
+        }
+        footer a { color: #4fb28e; text-decoration: none; }
+        footer a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
-    <!-- Accessibility: Skip to main content -->
-    <a href="#main-content" class="skip-link">Skip to main content</a>
-    
     <!-- Global Navigation -->
-    <nav class="global-nav" role="navigation" aria-label="Main navigation">
-        <a href="/" class="nav-brand" aria-label="Commute Compute Home">
-            <img src="/assets/brand/cc-logo-128.png" alt="CC" style="height: 56px; width: auto; margin-right: 10px;">
+    <nav class="global-nav">
+        <a href="/" class="nav-brand">
+            <img src="/assets/brand/cc-logo-128.png" alt="CC" style="height: 48px; width: auto;">
             <span>Commute Compute</span>
         </a>
-        <div class="nav-links" role="menubar">
-            <a href="/" class="nav-link" role="menuitem">Dashboard</a>
-            <a href="/admin.html" class="nav-link" role="menuitem">Settings</a>
-            <a href="/simulator.html" class="nav-link active" role="menuitem" aria-current="page">Simulator</a>
+        <div class="nav-links">
+            <a href="/" class="nav-link">Dashboard</a>
+            <a href="/admin.html" class="nav-link">Settings</a>
+            <a href="/simulator.html" class="nav-link active">Simulator</a>
         </div>
     </nav>
 
-    <main id="main-content" class="container" role="main">
+    <main class="container">
         <header>
-            <h1>📟 Commute Compute Multi-Device Simulator</h1>
-            <p>Firmware simulation with Flash → Setup → Boot → Live display</p>
+            <h1>🧪 CCDash V10 Simulator</h1>
+            <p>Test SmartCommute engine with random journeys • Firmware behavior verification</p>
         </header>
-        <div class="device-selector" id="device-selector"></div>
+
         <div class="main-layout">
+            <!-- Display Panel -->
             <div class="display-wrapper">
                 <div class="display-info">
                     <span id="device-name">TRMNL OG</span>
                     <span id="device-res">800×480</span>
-                    <span id="refresh-mode">FULL</span>
+                    <span id="render-mode">V10 Renderer</span>
                     <span id="refresh-count">Refresh #0</span>
+                    <span id="data-mode" class="live">Live API</span>
                 </div>
-                <div id="eink-display"></div>
+                <div id="eink-display" style="width: 800px; max-width: 100%;">
+                    <img id="display-image" src="" alt="E-Ink Display Preview" style="background: #f5f5f0;">
+                    <div id="loading-overlay" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; color: white;">
+                        <div style="text-align: center;">
+                            <div class="status-dot loading" style="width: 20px; height: 20px; margin: 0 auto 10px;"></div>
+                            <div>Loading dashboard...</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Log Output -->
+                <div class="log-output" id="log-output">
+                    <div class="log-line"><span class="log-time">[--:--:--]</span> <span class="log-info">Simulator ready</span></div>
+                </div>
             </div>
+
+            <!-- Controls Panel -->
             <div class="controls">
                 <h2>⚙️ Simulator Controls</h2>
+
+                <!-- Random Journey Generator -->
                 <div class="control-section">
-                    <h3>🎬 Device Simulation</h3>
+                    <h3>🎲 Random Journey Generator</h3>
+                    <p style="font-size: 11px; color: #94a3b8; margin-bottom: 10px;">
+                        Generate random scenarios to test SmartCommute engine
+                    </p>
                     <div class="button-row">
-                        <button onclick="simulateFlash()" style="background:#f59e0b;">⚡ Flash Firmware</button>
+                        <button onclick="generateRandomJourney()">🎲 Random Journey</button>
                     </div>
-                    <div class="button-row">
-                        <button onclick="simulateSetup()" class="secondary">📝 Setup Wizard</button>
-                        <button onclick="simulateBoot()" class="secondary">🔄 Boot Only</button>
+                    <div class="scenario-grid">
+                        <button class="scenario-btn" onclick="generateScenario('early')">⏰ Early Arrival</button>
+                        <button class="scenario-btn" onclick="generateScenario('late')">⚠️ Running Late</button>
+                        <button class="scenario-btn" onclick="generateScenario('ontime')">✓ On Time</button>
+                        <button class="scenario-btn" onclick="generateScenario('disruption')">🚨 Disruption</button>
+                        <button class="scenario-btn" onclick="generateScenario('delay')">⏱️ Delayed Service</button>
+                        <button class="scenario-btn" onclick="generateScenario('coffee')">☕ Coffee Time</button>
+                        <button class="scenario-btn" onclick="generateScenario('nocoffee')">🚫 Skip Coffee</button>
+                        <button class="scenario-btn" onclick="generateScenario('multimodal')">🚃🚊 Multi-Modal</button>
                     </div>
                 </div>
+
+                <!-- Journey Parameters -->
                 <div class="control-section">
-                    <h3>🔄 Refresh</h3>
-                    <div class="button-row">
-                        <button onclick="doFullRefresh()">Full Refresh</button>
-                        <button class="secondary" onclick="doPartialRefresh()">Partial</button>
+                    <h3>📍 Journey Parameters</h3>
+                    <div class="control-group">
+                        <label>Home Address</label>
+                        <input type="text" id="input-home" value="1 Clara St, South Yarra VIC">
+                    </div>
+                    <div class="control-group">
+                        <label>Work Address</label>
+                        <input type="text" id="input-work" value="Bunnings Collingwood, Victoria Parade VIC">
+                    </div>
+                    <div class="control-group">
+                        <label>Coffee Stop</label>
+                        <input type="text" id="input-cafe" value="Au79 Richmond Trader, Church St VIC">
+                    </div>
+                    <div class="control-group">
+                        <label>Target Arrival Time</label>
+                        <input type="time" id="input-arrival" value="09:00">
+                    </div>
+                    <div class="control-group">
+                        <label>Simulated Current Time (leave blank for now)</label>
+                        <input type="time" id="input-current-time" value="">
+                    </div>
+                    <div class="control-group">
+                        <label>Number of Legs</label>
+                        <select id="input-legs">
+                            <option value="auto">Auto (SmartCommute decides)</option>
+                            <option value="3">3 legs</option>
+                            <option value="4">4 legs</option>
+                            <option value="5" selected>5 legs</option>
+                        </select>
                     </div>
                 </div>
+
+                <!-- Service Status Override -->
                 <div class="control-section">
-                    <h3>📍 Content</h3>
-                    <div class="control-group"><label for="input-location">Location</label><input type="text" id="input-location" value="South Yarra, VIC" oninput="updateDisplay()"></div>
-                    <div class="control-group"><label for="input-time">Time</label><input type="text" id="input-time" value="08:15" oninput="updateDisplay()"></div>
+                    <h3>🚦 Service Status</h3>
+                    <div class="control-group">
+                        <label>Transit Status</label>
+                        <select id="input-status">
+                            <option value="normal">Normal Service</option>
+                            <option value="delayed">Delayed (+5 min)</option>
+                            <option value="disruption">Major Disruption</option>
+                            <option value="suspended">Service Suspended</option>
+                            <option value="diversion">Tram Diversion</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Weather Override</label>
+                        <select id="input-weather">
+                            <option value="auto">Auto (Live Weather)</option>
+                            <option value="sunny">☀️ Sunny 28°</option>
+                            <option value="cloudy">☁️ Cloudy 18°</option>
+                            <option value="rain">🌧️ Rain 15°</option>
+                            <option value="storm">⛈️ Storm 14°</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Refresh Controls -->
+                <div class="control-section">
+                    <h3>🔄 Display Refresh</h3>
+                    <div class="button-row">
+                        <button onclick="refreshDisplay()">Full Refresh</button>
+                        <button class="secondary" onclick="refreshDisplay(true)">Partial</button>
+                    </div>
+                    <div class="button-row">
+                        <button class="secondary" onclick="startAutoRefresh()">▶️ Auto (60s)</button>
+                        <button class="secondary" onclick="stopAutoRefresh()">⏹️ Stop</button>
+                    </div>
+                </div>
+
+                <!-- Firmware Simulation -->
+                <div class="control-section">
+                    <h3>🔧 Firmware Simulation</h3>
+                    <div class="button-row">
+                        <button class="warning" onclick="simulateBoot()">🔄 Boot Sequence</button>
+                    </div>
+                    <div style="font-size: 10px; color: #64748b; margin-top: 8px;">
+                        Firmware: CC-FW-6.1-60s • 60s refresh interval
+                    </div>
+                </div>
+
+                <!-- Export -->
+                <div class="control-section">
+                    <h3>📤 Export</h3>
+                    <div class="button-row">
+                        <button class="secondary" onclick="downloadImage()">💾 Download PNG</button>
+                        <button class="secondary" onclick="copyApiUrl()">📋 Copy API URL</button>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="status-bar" role="status" aria-live="polite">
-            <div class="status-item"><div class="status-dot" id="status-dot" aria-hidden="true"></div><span id="status-text">Ready</span></div>
-            <div class="status-item"><span id="device-ppi">--</span></div>
-            <div class="status-item"><span>v5.18</span></div>
+
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-dot" id="status-dot"></div>
+                <span id="status-text">Ready</span>
+            </div>
+            <div class="status-item">
+                <span id="last-update">Last update: --</span>
+            </div>
+            <div class="status-item">
+                <span>SmartCommute v3.0 • CCDash Renderer v2.1</span>
+            </div>
         </div>
-        <footer role="contentinfo">Commute Compute Simulator • © 2026 Angus Bergman • CC BY-NC 4.0</footer>
+
+        <footer>
+            © 2026 Angus Bergman • 
+            <a href="https://creativecommons.org/licenses/by-nc/4.0/">CC BY-NC 4.0</a> • 
+            Transit data: <a href="https://opendata.transport.vic.gov.au">Transport Victoria OpenData API</a> (CC BY 4.0)
+        </footer>
     </main>
+
     <script>
-        const DEVICES={"trmnl-og":{name:"TRMNL OG",width:800,height:480,ppi:150,orientation:"landscape"}};
-        let currentDevice="trmnl-og",refreshCount=0,partialCount=0,ghostElements=[];
-        function getScale(d){return Math.min(800/d.width,600/d.height,1);}
-        function initDeviceSelector(){const c=document.getElementById("device-selector");c.innerHTML="";Object.entries(DEVICES).forEach(([id,d])=>{const b=document.createElement("button");b.className="device-btn"+(id===currentDevice?" active":"");b.textContent=d.name;b.onclick=()=>selectDevice(id);c.appendChild(b);});}
-        function selectDevice(id){currentDevice=id;initDeviceSelector();updateDisplay();updateDeviceInfo();}
-        function updateDeviceInfo(){const d=DEVICES[currentDevice];document.getElementById("device-name").textContent=d.name;document.getElementById("device-res").textContent=d.width+"×"+d.height;document.getElementById("device-ppi").textContent=d.ppi+" PPI";}
-        function updateDisplay(){const d=DEVICES[currentDevice],display=document.getElementById("eink-display"),scale=getScale(d);display.style.width=(d.width*scale)+"px";display.style.height=(d.height*scale)+"px";display.style.background="#f5f5f0";display.innerHTML="";const loc=document.getElementById("input-location").value,time=document.getElementById("input-time").value;addText(display,20,25,"Commute Compute • "+loc,"font-large",scale);addText(display,d.width-100,25,time,"font-large",scale);addLine(display,0,55,d.width,55,scale);addText(display,20,80,"Ready - Click Flash Firmware to begin","font-medium",scale);addText(display,20,d.height-30,"Refresh #"+refreshCount,"font-small",scale);}
-        function addText(p,x,y,t,f,s,inv=false){const e=document.createElement("div");e.className="display-text "+f+(inv?" inverted":"");e.style.left=(x*s)+"px";e.style.top=(y*s)+"px";e.style.transform="scale("+s+")";e.style.transformOrigin="top left";e.textContent=t;p.appendChild(e);}
-        function addLine(p,x1,y1,x2,y2,s){const e=document.createElement("div");e.style.position="absolute";e.style.left=(x1*s)+"px";e.style.top=(y1*s)+"px";e.style.width=((x2-x1)*s)+"px";e.style.height="1px";e.style.background="#1a1a1a";p.appendChild(e);}
-        function doFullRefresh(){const d=document.getElementById("eink-display"),dot=document.getElementById("status-dot");dot.classList.add("refreshing");d.style.background="#1a1a1a";setTimeout(()=>{d.style.background="#f5f5f0";refreshCount++;document.getElementById("refresh-count").textContent="Refresh #"+refreshCount;dot.classList.remove("refreshing");renderV11Journey();},400);}
-        function doPartialRefresh(){refreshCount++;document.getElementById("refresh-count").textContent="Refresh #"+refreshCount;renderV11Journey();}
-                function renderV11Journey(){
-            const d=DEVICES[currentDevice],display=document.getElementById("eink-display"),s=getScale(d);
-            const dot=document.getElementById("status-dot"),st=document.getElementById("status-text");
-            dot.classList.remove("refreshing");
-            st.textContent="V11 Dashboard";
-            refreshCount++;
-            document.getElementById("refresh-count").textContent="Refresh #"+refreshCount;
-            display.style.width=(d.width*s)+"px";
-            display.style.height=(d.height*s)+"px";
-            display.style.background="#f5f5f0";
-            display.innerHTML=`
-            <div style="position:relative;width:100%;height:100%;font-family:-apple-system,BlinkMacSystemFont,sans-serif;color:#000;">
-                <!-- Header -->
-                <div style="position:absolute;left:${16*s}px;top:${8*s}px;font-size:${11*s}px;">68 Cambridge St, Collingwood</div>
-                <div style="position:absolute;left:${16*s}px;top:${28*s}px;font-size:${64*s}px;font-weight:800;">7:32</div>
-                <div style="position:absolute;left:${130*s}px;top:${70*s}px;font-size:${18*s}px;font-weight:600;">AM</div>
-                <div style="position:absolute;left:${280*s}px;top:${32*s}px;font-size:${20*s}px;font-weight:700;">TUESDAY</div>
-                <div style="position:absolute;left:${280*s}px;top:${56*s}px;font-size:${16*s}px;">28 January</div>
-                <!-- Weather Box -->
-                <div style="position:absolute;right:${16*s}px;top:${16*s}px;width:${144*s}px;height:${80*s}px;border:2px solid #000;">
-                    <div style="padding:${8*s}px;">
-                        <div style="font-size:${36*s}px;font-weight:700;">21°</div>
-                        <div style="font-size:${12*s}px;">Clear</div>
-                        <div style="margin-top:${4*s}px;border:1px solid #000;padding:${2*s}px ${8*s}px;font-size:${10*s}px;text-align:center;">NO UMBRELLA</div>
-                    </div>
-                </div>
-                <!-- Status Bar -->
-                <div style="position:absolute;left:0;top:${100*s}px;width:100%;height:${28*s}px;background:#000;display:flex;align-items:center;justify-content:space-between;padding:0 ${16*s}px;box-sizing:border-box;">
-                    <div style="color:#fff;font-size:${14*s}px;font-weight:600;">LEAVE NOW → Arrive 8:14</div>
-                    <div style="color:#fff;font-size:${14*s}px;font-weight:700;">42 min</div>
-                </div>
-                <!-- Journey Legs -->
-                <div style="position:absolute;left:${16*s}px;top:${140*s}px;right:${16*s}px;">
-                    <!-- Leg 1: Walk to Tram -->
-                    <div style="display:flex;align-items:center;border:2px solid #000;padding:${10*s}px;margin-bottom:${8*s}px;background:#fff;">
-                        <div style="width:${24*s}px;height:${24*s}px;background:#000;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:${14*s}px;">1</div>
-                        <div style="font-size:${20*s}px;margin:0 ${12*s}px;">🚶</div>
-                        <div style="flex:1;">
-                            <div style="font-size:${14*s}px;font-weight:700;">Walk to Tram Stop</div>
-                            <div style="font-size:${11*s}px;color:#666;">Smith St / Johnston St</div>
-                        </div>
-                        <div style="background:#000;color:#fff;padding:${8*s}px ${12*s}px;text-align:center;">
-                            <div style="font-size:${20*s}px;font-weight:800;">5</div>
-                            <div style="font-size:${9*s}px;">MIN</div>
-                        </div>
-                    </div>
-                    <!-- Arrow -->
-                    <div style="text-align:center;font-size:${16*s}px;margin:${4*s}px 0;">▼</div>
-                    <!-- Leg 2: Tram 86 -->
-                    <div style="display:flex;align-items:center;border:2px solid #000;padding:${10*s}px;margin-bottom:${8*s}px;background:#fff;">
-                        <div style="width:${24*s}px;height:${24*s}px;background:#000;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:${14*s}px;">2</div>
-                        <div style="font-size:${20*s}px;margin:0 ${12*s}px;">🚊</div>
-                        <div style="flex:1;">
-                            <div style="font-size:${14*s}px;font-weight:700;">Tram 86 → Bourke St</div>
-                            <div style="font-size:${11*s}px;color:#666;">Departs 7:41 • 8 stops</div>
-                        </div>
-                        <div style="background:#000;color:#fff;padding:${8*s}px ${12*s}px;text-align:center;">
-                            <div style="font-size:${20*s}px;font-weight:800;">18</div>
-                            <div style="font-size:${9*s}px;">MIN</div>
-                        </div>
-                    </div>
-                    <!-- Arrow -->
-                    <div style="text-align:center;font-size:${16*s}px;margin:${4*s}px 0;">▼</div>
-                    <!-- Leg 3: Coffee -->
-                    <div style="display:flex;align-items:center;border:2px solid #000;padding:${10*s}px;margin-bottom:${8*s}px;background:#fff;">
-                        <div style="width:${24*s}px;height:${24*s}px;background:#000;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:${14*s}px;">3</div>
-                        <div style="font-size:${20*s}px;margin:0 ${12*s}px;">☕</div>
-                        <div style="flex:1;">
-                            <div style="font-size:${14*s}px;font-weight:700;">Coffee at Proud Mary</div>
-                            <div style="font-size:${11*s}px;color:#666;">172 Oxford St • 2 min detour</div>
-                        </div>
-                        <div style="background:#000;color:#fff;padding:${8*s}px ${12*s}px;text-align:center;">
-                            <div style="font-size:${20*s}px;font-weight:800;">8</div>
-                            <div style="font-size:${9*s}px;">MIN</div>
-                        </div>
-                    </div>
-                    <!-- Arrow -->
-                    <div style="text-align:center;font-size:${16*s}px;margin:${4*s}px 0;">▼</div>
-                    <!-- Leg 4: Walk to Work -->
-                    <div style="display:flex;align-items:center;border:2px solid #000;padding:${10*s}px;background:#fff;">
-                        <div style="width:${24*s}px;height:${24*s}px;background:#000;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:${14*s}px;">4</div>
-                        <div style="font-size:${20*s}px;margin:0 ${12*s}px;">🚶</div>
-                        <div style="flex:1;">
-                            <div style="font-size:${14*s}px;font-weight:700;">Walk to 80 Collins St</div>
-                            <div style="font-size:${11*s}px;color:#666;">Final destination</div>
-                        </div>
-                        <div style="background:#000;color:#fff;padding:${8*s}px ${12*s}px;text-align:center;">
-                            <div style="font-size:${20*s}px;font-weight:800;">6</div>
-                            <div style="font-size:${9*s}px;">MIN</div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Footer -->
-                <div style="position:absolute;left:0;bottom:0;width:100%;height:${28*s}px;background:#000;display:flex;align-items:center;justify-content:space-between;padding:0 ${16*s}px;box-sizing:border-box;">
-                    <div style="color:#fff;font-size:${14*s}px;font-weight:700;">80 Collins St, Melbourne</div>
-                    <div style="color:#fff;font-size:${11*s}px;">ARRIVE <span style="font-size:${20*s}px;font-weight:800;margin-left:${8*s}px;">8:14</span></div>
-                </div>
-            </div>`;
+        // =========================================================================
+        // SIMULATOR STATE
+        // =========================================================================
+        let refreshCount = 0;
+        let autoRefreshInterval = null;
+        const BASE_URL = window.location.origin;
+
+        // Random data pools for journey generation
+        const MELBOURNE_ADDRESSES = [
+            '1 Clara St, South Yarra VIC',
+            '68 Cambridge St, Collingwood VIC',
+            '42 Smith St, Fitzroy VIC',
+            '155 Brunswick St, Fitzroy VIC',
+            '300 Chapel St, Prahran VIC',
+            '89 Acland St, St Kilda VIC',
+            '12 Lygon St, Carlton VIC',
+            '200 Sydney Rd, Brunswick VIC'
+        ];
+
+        const WORK_ADDRESSES = [
+            'Bunnings Collingwood, Victoria Parade VIC',
+            '80 Collins St, Melbourne VIC',
+            '101 Collins St, Melbourne VIC',
+            '360 Elizabeth St, Melbourne VIC',
+            'Melbourne Central, Swanston St VIC',
+            'Federation Square, Melbourne VIC',
+            'Flinders St Station, Melbourne VIC',
+            'Southern Cross Station, Melbourne VIC'
+        ];
+
+        const CAFES = [
+            'Au79 Richmond Trader, Church St VIC',
+            'Proud Mary, 172 Oxford St, Collingwood',
+            'Industry Beans, 3/62 Rose St, Fitzroy',
+            'Market Lane Coffee, Queen Victoria Market',
+            'Patricia Coffee, 493 Little Bourke St',
+            'Brother Baba Budan, 359 Little Bourke St',
+            'Seven Seeds, 114 Berkeley St, Carlton',
+            'St Ali, 12 Yarra Pl, South Melbourne'
+        ];
+
+        const STATIONS = [
+            'South Yarra', 'Richmond', 'Flinders Street', 'Melbourne Central',
+            'Parliament', 'Collingwood', 'Clifton Hill', 'Jolimont',
+            'North Melbourne', 'Footscray', 'Prahran', 'Windsor'
+        ];
+
+        const TRAM_ROUTES = ['1', '3', '5', '6', '11', '12', '16', '19', '48', '57', '58', '59', '64', '67', '70', '72', '75', '78', '86', '96'];
+
+        // =========================================================================
+        // LOGGING
+        // =========================================================================
+        function log(message, type = 'info') {
+            const logOutput = document.getElementById('log-output');
+            const time = new Date().toLocaleTimeString('en-AU', { hour12: false });
+            const line = document.createElement('div');
+            line.className = 'log-line';
+            line.innerHTML = `<span class="log-time">[${time}]</span> <span class="log-${type}">${message}</span>`;
+            logOutput.appendChild(line);
+            logOutput.scrollTop = logOutput.scrollHeight;
+            
+            // Keep only last 50 lines
+            while (logOutput.children.length > 50) {
+                logOutput.removeChild(logOutput.firstChild);
+            }
         }
 
-        function simulateFlash(){const d=document.getElementById("eink-display"),dev=DEVICES[currentDevice],s=getScale(dev),dot=document.getElementById("status-dot"),st=document.getElementById("status-text");refreshCount=0;partialCount=0;dot.classList.add("refreshing");d.style.background="#000";d.innerHTML='<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:monospace;color:#0f0;"><div style="font-size:'+(24*s)+'px;color:#fff;margin-bottom:'+(25*s)+'px;">⚡ FIRMWARE FLASH</div><div style="width:'+(500*s)+'px;height:'+(25*s)+'px;background:#222;border:2px solid #0f0;border-radius:4px;overflow:hidden;margin-bottom:'+(12*s)+'px;"><div id="flash-progress" style="width:0%;height:100%;background:linear-gradient(90deg,#0a0,#0f0);transition:width 0.3s;"></div></div><div id="flash-text" style="font-size:'+(14*s)+'px;color:#0f0;">Initializing...</div><div style="font-size:'+(10*s)+'px;color:#666;margin-top:'+(15*s)+'px;">DO NOT DISCONNECT DEVICE</div></div>';st.textContent="Flashing firmware...";const steps=[{pct:10,text:"Erasing flash memory...",delay:400},{pct:25,text:"Writing bootloader...",delay:500},{pct:40,text:"Writing firmware_main...",delay:600},{pct:55,text:"Writing firmware_backup...",delay:500},{pct:70,text:"Writing config partition...",delay:400},{pct:85,text:"Verifying checksums...",delay:500},{pct:100,text:"Flash complete!",delay:300}];let i=0;function next(){if(i>=steps.length){setTimeout(()=>simulateSetup(),800);return;}const step=steps[i++];document.getElementById("flash-progress").style.width=step.pct+"%";document.getElementById("flash-text").textContent="Flashing Commute Compute v5.18 ... "+step.pct+"%";st.textContent=step.text;setTimeout(next,step.delay);}next();}
-        function simulateSetup(){const d=document.getElementById("eink-display"),dev=DEVICES[currentDevice],s=getScale(dev),st=document.getElementById("status-text");d.style.background="#fff";d.innerHTML='<div style="width:100%;height:100%;padding:'+(30*s)+'px;font-family:-apple-system,sans-serif;color:#000;"><div style="font-size:'+(28*s)+'px;font-weight:800;margin-bottom:'+(8*s)+'px;">🚃 Commute Compute Setup</div><div style="font-size:'+(12*s)+'px;color:#666;margin-bottom:'+(25*s)+'px;">Configure your smart transit display</div><div style="background:#f5f5f5;border:2px solid #000;padding:'+(15*s)+'px;margin-bottom:'+(15*s)+'px;"><div style="font-size:'+(11*s)+'px;font-weight:700;margin-bottom:'+(8*s)+'px;">📍 HOME ADDRESS</div><div style="background:#fff;border:1px solid #ccc;padding:'+(10*s)+'px;font-size:'+(13*s)+'px;" id="setup-home">Detecting location...</div></div><div style="background:#f5f5f5;border:2px solid #000;padding:'+(15*s)+'px;margin-bottom:'+(15*s)+'px;"><div style="font-size:'+(11*s)+'px;font-weight:700;margin-bottom:'+(8*s)+'px;">🏢 WORK ADDRESS</div><div style="background:#fff;border:1px solid #ccc;padding:'+(10*s)+'px;font-size:'+(13*s)+'px;" id="setup-work">Waiting...</div></div><div style="background:#f5f5f5;border:2px solid #000;padding:'+(15*s)+'px;"><div style="font-size:'+(11*s)+'px;font-weight:700;margin-bottom:'+(8*s)+'px;">☕ COFFEE STOP</div><div style="background:#fff;border:1px solid #ccc;padding:'+(10*s)+'px;font-size:'+(13*s)+'px;" id="setup-coffee">Optional</div></div><div style="display:flex;gap:'+(10*s)+'px;margin-top:'+(20*s)+'px;"><div style="flex:1;background:#000;color:#fff;padding:'+(12*s)+'px;text-align:center;font-weight:700;font-size:'+(13*s)+'px;">← BACK</div><div style="flex:2;background:#4fb28e;color:#fff;padding:'+(12*s)+'px;text-align:center;font-weight:700;font-size:'+(13*s)+'px;">CONTINUE →</div></div></div>';st.textContent="Setup wizard...";setTimeout(()=>{document.getElementById("setup-home").textContent="68 Cambridge St, Collingwood VIC 3066";st.textContent="Home configured";},600);setTimeout(()=>{document.getElementById("setup-work").textContent="80 Collins St, Melbourne VIC 3000";st.textContent="Work configured";},1200);setTimeout(()=>{document.getElementById("setup-coffee").textContent="Proud Mary, 172 Oxford St";st.textContent="Setup complete!";},1800);setTimeout(()=>simulateBoot(),2500);}
-        function simulateBoot(){const d=document.getElementById("eink-display"),dev=DEVICES[currentDevice],s=getScale(dev),dot=document.getElementById("status-dot"),st=document.getElementById("status-text");d.style.background="#000";d.innerHTML='<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:-apple-system,sans-serif;color:#fff;"><div style="font-size:'+(48*s)+'px;margin-bottom:'+(15*s)+'px;">🚃</div><div style="font-size:'+(24*s)+'px;font-weight:800;margin-bottom:'+(8*s)+'px;">Commute Compute</div><div style="font-size:'+(12*s)+'px;color:#888;margin-bottom:'+(30*s)+'px;">Smart Transit Display</div><div style="display:flex;gap:'+(8*s)+'px;margin-bottom:'+(20*s)+'px;"><div style="width:'+(10*s)+'px;height:'+(10*s)+'px;background:#fff;border-radius:50%;animation:bootPulse 1.5s infinite;"></div><div style="width:'+(10*s)+'px;height:'+(10*s)+'px;background:#fff;border-radius:50%;animation:bootPulse 1.5s infinite 0.2s;"></div><div style="width:'+(10*s)+'px;height:'+(10*s)+'px;background:#fff;border-radius:50%;animation:bootPulse 1.5s infinite 0.4s;"></div></div><div id="boot-status" style="font-size:'+(11*s)+'px;color:#666;">Initializing...</div><div style="position:absolute;bottom:'+(25*s)+'px;font-size:'+(10*s)+'px;color:#444;">v5.18 • E-Ink '+dev.width+'×'+dev.height+'</div></div><style>@keyframes bootPulse{0%,100%{opacity:0.3;transform:scale(0.8);}50%{opacity:1;transform:scale(1);}}</style>';st.textContent="Booting...";const steps=[{text:"Connecting to WiFi...",delay:800},{text:"WiFi connected ✓",delay:500},{text:"Connecting to PTV OpenData API...",delay:700},{text:"Fetching real-time departures...",delay:600},{text:"Loading journey data...",delay:500},{text:"Display ready!",delay:400}];let i=0;function next(){if(i>=steps.length){dot.classList.remove("refreshing");st.textContent="Ready";setTimeout(()=>renderV11Journey(),600);return;}const step=steps[i++];document.getElementById("boot-status").textContent=step.text;st.textContent=step.text;setTimeout(next,step.delay);}next();}
-        initDeviceSelector();updateDeviceInfo();updateDisplay();
+        // =========================================================================
+        // RANDOM JOURNEY GENERATION
+        // =========================================================================
+        function generateRandomJourney() {
+            log('Generating random journey...', 'info');
+            
+            // Random addresses
+            document.getElementById('input-home').value = MELBOURNE_ADDRESSES[Math.floor(Math.random() * MELBOURNE_ADDRESSES.length)];
+            document.getElementById('input-work').value = WORK_ADDRESSES[Math.floor(Math.random() * WORK_ADDRESSES.length)];
+            document.getElementById('input-cafe').value = Math.random() > 0.3 ? CAFES[Math.floor(Math.random() * CAFES.length)] : '';
+            
+            // Random arrival time (7am - 10am)
+            const hour = 7 + Math.floor(Math.random() * 3);
+            const minute = Math.floor(Math.random() * 4) * 15;
+            document.getElementById('input-arrival').value = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+            
+            // Random status (mostly normal)
+            const statusRoll = Math.random();
+            let status = 'normal';
+            if (statusRoll > 0.9) status = 'disruption';
+            else if (statusRoll > 0.8) status = 'delayed';
+            else if (statusRoll > 0.7) status = 'diversion';
+            document.getElementById('input-status').value = status;
+            
+            // Random weather
+            const weatherRoll = Math.random();
+            let weather = 'auto';
+            if (weatherRoll > 0.8) weather = 'rain';
+            else if (weatherRoll > 0.6) weather = 'cloudy';
+            else if (weatherRoll > 0.4) weather = 'sunny';
+            document.getElementById('input-weather').value = weather;
+            
+            refreshDisplay();
+        }
+
+        function generateScenario(scenario) {
+            log(`Loading scenario: ${scenario}`, 'info');
+            
+            // Reset to defaults
+            document.getElementById('input-status').value = 'normal';
+            document.getElementById('input-weather').value = 'auto';
+            document.getElementById('input-current-time').value = '';
+            
+            switch (scenario) {
+                case 'early':
+                    // Set current time to give plenty of buffer
+                    document.getElementById('input-arrival').value = '09:00';
+                    document.getElementById('input-current-time').value = '07:30';
+                    break;
+                    
+                case 'late':
+                    // Set current time close to arrival
+                    document.getElementById('input-arrival').value = '09:00';
+                    document.getElementById('input-current-time').value = '08:50';
+                    break;
+                    
+                case 'ontime':
+                    document.getElementById('input-arrival').value = '09:00';
+                    document.getElementById('input-current-time').value = '08:20';
+                    break;
+                    
+                case 'disruption':
+                    document.getElementById('input-status').value = 'disruption';
+                    break;
+                    
+                case 'delay':
+                    document.getElementById('input-status').value = 'delayed';
+                    break;
+                    
+                case 'coffee':
+                    document.getElementById('input-cafe').value = CAFES[Math.floor(Math.random() * CAFES.length)];
+                    document.getElementById('input-arrival').value = '09:30';
+                    document.getElementById('input-current-time').value = '08:00';
+                    break;
+                    
+                case 'nocoffee':
+                    document.getElementById('input-cafe').value = CAFES[Math.floor(Math.random() * CAFES.length)];
+                    document.getElementById('input-arrival').value = '09:00';
+                    document.getElementById('input-current-time').value = '08:45';
+                    break;
+                    
+                case 'multimodal':
+                    // Pick addresses that require multiple transit modes
+                    document.getElementById('input-home').value = '89 Acland St, St Kilda VIC';
+                    document.getElementById('input-work').value = 'Melbourne Central, Swanston St VIC';
+                    break;
+            }
+            
+            refreshDisplay();
+        }
+
+        // =========================================================================
+        // DISPLAY REFRESH
+        // =========================================================================
+        async function refreshDisplay(partial = false) {
+            const statusDot = document.getElementById('status-dot');
+            const statusText = document.getElementById('status-text');
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const displayImage = document.getElementById('display-image');
+            
+            statusDot.className = 'status-dot loading';
+            statusText.textContent = partial ? 'Partial refresh...' : 'Full refresh...';
+            loadingOverlay.style.display = 'flex';
+            
+            try {
+                // Build API URL with parameters
+                const params = new URLSearchParams({
+                    device: 'trmnl-og',
+                    format: 'png',
+                    t: Date.now() // Cache bust
+                });
+                
+                // Add journey parameters if set
+                const home = document.getElementById('input-home').value;
+                const work = document.getElementById('input-work').value;
+                const cafe = document.getElementById('input-cafe').value;
+                const arrival = document.getElementById('input-arrival').value;
+                const currentTime = document.getElementById('input-current-time').value;
+                const status = document.getElementById('input-status').value;
+                const weather = document.getElementById('input-weather').value;
+                
+                if (home) params.set('home', home);
+                if (work) params.set('work', work);
+                if (cafe) params.set('cafe', cafe);
+                if (arrival) params.set('arrivalTime', arrival);
+                if (currentTime) params.set('simulatedTime', currentTime);
+                if (status !== 'normal') params.set('status', status);
+                if (weather !== 'auto') params.set('weather', weather);
+                
+                const apiUrl = `${BASE_URL}/api/screen?${params.toString()}`;
+                
+                log(`Fetching: /api/screen?...`, 'info');
+                
+                // Simulate e-ink flash for full refresh
+                if (!partial) {
+                    displayImage.style.filter = 'invert(1)';
+                    await new Promise(r => setTimeout(r, 150));
+                    displayImage.style.filter = 'none';
+                }
+                
+                // Load the image
+                displayImage.src = apiUrl;
+                
+                await new Promise((resolve, reject) => {
+                    displayImage.onload = resolve;
+                    displayImage.onerror = reject;
+                });
+                
+                refreshCount++;
+                document.getElementById('refresh-count').textContent = `Refresh #${refreshCount}`;
+                document.getElementById('last-update').textContent = `Last update: ${new Date().toLocaleTimeString('en-AU', { hour12: true })}`;
+                
+                statusDot.className = 'status-dot';
+                statusText.textContent = 'Ready';
+                loadingOverlay.style.display = 'none';
+                
+                log(`Display updated (${partial ? 'partial' : 'full'} refresh #${refreshCount})`, 'info');
+                
+            } catch (error) {
+                statusDot.className = 'status-dot error';
+                statusText.textContent = 'Error';
+                loadingOverlay.innerHTML = `<div style="text-align:center;color:#ef4444;"><div style="font-size:24px;margin-bottom:10px;">⚠️</div><div>Failed to load</div><div style="font-size:11px;margin-top:5px;">${error.message}</div></div>`;
+                log(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        // =========================================================================
+        // AUTO REFRESH
+        // =========================================================================
+        function startAutoRefresh() {
+            if (autoRefreshInterval) {
+                log('Auto-refresh already running', 'warn');
+                return;
+            }
+            log('Starting auto-refresh (60s interval per firmware spec)', 'info');
+            autoRefreshInterval = setInterval(() => refreshDisplay(true), 60000);
+            refreshDisplay();
+        }
+
+        function stopAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+                log('Auto-refresh stopped', 'info');
+            }
+        }
+
+        // =========================================================================
+        // FIRMWARE SIMULATION
+        // =========================================================================
+        async function simulateBoot() {
+            const displayImage = document.getElementById('display-image');
+            const loadingOverlay = document.getElementById('loading-overlay');
+            
+            log('Starting boot sequence (CC-FW-6.1-60s)...', 'info');
+            
+            // Show boot screen
+            loadingOverlay.style.display = 'flex';
+            loadingOverlay.innerHTML = `
+                <div style="text-align:center;">
+                    <div style="font-size:48px;margin-bottom:15px;">🚃</div>
+                    <div style="font-size:24px;font-weight:700;margin-bottom:8px;">Commute Compute</div>
+                    <div style="font-size:12px;color:#888;margin-bottom:20px;">Smart Transit Display</div>
+                    <div style="display:flex;gap:8px;justify-content:center;margin-bottom:15px;">
+                        <div class="status-dot loading"></div>
+                        <div class="status-dot loading" style="animation-delay:0.2s;"></div>
+                        <div class="status-dot loading" style="animation-delay:0.4s;"></div>
+                    </div>
+                    <div id="boot-status" style="font-size:11px;color:#666;">Initializing...</div>
+                    <div style="font-size:10px;color:#444;margin-top:20px;">CC-FW-6.1-60s</div>
+                </div>
+            `;
+            
+            const bootSteps = [
+                { text: 'Initializing hardware...', delay: 400 },
+                { text: 'Connecting to WiFi...', delay: 600 },
+                { text: 'WiFi connected ✓', delay: 300 },
+                { text: 'Syncing with dashboard...', delay: 500 },
+                { text: 'Loading SmartCommute engine...', delay: 400 },
+                { text: 'Fetching transit data...', delay: 600 },
+                { text: 'Rendering display...', delay: 400 },
+                { text: 'Boot complete!', delay: 300 }
+            ];
+            
+            for (const step of bootSteps) {
+                document.getElementById('boot-status').textContent = step.text;
+                log(step.text, 'info');
+                await new Promise(r => setTimeout(r, step.delay));
+            }
+            
+            await new Promise(r => setTimeout(r, 500));
+            refreshDisplay();
+        }
+
+        // =========================================================================
+        // EXPORT FUNCTIONS
+        // =========================================================================
+        function downloadImage() {
+            const img = document.getElementById('display-image');
+            if (!img.src || img.src.includes('data:')) {
+                log('No image to download', 'warn');
+                return;
+            }
+            
+            const link = document.createElement('a');
+            link.href = img.src;
+            link.download = `ccdash-${Date.now()}.png`;
+            link.click();
+            log('Image downloaded', 'info');
+        }
+
+        function copyApiUrl() {
+            const params = new URLSearchParams({
+                device: 'trmnl-og',
+                format: 'png'
+            });
+            
+            const home = document.getElementById('input-home').value;
+            const work = document.getElementById('input-work').value;
+            if (home) params.set('home', home);
+            if (work) params.set('work', work);
+            
+            const url = `${BASE_URL}/api/screen?${params.toString()}`;
+            navigator.clipboard.writeText(url).then(() => {
+                log('API URL copied to clipboard', 'info');
+            });
+        }
+
+        // =========================================================================
+        // INITIALIZATION
+        // =========================================================================
+        document.addEventListener('DOMContentLoaded', () => {
+            log('Simulator initialized', 'info');
+            log('Firmware: CC-FW-6.1-60s (60s refresh)', 'info');
+            log('Renderer: CCDash v2.1 (V10 Spec)', 'info');
+            
+            // Initial load
+            refreshDisplay();
+        });
     </script>
-    
-    <!-- Footer -->
-    <footer style="background: #1e293b; border-top: 1px solid rgba(255,255,255,0.1); padding: 20px; margin-top: 30px; text-align: center; font-size: 13px; color: #94a3b8;">
-        <div style="margin-bottom: 12px;">
-            <strong>Data:</strong>
-            <a href="https://opendata.transport.vic.gov.au" target="_blank" rel="noopener" style="color: #94a3b8;">Transport Victoria OpenData</a> (CC BY 4.0) •
-            <a href="/attribution.html" style="color: #94a3b8;">All Sources</a>
-        </div>
-        <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px;">
-            <a href="https://buymeacoffee.com/angusbergman" target="_blank" rel="noopener" 
-               style="padding: 6px 14px; background: #FFDD00; color: #000; border-radius: 6px; text-decoration: none; font-weight: 500; font-size: 12px;">
-                ☕ Buy me a coffee
-            </a>
-            <a href="https://github.com/sponsors/angusbergman17-cpu" target="_blank" rel="noopener"
-               style="padding: 6px 14px; background: #db61a2; color: #fff; border-radius: 6px; text-decoration: none; font-weight: 500; font-size: 12px;">
-                💖 Sponsor
-            </a>
-            <a href="https://github.com/angusbergman17-cpu/einkptdashboard/issues/new" target="_blank" rel="noopener"
-               style="padding: 6px 14px; background: #4fb28e; color: #fff; border-radius: 6px; text-decoration: none; font-weight: 500; font-size: 12px;">
-                📝 Feedback
-            </a>
-        </div>
-        <div style="font-size: 11px;">
-            © 2025-2026 <a href="https://github.com/angusbergman17-cpu" target="_blank" rel="noopener" style="color: #94a3b8;">Angus Bergman</a> •
-            <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener" style="color: #94a3b8;">CC BY-NC 4.0</a>
-        </div>
-    </footer>
 </body>
 </html>
