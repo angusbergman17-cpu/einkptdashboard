@@ -222,26 +222,26 @@ void loop() {
         if (fetchZoneUpdates(needsFull)) {
             consecutiveErrors = 0;
             
-            // Zones are already rendered during fetch (shared buffer approach)
-            // zone.changed now means "was successfully rendered"
-            int rendered = 0;
-            for (int i = 0; i < zoneCount; i++) {
-                if (zones[i].changed) rendered++;
-            }
+            // zoneCount is set by fetchZoneUpdates to number of successfully rendered zones
+            Serial.printf("Zones rendered: %d, needsFull: %s\n", zoneCount, needsFull ? "yes" : "no");
             
-            if (rendered > 0) {
+            if (zoneCount > 0) {
                 if (needsFull) {
+                    Serial.println("Doing full refresh...");
                     doFullRefresh();
                     lastFullRefresh = now;
                     partialRefreshCount = 0;
                     initialDrawDone = true;
+                    Serial.println("Full refresh complete!");
                 } else {
-                    // Partial refresh already done per-zone during fetch
+                    // Partial refresh - flash the screen then update
+                    Serial.println("Doing partial refresh...");
+                    bbep->refresh(REFRESH_PARTIAL, true);
                     partialRefreshCount++;
                 }
             }
             
-            Serial.printf("Refresh: %d zones, full=%s\n", rendered, needsFull ? "yes" : "no");
+            Serial.printf("Refresh: %d zones, full=%s\n", zoneCount, needsFull ? "yes" : "no");
         } else {
             consecutiveErrors++;
             lastErrorTime = now;
