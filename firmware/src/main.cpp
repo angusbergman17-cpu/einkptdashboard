@@ -545,6 +545,7 @@ bool fetchZoneUpdates(bool forceAll) {
         if (braceCount != 0) break;
         
         // Extract zone object
+        Serial.printf("Zone obj: %d-%d (%d bytes), heap: %d\n", objStart, objEnd, objEnd-objStart, ESP.getFreeHeap());
         String zoneJson = payload.substring(objStart, objEnd);
         
         Zone& zone = zones[zoneCount];
@@ -562,8 +563,9 @@ bool fetchZoneUpdates(bool forceAll) {
                       zoneCount, zone.id, zone.x, zone.y, zone.w, zone.h, zone.changed);
         
         // Extract data field (base64 BMP) into shared buffer and render immediately
+        Serial.printf("  Extracting data (zoneJson len=%d)...\n", zoneJson.length());
         String data = jsonGetString(zoneJson, "data");
-        Serial.printf("  Data length: %d\n", data.length());
+        Serial.printf("  Data extracted: %d bytes, heap: %d\n", data.length(), ESP.getFreeHeap());
         
         bool rendered = false;
         // Allocate shared buffer on first use (lazy allocation to save RAM for HTTP)
