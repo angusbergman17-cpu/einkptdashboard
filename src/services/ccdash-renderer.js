@@ -252,10 +252,10 @@ export function getZonesForTier(tier) {
 // Zone definitions for the new layout
 export const ZONES = {
   // Header row (0-94px)
-  'header.location': { id: 'header.location', x: 16, y: 4, w: 200, h: 20 },
-  'header.time': { id: 'header.time', x: 16, y: 20, w: 280, h: 80 },  // v1.24: even larger
-  'header.dayDate': { id: 'header.dayDate', x: 240, y: 16, w: 280, h: 78 },
-  'header.weather': { id: 'header.weather', x: 600, y: 8, w: 184, h: 86 },
+  'header.location': { id: 'header.location', x: 16, y: 2, w: 200, h: 18 },
+  'header.time': { id: 'header.time', x: 12, y: 16, w: 320, h: 80 },  // v1.26: larger, lower, closer to status bar
+  'header.dayDate': { id: 'header.dayDate', x: 320, y: 8, w: 260, h: 86 },
+  'header.weather': { id: 'header.weather', x: 600, y: 8, w: 192, h: 86 },  // v1.26: slightly wider
   
   // Status bar (96-124px) - Full width
   'status': { id: 'status', x: 0, y: 96, w: 800, h: 32 },
@@ -976,18 +976,21 @@ function renderLegZone(ctx, leg, zone, legNumber = 1, isHighlighted = false) {
   }
   ctx.fillText(subtitle, textX, subtitleY);
   
-  // v1.25: DEPART column - "Your planned departure" indicator
+  // v1.26: DEPART column - scales with leg height
   if (hasDepart) {
-    const departX = timeBoxX - 35;  // Slightly more space for text
+    const departColW = Math.max(35, Math.round(45 * scale));
+    const departX = timeBoxX - departColW / 2 - 5;
     ctx.fillStyle = textColor;
-    // Two-line label: "PLANNED" / "DEPART"
-    ctx.font = `${Math.max(5, Math.round(6 * scale))}px Inter, sans-serif`;
+    // Two-line label: "PLANNED" / "DEPART" - scaled
+    const labelSize = Math.max(5, Math.round(6 * scale));
+    const timeSize = Math.max(8, Math.round(10 * scale));
+    ctx.font = `${labelSize}px Inter, sans-serif`;
     ctx.textAlign = 'center';
-    ctx.fillText('PLANNED', departX, titleY - 2);
-    ctx.fillText('DEPART', departX, titleY + Math.max(6, Math.round(7 * scale)));
-    // Time below
-    ctx.font = `bold ${Math.max(9, Math.round(11 * scale))}px Inter, sans-serif`;
-    ctx.fillText(leg.departTime, departX, subtitleY + 2);
+    ctx.fillText('PLANNED', departX, titleY);
+    ctx.fillText('DEPART', departX, titleY + labelSize + 1);
+    // Time below - scaled
+    ctx.font = `bold ${timeSize}px Inter, sans-serif`;
+    ctx.fillText(leg.departTime, departX, subtitleY);
     ctx.textAlign = 'left';
   }
   
@@ -1224,12 +1227,12 @@ function renderHeaderTime(data, prefs) {
   ctx.fillRect(0, 0, zone.w, zone.h);
   
   ctx.fillStyle = '#000';
-  // v1.24: Even larger clock (84px)
-  ctx.font = '900 84px Inter, sans-serif';
+  // v1.26: Maximum clock size (96px), positioned to fill zone
+  ctx.font = '900 96px Inter, sans-serif';
   ctx.textBaseline = 'top';
   
   const time = data.current_time || data.time || '--:--';
-  ctx.fillText(time, 0, -8);  // Slight negative offset to maximize size
+  ctx.fillText(time, 0, -10);  // Negative offset to maximize visible size
   
   return canvasToBMP(canvas);
 }
@@ -1272,28 +1275,28 @@ function renderHeaderWeather(data, prefs) {
   ctx.fillRect(0, 0, zone.w, zone.h);
   
   // Weather box border (V10 Spec Section 2.6)
-  // v1.21: Adjusted layout to prevent overlap
+  // v1.26: Better spacing for temp and condition
   ctx.strokeStyle = '#000';
   ctx.lineWidth = 2;
   ctx.strokeRect(2, 2, zone.w - 4, 60);
   
   ctx.fillStyle = '#000';
-  
-  // Temperature (centered in box) - v1.21: reduced size
-  ctx.font = 'bold 28px Inter, sans-serif';
   ctx.textAlign = 'center';
+  
+  // Temperature (larger, top of box)
+  ctx.font = 'bold 32px Inter, sans-serif';
   ctx.textBaseline = 'top';
   const temp = data.temp ?? data.temperature ?? '--';
-  ctx.fillText(`${temp}°`, zone.w / 2, 6);
+  ctx.fillText(`${temp}°`, zone.w / 2, 4);
   
-  // Condition (centered below temp) - v1.21: adjusted position, truncate
-  ctx.font = '11px Inter, sans-serif';
+  // Condition (below temp with clear separation)
+  ctx.font = '12px Inter, sans-serif';
   let condition = data.condition || data.weather || '';
   // Truncate if too long for box width
-  while (ctx.measureText(condition).width > zone.w - 20 && condition.length > 3) {
+  while (ctx.measureText(condition).width > zone.w - 16 && condition.length > 3) {
     condition = condition.slice(0, -1);
   }
-  ctx.fillText(condition, zone.w / 2, 38);
+  ctx.fillText(condition, zone.w / 2, 42);
   
   // Umbrella indicator (V10 Spec Section 2.7)
   // Position: below weather box, 132×18px

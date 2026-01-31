@@ -497,20 +497,31 @@ function generateRandomJourney(targetLegs = null) {
       state: 'normal'
     });
 
-    // Leg 3: Walk to transit
+    // Leg 3: Walk to transit - v1.26: specific transit type in title
+    const walkToTransitTitle = transitType === 'train' 
+      ? `Walk to ${home.suburb} Station`
+      : transitType === 'tram' 
+        ? 'Walk to Tram Stop' 
+        : 'Walk to Bus Stop';
     legs.push({
       number: legNum++,
       type: 'walk',
-      title: transitType === 'train' ? 'Walk to Station' : 'Walk to Stop',
+      title: walkToTransitTitle,
       subtitle: `${home.suburb} ${transitType === 'train' ? 'Station' : 'Stop'}`,
       minutes: 3 + Math.floor(Math.random() * 5),
       state: 'normal'
     });
   } else {
+    // v1.26: specific transit type in title
+    const walkToTransitTitle = transitType === 'train' 
+      ? `Walk to ${home.suburb} Station`
+      : transitType === 'tram' 
+        ? 'Walk to Tram Stop' 
+        : 'Walk to Bus Stop';
     legs.push({
       number: legNum++,
       type: 'walk',
-      title: transitType === 'train' ? 'Walk to Station' : 'Walk to Stop',
+      title: walkToTransitTitle,
       subtitle: `From home • ${home.suburb}`,
       minutes: 5 + Math.floor(Math.random() * 8),
       state: 'normal'
@@ -554,13 +565,16 @@ function generateRandomJourney(targetLegs = null) {
     });
   }
 
-  // Optional transfer (for 6+ legs)
+  // Optional transfer (for 6+ legs) - v1.26: specific titles
   if (includeTransfer) {
     const transferType = transitType === 'tram' ? 'train' : 'tram';
+    const transferTitle = transferType === 'train' 
+      ? 'Walk to Flinders St Station' 
+      : 'Walk to Tram Stop';
     legs.push({
       number: legNum++,
       type: 'walk',
-      title: 'Walk to Transfer',
+      title: transferTitle,
       subtitle: transferType === 'train' ? 'Flinders St Station' : 'Collins St Stop',
       minutes: 2 + Math.floor(Math.random() * 3),
       state: 'normal'
@@ -571,7 +585,7 @@ function generateRandomJourney(targetLegs = null) {
         number: legNum++,
         type: 'train',
         title: 'Train to Parliament',
-        subtitle: 'City Loop • Next: 3, 8 min',
+        subtitle: 'Flinders St • City Loop • Next: 3, 8 min',
         minutes: 3 + Math.floor(Math.random() * 4),
         state: 'normal'
       });
@@ -580,7 +594,7 @@ function generateRandomJourney(targetLegs = null) {
       legs.push({
         number: legNum++,
         type: 'tram',
-        title: `Tram ${route} to Stop`,
+        title: `Tram ${route} to Collins St`,
         subtitle: 'Collins St • Next: 2, 6 min',
         minutes: 4 + Math.floor(Math.random() * 5),
         state: 'normal'
