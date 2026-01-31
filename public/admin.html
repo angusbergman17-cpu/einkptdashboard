@@ -3803,7 +3803,11 @@
         }
 
         function updateSystemStatus(status) {
-            const isConfigured = status.configured;
+            // Check both API status AND localStorage (setup wizard saves to localStorage)
+            // Per Section 3.6: localStorage is the primary config store for serverless mode
+            const localConfigured = localStorage.getItem('cc-configured') === 'true';
+            const localConfig = localStorage.getItem('cc-config');
+            const isConfigured = status.configured || (localConfigured && !!localConfig);
 
             // Set timezone based on detected state (location agnostic)
             if (status.location && status.location.state) {
@@ -4030,7 +4034,12 @@
             const userConfigDisplay = document.getElementById('user-config-display');
             if (!userConfigDisplay) return;
 
-            if (!status.configured) {
+            // Check both API status AND localStorage (consistent with updateSystemStatus)
+            const localConfigured = localStorage.getItem('cc-configured') === 'true';
+            const localConfig = localStorage.getItem('cc-config');
+            const isConfigured = status.configured || (localConfigured && !!localConfig);
+
+            if (!isConfigured) {
                 userConfigDisplay.innerHTML = `
                     <div style="padding: 30px; background: rgba(255,255,255,0.05); border-radius: 8px; text-align: center;">
                         <div style="font-size: 40px; opacity: 0.3; margin-bottom: 15px;">⚙️</div>
