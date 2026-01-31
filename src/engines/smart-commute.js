@@ -526,9 +526,11 @@ export class SmartCommute {
     if (this.state === 'VIC') {
       // Use PTV API client for Victoria
       try {
-        // Get nearby stops from preferences or use defaults
-        const trainStopId = this.preferences.trainStopId || 1071; // South Yarra default
-        const tramStopId = this.preferences.tramStopId || 2500;   // Chapel St default
+        // Get nearby stops from preferences or use GTFS-RT defaults
+        // GTFS-RT uses different stop IDs than legacy PTV API
+        // Default: South Yarra area stops on Sandringham line (14271) and Route 58 tram (19338)
+        const trainStopId = this.preferences.trainStopId || 14271; // Sandringham line GTFS-RT stop
+        const tramStopId = this.preferences.tramStopId || 19338;   // Route 58 GTFS-RT stop (Toorak Rd)
         
         // Pass API key directly to each call (Zero-Config: no env vars)
         console.log(`[SmartCommute] fetchLiveTransitData: transitKey=${this.apiKeys.transitKey ? this.apiKeys.transitKey.substring(0,8)+'...' : 'null'}`);

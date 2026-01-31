@@ -23,6 +23,33 @@ const API_BASE = 'https://api.opendata.transport.vic.gov.au/opendata/public-tran
 const MELBOURNE_LAT = -37.8136;
 const MELBOURNE_LON = 144.9631;
 
+// Melbourne Metro line names (GTFS route ID suffix → line name)
+const METRO_LINE_NAMES = {
+  'SHM': 'Sandringham', 'SAM': 'Sandringham', 'FKN': 'Frankston', 'PKM': 'Pakenham',
+  'CBE': 'Cranbourne', 'BEG': 'Belgrave', 'LIL': 'Lilydale', 'GWY': 'Glen Waverley',
+  'ALM': 'Alamein', 'HBE': 'Hurstbridge', 'SUY': 'Sunbury', 'CGB': 'Craigieburn',
+  'UFD': 'Upfield', 'WER': 'Werribee', 'WIL': 'Williamstown', 'MDD': 'Mernda'
+};
+
+/**
+ * Extract human-readable line name from GTFS route ID
+ * e.g., "aus:vic:vic-02-SHM:" → "Sandringham"
+ */
+function getLineName(routeId) {
+  if (!routeId) return 'City';
+  // Extract line code (e.g., SHM from aus:vic:vic-02-SHM:)
+  const match = routeId.match(/-([A-Z]{3}):?$/);
+  if (match && METRO_LINE_NAMES[match[1]]) {
+    return METRO_LINE_NAMES[match[1]];
+  }
+  // For trams, extract route number
+  const tramMatch = routeId.match(/-(\d+):?$/);
+  if (tramMatch) {
+    return `Route ${tramMatch[1]}`;
+  }
+  return 'City';
+}
+
 // Runtime API key storage (from user config token - Zero-Config compliant)
 let runtimeApiKey = null;
 
@@ -43,10 +70,12 @@ function getApiKey() {
 }
 
 /**
- * Get Melbourne local time
+ * Get current time in UTC milliseconds
+ * Note: GTFS-RT timestamps are Unix seconds (UTC), so we use Date.now() directly.
+ * For display formatting, use toLocaleString with timeZone option separately.
  */
-function getMelbourneTime() {
-  return new Date(new Date().toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
+function getNowMs() {
+  return Date.now();
 }
 
 /**
@@ -166,8 +195,7 @@ export async function getDepartures(stopId, routeType, options = {}) {
  * @returns {Array} - Departure objects
  */
 function processGtfsRtDepartures(feed, stopId) {
-  const now = getMelbourneTime();
-  const nowMs = now.getTime();
+  const nowMs = getNowMs();
   const departures = [];
   const stopIdStr = String(stopId);
   
@@ -199,7 +227,7 @@ function processGtfsRtDepartures(feed, stopId) {
         
         departures.push({
           minutes,
-          destination: tripUpdate.trip?.routeId || 'City',
+          destination: getLineName(tripUpdate.trip?.routeId),
           headsign: tripUpdate.trip?.tripHeadsign || null,
           routeId: tripUpdate.trip?.routeId,
           tripId: tripUpdate.trip?.tripId,
@@ -330,8 +358,9 @@ export async function getWeather(lat = MELBOURNE_LAT, lon = MELBOURNE_LON) {
  * @returns {Object} - Combined data for dashboard
  */
 export async function getDashboardData(config = {}) {
-  const trainStopId = config.trainStopId || 1071;
-  const tramStopId = config.tramStopId || 2500;
+  // GTFS-RT stop IDs - defaults for South Yarra area
+  const trainStopId = config.trainStopId || 14271;  // Sandringham line
+  const tramStopId = config.tramStopId || 19338;    // Route 58 tram
   const lat = config.lat || MELBOURNE_LAT;
   const lon = config.lon || MELBOURNE_LON;
   const options = { apiKey: config.apiKey };

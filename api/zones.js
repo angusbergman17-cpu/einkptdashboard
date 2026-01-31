@@ -360,8 +360,10 @@ export default async function handler(req, res) {
     const config = engine.journeyConfig;
     
     // Fetch live data
-    const trainStopId = parseInt(process.env.TRAIN_STOP_ID) || 1071;
-    const tramStopId = parseInt(process.env.TRAM_STOP_ID) || 2500;
+    // GTFS-RT stop IDs (different from legacy PTV API)
+    // Defaults: South Yarra area - Sandringham line (14271), Route 58 tram (19338)
+    const trainStopId = parseInt(process.env.TRAIN_STOP_ID) || 14271;
+    const tramStopId = parseInt(process.env.TRAM_STOP_ID) || 19338;
     
     // Per Section 11.8: Zero-Config compliant - load API key from KV storage
     const transitApiKey = await getTransitApiKey();
