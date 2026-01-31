@@ -473,6 +473,53 @@
                         </small>
                     </div>
 
+                    <!-- Optional: E-Ink Device Selection -->
+                    <div style="margin-top: 25px; border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; overflow: hidden;">
+                        <button type="button" onclick="toggleDeviceSection()" 
+                            style="width: 100%; padding: 15px 20px; background: rgba(102, 126, 234, 0.1); border: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; color: #f1f5f9;">
+                            <span style="display: flex; align-items: center; gap: 10px; font-weight: 600;">
+                                <span style="font-size: 20px;">📺</span>
+                                E-Ink Display Configuration (Optional)
+                            </span>
+                            <span id="device-section-arrow" style="font-size: 18px; transition: transform 0.2s;">▼</span>
+                        </button>
+                        
+                        <div id="device-section-content" style="display: none; padding: 20px; background: rgba(0,0,0,0.1);">
+                            <p style="color: #94a3b8; font-size: 13px; margin-bottom: 15px;">
+                                If you have a CC E-Ink display, select your device model below. Skip this if you just want to use the web dashboard.
+                            </p>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Select Your Device</label>
+                                <select id="device-select" class="form-input" onchange="updateDevicePreview()">
+                                    <option value="">— No e-ink device (web only) —</option>
+                                    <option value="trmnl-og">CC E-Ink Display OG (7.5" - 800×480)</option>
+                                    <option value="trmnl-x" disabled>CC E-Ink Display X (Coming Soon)</option>
+                                    <optgroup label="Kindle Devices (Jailbreak Required)">
+                                        <option value="kindle-pw3">Kindle Paperwhite 3 (6" - 1072×1448)</option>
+                                        <option value="kindle-pw4">Kindle Paperwhite 4 (6" - 1072×1448)</option>
+                                        <option value="kindle-pw5">Kindle Paperwhite 5 (6.8" - 1236×1648)</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                            
+                            <!-- Device Model Warning for CC E-Ink -->
+                            <div id="trmnl-model-warning" style="display: none; margin-top: 15px; padding: 12px; background: rgba(234, 88, 12, 0.1); border: 1px solid rgba(234, 88, 12, 0.3); border-radius: 8px;">
+                                <div style="font-size: 12px; color: rgba(255,255,255,0.9); line-height: 1.5;">
+                                    <strong>⚠️ Important:</strong> Check the back of your device for the model number.
+                                    Only CC Display OG is currently supported. Display X firmware coming soon.
+                                </div>
+                            </div>
+                            
+                            <div id="device-preview" style="display: none; margin-top: 15px; padding: 15px; background: rgba(79, 178, 142, 0.1); border-radius: 8px; border-left: 3px solid #4fb28e;">
+                                <div style="font-weight: 600; margin-bottom: 8px; font-size: 14px;" id="device-preview-name">CC E-Ink Display OG</div>
+                                <div style="font-size: 12px; color: #94a3b8; line-height: 1.6;" id="device-preview-specs">
+                                    Resolution: 800×480 pixels • Orientation: Landscape • Chip: ESP32
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div id="setup-status"></div>
                     
                     <!-- Fallback navigation - always visible after attempting setup -->
@@ -680,6 +727,53 @@
                 }
             }
         };
+
+        // Device selection functions
+        function toggleDeviceSection() {
+            const content = document.getElementById('device-section-content');
+            const arrow = document.getElementById('device-section-arrow');
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                arrow.style.transform = 'rotate(180deg)';
+            } else {
+                content.style.display = 'none';
+                arrow.style.transform = 'rotate(0deg)';
+            }
+        }
+        window.toggleDeviceSection = toggleDeviceSection;
+        
+        function updateDevicePreview() {
+            const select = document.getElementById('device-select');
+            const preview = document.getElementById('device-preview');
+            const warning = document.getElementById('trmnl-model-warning');
+            const previewName = document.getElementById('device-preview-name');
+            const previewSpecs = document.getElementById('device-preview-specs');
+            
+            const device = select.value;
+            
+            if (!device) {
+                preview.style.display = 'none';
+                warning.style.display = 'none';
+                return;
+            }
+            
+            preview.style.display = 'block';
+            
+            const deviceInfo = {
+                'trmnl-og': { name: 'CC E-Ink Display OG', specs: 'Resolution: 800×480 pixels • Orientation: Landscape • Chip: ESP32' },
+                'kindle-pw3': { name: 'Kindle Paperwhite 3', specs: 'Resolution: 1072×1448 pixels • Orientation: Portrait • 6" display' },
+                'kindle-pw4': { name: 'Kindle Paperwhite 4', specs: 'Resolution: 1072×1448 pixels • Orientation: Portrait • 6" display' },
+                'kindle-pw5': { name: 'Kindle Paperwhite 5', specs: 'Resolution: 1236×1648 pixels • Orientation: Portrait • 6.8" display' }
+            };
+            
+            const info = deviceInfo[device] || { name: device, specs: 'Unknown device' };
+            previewName.textContent = info.name;
+            previewSpecs.textContent = info.specs;
+            
+            // Show warning for TRMNL devices
+            warning.style.display = device.startsWith('trmnl') ? 'block' : 'none';
+        }
+        window.updateDevicePreview = updateDevicePreview;
 
         // Save and Test Google Places API Key (Step 1)
         window.saveAndTestGoogleKey = async function() {
@@ -1028,6 +1122,9 @@
                         }
                     }
                     
+                    // Get selected device (optional - empty means web-only)
+                    const selectedDevice = document.getElementById('device-select')?.value || '';
+                    
                     // Generate webhook URL for TRMNL device
                     // All location data is cached here - no runtime API calls needed for basic functionality
                     const fullConfig = {
@@ -1043,12 +1140,18 @@
                         // Cafe data cached from setup - no runtime API calls
                         cafe: cafeData,
                         // API mode: 'cached' (free) or 'live' (uses Google API)
-                        apiMode: apiMode
+                        apiMode: apiMode,
+                        // E-ink device selection (optional)
+                        device: selectedDevice
                     };
                     
                     // Save config to localStorage FIRST (before webhook generation)
                     localStorage.setItem('cc-config', JSON.stringify(fullConfig));
                     localStorage.setItem('cc-configured', 'true');
+                    // Also save device separately for quick access
+                    if (selectedDevice) {
+                        localStorage.setItem('cc-device', selectedDevice);
+                    }
                     
                     // Per Section 3.6 & 11.8: Sync config to Vercel KV for server-side access
                     try {

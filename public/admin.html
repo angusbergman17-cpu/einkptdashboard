@@ -1584,232 +1584,160 @@
             <button class="nav-tab advanced-only" onclick="showTab('system', this)">System & Support</button>
         </div>
 
-        <!-- Setup & Journey Tab -->
+        <!-- Setup & Journey Tab - Rebuilt for localStorage config -->
         <div id="tab-setup" class="tab-content">
-            <!-- Auto-Calculation Status (shown when configured) -->
-            <div id="auto-calc-card" class="card" style="display: none; margin-bottom: 20px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-left: 4px solid #4fb28e;">
-                <div class="card-header">
-                    <span class="card-icon">🔄</span>
-                    <h2>Automatic Journey Updates</h2>
-                </div>
-                <p style="margin-bottom: 15px; opacity: 0.9; font-size: 14px;">
-                    Your journey is automatically recalculated every 2 minutes with live transit data.
+            <!-- Not Configured State -->
+            <div id="setup-not-configured" style="display: none; text-align: center; padding: 60px 20px;">
+                <div style="font-size: 80px; margin-bottom: 20px;">🚀</div>
+                <h2 style="margin-bottom: 15px; font-size: 24px;">Welcome to Commute Compute</h2>
+                <p style="opacity: 0.8; margin-bottom: 30px; max-width: 500px; margin-left: auto; margin-right: auto; line-height: 1.7; font-size: 15px;">
+                    Set up your commute in just a few steps. We'll find the best route and keep your e-ink display updated with live transit data.
                 </p>
-                <div id="auto-calc-status" style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 15px;">
-                    <div style="font-size: 13px; opacity: 0.8;">Loading status...</div>
-                </div>
-                <button class="btn btn-secondary" onclick="forceRecalculation()" id="recalc-btn">
-                    🔄 Recalculate Now
-                </button>
+                <a href="/setup-wizard.html" class="btn btn-primary" style="padding: 15px 40px; font-size: 18px; text-decoration: none; display: inline-block;">
+                    ✨ Start Setup Wizard
+                </a>
             </div>
 
-            <div class="card" style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-left: 4px solid #4fb28e;">
-                <div class="card-header">
-                    <span class="card-icon">🚀</span>
-                    <h2 id="setup-title">Journey Setup</h2>
+            <!-- Configured State - Summary View -->
+            <div id="setup-configured" style="display: none;">
+                <!-- Journey Configuration Card -->
+                <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(79, 178, 142, 0.1) 0%, rgba(102, 126, 234, 0.1) 100%); border-left: 4px solid #4fb28e;">
+                    <div class="card-header" style="margin-bottom: 20px;">
+                        <span class="card-icon">🗺️</span>
+                        <h2>Your Commute</h2>
+                        <a href="/setup-wizard.html" class="btn btn-secondary" style="margin-left: auto; padding: 8px 16px; font-size: 13px;">
+                            ✏️ Edit
+                        </a>
+                    </div>
+
+                    <div style="display: grid; gap: 15px;">
+                        <!-- Route Summary -->
+                        <div id="journey-route-summary" style="padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px;">
+                            <div style="display: flex; flex-direction: column; gap: 12px;">
+                                <div style="display: flex; align-items: flex-start; gap: 12px;">
+                                    <span style="font-size: 20px; width: 28px; text-align: center;">🏠</span>
+                                    <div style="flex: 1;">
+                                        <div style="font-size: 11px; opacity: 0.6; margin-bottom: 2px;">HOME</div>
+                                        <div id="summary-home" style="font-size: 14px; font-weight: 500;">Not configured</div>
+                                    </div>
+                                </div>
+                                
+                                <div style="border-left: 2px dashed rgba(255,255,255,0.2); margin-left: 13px; height: 8px;"></div>
+                                
+                                <div id="summary-cafe-row" style="display: none;">
+                                    <div style="display: flex; align-items: flex-start; gap: 12px;">
+                                        <span style="font-size: 20px; width: 28px; text-align: center;">☕</span>
+                                        <div style="flex: 1;">
+                                            <div style="font-size: 11px; opacity: 0.6; margin-bottom: 2px;">COFFEE STOP</div>
+                                            <div id="summary-cafe" style="font-size: 14px; font-weight: 500;">Not configured</div>
+                                        </div>
+                                    </div>
+                                    <div style="border-left: 2px dashed rgba(255,255,255,0.2); margin-left: 13px; height: 8px;"></div>
+                                </div>
+                                
+                                <div style="display: flex; align-items: flex-start; gap: 12px;">
+                                    <span style="font-size: 20px; width: 28px; text-align: center;">💼</span>
+                                    <div style="flex: 1;">
+                                        <div style="font-size: 11px; opacity: 0.6; margin-bottom: 2px;">WORK</div>
+                                        <div id="summary-work" style="font-size: 14px; font-weight: 500;">Not configured</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quick Stats -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;">
+                            <div style="padding: 15px; background: rgba(79, 178, 142, 0.15); border-radius: 10px; text-align: center;">
+                                <div style="font-size: 24px; margin-bottom: 5px;">⏰</div>
+                                <div style="font-size: 11px; opacity: 0.6; margin-bottom: 3px;">ARRIVE BY</div>
+                                <div id="summary-arrival" style="font-size: 18px; font-weight: 700;">9:00am</div>
+                            </div>
+                            <div style="padding: 15px; background: rgba(102, 126, 234, 0.15); border-radius: 10px; text-align: center;">
+                                <div style="font-size: 24px; margin-bottom: 5px;">📍</div>
+                                <div style="font-size: 11px; opacity: 0.6; margin-bottom: 3px;">STATE</div>
+                                <div id="summary-state" style="font-size: 18px; font-weight: 700;">VIC</div>
+                            </div>
+                            <div style="padding: 15px; background: rgba(251, 191, 36, 0.15); border-radius: 10px; text-align: center;">
+                                <div style="font-size: 24px; margin-bottom: 5px;">☁️</div>
+                                <div style="font-size: 11px; opacity: 0.6; margin-bottom: 3px;">MODE</div>
+                                <div id="summary-mode" style="font-size: 14px; font-weight: 700;">Free</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <p id="setup-description" style="margin-bottom: 25px; opacity: 0.9; font-size: 14px;">
-                    Enter your addresses and arrival time. We'll automatically detect nearby transit stops, select the best route, and start journey planning.
-                </p>
 
-                <!-- Single-Step Form -->
-                <div style="max-width: 600px; margin: 0 auto;">
-                    <!-- Device Selection -->
-                    <div class="form-group">
-                        <label class="form-label">📱 Select Your Device *</label>
-                        <select id="setup-device-select" class="form-input" onchange="updateDeviceInfo()" required>
-                            <option value="trmnl-byos" selected>CC E-Ink (7.5" - 800×480 landscape)</option>
-                            <optgroup label="Kindle Devices (Jailbreak Required)">
-                                <option value="kindle-pw3">Kindle Paperwhite 3 (6" - 1072×1448 portrait)</option>
-                                <option value="kindle-pw4">Kindle Paperwhite 4 (6" - 1072×1448 portrait)</option>
-                                <option value="kindle-pw5">Kindle Paperwhite 5 (6.8" - 1236×1648 portrait)</option>
-                                <option value="kindle-basic-10">Kindle Basic 10th gen (6" - 600×800 portrait)</option>
-                                <option value="kindle-11">Kindle 11th gen (6" - 1072×1448 portrait)</option>
-                            </optgroup>
-                        </select>
+                <!-- Device Configuration Card -->
+                <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-left: 4px solid #818cf8;">
+                    <div class="card-header" style="margin-bottom: 20px;">
+                        <span class="card-icon">📺</span>
+                        <h2>Display Device</h2>
+                    </div>
 
-                        <!-- Display Model Selection (OG vs X) - appears only for CC E-Ink -->
-                        <div id="trmnl-model-selection" style="margin-top: 15px; display: block;">
-                            <label class="form-label" style="font-size: 14px; display: block; margin-bottom: 10px;">
-                                ⚠️ CRITICAL: Select Your Display Model *
-                            </label>
-                            <div style="background: rgba(234, 88, 12, 0.1); border: 1px solid rgba(234, 88, 12, 0.3); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
-                                <div style="font-size: 12px; color: rgba(255,255,255,0.9); line-height: 1.6;">
-                                    <strong>⚠️ Important:</strong> Flashing the wrong firmware can damage your device.
-                                    Check the back of your device for the model number.
-                                </div>
+                    <div id="device-status-content">
+                        <div style="display: flex; align-items: center; gap: 15px; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 10px; margin-bottom: 15px;">
+                            <div style="font-size: 40px;">📟</div>
+                            <div style="flex: 1;">
+                                <div id="device-name" style="font-weight: 600; font-size: 16px; margin-bottom: 4px;">CC E-Ink Display OG</div>
+                                <div id="device-specs" style="font-size: 12px; opacity: 0.7;">800×480 • Landscape • ESP32</div>
                             </div>
+                            <span id="device-status-badge" style="background: rgba(34, 197, 94, 0.9); color: white; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;">
+                                ✓ Ready
+                            </span>
+                        </div>
 
-                            <div style="display: flex; flex-direction: column; gap: 10px;">
-                                <label style="display: flex; align-items: center; padding: 12px; background: rgba(34, 197, 94, 0.1); border: 2px solid rgba(34, 197, 94, 0.3); border-radius: 8px; cursor: pointer;">
-                                    <input type="radio" name="trmnl-model" value="trmnl-og" checked style="margin-right: 10px; width: 18px; height: 18px;" onclick="hideDisplayXWarning()">
-                                    <div style="flex: 1;">
-                                        <div style="font-weight: 600; font-size: 13px; margin-bottom: 3px;">CC Display OG (Original)</div>
-                                        <div style="font-size: 11px; opacity: 0.8;">7.5" display, ESP32 chip</div>
-                                    </div>
-                                    <span style="background: rgba(34, 197, 94, 0.9); color: white; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;">✅ Compatible</span>
-                                </label>
-
-                                <label style="display: flex; align-items: center; padding: 12px; background: rgba(234, 88, 12, 0.1); border: 2px solid rgba(234, 88, 12, 0.3); border-radius: 8px; cursor: pointer; opacity: 0.7;">
-                                    <input type="radio" name="trmnl-model" value="trmnl-x" style="margin-right: 10px; width: 18px; height: 18px;" onclick="showDisplayXWarning()">
-                                    <div style="flex: 1;">
-                                        <div style="font-weight: 600; font-size: 13px; margin-bottom: 3px;">CC Display X (Newer Model)</div>
-                                        <div style="font-size: 11px; opacity: 0.8;">Different hardware architecture</div>
-                                    </div>
-                                    <span style="background: rgba(234, 88, 12, 0.9); color: white; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;">⚠️ Not Compatible</span>
-                                </label>
+                        <!-- Webhook URL -->
+                        <div id="webhook-section" style="display: none; padding: 15px; background: rgba(79, 178, 142, 0.1); border-radius: 10px; border: 1px solid rgba(79, 178, 142, 0.3);">
+                            <div style="font-weight: 600; font-size: 13px; margin-bottom: 10px;">🔗 Device Webhook URL</div>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="text" id="webhook-url-display" readonly 
+                                    style="flex: 1; padding: 10px 12px; font-family: monospace; font-size: 11px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; color: #f1f5f9;">
+                                <button onclick="copyWebhookUrl()" class="btn btn-secondary" style="padding: 10px 15px; font-size: 12px;">
+                                    📋 Copy
+                                </button>
                             </div>
-
-                            <!-- CC Display X Warning Box -->
-                            <div id="trmnl-x-warning" style="display: none; margin-top: 12px; padding: 15px; background: rgba(239, 68, 68, 0.15); border: 2px solid rgba(239, 68, 68, 0.4); border-radius: 8px;">
-                                <div style="font-weight: 600; font-size: 13px; color: rgba(255,255,255,0.95); margin-bottom: 8px;">
-                                    ⚠️ CC Display X Support Coming Soon
-                                </div>
-                                <div style="font-size: 12px; line-height: 1.6; color: rgba(255,255,255,0.85);">
-                                    The CC Display X model uses different hardware architecture and is not yet supported.
-                                    Please check back for future updates, or use <strong>CC Display OG</strong> for now.
-                                </div>
+                            <div style="font-size: 11px; opacity: 0.6; margin-top: 8px;">
+                                Configure your device to fetch from this URL for live dashboard updates
                             </div>
                         </div>
 
-                        <div id="device-info" style="margin-top: 10px; padding: 12px; background: rgba(79, 178, 142, 0.1); border-radius: 8px; border-left: 3px solid #4fb28e;">
-                            <div style="font-size: 13px; line-height: 1.7;">
-                                <div style="font-weight: 600; margin-bottom: 5px;">📺 CC E-Ink (OG)</div>
-                                <div style="font-size: 12px; opacity: 0.85;">
-                                    Resolution: 800×480 pixels<br>
-                                    Orientation: Landscape<br>
-                                    Display: 7.5" E-ink<br>
-                                    Chip: ESP32
-                                </div>
+                        <!-- No Device Selected -->
+                        <div id="no-device-section" style="display: none; padding: 20px; background: rgba(251, 191, 36, 0.1); border-radius: 10px; text-align: center;">
+                            <div style="font-size: 14px; opacity: 0.9; margin-bottom: 12px;">
+                                No e-ink device configured yet
                             </div>
-                        </div>
-                        <small style="color: rgba(255,255,255,0.6); font-size: 11px; display: block; margin-top: 8px;">
-                            All outputs will be optimized for your selected device
-                        </small>
-                    </div>
-
-                    <div class="form-group" style="position: relative;">
-                        <label class="form-label">Home Address *</label>
-                        <input type="text" id="setup-home-address" class="form-input" placeholder="Start typing your home address..." autocomplete="off" required>
-                        <div id="setup-home-suggestions" class="autocomplete-dropdown"></div>
-                        <small style="color: rgba(255,255,255,0.6); font-size: 11px; display: block; margin-top: 5px;">
-                            We'll detect your state and find nearby transit stops automatically
-                        </small>
-                    </div>
-
-                    <div class="form-group" style="position: relative;">
-                        <label class="form-label">💼 Work Address *</label>
-                        <input type="text" id="setup-work-address" class="form-input" placeholder="Start typing your work address..." autocomplete="off" required>
-                        <div id="setup-work-suggestions" class="autocomplete-dropdown"></div>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">⏰ Arrival Time at Work *</label>
-                        <input type="time" id="setup-arrival-time" class="form-input" value="09:00" required>
-                    </div>
-
-                    <div class="form-group" style="position: relative;">
-                        <label class="form-label">Favorite Cafe (Optional)</label>
-                        <input type="text" id="setup-cafe-address" class="form-input" placeholder="Start typing cafe name or address..." autocomplete="off">
-                        <div id="setup-cafe-suggestions" class="autocomplete-dropdown"></div>
-                        <small style="color: rgba(255,255,255,0.6); font-size: 11px; display: block; margin-top: 5px;">
-                            Include a coffee stop in your morning routine
-                        </small>
-                    </div>
-
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="setup-include-coffee" checked>
-                        <label for="setup-include-coffee">Factor coffee time into journey planning (5 minutes)</label>
-                    </div>
-
-                    <!-- Transport Victoria API Key Section -->
-                    <div style="margin-top: 30px; padding: 20px; background: rgba(79, 178, 142, 0.1); border-radius: 12px; border: 2px solid rgba(79, 178, 142, 0.4);">
-                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
-                            <span style="font-size: 24px;">🚂</span>
-                            <h3 style="margin: 0; font-size: 16px; font-weight: 600;">Transport Victoria API Key (Required for Live Data)</h3>
-                        </div>
-                        <p style="font-size: 13px; opacity: 0.85; margin-bottom: 15px; line-height: 1.6;">
-                            Enter your Transport Victoria OpenData API key to enable real-time train and tram updates.
-                        </p>
-                        <div class="form-group">
-                            <label class="form-label">Transport Victoria API Key</label>
-                            <input type="password" id="setup-transport-api-key" class="form-input" placeholder="e.g., ce606b90-9ffb-43e8-bcd7-0c2b-d0498367">
-                            <small style="color: rgba(255,255,255,0.6); font-size: 11px; display: block; margin-top: 5px;">
-                                Get your free key at <a href="https://opendata.transport.vic.gov.au/" target="_blank" style="color: #818cf8; text-decoration: none;">opendata.transport.vic.gov.au</a>
-                            </small>
-                        </div>
-                        <div id="transport-api-status" style="display: none; margin-top: 10px; padding: 10px; border-radius: 6px; font-size: 13px;"></div>
-                    </div>
-
-                    <!-- Google Places API Key Section -->
-                    <div style="margin-top: 20px; padding: 20px; background: rgba(79, 178, 142, 0.1); border-radius: 12px; border: 2px dashed rgba(79, 178, 142, 0.3);">
-                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
-                            <span style="font-size: 24px;">🔑</span>
-                            <h3 style="margin: 0; font-size: 16px; font-weight: 600;">Optional: Google Places API Key</h3>
-                        </div>
-                        <p style="font-size: 13px; opacity: 0.85; margin-bottom: 15px; line-height: 1.6;">
-                            <strong>Highly recommended for setup:</strong> Adding your Google Places API key now ensures the journey planner can accurately find your home, work, and cafe addresses. While the system works with free Nominatim geocoding, Google Places provides significantly better address recognition, especially for specific buildings, cafes, and businesses.
-                        </p>
-                        <p style="font-size: 12px; opacity: 0.75; margin-bottom: 15px; line-height: 1.5; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 6px;">
-                            💡 <strong>Tip:</strong> The Google Places API has a generous free tier ($200/month credit). Adding it during setup prevents address lookup failures and ensures your journey planner works correctly on first try.
-                        </p>
-
-                        <div class="checkbox-group" style="margin-bottom: 15px;">
-                            <input type="checkbox" id="setup-has-google-api" onchange="toggleGoogleApiInput()">
-                            <label for="setup-has-google-api">I have a Google Places API key</label>
-                        </div>
-
-                        <div id="setup-google-api-input" style="display: none;">
-                            <div class="form-group">
-                                <label class="form-label">Google Places API Key</label>
-                                <input type="password" id="setup-google-api-key" class="form-input" placeholder="Enter your Google Places API key">
-                                <small style="color: rgba(255,255,255,0.6); font-size: 11px; display: block; margin-top: 5px;">
-                                    Don't have one? <a href="https://console.cloud.google.com/apis/library/places-backend.googleapis.com" target="_blank" style="color: #818cf8; text-decoration: none;">Get it here (free tier available)</a>
-                                </small>
-                            </div>
-                            <button class="btn btn-secondary" onclick="saveGoogleApiKey()" style="width: 100%; margin-top: 10px;">
-                                💾 Save API Key & Restart System
-                            </button>
-                            <div id="google-api-save-message" style="display: none; margin-top: 10px; padding: 10px; border-radius: 6px; font-size: 13px;"></div>
-                        </div>
-
-                        <div style="margin-top: 12px; padding: 10px; background: rgba(251, 191, 36, 0.1); border-radius: 6px; border-left: 3px solid #fbbf24;">
-                            <div style="font-size: 12px; opacity: 0.9;">
-                                <strong>💡 Note:</strong> Google Places free tier includes $200/month credit. The system has quota protection built-in to never exceed free limits.
-                            </div>
+                            <a href="/setup-wizard.html" class="btn btn-secondary" style="padding: 10px 20px; font-size: 13px; text-decoration: none;">
+                                📱 Add Device
+                            </a>
                         </div>
                     </div>
+                </div>
 
-                    <div id="setup-message" class="message" style="display: none; margin-top: 20px;"></div>
-                    <div id="setup-progress" style="display: none; margin-top: 20px; padding: 15px; background: rgba(102, 126, 234, 0.2); border-radius: 8px; border-left: 3px solid #4fb28e;">
-                        <div style="font-weight: 600; margin-bottom: 10px;">🔄 Setting up your journey...</div>
-                        <div id="setup-progress-text" style="font-size: 13px; opacity: 0.9;"></div>
+                <!-- Quick Actions Card -->
+                <div class="card" style="background: rgba(255,255,255,0.03);">
+                    <div class="card-header" style="margin-bottom: 15px;">
+                        <span class="card-icon">⚡</span>
+                        <h2>Quick Actions</h2>
                     </div>
-
-                    <button class="btn btn-block btn-success" onclick="startJourneyPlanning()" style="margin-top: 25px; font-size: 16px; padding: 15px;">
-                        ✨ Start Journey Planning
-                    </button>
-
-                    <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
-                        <p style="font-size: 13px; opacity: 0.7; margin-bottom: 10px;">
-                            <strong>What happens next?</strong>
-                        </p>
-                        <ul style="text-align: left; font-size: 12px; opacity: 0.8; line-height: 1.8; max-width: 450px; margin: 0 auto;">
-                            <li>✅ Your state will be auto-detected from your address</li>
-                            <li>✅ Nearby transit stops will be identified automatically</li>
-                            <li>✅ Best route mode (train/tram/bus) will be selected</li>
-                            <li>✅ Journey calculation will start immediately</li>
-                            <li>✅ Live updates will begin (every 2 minutes)</li>
-                        </ul>
-                        <p style="font-size: 12px; opacity: 0.7; margin-top: 15px;">
-                            Need API credentials? Add them in the <strong>Configuration</strong> tab for live transit data.
-                        </p>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                        <button onclick="forceRecalculation()" class="btn btn-secondary" style="padding: 15px; font-size: 14px;">
+                            🔄 Recalculate Journey
+                        </button>
+                        <button onclick="showTab('live', this)" class="btn btn-secondary" style="padding: 15px; font-size: 14px;">
+                            📊 View Live Data
+                        </button>
+                        <a href="/preview.html" target="_blank" class="btn btn-secondary" style="padding: 15px; font-size: 14px; text-decoration: none; text-align: center;">
+                            🖼️ E-Ink Preview
+                        </a>
+                        <button onclick="clearConfig()" class="btn btn-secondary" style="padding: 15px; font-size: 14px; opacity: 0.7;">
+                            🗑️ Reset Config
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Live Data Tab -->
+
+                <!-- Live Data Tab -->
         <div id="tab-live" class="tab-content active">
             <!-- Unconfigured Placeholder (shown until setup complete) -->
             <div id="live-data-unconfigured" style="display: none; text-align: center; padding: 60px 20px;">
@@ -4633,6 +4561,108 @@
                 } else {
                     summaryEl.innerHTML = 'No configuration yet. <a href="/setup-wizard.html" style="color: #4fb28e;">Complete setup →</a>';
                 }
+            }
+            
+            // Also update the new Setup & Journey tab summary
+            updateSetupTabSummary(prefs);
+        }
+        
+        // Populate the rebuilt Setup & Journey tab from localStorage config
+        function updateSetupTabSummary(prefs) {
+            const notConfigured = document.getElementById('setup-not-configured');
+            const configured = document.getElementById('setup-configured');
+            
+            if (!notConfigured || !configured) return;
+            
+            const hasConfig = prefs && (prefs.addresses?.home || prefs.addresses?.work);
+            
+            if (hasConfig) {
+                notConfigured.style.display = 'none';
+                configured.style.display = 'block';
+                
+                // Populate route summary
+                const homeEl = document.getElementById('summary-home');
+                const workEl = document.getElementById('summary-work');
+                const cafeEl = document.getElementById('summary-cafe');
+                const cafeRow = document.getElementById('summary-cafe-row');
+                const arrivalEl = document.getElementById('summary-arrival');
+                const stateEl = document.getElementById('summary-state');
+                const modeEl = document.getElementById('summary-mode');
+                
+                if (homeEl) homeEl.textContent = prefs.addresses?.home || 'Not set';
+                if (workEl) workEl.textContent = prefs.addresses?.work || 'Not set';
+                if (cafeEl && prefs.addresses?.cafe) {
+                    cafeEl.textContent = prefs.addresses.cafe;
+                    if (cafeRow) cafeRow.style.display = 'block';
+                } else if (cafeRow) {
+                    cafeRow.style.display = 'none';
+                }
+                if (arrivalEl) arrivalEl.textContent = formatTime12h(prefs.journey?.arrivalTime || '09:00');
+                if (stateEl) stateEl.textContent = prefs.state || 'VIC';
+                if (modeEl) modeEl.textContent = prefs.apiMode === 'live' ? 'Live' : 'Free';
+                
+                // Device info
+                const deviceName = document.getElementById('device-name');
+                const deviceSpecs = document.getElementById('device-specs');
+                const webhookSection = document.getElementById('webhook-section');
+                const noDeviceSection = document.getElementById('no-device-section');
+                const webhookDisplay = document.getElementById('webhook-url-display');
+                
+                const device = prefs.device || localStorage.getItem('cc-device') || 'trmnl-og';
+                const webhookUrl = prefs.webhookUrl || localStorage.getItem('cc-webhook-url');
+                
+                if (deviceName) {
+                    const deviceNames = {
+                        'trmnl-og': 'CC E-Ink Display OG',
+                        'trmnl-byos': 'CC E-Ink Display',
+                        'kindle-pw3': 'Kindle Paperwhite 3',
+                        'kindle-pw4': 'Kindle Paperwhite 4',
+                        'kindle-pw5': 'Kindle Paperwhite 5'
+                    };
+                    deviceName.textContent = deviceNames[device] || 'CC E-Ink Display';
+                }
+                if (deviceSpecs) {
+                    deviceSpecs.textContent = device?.startsWith('kindle') ? '1072×1448 • Portrait' : '800×480 • Landscape • ESP32';
+                }
+                
+                if (webhookUrl && webhookSection && webhookDisplay) {
+                    webhookSection.style.display = 'block';
+                    webhookDisplay.value = webhookUrl;
+                    if (noDeviceSection) noDeviceSection.style.display = 'none';
+                } else {
+                    if (webhookSection) webhookSection.style.display = 'none';
+                    if (noDeviceSection) noDeviceSection.style.display = 'block';
+                }
+            } else {
+                notConfigured.style.display = 'block';
+                configured.style.display = 'none';
+            }
+        }
+        
+        // Copy webhook URL to clipboard
+        function copyWebhookUrl() {
+            const input = document.getElementById('webhook-url-display');
+            if (input) {
+                input.select();
+                document.execCommand('copy');
+                // Brief visual feedback
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '✓ Copied!';
+                setTimeout(() => btn.textContent = originalText, 1500);
+            }
+        }
+        
+        // Clear all config and restart
+        function clearConfig() {
+            if (confirm('Are you sure you want to reset all configuration? This cannot be undone.')) {
+                localStorage.removeItem('cc-config');
+                localStorage.removeItem('cc-configured');
+                localStorage.removeItem('cc-webhook-url');
+                localStorage.removeItem('cc-device');
+                localStorage.removeItem('cc-transit-api-key');
+                localStorage.removeItem('cc-google-places-key');
+                window.location.reload();
             }
         }
 
