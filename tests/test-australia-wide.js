@@ -5,7 +5,7 @@
  */
 
 import SmartCommute from '../src/engines/smart-commute.js';
-import { renderFullDashboard } from '../src/services/zone-renderer.js';
+import { renderFullDashboard } from '../src/services/ccdash-renderer.js';
 import fs from 'fs';
 import path from 'path';
 

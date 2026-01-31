@@ -11,7 +11,7 @@
 
 import RoutePlanner from '../core/route-planner.js';
 import CoffeeDecision from '../core/coffee-decision.js';
-import V11DashboardRenderer from './v11-dashboard-renderer.js';
+import * as ccdashRenderer from './ccdash-renderer.js';
 import SmartJourneyIntegration from './smart-journey-integration.js';
 
 class DashboardService {
@@ -20,7 +20,7 @@ class DashboardService {
     this.routePlanner = null;
     this.coffeeDecision = null;
     this.smartJourney = null;  // Smart journey integration
-    this.renderer = new V11DashboardRenderer();
+    this.renderer = ccdashRenderer;
     
     // Cache for computed data
     this.cache = {

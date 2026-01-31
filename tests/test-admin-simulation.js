@@ -7,7 +7,7 @@
 import fs from 'fs';
 import path from 'path';
 import SmartJourneyEngine from '../src/core/smart-journey-engine.js';
-import { renderFullDashboard } from '../src/services/zone-renderer.js';
+import { renderFullDashboard } from '../src/services/ccdash-renderer.js';
 
 console.log('🧪 Admin Panel Simulation Test\n');
 console.log('Simulating: Home → ☕ Coffee → 🚊 Tram → 🚆 Train → Work\n');

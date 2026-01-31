@@ -19,7 +19,7 @@
 import { getDepartures, getDisruptions, getWeather } from '../src/services/opendata-client.js';
 import SmartCommute from '../src/engines/smart-commute.js';
 import { getTransitApiKey } from '../src/data/kv-preferences.js';
-import tieredRenderer, { ZONES_TIERED, TIER_INTERVALS } from '../src/services/zone-renderer-tiered.js';
+import ccdashRenderer, { ZONES, TIER_CONFIG } from '../src/services/ccdash-renderer.js';
 import PreferencesManager from '../src/data/preferences-manager.js';
 
 // Singleton engine instance
@@ -258,10 +258,10 @@ export default async function handler(req, res) {
       return res.json({
         timestamp: now.toISOString(),
         tier: tierParam,
-        intervals: TIER_INTERVALS,
+        intervals: TIER_CONFIG,
         zones: tierParam === 'all' 
-          ? Object.keys(ZONES_TIERED)
-          : Object.values(ZONES_TIERED).filter(z => z.tier === parseInt(tierParam)).map(z => z.id),
+          ? Object.keys(ZONES)
+          : Object.values(ZONES).filter(z => z.tier === parseInt(tierParam)).map(z => z.id),
         data: dashboardData
       });
     }
@@ -269,13 +269,13 @@ export default async function handler(req, res) {
     // Render zones
     let result;
     if (tierParam === 'all') {
-      result = tieredRenderer.renderAllZones(dashboardData);
+      result = ccdashRenderer.renderAllZones(dashboardData);
     } else {
-      result = tieredRenderer.renderZonesByTier(dashboardData, parseInt(tierParam), forceAll);
+      result = ccdashRenderer.renderZonesByTier(dashboardData, parseInt(tierParam), forceAll);
     }
     
     // Add tier intervals to response
-    result.intervals = TIER_INTERVALS;
+    result.intervals = TIER_CONFIG;
     
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');

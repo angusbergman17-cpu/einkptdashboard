@@ -10,7 +10,7 @@
 
 import { getDepartures, getWeather } from '../src/services/opendata-client.js';
 import CoffeeDecision from '../src/core/coffee-decision.js';
-import { renderZones } from '../src/services/zone-renderer.js';
+import { renderZones } from '../src/services/ccdash-renderer.js';
 import { getTransitApiKey } from '../src/data/kv-preferences.js';
 
 // Config

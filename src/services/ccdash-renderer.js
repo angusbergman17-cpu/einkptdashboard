@@ -57,6 +57,110 @@ try {
 }
 
 // =============================================================================
+// TYPE CONSTANTS (merged from v11-journey-renderer.js)
+// =============================================================================
+
+export const StepType = {
+  WALK: 'walk',
+  TRAIN: 'train',
+  TRAM: 'tram',
+  BUS: 'bus',
+  COFFEE: 'coffee',
+  FERRY: 'ferry'
+};
+
+export const StepStatus = {
+  NORMAL: 'normal',
+  DELAYED: 'delayed',
+  SKIPPED: 'skipped',
+  CANCELLED: 'cancelled',
+  DIVERTED: 'diverted',
+  EXTENDED: 'extended'
+};
+
+export const JourneyStatus = {
+  ON_TIME: 'on-time',
+  LEAVE_NOW: 'leave-now',
+  DELAY: 'delay',
+  DISRUPTION: 'disruption',
+  DIVERSION: 'diversion'
+};
+
+// =============================================================================
+// DEVICE CONFIGURATIONS (merged from v11-dashboard-renderer.js)
+// =============================================================================
+
+/**
+ * Device configurations for CC LiveDash multi-device rendering
+ */
+export const DEVICE_CONFIGS = {
+  'trmnl-og': {
+    name: 'TRMNL Original',
+    width: 800,
+    height: 480,
+    orientation: 'landscape',
+    colorDepth: 1,
+    format: 'bmp'
+  },
+  'trmnl-mini': {
+    name: 'TRMNL Mini',
+    width: 400,
+    height: 300,
+    orientation: 'landscape',
+    colorDepth: 1,
+    format: 'bmp'
+  },
+  'kindle-pw3': {
+    name: 'Kindle Paperwhite 3',
+    width: 758,
+    height: 1024,
+    orientation: 'portrait',
+    colorDepth: 8,
+    format: 'png'
+  },
+  'kindle-pw5': {
+    name: 'Kindle Paperwhite 5',
+    width: 1236,
+    height: 1648,
+    orientation: 'portrait',
+    colorDepth: 8,
+    format: 'png'
+  },
+  'kindle-basic': {
+    name: 'Kindle Basic',
+    width: 600,
+    height: 800,
+    orientation: 'portrait',
+    colorDepth: 8,
+    format: 'png'
+  },
+  'inkplate-6': {
+    name: 'Inkplate 6',
+    width: 800,
+    height: 600,
+    orientation: 'landscape',
+    colorDepth: 1,
+    format: 'bmp'
+  },
+  'inkplate-10': {
+    name: 'Inkplate 10',
+    width: 1200,
+    height: 825,
+    orientation: 'landscape',
+    colorDepth: 1,
+    format: 'bmp'
+  },
+  'web': {
+    name: 'Web Preview',
+    width: 800,
+    height: 480,
+    orientation: 'landscape',
+    colorDepth: 24,
+    format: 'png'
+  }
+};
+
+// =============================================================================
 // TIERED REFRESH CONFIGURATION (merged from zone-renderer-tiered.js)
 // =============================================================================
 
@@ -763,6 +867,53 @@ export function renderFullScreen(data, prefs = {}) {
 }
 
 // =============================================================================
+// UTILITY FUNCTIONS (merged from image-renderer.js)
+// =============================================================================
+
+/**
+ * Render a test pattern for display calibration
+ */
+export function renderTestPattern() {
+  const canvas = createCanvas(800, 480);
+  const ctx = canvas.getContext('2d');
+  
+  // White background
+  ctx.fillStyle = '#FFF';
+  ctx.fillRect(0, 0, 800, 480);
+  
+  // Black border
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(1, 1, 798, 478);
+  
+  // Grid pattern
+  ctx.lineWidth = 1;
+  for (let x = 0; x <= 800; x += 100) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, 480);
+    ctx.stroke();
+  }
+  for (let y = 0; y <= 480; y += 60) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(800, y);
+    ctx.stroke();
+  }
+  
+  // Center text
+  ctx.fillStyle = '#000';
+  ctx.font = 'bold 24px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('CCDash Test Pattern', 400, 240);
+  ctx.font = '16px sans-serif';
+  ctx.fillText('800 × 480', 400, 280);
+  
+  return canvasToBMP(canvas);
+}
+
+// =============================================================================
 // BACKWARD COMPATIBILITY (aliases for zone-renderer.js)
 // =============================================================================
 
@@ -785,21 +936,55 @@ export { ZONES as ZONES_V10 };
 // EXPORTS
 // =============================================================================
 
+/**
+ * Get device configuration by type
+ */
+export function getDeviceConfig(deviceType) {
+  return DEVICE_CONFIGS[deviceType] || DEVICE_CONFIGS['trmnl-og'];
+}
+
+/**
+ * Render for a specific device (wrapper for multi-device support)
+ */
+export function render(options) {
+  // Extract data from options
+  const data = {
+    ...options.journeyData,
+    coffee_decision: options.coffeeDecision,
+    transit: options.transitData,
+    alerts: options.alerts,
+    weather: options.weather,
+    temp: options.weather?.temp,
+    condition: options.weather?.condition
+  };
+  
+  return renderFullScreen(data);
+}
+
 export default {
+  // Device configs
+  DEVICE_CONFIGS,
+  getDeviceConfig,
+  
   // Zone definitions
   ZONES,
   TIER_CONFIG,
   
   // Primary API
+  render,
   renderSingleZone,
   renderFullScreen,
   renderZones,
   renderFullDashboard,
+  renderTestPattern,
   
   // Zone utilities
   getActiveZones,
   getChangedZones,
   getZoneDefinition,
   getZonesForTier,
-  clearCache
+  clearCache,
+  
+  // Low-level utilities
+  canvasToBMP
 };

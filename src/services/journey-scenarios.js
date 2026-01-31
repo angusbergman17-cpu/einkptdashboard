@@ -18,7 +18,7 @@
  * Licensed under CC BY-NC 4.0
  */
 
-import { StepType, StepStatus, JourneyStatus } from './v11-journey-renderer.js';
+import { StepType, StepStatus, JourneyStatus } from './ccdash-renderer.js';
 
 // =============================================================================
 // DEMO SCENARIOS

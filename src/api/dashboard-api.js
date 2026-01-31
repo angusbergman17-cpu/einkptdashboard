@@ -18,7 +18,7 @@
 
 import express from 'express';
 import DashboardService from '../services/dashboard-service.js';
-import { DEVICE_CONFIGS } from '../services/v11-dashboard-renderer.js';
+import { DEVICE_CONFIGS } from '../services/ccdash-renderer.js';
 
 const router = express.Router();
 

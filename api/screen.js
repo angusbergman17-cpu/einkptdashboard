@@ -13,7 +13,7 @@
 import { getDepartures, getDisruptions, getWeather } from '../src/services/opendata-client.js';
 import SmartCommute from '../src/engines/smart-commute.js';
 import { getTransitApiKey } from '../src/data/kv-preferences.js';
-import { renderFullDashboard } from '../src/services/zone-renderer.js';
+import { renderFullDashboard } from '../src/services/ccdash-renderer.js';
 import { getScenario, getScenarioNames } from '../src/services/journey-scenarios.js';
 
 // Singleton engine instance (initialized once)
