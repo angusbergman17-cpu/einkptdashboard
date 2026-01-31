@@ -855,11 +855,12 @@ function canvasToBMP(canvas) {
 function getDynamicLegZone(legIndex, totalLegs) {
   const startY = 132;
   const endY = 440;
-  const gap = 4;
+  // Gap includes space for arrow connector (12px arrow + small padding)
+  const gap = 14;  // Increased from 4 to fit arrow connectors
   const availableHeight = endY - startY;
-  const maxLegHeight = 56;
+  const maxLegHeight = 52;  // Slightly smaller to fit arrows
   
-  // Calculate optimal height
+  // Calculate optimal height based on leg count
   const legHeight = Math.min(maxLegHeight, Math.floor((availableHeight - (totalLegs - 1) * gap) / totalLegs));
   const y = startY + (legIndex - 1) * (legHeight + gap);
   
@@ -1861,17 +1862,20 @@ export function renderFullScreen(data, prefs = {}) {
     
     // -----------------------------------------------------------------------
     // ARROW CONNECTOR ▼ (between legs) - Per reference images
-    // Draw arrow pointing down after each leg except the last
+    // Small downward-pointing triangle between leg boxes
+    // Arrow must fit in the 4px gap between legs
     // -----------------------------------------------------------------------
     if (idx < legs.length - 1) {
-      const arrowY = zone.y + zone.h + 2;  // Position just below current leg
+      const nextZone = getDynamicLegZone(legNum + 1, legs.length);
+      const gapCenter = zone.y + zone.h + (nextZone.y - (zone.y + zone.h)) / 2;
       const arrowX = 400;  // Center of screen
       
       ctx.fillStyle = '#000';
       ctx.beginPath();
-      ctx.moveTo(arrowX - 8, arrowY);
-      ctx.lineTo(arrowX + 8, arrowY);
-      ctx.lineTo(arrowX, arrowY + 10);
+      // Small arrow: 12px wide, 8px tall
+      ctx.moveTo(arrowX - 6, gapCenter - 4);
+      ctx.lineTo(arrowX + 6, gapCenter - 4);
+      ctx.lineTo(arrowX, gapCenter + 4);
       ctx.closePath();
       ctx.fill();
     }
@@ -1882,24 +1886,25 @@ export function renderFullScreen(data, prefs = {}) {
   
   // =========================================================================
   // FOOTER (V10 Spec Section 6) - Per reference images
-  // Format: "DESTINATION ADDRESS" ... "ARRIVE" ... "X:XX"
+  // Ref format: "80 COLLINS ST, MELBOURNE" ... "ARRIVE" ... "9:18"
   // =========================================================================
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 448, 800, 32);
   ctx.fillStyle = '#FFF';
   
-  // Destination address (left side, uppercase) - per ref images
+  // Destination address (left side, uppercase, bold) - per ref images
   ctx.font = 'bold 16px Inter, sans-serif';
   ctx.textBaseline = 'middle';
+  ctx.textAlign = 'left';
   ctx.fillText((data.destination || 'WORK').toUpperCase(), 16, 464);
   
-  // "ARRIVE" label (right side, before time) - per ref images
-  ctx.textAlign = 'right';
+  // "ARRIVE" label (positioned before time) - per ref images
   ctx.font = '12px Inter, sans-serif';
-  ctx.fillText('ARRIVE', 720, 464);
+  ctx.textAlign = 'right';
+  ctx.fillText('ARRIVE', 710, 464);
   
-  // Calculated arrival time (far right, large) - per ref images
-  ctx.font = 'bold 22px Inter, sans-serif';
+  // Arrival time (far right, large bold) - per ref images  
+  ctx.font = 'bold 24px Inter, sans-serif';
   const footerArrival = data._calculatedArrival || data.arrive_by || '--:--';
   ctx.fillText(footerArrival, 784, 464);
   
