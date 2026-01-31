@@ -1854,184 +1854,176 @@
             </div><!-- end live-data-configured -->
         </div>
 
-        <!-- API Settings Tab (NEW) -->
+        <!-- API Settings Tab - Rebuilt to use Setup Wizard data -->
         <div id="tab-api" class="tab-content">
-            <!-- Introduction Banner -->
-            <div style="margin-bottom: 25px; padding: 20px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%); border-radius: 12px; border-left: 4px solid #4fb28e;">
-                <div style="font-size: 24px; margin-bottom: 12px;">🔑 API Settings</div>
-                <p style="opacity: 0.9; line-height: 1.6; margin-bottom: 12px;">
-                    Configure API credentials to enable <strong>real-time transit data</strong> and enhanced features.
+            <!-- Not Configured State -->
+            <div id="api-not-configured" style="display: none; text-align: center; padding: 60px 20px;">
+                <div style="font-size: 80px; margin-bottom: 20px;">🔑</div>
+                <h2 style="margin-bottom: 15px; font-size: 24px;">API Keys Not Configured</h2>
+                <p style="opacity: 0.8; margin-bottom: 30px; max-width: 500px; margin-left: auto; margin-right: auto; line-height: 1.7; font-size: 15px;">
+                    Complete the setup wizard to configure your API keys. The wizard will guide you through obtaining and validating your credentials.
                 </p>
-                <p style="opacity: 0.8; font-size: 14px; line-height: 1.5; margin: 0;">
-                    <strong>All fields are optional.</strong> The system works with fallback timetable data if you don't configure APIs.
-                    Real-time updates enhance accuracy but aren't required.
-                </p>
+                <a href="/setup-wizard.html" class="btn btn-primary" style="padding: 15px 40px; font-size: 18px; text-decoration: none; display: inline-block;">
+                    ✨ Go to Setup Wizard
+                </a>
             </div>
 
-            <!-- Current Data Mode Indicator -->
-            <div id="data-mode-indicator" style="margin-bottom: 25px; padding: 16px; background: rgba(251, 191, 36, 0.1); border-radius: 10px; border-left: 4px solid #fbbf24;">
-                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-                    <span style="font-size: 24px;">🔴</span>
-                    <div>
-                        <div style="font-weight: 600; font-size: 15px;">Using Fallback Timetable Data</div>
-                        <div style="font-size: 13px; opacity: 0.8; margin-top: 4px;">Configure API keys below to enable live real-time updates</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="grid">
-                <!-- Transit Authority API Credentials -->
-                <div class="card">
-                    <div class="card-header">
-                        <span class="card-icon">🔑</span>
-                        <h2 id="transit-api-title">Transit Authority API</h2>
-                    </div>
-                    <div id="transit-api-description" style="margin-bottom: 15px; padding: 12px; background: rgba(102, 126, 234, 0.1); border-radius: 8px; display: none;">
-                        <p style="margin: 0; opacity: 0.9; font-size: 13px;">
-                            <strong>Victoria:</strong> For Transport Victoria OpenData API credentials, visit
-                            <a href="https://opendata.transport.vic.gov.au/" target="_blank" style="color: #4fb28e;">OpenData Transport Victoria</a>
-                        </p>
-                        <p style="margin: 8px 0 0 0; opacity: 0.8; font-size: 12px;">
-                            See <strong>VICTORIA-GTFS-REALTIME-PROTOCOL.md</strong> for GTFS Realtime API instructions
-                        </p>
-                    </div>
-                    <div id="transit-api-description-generic" style="margin-bottom: 15px; padding: 12px; background: rgba(102, 126, 234, 0.1); border-radius: 8px;">
-                        <p style="margin: 0; opacity: 0.9; font-size: 13px;">
-                            Enter your transit authority API credentials below. Configuration details will appear after detecting your location in Setup tab.
-                        </p>
-                    </div>
-                    <div id="api-message"></div>
-                    <div class="form-group">
-                        <label class="form-label">API Key (Optional)</label>
-                        <input type="text" id="ptv-dev-id" class="form-input" placeholder="Your API Key">
-                        <small style="color: rgba(255,255,255,0.6); font-size: 12px; display: block; margin-top: 5px;">
-                            VIC: Previously called "Developer ID" | Other states: Check your transit authority portal
-                        </small>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">API Token / Secret (Optional)</label>
-                        <input type="password" id="ptv-api-key" class="form-input" placeholder="Your API Token">
-                    </div>
-                    <div style="display: flex; gap: 10px;">
-                        <button class="btn" onclick="savePtvConfig()">Save</button>
-                        <button class="btn btn-secondary" onclick="testPtvApi()">Test</button>
-                    </div>
-                </div>
-
-                <!-- Victorian GTFS Realtime API (Victoria only) -->
-                <div id="victoria-gtfs-config" class="card" style="display: none;">
-                    <div class="card-header">
-                        <span class="card-icon">🚂</span>
-                        <h2>GTFS Realtime API (Victoria)</h2>
-                    </div>
-                    <p style="margin-bottom: 15px; opacity: 0.9; font-size: 13px;">
-                        Optional: Enable real-time metro train updates via Transport for Victoria's OpenData portal
-                    </p>
-                    <div class="form-group">
-                        <label class="form-label">GTFS Realtime Subscription Key (Optional)</label>
-                        <input type="password" id="gtfs-realtime-key" class="form-input" placeholder="Your subscription key from opendata.transport.vic.gov.au">
-                        <small style="color: rgba(255,255,255,0.6); font-size: 12px; display: block; margin-top: 5px;">
-                            Get your key at <a href="https://opendata.transport.vic.gov.au/" target="_blank" style="color: #4fb28e;">opendata.transport.vic.gov.au</a>
-                        </small>
-                    </div>
-                    <div style="display: flex; gap: 10px;">
-                        <button class="btn" onclick="saveGtfsRealtimeConfig()">Save</button>
-                        <button class="btn btn-secondary" onclick="testGtfsRealtimeApi()">Test</button>
-                    </div>
-                </div>
-
-                <!-- Additional API Keys -->
-                <div class="card">
-                    <div class="card-header">
-                        <span class="card-icon">🌐</span>
-                        <h2>Enhanced Features</h2>
-                    </div>
-                    <p style="margin-bottom: 15px; opacity: 0.9; font-size: 13px;">
-                        Optional: Add Google Places, Mapbox, or custom RSS feeds for enhanced functionality
-                    </p>
-
-                    <div class="form-group">
-                        <label class="form-label">Google Places API (new) Key (Recommended)</label>
-                        <input type="password" id="google-places-key" class="form-input" placeholder="For best address accuracy and business search">
-                        <button class="btn" onclick="forceGooglePlacesKey()" style="margin-top: 10px; background: #22c55e; width: 100%;" id="force-google-key-btn">
-                            💾 Save & Test Immediately (No Restart)
-                        </button>
-                        <div id="google-key-status" style="margin-top: 10px; padding: 10px; border-radius: 6px; display: none; font-size: 13px;"></div>
-                        <small style="color: rgba(255,255,255,0.6); font-size: 12px; display: block; margin-top: 8px;">
-                            Get from <a href="https://console.cloud.google.com/apis/library/places-backend.googleapis.com" target="_blank" style="color: #4fb28e;">Google Cloud Console - Places API (new)</a>
-                        </small>
-                        <small style="color: rgba(255,255,255,0.5); font-size: 11px; display: block; margin-top: 4px;">
-                            ⚠️ Use "Places API (new)", not the legacy version
-                        </small>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Mapbox Access Token (Optional)</label>
-                        <input type="password" id="mapbox-token" class="form-input" placeholder="For additional geocoding coverage">
-                        <small style="color: rgba(255,255,255,0.6); font-size: 12px; display: block; margin-top: 5px;">
-                            Get from <a href="https://account.mapbox.com/" target="_blank" style="color: #4fb28e;">Mapbox Account</a>
-                        </small>
-                    </div>
-
-                    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <h3 style="margin: 0; font-size: 14px; font-weight: 600;">Custom RSS Feeds</h3>
-                            <button class="btn btn-secondary" onclick="addRssFeed()" style="padding: 6px 12px; font-size: 12px;">+ Add Feed</button>
+            <!-- Configured State -->
+            <div id="api-configured" style="display: none;">
+                <!-- Data Mode Banner -->
+                <div id="api-data-mode-banner" style="margin-bottom: 25px; padding: 18px 20px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 15px;">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <span id="api-mode-icon" style="font-size: 32px;">🟢</span>
+                        <div>
+                            <div id="api-mode-title" style="font-weight: 700; font-size: 17px; margin-bottom: 4px;">Real-Time Data Enabled</div>
+                            <div id="api-mode-subtitle" style="font-size: 13px; opacity: 0.85;">Transit API validated and active</div>
                         </div>
-                        <div id="rss-feeds-list" style="display: grid; gap: 10px;">
-                            <!-- RSS feeds will be populated here -->
-                            <div style="padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px; text-align: center; opacity: 0.6; font-size: 13px;">
-                                No custom RSS feeds added yet
+                    </div>
+                </div>
+
+                <!-- Transit API Card -->
+                <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(79, 178, 142, 0.1) 0%, rgba(34, 197, 94, 0.1) 100%); border-left: 4px solid #4fb28e;">
+                    <div class="card-header" style="margin-bottom: 15px;">
+                        <span class="card-icon">🚆</span>
+                        <h2>Transport Victoria OpenData API</h2>
+                    </div>
+
+                    <div id="transit-api-status-card" style="padding: 15px; background: rgba(0,0,0,0.2); border-radius: 10px; margin-bottom: 15px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <span id="transit-status-icon" style="font-size: 24px;">✅</span>
+                                <div>
+                                    <div id="transit-status-text" style="font-weight: 600; font-size: 14px;">Configured & Validated</div>
+                                    <div id="transit-key-preview" style="font-size: 12px; opacity: 0.7; font-family: monospace; margin-top: 4px;">ce606b90-****-****-****-************</div>
+                                </div>
                             </div>
+                            <span id="transit-status-badge" style="background: rgba(34, 197, 94, 0.9); color: white; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;">
+                                ✓ Active
+                            </span>
                         </div>
                     </div>
 
-                    <div style="display: flex; gap: 10px; margin-top: 20px;">
-                        <button class="btn" onclick="saveAdditionalAPIs()">Save All</button>
+                    <!-- Edit Transit API (collapsed by default) -->
+                    <details style="margin-top: 15px;">
+                        <summary style="cursor: pointer; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; font-size: 14px; font-weight: 500;">
+                            ✏️ Edit Transit API Key
+                        </summary>
+                        <div style="padding: 15px; margin-top: 10px; background: rgba(0,0,0,0.1); border-radius: 8px;">
+                            <div class="form-group" style="margin-bottom: 15px;">
+                                <label class="form-label">Transport Victoria API Key</label>
+                                <input type="password" id="edit-transit-key" class="form-input" placeholder="Enter new API key">
+                                <small style="color: rgba(255,255,255,0.6); font-size: 11px; display: block; margin-top: 5px;">
+                                    Get your free key at <a href="https://opendata.transport.vic.gov.au/" target="_blank" style="color: #4fb28e;">opendata.transport.vic.gov.au</a>
+                                </small>
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <button class="btn" onclick="updateTransitKey()">💾 Save & Validate</button>
+                                <button class="btn btn-secondary" onclick="testTransitKey()">🔄 Test Current</button>
+                            </div>
+                            <div id="transit-edit-message" style="display: none; margin-top: 12px; padding: 10px; border-radius: 6px; font-size: 13px;"></div>
+                        </div>
+                    </details>
+                </div>
+
+                <!-- Google Places API Card -->
+                <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-left: 4px solid #818cf8;">
+                    <div class="card-header" style="margin-bottom: 15px;">
+                        <span class="card-icon">📍</span>
+                        <h2>Google Places API</h2>
                     </div>
-                </div>
-            </div>
 
-            <!-- API Status Overview -->
-            <div class="card" style="margin-top: 20px;">
-                <div class="card-header">
-                    <span class="card-icon">📊</span>
-                    <h2>API Status Overview</h2>
-                </div>
-                <p style="opacity: 0.8; font-size: 13px; margin-bottom: 20px;">
-                    Current status of all configured API keys. Keys are masked for security.
-                </p>
-                <div id="api-keys-status-list" style="display: grid; gap: 12px;">
-                    <!-- API keys will be populated here -->
-                </div>
-            </div>
+                    <div id="google-api-status-card" style="padding: 15px; background: rgba(0,0,0,0.2); border-radius: 10px; margin-bottom: 15px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <span id="google-status-icon" style="font-size: 24px;">✅</span>
+                                <div>
+                                    <div id="google-status-text" style="font-weight: 600; font-size: 14px;">Configured & Validated</div>
+                                    <div id="google-key-preview" style="font-size: 12px; opacity: 0.7; font-family: monospace; margin-top: 4px;">AIza****************************</div>
+                                </div>
+                            </div>
+                            <span id="google-status-badge" style="background: rgba(34, 197, 94, 0.9); color: white; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;">
+                                ✓ Active
+                            </span>
+                        </div>
+                    </div>
 
-            <!-- Help Section -->
-            <div class="card" style="margin-top: 20px; background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%); border-left: 4px solid #4fb28e;">
-                <div class="card-header">
-                    <span class="card-icon">💡</span>
-                    <h2>Getting API Keys</h2>
+                    <div style="padding: 12px; background: rgba(251, 191, 36, 0.1); border-radius: 8px; font-size: 13px; line-height: 1.5;">
+                        <strong>💡 Usage:</strong> Google Places enhances address search accuracy and enables real-time cafe busy-ness detection in Live Mode.
+                    </div>
+
+                    <!-- Edit Google API (collapsed by default) -->
+                    <details style="margin-top: 15px;">
+                        <summary style="cursor: pointer; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; font-size: 14px; font-weight: 500;">
+                            ✏️ Edit Google Places API Key
+                        </summary>
+                        <div style="padding: 15px; margin-top: 10px; background: rgba(0,0,0,0.1); border-radius: 8px;">
+                            <div class="form-group" style="margin-bottom: 15px;">
+                                <label class="form-label">Google Places API Key</label>
+                                <input type="password" id="edit-google-key" class="form-input" placeholder="Enter new API key">
+                                <small style="color: rgba(255,255,255,0.6); font-size: 11px; display: block; margin-top: 5px;">
+                                    Get from <a href="https://console.cloud.google.com/apis/library/places-backend.googleapis.com" target="_blank" style="color: #4fb28e;">Google Cloud Console - Places API (new)</a>
+                                </small>
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <button class="btn" onclick="updateGoogleKey()">💾 Save & Validate</button>
+                                <button class="btn btn-secondary" onclick="testGoogleKey()">🔄 Test Current</button>
+                            </div>
+                            <div id="google-edit-message" style="display: none; margin-top: 12px; padding: 10px; border-radius: 6px; font-size: 13px;"></div>
+                        </div>
+                    </details>
                 </div>
-                <div style="font-size: 14px; line-height: 1.7; opacity: 0.9;">
-                    <p><strong>Victoria (Melbourne)</strong>:</p>
-                    <ul style="margin: 10px 0; padding-left: 20px;">
-                        <li>Visit <a href="https://opendata.transport.vic.gov.au/" target="_blank" style="color: #4fb28e;">OpenData Transport Victoria</a></li>
-                        <li>Sign up for a free developer account</li>
-                        <li>Subscribe to GTFS Realtime feeds (Metro Trains, Trams)</li>
-                        <li>Copy your subscription key and paste above</li>
-                    </ul>
-                    <p style="margin-top: 15px;"><strong>Other States</strong>:</p>
-                    <ul style="margin: 10px 0; padding-left: 20px;">
-                        <li>Check your state's transit authority developer portal</li>
-                        <li>Most states offer free API access for personal use</li>
-                        <li>Look for "Developer", "API", or "Open Data" sections</li>
-                    </ul>
+
+                <!-- API Mode Selection -->
+                <div class="card" style="margin-bottom: 20px;">
+                    <div class="card-header" style="margin-bottom: 15px;">
+                        <span class="card-icon">☁️</span>
+                        <h2>Data Mode</h2>
+                    </div>
+
+                    <div style="display: grid; gap: 12px;">
+                        <label id="mode-free-option" style="display: flex; align-items: center; padding: 15px; background: rgba(34, 197, 94, 0.1); border: 2px solid rgba(34, 197, 94, 0.3); border-radius: 10px; cursor: pointer;">
+                            <input type="radio" name="api-mode-select" value="cached" style="margin-right: 12px; width: 18px; height: 18px;" onchange="updateApiMode('cached')">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">🆓 Free Mode</div>
+                                <div style="font-size: 12px; opacity: 0.8;">Uses cached timetable data. No runtime API calls. Best for most users.</div>
+                            </div>
+                        </label>
+
+                        <label id="mode-live-option" style="display: flex; align-items: center; padding: 15px; background: rgba(102, 126, 234, 0.1); border: 2px solid rgba(102, 126, 234, 0.3); border-radius: 10px; cursor: pointer;">
+                            <input type="radio" name="api-mode-select" value="live" style="margin-right: 12px; width: 18px; height: 18px;" onchange="updateApiMode('live')">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">⚡ Live Mode</div>
+                                <div style="font-size: 12px; opacity: 0.8;">Real-time transit data + cafe busy-ness. Requires valid API keys.</div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div id="mode-change-message" style="display: none; margin-top: 15px; padding: 12px; background: rgba(34, 197, 94, 0.1); border-radius: 8px; font-size: 13px;"></div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="card">
+                    <div class="card-header" style="margin-bottom: 15px;">
+                        <span class="card-icon">⚡</span>
+                        <h2>Quick Actions</h2>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+                        <button onclick="testAllApis()" class="btn btn-secondary" style="padding: 15px; font-size: 14px;">
+                            🔄 Test All APIs
+                        </button>
+                        <button onclick="refreshApiStatus()" class="btn btn-secondary" style="padding: 15px; font-size: 14px;">
+                            📊 Refresh Status
+                        </button>
+                        <a href="/setup-wizard.html" class="btn btn-secondary" style="padding: 15px; font-size: 14px; text-decoration: none; text-align: center;">
+                            ✨ Re-run Setup Wizard
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
 
 
-        <!-- Configuration Tab -->
+                <!-- Configuration Tab -->
         <div id="tab-config" class="tab-content">
             <!-- Journey Profiles Management (Task #6) -->
             <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-left: 4px solid #4fb28e;">
@@ -4574,6 +4566,9 @@
             
             // Also update the new Setup & Journey tab summary
             updateSetupTabSummary(prefs);
+            
+            // Also update the API Settings tab
+            updateApiSettingsTab(prefs);
         }
         
         // Populate the rebuilt Setup & Journey tab from localStorage config
@@ -4671,8 +4666,364 @@
                 localStorage.removeItem('cc-webhook-url');
                 localStorage.removeItem('cc-device');
                 localStorage.removeItem('cc-transit-api-key');
+                localStorage.removeItem('cc-transit-api-validated');
                 localStorage.removeItem('cc-google-places-key');
+                localStorage.removeItem('cc-google-places-validated');
                 window.location.reload();
+            }
+        }
+        
+        // ============================================
+        // API Settings Tab Functions (reads from localStorage)
+        // ============================================
+        
+        // Mask API key for display (show first 8 chars + ****)
+        function maskApiKey(key) {
+            if (!key || key.length < 12) return '****';
+            return key.substring(0, 8) + '-****-****-****-************';
+        }
+        
+        function maskGoogleKey(key) {
+            if (!key || key.length < 8) return '****';
+            return key.substring(0, 4) + '****************************';
+        }
+        
+        // Update API Settings tab from localStorage
+        function updateApiSettingsTab(prefs) {
+            const notConfigured = document.getElementById('api-not-configured');
+            const configured = document.getElementById('api-configured');
+            
+            if (!notConfigured || !configured) return;
+            
+            // Get API keys from localStorage
+            const transitKey = localStorage.getItem('cc-transit-api-key') || prefs?.api?.key || '';
+            const transitValidated = localStorage.getItem('cc-transit-api-validated') === 'true';
+            const googleKey = localStorage.getItem('cc-google-places-key') || '';
+            const googleValidated = localStorage.getItem('cc-google-places-validated') === 'true';
+            const apiMode = prefs?.apiMode || localStorage.getItem('cc-api-mode') || 'cached';
+            
+            const hasAnyConfig = transitKey || googleKey || localStorage.getItem('cc-configured') === 'true';
+            
+            if (hasAnyConfig) {
+                notConfigured.style.display = 'none';
+                configured.style.display = 'block';
+                
+                // Update Transit API card
+                const transitStatusIcon = document.getElementById('transit-status-icon');
+                const transitStatusText = document.getElementById('transit-status-text');
+                const transitKeyPreview = document.getElementById('transit-key-preview');
+                const transitStatusBadge = document.getElementById('transit-status-badge');
+                
+                if (transitKey) {
+                    transitStatusIcon.textContent = transitValidated ? '✅' : '⚠️';
+                    transitStatusText.textContent = transitValidated ? 'Configured & Validated' : 'Configured (Not Validated)';
+                    transitKeyPreview.textContent = maskApiKey(transitKey);
+                    transitStatusBadge.textContent = transitValidated ? '✓ Active' : '⚠️ Pending';
+                    transitStatusBadge.style.background = transitValidated ? 'rgba(34, 197, 94, 0.9)' : 'rgba(251, 191, 36, 0.9)';
+                } else {
+                    transitStatusIcon.textContent = '❌';
+                    transitStatusText.textContent = 'Not Configured';
+                    transitKeyPreview.textContent = 'No key set';
+                    transitStatusBadge.textContent = 'Using Fallback';
+                    transitStatusBadge.style.background = 'rgba(239, 68, 68, 0.7)';
+                }
+                
+                // Update Google API card
+                const googleStatusIcon = document.getElementById('google-status-icon');
+                const googleStatusText = document.getElementById('google-status-text');
+                const googleKeyPreview = document.getElementById('google-key-preview');
+                const googleStatusBadge = document.getElementById('google-status-badge');
+                
+                if (googleKey) {
+                    googleStatusIcon.textContent = googleValidated ? '✅' : '⚠️';
+                    googleStatusText.textContent = googleValidated ? 'Configured & Validated' : 'Configured (Not Validated)';
+                    googleKeyPreview.textContent = maskGoogleKey(googleKey);
+                    googleStatusBadge.textContent = googleValidated ? '✓ Active' : '⚠️ Pending';
+                    googleStatusBadge.style.background = googleValidated ? 'rgba(34, 197, 94, 0.9)' : 'rgba(251, 191, 36, 0.9)';
+                } else {
+                    googleStatusIcon.textContent = '⚪';
+                    googleStatusText.textContent = 'Not Configured (Optional)';
+                    googleKeyPreview.textContent = 'Using free geocoding';
+                    googleStatusBadge.textContent = 'Optional';
+                    googleStatusBadge.style.background = 'rgba(107, 114, 128, 0.7)';
+                }
+                
+                // Update data mode banner
+                const apiModeIcon = document.getElementById('api-mode-icon');
+                const apiModeTitle = document.getElementById('api-mode-title');
+                const apiModeSubtitle = document.getElementById('api-mode-subtitle');
+                const apiModeBanner = document.getElementById('api-data-mode-banner');
+                
+                if (transitKey && transitValidated) {
+                    apiModeIcon.textContent = '🟢';
+                    apiModeTitle.textContent = 'Real-Time Data Enabled';
+                    apiModeSubtitle.textContent = 'Transit API validated and active';
+                    apiModeBanner.style.background = 'linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(22, 163, 74, 0.15) 100%)';
+                    apiModeBanner.style.borderLeft = '4px solid #22c55e';
+                } else if (transitKey) {
+                    apiModeIcon.textContent = '🟡';
+                    apiModeTitle.textContent = 'API Key Pending Validation';
+                    apiModeSubtitle.textContent = 'Test your API key to enable real-time data';
+                    apiModeBanner.style.background = 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.15) 100%)';
+                    apiModeBanner.style.borderLeft = '4px solid #fbbf24';
+                } else {
+                    apiModeIcon.textContent = '🔴';
+                    apiModeTitle.textContent = 'Using Fallback Timetable Data';
+                    apiModeSubtitle.textContent = 'Add a Transit API key for real-time updates';
+                    apiModeBanner.style.background = 'linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%)';
+                    apiModeBanner.style.borderLeft = '4px solid #ef4444';
+                }
+                
+                // Update API mode selection
+                const modeRadios = document.querySelectorAll('input[name="api-mode-select"]');
+                modeRadios.forEach(radio => {
+                    radio.checked = radio.value === apiMode;
+                });
+            } else {
+                notConfigured.style.display = 'block';
+                configured.style.display = 'none';
+            }
+        }
+        
+        // Update API mode in localStorage
+        function updateApiMode(mode) {
+            const config = JSON.parse(localStorage.getItem('cc-config') || '{}');
+            config.apiMode = mode;
+            localStorage.setItem('cc-config', JSON.stringify(config));
+            localStorage.setItem('cc-api-mode', mode);
+            
+            const msg = document.getElementById('mode-change-message');
+            if (msg) {
+                msg.style.display = 'block';
+                msg.innerHTML = `✅ Data mode changed to <strong>${mode === 'live' ? 'Live Mode' : 'Free Mode'}</strong>. Changes take effect immediately.`;
+                setTimeout(() => msg.style.display = 'none', 3000);
+            }
+        }
+        
+        // Update Transit API key
+        async function updateTransitKey() {
+            const input = document.getElementById('edit-transit-key');
+            const msg = document.getElementById('transit-edit-message');
+            const key = input?.value?.trim();
+            
+            if (!key) {
+                msg.style.display = 'block';
+                msg.style.background = 'rgba(239, 68, 68, 0.2)';
+                msg.textContent = '⚠️ Please enter an API key';
+                return;
+            }
+            
+            msg.style.display = 'block';
+            msg.style.background = 'rgba(102, 126, 234, 0.2)';
+            msg.textContent = '🔄 Validating API key...';
+            
+            try {
+                // Validate the key
+                const response = await fetch(BASE_URL + '/api/validate-transit-key', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ apiKey: key, state: 'VIC' })
+                });
+                const result = await response.json();
+                
+                if (result.valid) {
+                    localStorage.setItem('cc-transit-api-key', key);
+                    localStorage.setItem('cc-transit-api-validated', 'true');
+                    
+                    // Update config
+                    const config = JSON.parse(localStorage.getItem('cc-config') || '{}');
+                    config.api = config.api || {};
+                    config.api.key = key;
+                    localStorage.setItem('cc-config', JSON.stringify(config));
+                    
+                    msg.style.background = 'rgba(34, 197, 94, 0.2)';
+                    msg.textContent = '✅ API key validated and saved!';
+                    input.value = '';
+                    
+                    // Refresh the tab
+                    updateApiSettingsTab(config);
+                } else {
+                    msg.style.background = 'rgba(239, 68, 68, 0.2)';
+                    msg.textContent = '❌ API key validation failed: ' + (result.error || 'Invalid key');
+                }
+            } catch (error) {
+                msg.style.background = 'rgba(239, 68, 68, 0.2)';
+                msg.textContent = '❌ Error validating key: ' + error.message;
+            }
+        }
+        
+        // Update Google Places API key
+        async function updateGoogleKey() {
+            const input = document.getElementById('edit-google-key');
+            const msg = document.getElementById('google-edit-message');
+            const key = input?.value?.trim();
+            
+            if (!key) {
+                msg.style.display = 'block';
+                msg.style.background = 'rgba(239, 68, 68, 0.2)';
+                msg.textContent = '⚠️ Please enter an API key';
+                return;
+            }
+            
+            msg.style.display = 'block';
+            msg.style.background = 'rgba(102, 126, 234, 0.2)';
+            msg.textContent = '🔄 Validating API key...';
+            
+            try {
+                const response = await fetch(BASE_URL + '/api/validate-google-key', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ apiKey: key })
+                });
+                const result = await response.json();
+                
+                if (result.valid) {
+                    localStorage.setItem('cc-google-places-key', key);
+                    localStorage.setItem('cc-google-places-validated', 'true');
+                    
+                    msg.style.background = 'rgba(34, 197, 94, 0.2)';
+                    msg.textContent = '✅ Google API key validated and saved!';
+                    input.value = '';
+                    
+                    // Refresh the tab
+                    const config = JSON.parse(localStorage.getItem('cc-config') || '{}');
+                    updateApiSettingsTab(config);
+                } else {
+                    msg.style.background = 'rgba(239, 68, 68, 0.2)';
+                    msg.textContent = '❌ Validation failed: ' + (result.error || 'Invalid key');
+                }
+            } catch (error) {
+                msg.style.background = 'rgba(239, 68, 68, 0.2)';
+                msg.textContent = '❌ Error validating key: ' + error.message;
+            }
+        }
+        
+        // Test all APIs
+        async function testAllApis() {
+            const transitKey = localStorage.getItem('cc-transit-api-key');
+            const googleKey = localStorage.getItem('cc-google-places-key');
+            
+            let results = [];
+            
+            if (transitKey) {
+                try {
+                    const resp = await fetch(BASE_URL + '/api/validate-transit-key', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ apiKey: transitKey, state: 'VIC' })
+                    });
+                    const result = await resp.json();
+                    results.push(`Transit API: ${result.valid ? '✅ Valid' : '❌ Invalid'}`);
+                    if (result.valid) localStorage.setItem('cc-transit-api-validated', 'true');
+                } catch (e) {
+                    results.push('Transit API: ❌ Error');
+                }
+            } else {
+                results.push('Transit API: ⚪ Not configured');
+            }
+            
+            if (googleKey) {
+                try {
+                    const resp = await fetch(BASE_URL + '/api/validate-google-key', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ apiKey: googleKey })
+                    });
+                    const result = await resp.json();
+                    results.push(`Google API: ${result.valid ? '✅ Valid' : '❌ Invalid'}`);
+                    if (result.valid) localStorage.setItem('cc-google-places-validated', 'true');
+                } catch (e) {
+                    results.push('Google API: ❌ Error');
+                }
+            } else {
+                results.push('Google API: ⚪ Not configured');
+            }
+            
+            alert('API Test Results:\\n\\n' + results.join('\\n'));
+            
+            // Refresh display
+            const config = JSON.parse(localStorage.getItem('cc-config') || '{}');
+            updateApiSettingsTab(config);
+        }
+        
+        // Refresh API status display
+        function refreshApiStatus() {
+            const config = JSON.parse(localStorage.getItem('cc-config') || '{}');
+            updateApiSettingsTab(config);
+            
+            const msg = document.getElementById('mode-change-message');
+            if (msg) {
+                msg.style.display = 'block';
+                msg.innerHTML = '✅ Status refreshed';
+                setTimeout(() => msg.style.display = 'none', 2000);
+            }
+        }
+        
+        // Test current transit key
+        async function testTransitKey() {
+            const key = localStorage.getItem('cc-transit-api-key');
+            const msg = document.getElementById('transit-edit-message');
+            
+            if (!key) {
+                msg.style.display = 'block';
+                msg.style.background = 'rgba(239, 68, 68, 0.2)';
+                msg.textContent = '⚠️ No Transit API key configured';
+                return;
+            }
+            
+            msg.style.display = 'block';
+            msg.style.background = 'rgba(102, 126, 234, 0.2)';
+            msg.textContent = '🔄 Testing current key...';
+            
+            try {
+                const resp = await fetch(BASE_URL + '/api/validate-transit-key', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ apiKey: key, state: 'VIC' })
+                });
+                const result = await resp.json();
+                
+                msg.style.background = result.valid ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)';
+                msg.textContent = result.valid ? '✅ Current key is valid!' : '❌ Key validation failed';
+                
+                if (result.valid) localStorage.setItem('cc-transit-api-validated', 'true');
+            } catch (e) {
+                msg.style.background = 'rgba(239, 68, 68, 0.2)';
+                msg.textContent = '❌ Test error: ' + e.message;
+            }
+        }
+        
+        // Test current Google key
+        async function testGoogleKey() {
+            const key = localStorage.getItem('cc-google-places-key');
+            const msg = document.getElementById('google-edit-message');
+            
+            if (!key) {
+                msg.style.display = 'block';
+                msg.style.background = 'rgba(251, 191, 36, 0.2)';
+                msg.textContent = 'ℹ️ No Google API key configured (optional)';
+                return;
+            }
+            
+            msg.style.display = 'block';
+            msg.style.background = 'rgba(102, 126, 234, 0.2)';
+            msg.textContent = '🔄 Testing current key...';
+            
+            try {
+                const resp = await fetch(BASE_URL + '/api/validate-google-key', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ apiKey: key })
+                });
+                const result = await resp.json();
+                
+                msg.style.background = result.valid ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)';
+                msg.textContent = result.valid ? '✅ Current key is valid!' : '❌ Key validation failed';
+                
+                if (result.valid) localStorage.setItem('cc-google-places-validated', 'true');
+            } catch (e) {
+                msg.style.background = 'rgba(239, 68, 68, 0.2)';
+                msg.textContent = '❌ Test error: ' + e.message;
             }
         }
 
