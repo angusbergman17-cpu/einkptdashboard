@@ -1,6 +1,6 @@
 # Commute Compute System™ Architecture
 
-**Version:** 5.0  
+**Version:** 5.1  
 **Last Updated:** 2026-01-31  
 **Status:** Active  
 **Specification:** CCDash™ V10 (LOCKED)  
@@ -23,6 +23,114 @@ All trademarks and associated copyrights are owned by **Angus Bergman**:
 | CCFirm™ | © 2026 Angus Bergman |
 
 See **LEGAL.md** for complete IP documentation.
+
+---
+
+## Trademark Family File Registry
+
+Complete mapping of each trademark to its constituent files in the codebase.
+
+### SmartCommute™ — Intelligent Route Engine
+
+| File | Type | Purpose |
+|------|------|---------|
+| `src/engines/smart-commute.js` | Core | Main journey recommendation engine |
+| `api/smartcommute.js` | API | REST endpoint for SmartCommute |
+| `src/core/smart-journey-engine.js` | Core | Journey calculation logic |
+| `src/services/smart-journey-integration.js` | Service | Integration layer |
+| `src/services/smart-route-recommender.js` | Service | Route scoring and selection |
+| `tests/test-smart-commute.js` | Test | Unit tests |
+| `tests/test-smart-journey-integration.js` | Test | Integration tests |
+| `tests/test-smart-route-recommender.js` | Test | Recommender tests |
+
+### CCDash™ — Primary Dashboard Renderer
+
+| File | Type | Purpose |
+|------|------|---------|
+| `src/services/ccdash-renderer.js` | Core | Consolidated renderer (v2.0) — single source of truth |
+| `api/zones.js` | API | Zone-based partial refresh endpoint |
+| `api/zones-tiered.js` | API | Tiered refresh intervals (1/2/5 min) |
+| `api/zone/[id].js` | API | Individual zone BMP endpoint |
+| `api/zonedata.js` | API | All zones with metadata |
+| `api/screen.js` | API | Full 800×480 PNG endpoint |
+| `api/fullscreen.js` | API | Fullscreen render endpoint |
+| `specs/CCDashDesignV10.md` | Spec | **LOCKED** dashboard specification |
+| `specs/CCDASH-SPEC-V10.md` | Spec | V10 specification document |
+| `specs/DASHBOARD-SPEC.md` | Spec | General dashboard specification |
+| `tests/test-dashboard-render.js` | Test | Render tests |
+
+### CC LiveDash™ — Multi-Device Preview Renderer
+
+| File | Type | Purpose |
+|------|------|---------|
+| `src/services/livedash.js` | Core | Multi-device renderer service |
+| `api/livedash.js` | API | Device-aware render endpoint |
+| `tests/test-livedash.js` | Test | Multi-device tests |
+| `tests/output/devices/livedash-*.png` | Output | Test render outputs per device |
+| `docs/MULTI-DEVICE-RENDERING.md` | Docs | Device support documentation |
+
+### CCFirm™ — Custom Firmware Family
+
+| File | Type | Purpose |
+|------|------|---------|
+| `firmware/src/main.cpp` | Core | Primary CCFirmTRMNL firmware |
+| `firmware/src/main-tiered.cpp` | Variant | Tiered refresh variant |
+| `firmware/src/main-minimal.cpp` | Variant | Minimal/debug variant |
+| `firmware/src/main-v7.cpp` | Variant | V7 firmware |
+| `firmware/src/main-v6.cpp` | Variant | V6 firmware |
+| `firmware/src/main-barebones.cpp` | Variant | Barebones test |
+| `firmware/src/main-bypass.cpp` | Variant | Bypass mode |
+| `firmware/src/main-sequential.cpp` | Variant | Sequential refresh |
+| `firmware/src/main-direct-wifi.cpp` | Variant | Direct WiFi mode |
+| `firmware/src/main-display-test.cpp` | Variant | Display testing |
+| `firmware/src/zones-v12.cpp` | Module | Zone handling module |
+| `firmware/src/cc-logo.cpp` | Asset | Logo rendering |
+| `firmware/src/display-test.cpp` | Test | Display test routines |
+| `firmware/src/burnin-fix.cpp` | Utility | Burn-in recovery |
+| `firmware/include/config.h` | Config | Build configuration |
+| `firmware/include/prerendered-screens.h` | Asset | Prerendered screens (boot, error) |
+| `firmware/platformio.ini` | Build | PlatformIO build config |
+| `firmware/kindle/` | Variant | CCFirmKindle for jailbroken Kindles |
+| `firmware/README.md` | Docs | Firmware overview |
+| `firmware/BOOT-SEQUENCE.md` | Docs | Boot sequence documentation |
+| `firmware/QUICK_START.md` | Docs | Quick start guide |
+| `firmware/FIRMWARE-VERSION-HISTORY.md` | Docs | Version history |
+| `firmware/docs/FLASHING.md` | Docs | Flashing instructions |
+
+### CoffeeDecision Engine (Component of SmartCommute™)
+
+| File | Type | Purpose |
+|------|------|---------|
+| `src/core/coffee-decision.js` | Core | Coffee insertion decision logic |
+| `src/core/decision-logger.js` | Core | Decision audit logging |
+| `src/services/cafe-busy-detector.js` | Service | Cafe busyness estimation |
+| `api/cafe-details.js` | API | Cafe data fetching |
+| `tests/test-coffee-at-interchange.js` | Test | Interchange coffee tests |
+| `docs/CAFE-BUSYNESS-FEATURE.md` | Docs | Cafe busyness documentation |
+
+### Journey Display Module (Component of CCDash™)
+
+| File | Type | Purpose |
+|------|------|---------|
+| `src/journey-display/index.js` | Core | Module exports |
+| `src/journey-display/api.js` | API | HTTP API handlers |
+| `src/journey-display/engine.js` | Core | Journey calculation |
+| `src/journey-display/renderer.js` | Core | Canvas rendering |
+| `src/journey-display/diff.js` | Core | Zone change detection |
+| `src/journey-display/models.js` | Core | Data models and types |
+
+### Supporting Services
+
+| File | Trademark | Purpose |
+|------|-----------|---------|
+| `src/services/opendata.js` | SmartCommute™ | Transport Victoria GTFS-RT client |
+| `src/services/weather-bom.js` | CCDash™ | BOM weather integration |
+| `src/services/geocoding-service.js` | SmartCommute™ | Address resolution |
+| `src/services/journey-planner.js` | SmartCommute™ | Journey calculation |
+| `src/services/journey-scenarios.js` | SmartCommute™ | Scenario handling |
+| `src/services/dashboard-service.js` | CCDash™ | Dashboard data aggregation |
+| `src/services/health-monitor.js` | System | System health checks |
+| `src/utils/config-token.js` | System | Token encode/decode |
 
 ---
 
@@ -1412,6 +1520,7 @@ grep -rn "Clara\|Toorak\|Norman" src/ api/ --include="*.js" \
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 5.1 | 2026-01-31 | **Trademark Family File Registry**: Added comprehensive mapping of all trademarked components (SmartCommute™, CCDash™, CC LiveDash™, CCFirm™) to their constituent files. Documents CoffeeDecision engine, Journey Display module, and supporting services. |
 | 5.0 | 2026-01-31 | **Alignment with DEVELOPMENT-RULES.md v1.14**: Added Vercel KV Storage (Section 21), GTFS-RT Data Flow (Section 22), Turnkey Compliance (Section 23). Updated references to dev rules. Refresh interval now 60s. |
 | 4.0 | 2026-01-30 | Major update: Added Journey Display Module, Data Layer, Multi-State Support, Device Pairing, Health Monitoring, CCFirm™ Architecture. Updated component structure, API endpoints, and device support. |
 | 3.0 | 2026-01-29 | Added IP notice, Setup Wizard, Free-Tier architecture |
