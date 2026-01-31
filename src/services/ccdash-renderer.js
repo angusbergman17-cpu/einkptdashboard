@@ -1641,18 +1641,25 @@ export function renderFullScreen(data, prefs = {}) {
   ctx.font = '14px Inter, sans-serif';
   ctx.fillText(data.date || '', dayDateX, 28);
   
-  // v1.31: Service status box below day/date
+  // v1.33: Service status box with live/scheduled data indicator
   const serviceStatus = data.service_status || (data.disruption ? 'DISRUPTIONS' : 'OK');
   const hasDisruption = data.disruption || data.status_type === 'disruption' || 
     serviceStatus.toUpperCase().includes('DISRUPTION') || serviceStatus.toUpperCase().includes('DELAY');
+  const isLiveData = data.isLive !== false && data.dataSource !== 'scheduled';  // Default to live unless specified
   
   const statusBoxX = dayDateX;
-  const statusBoxY = 48;
-  const statusBoxW = 110;
-  const statusBoxH = 20;
+  const statusBoxY = 46;
+  const statusBoxW = 115;
+  const statusBoxH = 18;
   
-  ctx.font = 'bold 10px Inter, sans-serif';
+  // Data source indicator (below status box)
+  const dataBoxY = statusBoxY + statusBoxH + 2;
+  const dataBoxH = 14;
+  
+  ctx.font = 'bold 9px Inter, sans-serif';
   ctx.textBaseline = 'middle';
+  
+  // Service status box
   if (hasDisruption) {
     ctx.fillStyle = '#000';
     ctx.fillRect(statusBoxX, statusBoxY, statusBoxW, statusBoxH);
@@ -1665,6 +1672,22 @@ export function renderFullScreen(data, prefs = {}) {
     ctx.fillStyle = '#000';
     ctx.fillText('✓ SERVICES OK', statusBoxX + 6, statusBoxY + statusBoxH / 2);
   }
+  
+  // Data source indicator
+  ctx.font = 'bold 8px Inter, sans-serif';
+  if (isLiveData) {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(statusBoxX, dataBoxY, statusBoxW, dataBoxH);
+    ctx.fillStyle = '#FFF';
+    ctx.fillText('● LIVE DATA', statusBoxX + 6, dataBoxY + dataBoxH / 2);
+  } else {
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(statusBoxX, dataBoxY, statusBoxW, dataBoxH);
+    ctx.fillStyle = '#000';
+    ctx.fillText('○ SCHEDULED', statusBoxX + 6, dataBoxY + dataBoxH / 2);
+  }
+  
   ctx.fillStyle = '#000';
   ctx.textBaseline = 'top';
   
