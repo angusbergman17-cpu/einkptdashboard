@@ -1983,26 +1983,26 @@
                     <div id="journey-config-summary" style="font-size: 13px; color: #94a3b8; line-height: 1.6;">Loading configuration...</div>
                 </div>
 
-                <!-- SmartCommute Engine Output Panel - REAL-TIME "LEAVE NOW" VIEW -->
-                <div id="smartcommute-output-panel" class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(79, 178, 142, 0.08) 0%, rgba(102, 126, 234, 0.08) 100%); border-radius: 12px; padding: 20px; border: 1px solid rgba(79, 178, 142, 0.2);">
+                <!-- SmartCommute Engine Output Panel - CCDash Compatible Preview -->
+                <div id="smartcommute-output-panel" class="card" style="margin-bottom: 20px; background: #2a3d5f; border-radius: 12px; padding: 20px; border: 1px solid #3d5278;">
                     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
                         <div style="display: flex; align-items: center; gap: 12px;">
-                            <div style="width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #4fb28e 0%, #667eea 100%); display: flex; align-items: center; justify-content: center;">
+                            <div style="width: 40px; height: 40px; border-radius: 10px; background: #1a1a1a; display: flex; align-items: center; justify-content: center;">
                                 <svg width="22" height="22" style="color: white;"><use href="#icon-cpu"/></svg>
                             </div>
                             <div>
-                                <h3 style="font-size: 16px; font-weight: 600; color: #f1f5f9; margin: 0;">If You Leave NOW</h3>
-                                <span style="font-size: 12px; color: #94a3b8;">Real-time journey calculation • <span id="sc-last-update">--</span></span>
+                                <h3 style="font-size: 16px; font-weight: 600; color: #f1f5f9; margin: 0;">SmartCommute Output (CCDash Preview)</h3>
+                                <span style="font-size: 12px; color: #94a3b8;">1-bit e-ink compatible • <span id="sc-last-update">--</span></span>
                             </div>
                         </div>
                         <div style="display: flex; gap: 8px; align-items: center;">
                             <div id="sc-auto-refresh-indicator" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(34, 197, 94, 0.15); border-radius: 20px; font-size: 11px; color: #22c55e;">
                                 <div style="width: 8px; height: 8px; background: #22c55e; border-radius: 50%; animation: pulse 1.5s infinite;"></div>
-                                Auto-refresh
+                                Live
                             </div>
                             <button onclick="toggleSmartCommuteDetails()" class="btn btn-secondary" style="padding: 8px 14px; font-size: 12px;">
                                 <svg width="14" height="14"><use href="#icon-layers"/></svg>
-                                Details
+                                Raw
                             </button>
                             <button onclick="loadSmartCommuteOutput(true)" class="btn btn-secondary" style="padding: 8px 14px; font-size: 12px;">
                                 <svg width="14" height="14"><use href="#icon-refresh"/></svg>
@@ -2031,15 +2031,15 @@
                         </div>
                     </div>
 
-                    <!-- Journey Legs Visual - Real-Time -->
-                    <div id="smartcommute-legs" style="padding: 16px; background: rgba(0,0,0,0.2); border-radius: 10px; margin-bottom: 16px;">
-                        <div style="font-weight: 600; margin-bottom: 12px; font-size: 13px; color: #94a3b8; display: flex; align-items: center; justify-content: space-between;">
-                            <span>YOUR COMMUTE IF YOU LEAVE NOW</span>
-                            <span id="sc-current-time" style="font-family: monospace; color: #4fb28e;"></span>
+                    <!-- Journey Legs Visual - CCDash E-Ink Preview -->
+                    <div id="smartcommute-legs" style="padding: 16px; background: #f5f5f0; border-radius: 4px; margin-bottom: 16px;">
+                        <div style="font-weight: 600; margin-bottom: 12px; font-size: 12px; color: #1a1a1a; display: flex; align-items: center; justify-content: space-between; text-transform: uppercase; letter-spacing: 0.5px;">
+                            <span>E-INK DISPLAY PREVIEW</span>
+                            <span id="sc-current-time" style="font-family: monospace; color: #1a1a1a;"></span>
                         </div>
-                        <div id="sc-legs-display" style="display: flex; flex-direction: column; gap: 8px;">
-                            <div style="padding: 15px; text-align: center; color: #94a3b8; font-size: 13px;">
-                                Loading real-time commute data...
+                        <div id="sc-legs-display" style="display: flex; flex-direction: column; gap: 4px;">
+                            <div style="padding: 15px; text-align: center; color: #666; font-size: 13px; background: #f5f5f0; border: 2px solid #1a1a1a;">
+                                Loading CCDash output...
                             </div>
                         </div>
                     </div>
@@ -5539,58 +5539,42 @@
             }
         }
 
-        // Update SmartCommute summary cards - REAL-TIME "Leave Now" view
+        // Update SmartCommute summary cards - CCDash compatible format
         function updateSmartCommuteSummary(result) {
             const leaveTime = document.getElementById('sc-leave-time');
             const arriveTime = document.getElementById('sc-arrive-time');
             const totalTime = document.getElementById('sc-total-time');
             const coffeeDecision = document.getElementById('sc-coffee-decision');
 
-            // Use leaveNow data for real-time view
-            const leaveNow = result.leaveNow;
-            
-            if (result.success && leaveNow) {
-                // Show current time as "leave now"
+            if (result.success && result.summary) {
+                const summary = result.summary;
+                
+                // Current time (leave now)
                 if (leaveTime) {
-                    leaveTime.textContent = result.localTime || 'NOW';
-                    leaveTime.title = 'If you leave right now';
+                    leaveTime.textContent = result.current_time || 'NOW';
                 }
                 
-                // Show calculated arrival
+                // Arrival time
                 if (arriveTime) {
-                    arriveTime.textContent = leaveNow.arriveTime || '--:--';
-                    // Color based on arrival status
-                    if (leaveNow.arrival?.status === 'late') {
-                        arriveTime.style.color = '#ef4444';
-                        arriveTime.title = leaveNow.arrival.message;
-                    } else if (leaveNow.arrival?.status === 'early') {
-                        arriveTime.style.color = '#22c55e';
-                        arriveTime.title = leaveNow.arrival.message;
-                    } else {
-                        arriveTime.style.color = '#667eea';
-                        arriveTime.title = 'On time';
-                    }
+                    arriveTime.textContent = summary.arriveAt || '--:--';
+                    arriveTime.style.color = summary.status === 'late' ? '#ef4444' : 
+                                             summary.status === 'early' ? '#22c55e' : '#667eea';
                 }
                 
                 // Total journey time
                 if (totalTime) {
-                    totalTime.textContent = leaveNow.totalMinutes ? `${leaveNow.totalMinutes} min` : '-- min';
+                    totalTime.textContent = summary.totalMinutes ? `${summary.totalMinutes} min` : '-- min';
                 }
                 
-                // Coffee decision
+                // Coffee decision (CCDash format)
                 if (coffeeDecision) {
-                    const coffee = leaveNow.coffee;
-                    if (coffee) {
-                        coffeeDecision.textContent = coffee.canGet ? 'YES' : 'NO';
-                        coffeeDecision.style.color = coffee.canGet ? '#22c55e' : '#ef4444';
-                        coffeeDecision.title = coffee.reason || '';
-                    } else {
-                        coffeeDecision.textContent = '--';
-                        coffeeDecision.style.color = '#a78bfa';
-                    }
+                    const coffee = result.coffee;
+                    coffeeDecision.textContent = coffee?.canGet ? 'YES' : 'NO';
+                    coffeeDecision.style.color = coffee?.canGet ? '#22c55e' : '#ef4444';
+                    coffeeDecision.title = coffee?.subtext || '';
                 }
             } else if (result.fallbackMode) {
-                if (leaveTime) leaveTime.textContent = result.localTime || 'NOW';
+                if (leaveTime) leaveTime.textContent = result.current_time || 'NOW';
                 if (arriveTime) arriveTime.textContent = '--:--';
                 if (totalTime) totalTime.textContent = '-- min';
                 if (coffeeDecision) {
@@ -5600,75 +5584,106 @@
             }
         }
 
-        // Update SmartCommute legs display - REAL-TIME with times
+        // Update SmartCommute legs display - CCDash compatible format
+        // Matches 1-bit e-ink rendering style: {type, title, subtitle, minutes, state}
         function updateSmartCommuteLegs(result) {
             const legsDisplay = document.getElementById('sc-legs-display');
             if (!legsDisplay) return;
 
-            const leaveNow = result.leaveNow;
+            const legs = result.journey_legs;
+            const statusBar = result.status_bar;
 
-            if (result.success && leaveNow?.legs?.length > 0) {
+            if (result.success && legs?.length > 0) {
+                // CCDash mode icons (matches e-ink display)
+                const modeIcons = {
+                    walk: '🚶', coffee: '☕', tram: '🚊', train: '🚆',
+                    bus: '🚌', wait: '⏱️', transit: '🚇', vline: '🚄'
+                };
+                
                 let html = '';
                 
-                // Show next departure countdown prominently
-                if (leaveNow.nextDeparture) {
-                    const dep = leaveNow.nextDeparture;
+                // Status bar (matches CCDash status bar zone)
+                if (statusBar) {
+                    const barBg = statusBar.hasDisruption ? '#000' : '#1a1a1a';
+                    const barColor = statusBar.hasDisruption ? '#fff' : '#f1f5f9';
                     html += `
-                        <div style="padding: 12px 16px; background: linear-gradient(135deg, rgba(79, 178, 142, 0.2) 0%, rgba(102, 126, 234, 0.2) 100%); border-radius: 10px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
+                        <div style="padding: 10px 16px; background: ${barBg}; color: ${barColor}; font-weight: 600; font-size: 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; border-radius: 4px;">
+                            ${statusBar.icon ? `<span style="font-size: 16px;">${statusBar.icon}</span>` : ''}
+                            <span>${statusBar.text}</span>
+                        </div>
+                    `;
+                }
+                
+                // Next departure (if available)
+                if (result.nextDeparture) {
+                    const dep = result.nextDeparture;
+                    const countdownColor = dep.minutes <= 3 ? '#ef4444' : '#4fb28e';
+                    html += `
+                        <div style="padding: 12px 16px; background: #f5f5f0; border: 2px solid #1a1a1a; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
                             <div>
-                                <div style="font-size: 12px; opacity: 0.7; margin-bottom: 2px;">NEXT ${dep.mode.toUpperCase()}</div>
-                                <div style="font-size: 16px; font-weight: 600; color: #f1f5f9;">${dep.destination || 'City'}</div>
+                                <div style="font-size: 11px; color: #666; text-transform: uppercase;">NEXT ${dep.mode.toUpperCase()}</div>
+                                <div style="font-size: 15px; font-weight: 600; color: #1a1a1a;">${dep.destination}</div>
                             </div>
                             <div style="text-align: right;">
-                                <div style="font-size: 28px; font-weight: 700; color: ${dep.minutes <= 3 ? '#ef4444' : '#4fb28e'};">${dep.countdown}</div>
-                                <div style="font-size: 11px; opacity: 0.7;">${dep.departureTime}</div>
+                                <div style="font-size: 28px; font-weight: 700; color: ${countdownColor};">${dep.minutes} MIN</div>
+                                <div style="font-size: 11px; color: #666;">${dep.departureTime}</div>
                             </div>
                         </div>
                     `;
                 }
                 
-                // Journey legs with times
-                leaveNow.legs.forEach((leg, index) => {
-                    const isLast = index === leaveNow.legs.length - 1;
-                    const bgColor = leg.mode === 'wait' ? 'rgba(251, 191, 36, 0.15)' : 
-                                   leg.mode === 'coffee' ? 'rgba(167, 139, 250, 0.15)' :
-                                   leg.mode === 'train' || leg.mode === 'tram' ? 'rgba(102, 126, 234, 0.15)' :
-                                   'rgba(79, 178, 142, 0.15)';
+                // Journey legs (CCDash format: type, title, subtitle, minutes, state)
+                legs.forEach((leg, index) => {
+                    const icon = modeIcons[leg.type] || '📍';
+                    const isSkip = leg.state === 'skip';
+                    const isDelayed = leg.state === 'delayed';
+                    const isCancelled = leg.state === 'cancelled';
+                    
+                    // Style based on state (matches CCDash leg states)
+                    let borderStyle = '2px solid #1a1a1a';
+                    let bgStyle = '#f5f5f0';
+                    let textColor = '#1a1a1a';
+                    
+                    if (isSkip) {
+                        borderStyle = '2px dashed #888';
+                        bgStyle = '#f5f5f0';
+                        textColor = '#888';
+                    } else if (isCancelled) {
+                        borderStyle = '2px solid #888';
+                        bgStyle = 'repeating-linear-gradient(135deg, #f5f5f0, #f5f5f0 10px, #ccc 10px, #ccc 11px)';
+                    } else if (isDelayed) {
+                        borderStyle = '2px dashed #888';
+                    }
                     
                     html += `
-                        <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: ${bgColor}; border-radius: 8px;">
-                            <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
-                                ${leg.icon || '📍'}
+                        <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: ${bgStyle}; border: ${borderStyle}; margin-bottom: 4px;">
+                            <div style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+                                ${icon}
                             </div>
                             <div style="flex: 1; min-width: 0;">
-                                <div style="font-weight: 600; font-size: 14px; color: #f1f5f9;">${leg.description || leg.mode || 'Unknown'}</div>
-                                <div style="font-size: 12px; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${leg.details || ''}</div>
+                                <div style="font-weight: 600; font-size: 15px; color: ${textColor};">${leg.title}</div>
+                                <div style="font-size: 12px; color: #666;">${leg.subtitle || ''}</div>
                             </div>
-                            <div style="text-align: right; flex-shrink: 0;">
-                                <div style="font-weight: 700; font-size: 18px; color: #f1f5f9;">${leg.duration} min</div>
-                                <div style="font-size: 11px; color: #94a3b8;">${leg.startTime} → ${leg.endTime}</div>
+                            ${leg.minutes > 0 ? `
+                            <div style="background: #1a1a1a; color: #fff; padding: 8px 12px; text-align: center; min-width: 60px;">
+                                <div style="font-size: 18px; font-weight: 700;">${leg.minutes}</div>
+                                <div style="font-size: 9px; text-transform: uppercase;">${leg.type === 'walk' ? 'MIN WALK' : 'MIN'}</div>
                             </div>
+                            ` : isSkip ? `
+                            <div style="padding: 8px 12px; text-align: center; color: #888; font-size: 11px;">
+                                SKIP
+                            </div>
+                            ` : ''}
                         </div>
-                        ${!isLast ? '<div style="border-left: 2px dashed rgba(255,255,255,0.15); margin-left: 19px; height: 8px;"></div>' : ''}
                     `;
                 });
                 
-                // Arrival status
-                if (leaveNow.arrival) {
-                    const statusColor = leaveNow.arrival.status === 'late' ? '#ef4444' : 
-                                       leaveNow.arrival.status === 'early' ? '#22c55e' : '#4fb28e';
-                    const statusBg = leaveNow.arrival.status === 'late' ? 'rgba(239, 68, 68, 0.15)' : 
-                                    leaveNow.arrival.status === 'early' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(79, 178, 142, 0.15)';
+                // Footer (arrival info)
+                if (result.footer) {
                     html += `
-                        <div style="margin-top: 16px; padding: 14px 16px; background: ${statusBg}; border-radius: 10px; border-left: 4px solid ${statusColor}; display: flex; align-items: center; justify-content: space-between;">
-                            <div>
-                                <div style="font-size: 12px; opacity: 0.7; margin-bottom: 2px;">ARRIVAL STATUS</div>
-                                <div style="font-size: 16px; font-weight: 700; color: ${statusColor};">${leaveNow.arrival.message}</div>
-                            </div>
-                            <div style="text-align: right;">
-                                <div style="font-size: 11px; opacity: 0.7;">Target: ${leaveNow.arrival.targetTime}</div>
-                                <div style="font-size: 14px; font-weight: 600; color: #f1f5f9;">Actual: ${leaveNow.arrival.actualTime}</div>
-                            </div>
+                        <div style="margin-top: 12px; padding: 10px 16px; background: #1a1a1a; color: #fff; display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+                            <span style="text-transform: uppercase;">${result.footer.destination}</span>
+                            <span style="font-weight: 600;">ARRIVE ${result.footer.arriveTime}</span>
                         </div>
                     `;
                 }
@@ -5677,22 +5692,22 @@
 
             } else if (result.fallbackMode) {
                 legsDisplay.innerHTML = `
-                    <div style="padding: 20px; background: rgba(251, 191, 36, 0.1); border-radius: 10px; text-align: center;">
-                        <div style="font-size: 32px; margin-bottom: 12px;">📋</div>
-                        <div style="font-weight: 600; font-size: 16px; color: #fbbf24; margin-bottom: 6px;">Using Timetable Data</div>
-                        <div style="font-size: 13px; color: #94a3b8; line-height: 1.5;">Add a Transit API key in API Settings for real-time departure data</div>
+                    <div style="padding: 20px; background: #f5f5f0; border: 2px solid #1a1a1a; text-align: center;">
+                        <div style="font-size: 28px; margin-bottom: 10px;">📋</div>
+                        <div style="font-weight: 600; font-size: 15px; color: #1a1a1a; margin-bottom: 6px;">USING TIMETABLE DATA</div>
+                        <div style="font-size: 12px; color: #666;">Add Transit API key for real-time</div>
                     </div>
                 `;
             } else if (result.error) {
                 legsDisplay.innerHTML = `
-                    <div style="padding: 20px; background: rgba(239, 68, 68, 0.1); border-radius: 10px; text-align: center;">
-                        <div style="font-size: 32px; margin-bottom: 12px;">⚠️</div>
-                        <div style="font-weight: 600; font-size: 16px; color: #ef4444; margin-bottom: 6px;">Calculation Error</div>
-                        <div style="font-size: 13px; color: #94a3b8;">${result.error}</div>
+                    <div style="padding: 20px; background: #f5f5f0; border: 2px solid #1a1a1a; text-align: center;">
+                        <div style="font-size: 28px; margin-bottom: 10px;">⚠️</div>
+                        <div style="font-weight: 600; font-size: 15px; color: #1a1a1a; margin-bottom: 6px;">ERROR</div>
+                        <div style="font-size: 12px; color: #666;">${result.error}</div>
                     </div>
                 `;
             } else {
-                legsDisplay.innerHTML = '<div style="padding: 20px; text-align: center; color: #94a3b8; font-size: 14px;">Configure your journey in Setup to see real-time commute data</div>';
+                legsDisplay.innerHTML = '<div style="padding: 20px; text-align: center; color: #666; font-size: 13px; background: #f5f5f0; border: 2px solid #1a1a1a;">Configure journey in Setup</div>';
             }
         }
 

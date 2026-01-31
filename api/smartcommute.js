@@ -1,11 +1,13 @@
 /**
- * SmartCommute API Endpoint - REAL-TIME "LEAVE NOW" VIEW
+ * SmartCommute API Endpoint - CCDash Compatible Output
  * 
- * Shows what happens if the user leaves RIGHT NOW:
- * - Next available departures
- * - Real-time countdown
- * - Estimated arrival time
- * - Coffee feasibility based on current time
+ * Returns SmartCommute engine output in CCDash-compatible format
+ * for 1-bit black and white e-ink rendering.
+ * 
+ * Output format matches CCDashRendererV13 expectations:
+ * - journey_legs[]: {type, title, subtitle, minutes, state}
+ * - status_bar: {text, icon, hasDisruption}
+ * - coffee: {canGet, subtext}
  * 
  * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
@@ -15,7 +17,6 @@ import { SmartCommute } from '../src/engines/smart-commute.js';
 import { getTransitApiKey } from '../src/data/kv-preferences.js';
 
 export default async function handler(req, res) {
-  // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -24,7 +25,6 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  // Melbourne timezone
   const TIMEZONE = 'Australia/Melbourne';
   const now = new Date();
   const melbourneNow = new Date(now.toLocaleString('en-US', { timeZone: TIMEZONE }));
@@ -33,9 +33,7 @@ export default async function handler(req, res) {
     const params = req.method === 'POST' ? req.body : req.query;
     
     const {
-      home,
-      work,
-      cafe,
+      home, work, cafe,
       arrivalTime = '09:00',
       state = 'VIC',
       coffeeEnabled = true,
@@ -48,11 +46,7 @@ export default async function handler(req, res) {
 
     // Get API key
     let apiKey = null;
-    try {
-      apiKey = await getTransitApiKey();
-    } catch (e) {
-      console.log('[SmartCommute API] No KV API key');
-    }
+    try { apiKey = await getTransitApiKey(); } catch (e) {}
     if (!apiKey && params.apiKey) apiKey = params.apiKey;
 
     // Build preferences
@@ -60,8 +54,7 @@ export default async function handler(req, res) {
       homeAddress: home,
       workAddress: work,
       coffeeAddress: cafe,
-      arrivalTime,
-      state,
+      arrivalTime, state,
       coffeeEnabled: coffeeEnabled !== false && coffeeEnabled !== 'false',
       homeToStop: walkingTimes.homeToStop || 5,
       homeToCafe: walkingTimes.homeToCafe || 5,
@@ -87,47 +80,78 @@ export default async function handler(req, res) {
     // Get live transit data
     const result = await engine.getJourneyRecommendation({ forceRefresh });
 
-    // Calculate REAL-TIME "leave now" journey
-    const realTimeJourney = calculateLeaveNowJourney(result, preferences, melbourneNow);
+    // Build CCDash-compatible journey_legs
+    const journeyLegs = buildCCDashLegs(result, preferences, melbourneNow);
+
+    // Build status bar text (matches CCDash status bar format)
+    const statusBar = buildStatusBar(result, journeyLegs, preferences, melbourneNow);
+
+    // Calculate times
+    const totalMinutes = journeyLegs.reduce((sum, leg) => sum + (leg.minutes || 0), 0);
+    const arriveTime = addMinutes(melbourneNow, totalMinutes);
+
+    // Check if on time for target arrival
+    const [targetH, targetM] = (arrivalTime || '09:00').split(':').map(Number);
+    const targetArrival = new Date(melbourneNow);
+    targetArrival.setHours(targetH, targetM, 0, 0);
+    const arrivalDiff = Math.round((arriveTime - targetArrival) / 60000);
 
     const response = {
       success: true,
       timestamp: now.toISOString(),
-      localTime: formatTime12h(melbourneNow),
-      localTimeRaw: formatTime24h(melbourneNow),
+      
+      // Current time in Melbourne (12-hour format per dev rules)
+      current_time: formatTime12h(melbourneNow),
+      current_time_24h: formatTime24h(melbourneNow),
+      
+      // CCDash-compatible journey legs (1-bit render ready)
+      journey_legs: journeyLegs,
+      
+      // Status bar (matches CCDash status bar)
+      status_bar: statusBar,
+      
+      // Coffee decision
+      coffee: {
+        canGet: result.coffee?.canGet ?? false,
+        subtext: result.coffee?.subtext || result.coffee?.reason || '',
+        urgent: result.coffee?.urgent ?? false
+      },
+      
+      // Journey summary
+      summary: {
+        leaveNow: formatTime12h(melbourneNow),
+        arriveAt: formatTime12h(arriveTime),
+        totalMinutes,
+        onTime: arrivalDiff <= 5,
+        diffMinutes: arrivalDiff,
+        status: arrivalDiff > 5 ? 'late' : arrivalDiff < -10 ? 'early' : 'on-time'
+      },
+      
+      // Next departure info
+      nextDeparture: getNextDeparture(result.transit, melbourneNow),
+      
+      // Weather (for header)
+      weather: result.weather ? {
+        temp: result.weather.temp,
+        condition: result.weather.condition,
+        icon: result.weather.icon,
+        umbrella: result.weather.umbrella
+      } : null,
+      
+      // Footer data
+      footer: {
+        destination: shortenAddress(work) || 'WORK',
+        arriveTime: formatTime12h(arriveTime)
+      },
+      
+      // State info
       state: result.state,
       fallbackMode: result.fallbackMode,
       
-      // REAL-TIME "Leave Now" data
-      leaveNow: realTimeJourney,
-      
-      // Coffee decision for leaving now
-      coffee: realTimeJourney.coffee,
-      
-      // Live transit departures
-      nextDepartures: {
-        trains: (result.transit?.trains || []).slice(0, 5).map(t => ({
-          ...t,
-          departureTime: addMinutes(melbourneNow, t.minutes),
-          countdown: formatCountdown(t.minutes)
-        })),
-        trams: (result.transit?.trams || []).slice(0, 5).map(t => ({
-          ...t,
-          departureTime: addMinutes(melbourneNow, t.minutes),
-          countdown: formatCountdown(t.minutes)
-        })),
-        source: result.transit?.source || 'timetable'
-      },
-      
-      // Weather
-      weather: result.weather,
-      
-      // Target arrival for reference
-      targetArrival: arrivalTime,
-      
-      // Raw engine data
+      // Raw data for debugging
       raw: {
         route: result.route,
+        transit: result.transit,
         engineStatus: engine.getStatus()
       }
     };
@@ -140,242 +164,211 @@ export default async function handler(req, res) {
       success: false,
       error: error.message,
       fallbackMode: true,
-      localTime: formatTime12h(melbourneNow),
+      current_time: formatTime12h(melbourneNow),
+      journey_legs: [],
+      status_bar: { text: 'ERROR', icon: '⚠', hasDisruption: true },
       timestamp: now.toISOString()
     });
   }
 }
 
 /**
- * Calculate journey if user leaves RIGHT NOW
+ * Build CCDash-compatible journey legs
+ * Format: {type, title, subtitle, minutes, state}
  */
-function calculateLeaveNowJourney(result, prefs, now) {
+function buildCCDashLegs(result, prefs, now) {
   const legs = [];
-  let currentTime = new Date(now);
-  let totalMinutes = 0;
-
-  // Get transit data
-  const trains = result.transit?.trains || [];
-  const trams = result.transit?.trams || [];
+  const transit = result.transit || {};
+  const trains = transit.trains || [];
+  const trams = transit.trams || [];
   
-  // Determine primary transit mode and departure
-  let primaryTransit = null;
-  let walkToStopTime = prefs.homeToStop || 5;
-  
-  // Check coffee feasibility
   const coffeeEnabled = prefs.coffeeEnabled && prefs.coffeeAddress;
-  let canGetCoffee = false;
-  let coffeeReason = '';
-
-  if (coffeeEnabled) {
-    const homeToCafe = prefs.homeToCafe || 5;
-    const coffeeDuration = prefs.cafeDuration || 5;
-    const cafeToStop = prefs.cafeToTransit || 2;
-    const totalCoffeeTime = homeToCafe + coffeeDuration + cafeToStop;
-    
-    // Find first departure we can catch with coffee
-    const firstUsableDeparture = [...trains, ...trams]
-      .filter(d => d.minutes >= totalCoffeeTime + 2) // +2 min buffer
-      .sort((a, b) => a.minutes - b.minutes)[0];
-    
-    // Find first departure without coffee
-    const firstDeparture = [...trains, ...trams]
-      .filter(d => d.minutes >= walkToStopTime + 1)
-      .sort((a, b) => a.minutes - b.minutes)[0];
-    
-    if (firstUsableDeparture && firstDeparture) {
-      // Can we get coffee and still make a reasonable departure?
-      const coffeeWaitExtra = firstUsableDeparture.minutes - firstDeparture.minutes;
-      canGetCoffee = coffeeWaitExtra <= 10; // Only if it doesn't add more than 10 min
-      if (!canGetCoffee) {
-        coffeeReason = `Would add ${coffeeWaitExtra} min wait`;
-      }
-    } else if (!firstUsableDeparture) {
-      coffeeReason = 'No departure available with coffee time';
-    }
-    
-    if (canGetCoffee && firstUsableDeparture) {
-      primaryTransit = firstUsableDeparture;
-      
-      // Leg 1: Walk to cafe
-      legs.push({
-        mode: 'walk',
-        icon: '🚶',
-        description: 'Walk to coffee shop',
-        details: shortenAddress(prefs.coffeeAddress),
-        duration: homeToCafe,
-        startTime: formatTime12h(currentTime),
-        endTime: formatTime12h(addMinutes(currentTime, homeToCafe))
-      });
-      currentTime = addMinutes(currentTime, homeToCafe);
-      totalMinutes += homeToCafe;
-      
-      // Leg 2: Get coffee
-      legs.push({
-        mode: 'coffee',
-        icon: '☕',
-        description: 'Get coffee',
-        details: 'Order & wait',
-        duration: coffeeDuration,
-        startTime: formatTime12h(currentTime),
-        endTime: formatTime12h(addMinutes(currentTime, coffeeDuration))
-      });
-      currentTime = addMinutes(currentTime, coffeeDuration);
-      totalMinutes += coffeeDuration;
-      
-      // Leg 3: Walk to station
-      legs.push({
-        mode: 'walk',
-        icon: '🚶',
-        description: 'Walk to station',
-        details: 'From cafe',
-        duration: cafeToStop,
-        startTime: formatTime12h(currentTime),
-        endTime: formatTime12h(addMinutes(currentTime, cafeToStop))
-      });
-      currentTime = addMinutes(currentTime, cafeToStop);
-      totalMinutes += cafeToStop;
-    }
-  }
   
-  // If not getting coffee, find direct departure
-  if (!canGetCoffee || !coffeeEnabled) {
-    primaryTransit = [...trains, ...trams]
-      .filter(d => d.minutes >= walkToStopTime + 1)
-      .sort((a, b) => a.minutes - b.minutes)[0];
-    
-    if (!primaryTransit && (trains.length > 0 || trams.length > 0)) {
-      // Use first available even if we might miss it
-      primaryTransit = [...trains, ...trams].sort((a, b) => a.minutes - b.minutes)[0];
-    }
-    
-    // Leg 1: Walk to station
+  // Determine if we have time for coffee
+  const homeToCafe = prefs.homeToCafe || 5;
+  const coffeeDuration = prefs.cafeDuration || 5;
+  const cafeToStop = prefs.cafeToTransit || 2;
+  const homeToStop = prefs.homeToStop || 5;
+  const totalCoffeeTime = homeToCafe + coffeeDuration + cafeToStop;
+  
+  // Find next usable departure
+  const allDepartures = [...trains, ...trams].sort((a, b) => a.minutes - b.minutes);
+  const directDeparture = allDepartures.find(d => d.minutes >= homeToStop + 1);
+  const coffeeDeparture = allDepartures.find(d => d.minutes >= totalCoffeeTime + 2);
+  
+  const canGetCoffee = coffeeEnabled && coffeeDeparture && 
+    (!directDeparture || (coffeeDeparture.minutes - directDeparture.minutes) <= 10);
+  
+  if (canGetCoffee && coffeeEnabled) {
+    // Route with coffee
     legs.push({
-      mode: 'walk',
-      icon: '🚶',
-      description: 'Walk to station',
-      details: 'From home',
-      duration: walkToStopTime,
-      startTime: formatTime12h(currentTime),
-      endTime: formatTime12h(addMinutes(currentTime, walkToStopTime))
+      type: 'walk',
+      title: 'Walk to Cafe',
+      subtitle: shortenAddress(prefs.coffeeAddress) || 'Coffee shop',
+      minutes: homeToCafe,
+      state: 'normal'
     });
-    currentTime = addMinutes(currentTime, walkToStopTime);
-    totalMinutes += walkToStopTime;
-  }
-
-  // Transit leg
-  if (primaryTransit) {
-    const transitType = trains.includes(primaryTransit) ? 'train' : 'tram';
-    const icon = transitType === 'train' ? '🚃' : '🚊';
-    const transitDuration = transitType === 'train' ? 15 : 20; // Estimate
     
-    // Wait time at station
-    const departureTime = addMinutes(now, primaryTransit.minutes);
-    const waitTime = Math.max(0, Math.round((departureTime - currentTime) / 60000));
-    
-    if (waitTime > 0) {
-      legs.push({
-        mode: 'wait',
-        icon: '⏱️',
-        description: 'Wait at station',
-        details: `${waitTime} min until departure`,
-        duration: waitTime,
-        startTime: formatTime12h(currentTime),
-        endTime: formatTime12h(departureTime)
-      });
-      currentTime = departureTime;
-      totalMinutes += waitTime;
-    }
-    
-    // Actual transit
     legs.push({
-      mode: transitType,
-      icon: icon,
-      description: `${transitType === 'train' ? 'Train' : 'Tram'} to ${primaryTransit.destination || 'City'}`,
-      details: primaryTransit.platform ? `Platform ${primaryTransit.platform}` : 'Check platform',
-      duration: transitDuration,
-      startTime: formatTime12h(currentTime),
-      endTime: formatTime12h(addMinutes(currentTime, transitDuration)),
-      departure: {
-        minutes: primaryTransit.minutes,
-        countdown: formatCountdown(primaryTransit.minutes),
-        destination: primaryTransit.destination,
-        isLive: primaryTransit.source === 'live'
-      }
+      type: 'coffee',
+      title: 'COFFEE',
+      subtitle: '☕ TIME FOR COFFEE',
+      minutes: coffeeDuration,
+      state: 'normal'
     });
-    currentTime = addMinutes(currentTime, transitDuration);
-    totalMinutes += transitDuration;
+    
+    legs.push({
+      type: 'walk',
+      title: 'Walk to Station',
+      subtitle: 'From cafe',
+      minutes: cafeToStop,
+      state: 'normal'
+    });
+  } else if (coffeeEnabled && !canGetCoffee) {
+    // Skip coffee
+    legs.push({
+      type: 'walk',
+      title: 'Walk to Station',
+      subtitle: 'Direct from home',
+      minutes: homeToStop,
+      state: 'normal'
+    });
+    
+    legs.push({
+      type: 'coffee',
+      title: 'SKIP COFFEE',
+      subtitle: result.coffee?.subtext || 'No time',
+      minutes: 0,
+      state: 'skip'
+    });
   } else {
-    // No transit data - show placeholder
+    // No coffee configured
     legs.push({
-      mode: 'transit',
-      icon: '🚌',
-      description: 'Take transit',
-      details: 'Check timetable for departures',
-      duration: 20,
-      startTime: formatTime12h(currentTime),
-      endTime: formatTime12h(addMinutes(currentTime, 20))
+      type: 'walk',
+      title: 'Walk to Station',
+      subtitle: 'From home',
+      minutes: homeToStop,
+      state: 'normal'
     });
-    currentTime = addMinutes(currentTime, 20);
-    totalMinutes += 20;
   }
-
-  // Final walk to work
-  const walkToWork = prefs.walkToWork || 5;
-  legs.push({
-    mode: 'walk',
-    icon: '🚶',
-    description: 'Walk to work',
-    details: shortenAddress(prefs.workAddress),
-    duration: walkToWork,
-    startTime: formatTime12h(currentTime),
-    endTime: formatTime12h(addMinutes(currentTime, walkToWork))
-  });
-  currentTime = addMinutes(currentTime, walkToWork);
-  totalMinutes += walkToWork;
-
-  // Check if we'll be on time
-  const [targetH, targetM] = (prefs.arrivalTime || '09:00').split(':').map(Number);
-  const targetArrival = new Date(now);
-  targetArrival.setHours(targetH, targetM, 0, 0);
-  if (targetArrival < now) targetArrival.setDate(targetArrival.getDate() + 1);
   
-  const arrivalDiff = Math.round((currentTime - targetArrival) / 60000);
-  let arrivalStatus = 'on-time';
-  let arrivalMessage = 'On time';
-  
-  if (arrivalDiff > 5) {
-    arrivalStatus = 'late';
-    arrivalMessage = `${arrivalDiff} min late`;
-  } else if (arrivalDiff < -10) {
-    arrivalStatus = 'early';
-    arrivalMessage = `${Math.abs(arrivalDiff)} min early`;
-  }
-
-  return {
-    leaveTime: formatTime12h(now),
-    arriveTime: formatTime12h(currentTime),
-    totalMinutes,
-    legs,
-    coffee: {
-      canGet: canGetCoffee,
-      included: canGetCoffee && coffeeEnabled,
-      reason: coffeeReason || (canGetCoffee ? 'Time for coffee!' : 'No time for coffee')
-    },
-    nextDeparture: primaryTransit ? {
-      mode: trains.includes(primaryTransit) ? 'train' : 'tram',
-      minutes: primaryTransit.minutes,
-      countdown: formatCountdown(primaryTransit.minutes),
-      destination: primaryTransit.destination,
-      departureTime: formatTime12h(addMinutes(now, primaryTransit.minutes))
-    } : null,
-    arrival: {
-      status: arrivalStatus,
-      message: arrivalMessage,
-      targetTime: prefs.arrivalTime,
-      actualTime: formatTime12h(currentTime),
-      diffMinutes: arrivalDiff
+  // Transit leg
+  const primaryDeparture = canGetCoffee ? coffeeDeparture : directDeparture;
+  if (primaryDeparture) {
+    const isTrainDep = trains.includes(primaryDeparture);
+    const type = isTrainDep ? 'train' : 'tram';
+    const dest = primaryDeparture.destination || 'City';
+    
+    // Calculate wait time
+    const walkTime = canGetCoffee ? totalCoffeeTime : homeToStop;
+    const waitMinutes = Math.max(0, primaryDeparture.minutes - walkTime);
+    
+    if (waitMinutes > 2) {
+      legs.push({
+        type: 'wait',
+        title: `Wait at Station`,
+        subtitle: `${waitMinutes} min until departure`,
+        minutes: waitMinutes,
+        state: 'normal'
+      });
     }
+    
+    legs.push({
+      type,
+      title: `${type === 'train' ? 'Train' : 'Tram'} → ${dest}`,
+      subtitle: primaryDeparture.platform ? `Platform ${primaryDeparture.platform}` : `Departs ${primaryDeparture.minutes} min`,
+      minutes: type === 'train' ? 15 : 20, // Estimated ride time
+      state: primaryDeparture.isDelayed ? 'delayed' : 'normal'
+    });
+  } else {
+    // Fallback transit
+    legs.push({
+      type: 'transit',
+      title: 'Take Transit',
+      subtitle: 'Check timetable',
+      minutes: 20,
+      state: 'normal'
+    });
+  }
+  
+  // Final walk to work
+  legs.push({
+    type: 'walk',
+    title: 'Walk to Work',
+    subtitle: shortenAddress(prefs.workAddress) || 'Destination',
+    minutes: prefs.walkToWork || 5,
+    state: 'normal'
+  });
+  
+  return legs;
+}
+
+/**
+ * Build CCDash status bar
+ */
+function buildStatusBar(result, legs, prefs, now) {
+  const coffee = result.coffee;
+  const transit = result.transit;
+  
+  // Check for disruptions
+  const hasDisruption = transit?.alerts?.length > 0 || 
+    legs.some(l => l.state === 'cancelled' || l.state === 'delayed');
+  
+  // Calculate arrival
+  const totalMinutes = legs.reduce((sum, leg) => sum + (leg.minutes || 0), 0);
+  const arriveTime = addMinutes(now, totalMinutes);
+  const arriveStr = formatTime12h(arriveTime);
+  
+  if (hasDisruption) {
+    return {
+      text: `DISRUPTION → Arrive ${arriveStr}`,
+      icon: '⚠',
+      hasDisruption: true
+    };
+  }
+  
+  if (coffee?.urgent) {
+    return {
+      text: `LEAVE NOW → Arrive ${arriveStr}`,
+      icon: '🚨',
+      hasDisruption: false
+    };
+  }
+  
+  if (coffee?.canGet) {
+    return {
+      text: `☕ COFFEE TIME → Arrive ${arriveStr}`,
+      icon: '☕',
+      hasDisruption: false
+    };
+  }
+  
+  return {
+    text: `LEAVE NOW → Arrive ${arriveStr}`,
+    icon: '',
+    hasDisruption: false
+  };
+}
+
+/**
+ * Get next departure info
+ */
+function getNextDeparture(transit, now) {
+  if (!transit) return null;
+  
+  const trains = transit.trains || [];
+  const trams = transit.trams || [];
+  const next = [...trains, ...trams].sort((a, b) => a.minutes - b.minutes)[0];
+  
+  if (!next) return null;
+  
+  return {
+    mode: trains.includes(next) ? 'train' : 'tram',
+    minutes: next.minutes,
+    destination: next.destination || 'City',
+    platform: next.platform,
+    departureTime: formatTime12h(addMinutes(now, next.minutes)),
+    isLive: next.source === 'live'
   };
 }
 
@@ -386,32 +379,22 @@ function addMinutes(date, minutes) {
 function formatTime12h(date) {
   if (!date) return '--:--';
   const d = date instanceof Date ? date : new Date(date);
-  return d.toLocaleTimeString('en-AU', { 
-    hour: 'numeric', 
-    minute: '2-digit', 
-    hour12: true 
-  }).toLowerCase();
+  // Per dev rules 12.2: 12-hour format with am/pm
+  const h = d.getHours();
+  const m = d.getMinutes().toString().padStart(2, '0');
+  const ampm = h >= 12 ? 'pm' : 'am';
+  const h12 = h % 12 || 12;
+  return `${h12}:${m}${ampm}`;
 }
 
 function formatTime24h(date) {
   if (!date) return '--:--';
   const d = date instanceof Date ? date : new Date(date);
-  return d.toLocaleTimeString('en-AU', { 
-    hour: '2-digit', 
-    minute: '2-digit', 
-    hour12: false 
-  });
-}
-
-function formatCountdown(minutes) {
-  if (minutes <= 0) return 'NOW';
-  if (minutes === 1) return '1 min';
-  return `${minutes} min`;
+  return d.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
 function shortenAddress(addr) {
   if (!addr) return '';
   if (typeof addr !== 'string') return '';
-  const parts = addr.split(',');
-  return parts[0].trim();
+  return addr.split(',')[0].trim();
 }
