@@ -3707,7 +3707,14 @@
 
                 if (status) {
                     updateDepartures(status);
-                    document.getElementById('data-mode').textContent = status.dataMode === 'Live' ? 'Live Data' : 'Fallback';
+                    // Check both server status AND localStorage for data mode
+                    const transitValidated = localStorage.getItem('cc-transit-api-validated') === 'true';
+                    const hasTransitKey = !!localStorage.getItem('cc-transit-api-key');
+                    const isLive = status.dataMode === 'Live' || (hasTransitKey && transitValidated);
+                    document.getElementById('data-mode').textContent = isLive ? 'Live Data' : 'Fallback';
+                    
+                    // Update the Live Data tab banner to match
+                    updateLiveDataBanner(isLive, hasTransitKey, transitValidated);
                 } else {
                     // Show "Not configured" state when no status
                     document.getElementById('train-departures').innerHTML = '<div class="no-data">Complete setup first</div>';
@@ -3935,8 +3942,11 @@
 
             if (!indicator) return;
 
-            // Check if any real-time APIs are configured
-            const hasLiveData = apis.transitAuthority && apis.transitAuthority.configured;
+            // Check BOTH server status AND localStorage for live data
+            const transitValidated = localStorage.getItem('cc-transit-api-validated') === 'true';
+            const hasTransitKey = !!localStorage.getItem('cc-transit-api-key');
+            const serverHasLive = apis && apis.transitAuthority && apis.transitAuthority.configured;
+            const hasLiveData = serverHasLive || (hasTransitKey && transitValidated);
 
             if (hasLiveData) {
                 // Live data mode
@@ -3955,6 +3965,35 @@
                 title.textContent = 'Using Fallback Timetable Data';
                 subtitle.textContent = 'Configure API keys in API Settings to enable real-time updates';
                 actionBtn.textContent = '→ API Settings';
+                actionBtn.onclick = () => showTab('api');
+            }
+        }
+        
+        // Update Live Data tab banner based on localStorage validation status
+        function updateLiveDataBanner(isLive, hasKey, isValidated) {
+            const indicator = document.getElementById('data-source-indicator');
+            const icon = document.getElementById('data-source-icon');
+            const title = document.getElementById('data-source-title');
+            const subtitle = document.getElementById('data-source-subtitle');
+            const actionBtn = document.getElementById('data-source-action-btn');
+            
+            if (!indicator) return;
+            
+            if (isLive) {
+                indicator.style.background = 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.15) 100%)';
+                indicator.style.borderLeft = '4px solid #22c55e';
+                icon.textContent = '🟢';
+                title.textContent = 'Live Data Active';
+                subtitle.textContent = 'Transit API validated • Real-time updates enabled';
+                actionBtn.textContent = '🔄 Refresh Now';
+                actionBtn.onclick = () => loadAllData();
+            } else if (hasKey && !isValidated) {
+                indicator.style.background = 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.15) 100%)';
+                indicator.style.borderLeft = '4px solid #fbbf24';
+                icon.textContent = '🟡';
+                title.textContent = 'API Key Pending Validation';
+                subtitle.textContent = 'Go to API Settings to test and validate your key';
+                actionBtn.textContent = '→ Validate Key';
                 actionBtn.onclick = () => showTab('api');
             }
         }
