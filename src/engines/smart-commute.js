@@ -1054,6 +1054,7 @@ export class SmartCommute {
 
   /**
    * Get hardcoded routes when no stop data available
+   * Generates variable leg counts per CCDashDesignV10 spec (2-6 legs)
    */
   getHardcodedRoutes(locations, includeCoffee) {
     const routes = [];
@@ -1061,55 +1062,109 @@ export class SmartCommute {
     const nearestStation = 'Station';
     const destStation = 'City';
     
-    // Preferred route
-    const preferredLegs = [];
-    let preferredTotal = 0;
-    
+    // =========================================================================
+    // ROUTE 1: Full commute with coffee (5 legs)
+    // =========================================================================
     if (includeCoffee) {
-      preferredLegs.push({ type: 'walk', to: 'cafe', from: 'home', minutes: 3 });
-      preferredLegs.push({ type: 'coffee', location: cafeName, minutes: 4 });
-      preferredLegs.push({ type: 'walk', to: nearestStation, from: 'cafe', minutes: 5 });
-      preferredTotal += 12;
-    } else {
-      preferredLegs.push({ type: 'walk', to: nearestStation, from: 'home', minutes: 8 });
-      preferredTotal += 8;
+      routes.push({
+        id: 'full-coffee',
+        name: 'Train via Station (with coffee)',
+        description: 'Home → Coffee → Train → City → Office',
+        type: 'preferred',
+        totalMinutes: 25,
+        legs: [
+          { type: 'walk', to: 'cafe', from: 'home', minutes: 3 },
+          { type: 'coffee', location: cafeName, minutes: 4 },
+          { type: 'walk', to: nearestStation, from: 'cafe', minutes: 5 },
+          { type: 'train', routeNumber: 'City Loop', origin: { name: nearestStation }, destination: { name: destStation }, minutes: 8 },
+          { type: 'walk', to: 'work', from: destStation, minutes: 5 }
+        ]
+      });
     }
-    preferredLegs.push({ type: 'train', routeNumber: 'City Loop', origin: { name: nearestStation }, destination: { name: destStation }, minutes: 8 });
-    preferredLegs.push({ type: 'walk', to: 'work', from: destStation, minutes: 5 });
-    preferredTotal += 13;
     
+    // =========================================================================
+    // ROUTE 2: Direct train (3 legs - no coffee)
+    // =========================================================================
     routes.push({
-      id: 'user-preferred',
-      name: 'Train via ' + nearestStation + ' (Preferred)',
-      description: includeCoffee ? 'Home → Coffee → Train → City → Office' : 'Home → Train → City → Office',
-      type: 'preferred',
-      totalMinutes: preferredTotal,
-      legs: preferredLegs
+      id: 'train-direct',
+      name: 'Train Direct (no coffee)',
+      description: 'Home → Train → Office',
+      type: 'direct',
+      totalMinutes: 21,
+      legs: [
+        { type: 'walk', to: nearestStation, from: 'home', minutes: 8 },
+        { type: 'train', routeNumber: 'City Loop', origin: { name: nearestStation }, destination: { name: destStation }, minutes: 8 },
+        { type: 'walk', to: 'work', from: destStation, minutes: 5 }
+      ]
     });
     
-    // Tram alternative
-    const tramLegs = [];
-    let tramTotal = 0;
-    if (includeCoffee) {
-      tramLegs.push({ type: 'walk', to: 'cafe', minutes: 3 });
-      tramLegs.push({ type: 'coffee', location: cafeName, minutes: 4 });
-      tramLegs.push({ type: 'walk', to: 'tram stop', minutes: 2 });
-      tramTotal += 9;
-    } else {
-      tramLegs.push({ type: 'walk', to: 'tram stop', minutes: 5 });
-      tramTotal += 5;
-    }
-    tramLegs.push({ type: 'tram', routeNumber: '58', origin: { name: 'Local Stop' }, destination: { name: 'City' }, minutes: 12 });
-    tramLegs.push({ type: 'walk', to: 'work', minutes: 4 });
-    tramTotal += 16;
-    
+    // =========================================================================
+    // ROUTE 3: Direct tram (2 legs - minimal)
+    // =========================================================================
     routes.push({
-      id: 'tram-direct',
-      name: 'Tram Direct',
-      description: includeCoffee ? 'Home → Coffee → Tram → Work' : 'Home → Tram → Work',
-      type: 'direct',
-      totalMinutes: tramTotal,
-      legs: tramLegs
+      id: 'tram-minimal',
+      name: 'Tram Direct (minimal)',
+      description: 'Home → Tram → Office',
+      type: 'express',
+      totalMinutes: 18,
+      legs: [
+        { type: 'tram', routeNumber: '58', origin: { name: 'Near home' }, destination: { name: 'Near work' }, minutes: 12 },
+        { type: 'walk', to: 'work', minutes: 6 }
+      ]
+    });
+    
+    // =========================================================================
+    // ROUTE 4: Multi-modal with transfer (4 legs)
+    // =========================================================================
+    routes.push({
+      id: 'multimodal-transfer',
+      name: 'Tram then Train',
+      description: 'Home → Tram → Train → Office',
+      type: 'transfer',
+      totalMinutes: 28,
+      legs: [
+        { type: 'walk', to: 'tram stop', from: 'home', minutes: 5 },
+        { type: 'tram', routeNumber: '58', origin: { name: 'Local Stop' }, destination: { name: 'Flinders St' }, minutes: 10 },
+        { type: 'train', routeNumber: 'City Loop', origin: { name: 'Flinders St' }, destination: { name: destStation }, minutes: 8 },
+        { type: 'walk', to: 'work', from: destStation, minutes: 5 }
+      ]
+    });
+    
+    // =========================================================================
+    // ROUTE 5: Full multi-modal with coffee (6 legs)
+    // =========================================================================
+    if (includeCoffee) {
+      routes.push({
+        id: 'full-multimodal',
+        name: 'Full Journey with Transfer',
+        description: 'Home → Coffee → Tram → Train → Office',
+        type: 'scenic',
+        totalMinutes: 35,
+        legs: [
+          { type: 'walk', to: 'cafe', from: 'home', minutes: 3 },
+          { type: 'coffee', location: cafeName, minutes: 4 },
+          { type: 'tram', routeNumber: '58', origin: { name: 'Near cafe' }, destination: { name: 'Flinders St' }, minutes: 12 },
+          { type: 'walk', to: 'train platform', minutes: 2 },
+          { type: 'train', routeNumber: 'City Loop', origin: { name: 'Flinders St' }, destination: { name: destStation }, minutes: 8 },
+          { type: 'walk', to: 'work', minutes: 6 }
+        ]
+      });
+    }
+    
+    // =========================================================================
+    // ROUTE 6: Bus only (3 legs - alternative)
+    // =========================================================================
+    routes.push({
+      id: 'bus-direct',
+      name: 'Bus Direct',
+      description: 'Home → Bus → Office',
+      type: 'alternative',
+      totalMinutes: 32,
+      legs: [
+        { type: 'walk', to: 'bus stop', from: 'home', minutes: 4 },
+        { type: 'bus', routeNumber: '201', origin: { name: 'Local' }, destination: { name: 'City' }, minutes: 22 },
+        { type: 'walk', to: 'work', minutes: 6 }
+      ]
     });
     
     return routes;

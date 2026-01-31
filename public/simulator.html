@@ -347,12 +347,14 @@
                         <input type="time" id="input-current-time" value="">
                     </div>
                     <div class="control-group">
-                        <label>Number of Legs</label>
+                        <label>Number of Legs (for scenario testing)</label>
                         <select id="input-legs">
-                            <option value="auto">Auto (SmartCommute decides)</option>
-                            <option value="3">3 legs</option>
-                            <option value="4">4 legs</option>
-                            <option value="5" selected>5 legs</option>
+                            <option value="auto" selected>Auto (SmartCommute decides)</option>
+                            <option value="2">2 legs (minimal)</option>
+                            <option value="3">3 legs (direct)</option>
+                            <option value="4">4 legs (transfer)</option>
+                            <option value="5">5 legs (with coffee)</option>
+                            <option value="6">6 legs (full multimodal)</option>
                         </select>
                     </div>
                 </div>
@@ -508,36 +510,52 @@
         // =========================================================================
         // RANDOM JOURNEY GENERATION
         // =========================================================================
-        function generateRandomJourney() {
-            log('Generating random journey...', 'info');
+        async function generateRandomJourney() {
+            log('Calling /api/screen?random=1 for server-generated random journey...', 'info');
             
-            // Random addresses
-            document.getElementById('input-home').value = MELBOURNE_ADDRESSES[Math.floor(Math.random() * MELBOURNE_ADDRESSES.length)];
-            document.getElementById('input-work').value = WORK_ADDRESSES[Math.floor(Math.random() * WORK_ADDRESSES.length)];
-            document.getElementById('input-cafe').value = Math.random() > 0.3 ? CAFES[Math.floor(Math.random() * CAFES.length)] : '';
+            const statusDot = document.getElementById('status-dot');
+            const statusText = document.getElementById('status-text');
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const displayImage = document.getElementById('display-image');
             
-            // Random arrival time (7am - 10am)
-            const hour = 7 + Math.floor(Math.random() * 3);
-            const minute = Math.floor(Math.random() * 4) * 15;
-            document.getElementById('input-arrival').value = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+            statusDot.className = 'status-dot loading';
+            statusText.textContent = 'Generating random journey...';
+            loadingOverlay.style.display = 'flex';
             
-            // Random status (mostly normal)
-            const statusRoll = Math.random();
-            let status = 'normal';
-            if (statusRoll > 0.9) status = 'disruption';
-            else if (statusRoll > 0.8) status = 'delayed';
-            else if (statusRoll > 0.7) status = 'diversion';
-            document.getElementById('input-status').value = status;
-            
-            // Random weather
-            const weatherRoll = Math.random();
-            let weather = 'auto';
-            if (weatherRoll > 0.8) weather = 'rain';
-            else if (weatherRoll > 0.6) weather = 'cloudy';
-            else if (weatherRoll > 0.4) weather = 'sunny';
-            document.getElementById('input-weather').value = weather;
-            
-            refreshDisplay();
+            try {
+                // Use the random endpoint which generates variable leg counts (2-6)
+                const apiUrl = `${BASE_URL}/api/screen?random=1&t=${Date.now()}`;
+                log(`Fetching: /api/screen?random=1`, 'info');
+                
+                // E-ink flash effect
+                displayImage.style.filter = 'invert(1)';
+                await new Promise(r => setTimeout(r, 150));
+                displayImage.style.filter = 'none';
+                
+                displayImage.src = apiUrl;
+                
+                await new Promise((resolve, reject) => {
+                    displayImage.onload = resolve;
+                    displayImage.onerror = reject;
+                });
+                
+                refreshCount++;
+                document.getElementById('refresh-count').textContent = `Refresh #${refreshCount}`;
+                document.getElementById('last-update').textContent = `Last update: ${new Date().toLocaleTimeString('en-AU', { hour12: true })}`;
+                document.getElementById('data-mode').textContent = 'Random Journey';
+                document.getElementById('data-mode').classList.add('live');
+                
+                statusDot.className = 'status-dot';
+                statusText.textContent = 'Ready';
+                loadingOverlay.style.display = 'none';
+                
+                log(`Random journey loaded (variable leg count)`, 'info');
+                
+            } catch (error) {
+                statusDot.className = 'status-dot error';
+                statusText.textContent = 'Error';
+                log(`Error: ${error.message}`, 'error');
+            }
         }
 
         function generateScenario(scenario) {

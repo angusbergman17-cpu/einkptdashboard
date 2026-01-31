@@ -558,8 +558,8 @@ function drawLegNumber(ctx, number, x, y, status = 'normal') {
   ctx.fillStyle = '#000';
   
   if (status === 'skipped' || status === 'cancelled') {
-    // Dashed circle for skipped
-    ctx.strokeStyle = '#888';
+    // Dashed circle for skipped (1-bit: use #000, not gray)
+    ctx.strokeStyle = '#000';  // E-ink 1-bit: NO GRAY
     ctx.lineWidth = 2;
     ctx.setLineDash([3, 3]);
     ctx.beginPath();
@@ -575,7 +575,7 @@ function drawLegNumber(ctx, number, x, y, status = 'normal') {
       ctx.textBaseline = 'middle';
       ctx.fillText('✗', centerX, centerY);
     } else {
-      ctx.fillStyle = '#888';
+      ctx.fillStyle = '#000';  // E-ink 1-bit: NO GRAY
       ctx.font = 'bold 13px Inter, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -735,9 +735,9 @@ function renderLegZone(ctx, leg, zone, legNumber = 1, isHighlighted = false) {
   drawModeIcon(ctx, leg.type, iconX, iconY, 32);
   ctx.globalAlpha = 1.0;
   
-  // Main text area
+  // Main text area (1-bit: ALL text must be #000 or #FFF, no gray)
   const textX = x + 82;
-  const textColor = isHighlighted ? '#FFF' : (status === 'skipped' || (leg.type === 'coffee' && !leg.canGet)) ? '#888' : '#000';
+  const textColor = isHighlighted ? '#FFF' : '#000';  // E-ink 1-bit: NO GRAY
   ctx.fillStyle = textColor;
   
   // Title with status prefix (V10 Spec Section 5.4)
@@ -780,15 +780,15 @@ function renderLegZone(ctx, leg, zone, legNumber = 1, isHighlighted = false) {
     ctx.strokeRect(timeBoxX + 2, timeBoxY + 2, timeBoxW - 4, timeBoxH - 4);
     ctx.setLineDash([]);
   } else if (leg.type === 'coffee' && !leg.canGet) {
-    // Skip coffee - dashed border, no fill
-    ctx.strokeStyle = '#888';
+    // Skip coffee - dashed border, no fill (1-bit: use #000, not gray)
+    ctx.strokeStyle = '#000';  // E-ink 1-bit: NO GRAY
     ctx.lineWidth = 2;
     ctx.setLineDash([4, 4]);
     ctx.strokeRect(timeBoxX + 2, timeBoxY + 2, timeBoxW - 4, timeBoxH - 4);
     ctx.setLineDash([]);
     showDuration = false;
     // Draw "—" for skipped
-    ctx.fillStyle = '#888';
+    ctx.fillStyle = '#000';  // E-ink 1-bit: NO GRAY
     ctx.font = 'bold 22px Inter, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -1317,22 +1317,39 @@ export function renderFullScreen(data, prefs = {}) {
   ctx.textBaseline = 'top';
   ctx.fillText((data.location || 'HOME').toUpperCase(), 16, 8);
   
+  // Convert to 12-hour format (DEVELOPMENT-RULES.md: 12-hour time MANDATORY)
   ctx.font = 'bold 68px Inter, sans-serif';
-  ctx.fillText(data.current_time || '--:--', 16, 22);
+  let displayTime = data.current_time || '--:--';
+  let isPM = false;
+  
+  // Parse and convert 24h to 12h
+  const timeMatch = displayTime.match(/^(\d{1,2}):(\d{2})/);
+  if (timeMatch) {
+    let hours = parseInt(timeMatch[1]);
+    const mins = timeMatch[2];
+    isPM = hours >= 12;
+    const hours12 = hours % 12 || 12;
+    displayTime = `${hours12}:${mins}`;
+  } else if (displayTime.toLowerCase().includes('pm')) {
+    isPM = true;
+    displayTime = displayTime.replace(/\s*(am|pm)/gi, '');
+  } else if (displayTime.toLowerCase().includes('am')) {
+    isPM = false;
+    displayTime = displayTime.replace(/\s*(am|pm)/gi, '');
+  }
+  
+  ctx.fillText(displayTime, 16, 22);
   
   // AM/PM indicator
   ctx.font = 'bold 16px Inter, sans-serif';
-  const timeStr = data.current_time || '';
-  const isPM = timeStr.toLowerCase().includes('pm') || (parseInt(timeStr) >= 12 && parseInt(timeStr) < 24);
   ctx.fillText(data.am_pm || (isPM ? 'PM' : 'AM'), 200, 72);
   
-  // Day and date
+  // Day and date (1-bit: ALL text must be #000, no gray)
   ctx.font = 'bold 18px Inter, sans-serif';
   ctx.fillText(data.day || '', 300, 28);
   ctx.font = '16px Inter, sans-serif';
-  ctx.fillStyle = '#444';
+  ctx.fillStyle = '#000';  // E-ink 1-bit: NO GRAY TEXT
   ctx.fillText(data.date || '', 300, 50);
-  ctx.fillStyle = '#000';
   
   // Weather box (V10 Spec Section 2.6)
   ctx.strokeStyle = '#000';
@@ -1490,8 +1507,8 @@ export function renderFullScreen(data, prefs = {}) {
     drawModeIcon(ctx, leg.type, zone.x + 40, zone.y + (zone.h - 32) / 2, 32);
     ctx.globalAlpha = 1.0;
     
-    // Title (V10 Spec Section 5.4)
-    ctx.fillStyle = isSkippedCoffee ? '#888' : '#000';
+    // Title (V10 Spec Section 5.4) - 1-bit: ALL text #000
+    ctx.fillStyle = '#000';  // E-ink 1-bit: NO GRAY
     ctx.font = 'bold 16px Inter, sans-serif';
     ctx.textBaseline = 'top';
     let titlePrefix = '';
@@ -1526,12 +1543,12 @@ export function renderFullScreen(data, prefs = {}) {
       ctx.font = '9px Inter, sans-serif';
       ctx.fillText(leg.type === 'walk' ? 'MIN WALK' : 'MIN', timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 + 14);
     } else {
-      // Skipped coffee: dashed border, "—"
-      ctx.strokeStyle = '#888';
+      // Skipped coffee: dashed border, "—" (1-bit: use #000, not gray)
+      ctx.strokeStyle = '#000';  // E-ink 1-bit: NO GRAY
       ctx.setLineDash([4, 4]);
       ctx.strokeRect(timeBoxX + 2, zone.y + 2, timeBoxW - 4, zone.h - 4);
       ctx.setLineDash([]);
-      ctx.fillStyle = '#888';
+      ctx.fillStyle = '#000';  // E-ink 1-bit: NO GRAY
       ctx.font = 'bold 22px Inter, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
