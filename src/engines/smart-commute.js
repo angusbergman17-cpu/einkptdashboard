@@ -524,28 +524,36 @@ export class SmartCommute {
   async fetchLiveTransitData() {
     // State-specific API calls
     if (this.state === 'VIC') {
-      // Use PTV API client for Victoria
+      // Use Transport Victoria OpenData API client
       try {
-        // Get nearby stops from preferences or use GTFS-RT defaults
+        // Get stop IDs from preferences, or auto-detect based on journey destination
         // GTFS-RT uses direction-specific stop IDs (different platforms = different IDs)
         // 
-        // South Yarra station GTFS stop IDs:
-        // - 12179: Pakenham/Cranbourne citybound (→ Parliament via City Loop)
-        // - 14295: Frankston citybound (→ Flinders St)
-        // - 14271: Sandringham outbound (→ Sandringham, NOT to Parliament)
+        // Per DEVELOPMENT-RULES.md Section 17.4: No hardcoded personal data
+        // Stop IDs should come from user preferences or be auto-detected
         //
-        // Default to 12179 (PKM/CBE citybound) for journeys to Parliament/City Loop
-        const trainStopId = this.preferences.trainStopId || 12179; // South Yarra → City Loop (PKM/CBE)
-        const tramStopId = this.preferences.tramStopId || 19338;   // Route 58 GTFS-RT stop (Toorak Rd)
+        // Melbourne City Loop detection:
+        // - If work is in CBD (lat ~-37.81, lon ~144.96), use citybound stops
+        // - Otherwise use outbound stops
+        const trainStopId = this.preferences.trainStopId || this.detectTrainStopId();
+        const tramStopId = this.preferences.tramStopId || this.detectTramStopId();
+        
+        // Per DEVELOPMENT-RULES.md Section 17.4: No hardcoded stops
+        // If stop IDs not configured, log warning and use fallback data
+        if (!trainStopId && !tramStopId) {
+          console.log('[SmartCommute] No stop IDs configured - using fallback timetable data');
+          console.log('[SmartCommute] Configure trainStopId and tramStopId in preferences for live data');
+          throw new Error('Stop IDs not configured - please configure via Setup Wizard');
+        }
         
         // Pass API key directly to each call (Zero-Config: no env vars)
-        console.log(`[SmartCommute] fetchLiveTransitData: transitKey=${this.apiKeys.transitKey ? this.apiKeys.transitKey.substring(0,8)+'...' : 'null'}`);
+        console.log(`[SmartCommute] fetchLiveTransitData: trainStopId=${trainStopId}, tramStopId=${tramStopId}`);
         const apiOptions = { apiKey: this.apiKeys.transitKey };
         
         const [trains, trams, buses] = await Promise.all([
-          ptvApi.getDepartures(trainStopId, 0, apiOptions), // 0 = train
-          ptvApi.getDepartures(tramStopId, 1, apiOptions),  // 1 = tram
-          Promise.resolve([])                                 // 2 = bus (skip for now)
+          trainStopId ? ptvApi.getDepartures(trainStopId, 0, apiOptions) : Promise.resolve([]),
+          tramStopId ? ptvApi.getDepartures(tramStopId, 1, apiOptions) : Promise.resolve([]),
+          Promise.resolve([])  // 2 = bus (skip for now)
         ]);
         
         return {
@@ -700,6 +708,54 @@ export class SmartCommute {
     const tramData = transitData?.trams || [];
     
     return this.coffeeDecision.calculate(nextDeparture, tramData, alertText);
+  }
+
+  /**
+   * Auto-detect appropriate train stop ID based on journey destination
+   * Per DEVELOPMENT-RULES.md Section 17.4: No hardcoded personal data
+   * 
+   * Logic:
+   * - If work is in Melbourne CBD (City Loop area), use citybound stop
+   * - Otherwise use a generic metro stop
+   * 
+   * Note: This returns null if no suitable stop can be determined,
+   * which will cause fallback to scheduled data.
+   */
+  detectTrainStopId() {
+    const prefs = this.getPrefs();
+    const workLat = prefs.workLocation?.lat;
+    const workLon = prefs.workLocation?.lon;
+    
+    // Check if destination is Melbourne CBD (City Loop area)
+    // CBD roughly: lat -37.80 to -37.82, lon 144.95 to 144.98
+    const isCityLoop = workLat && workLon && 
+      workLat >= -37.82 && workLat <= -37.80 &&
+      workLon >= 144.95 && workLon <= 144.98;
+    
+    if (isCityLoop) {
+      // User is going TO the city - need citybound platform
+      // Return null to signal we need user to configure their specific stop
+      // Or use a well-known citybound stop as temporary default
+      console.log('[SmartCommute] Detected citybound journey (work in CBD)');
+      // Note: Specific stop IDs depend on user's home station
+      // This should be configured via Setup Wizard
+      return null; // Will trigger fallback data
+    }
+    
+    // Outbound or unknown - return null to trigger fallback
+    console.log('[SmartCommute] Could not auto-detect train stop ID - configure via preferences');
+    return null;
+  }
+
+  /**
+   * Auto-detect appropriate tram stop ID based on journey
+   * Per DEVELOPMENT-RULES.md Section 17.4: No hardcoded personal data
+   */
+  detectTramStopId() {
+    // Tram stops are highly location-specific
+    // Return null to indicate user should configure via Setup Wizard
+    console.log('[SmartCommute] Tram stop ID should be configured via preferences');
+    return null;
   }
 
   /**

@@ -1,7 +1,7 @@
 /**
  * Admin Panel Simulation Test
  * Simulates the full admin panel → dashboard render flow
- * Uses the angus-journey.json config to test the complete pipeline
+ * Uses the sample-journey.json config to test the complete pipeline
  */
 
 import fs from 'fs';
@@ -65,7 +65,7 @@ async function runSimulation() {
   console.log('1. Loading journey configuration...');
   console.log('-'.repeat(50));
   
-  const configPath = path.join(process.cwd(), 'config', 'angus-journey.json');
+  const configPath = path.join(process.cwd(), 'config', 'sample-journey.json');
   const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
   
   console.log(`   Config version: ${config.version}`);

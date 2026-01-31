@@ -9,7 +9,7 @@
  * │ STATUS BAR: Coffee Decision / Leave Now / Disruption               │ 96-124
  * ├─────────────────────────────────────────────────────────────────────┤
  * │ LEG 1: [Icon] Walk to Cafe                              3 MIN WALK │ 132-186
- * │ LEG 2: [Icon] Norman South Yarra                        4 MIN      │ 190-244
+ * │ LEG 2: [Icon] Local Cafe                        4 MIN      │ 190-244
  * │ LEG 3: [Icon] Walk to Tram Stop                         2 MIN WALK │ 248-302
  * │ LEG 4: [Icon] Tram 58 → Collins St                     12 MIN      │ 306-360
  * │ LEG 5: [Icon] Walk to Work                              4 MIN WALK │ 364-418

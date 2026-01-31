@@ -361,21 +361,29 @@ export default async function handler(req, res) {
     
     // Fetch live data
     // GTFS-RT stop IDs - direction-specific (different platforms = different IDs)
-    // South Yarra citybound: 12179 (PKM/CBE → City Loop/Parliament)
-    // Route 58 tram: 19338 (Toorak Rd stop)
-    const trainStopId = parseInt(process.env.TRAIN_STOP_ID) || 12179;
-    const tramStopId = parseInt(process.env.TRAM_STOP_ID) || 19338;
+    // Per DEVELOPMENT-RULES.md Section 17.4: No hardcoded personal data
+    // Stop IDs must be configured via Setup Wizard or environment variables
+    // 
+    // If not configured, API will return fallback/scheduled data
+    const trainStopId = parseInt(process.env.TRAIN_STOP_ID) || prefs.get()?.trainStopId || null;
+    const tramStopId = parseInt(process.env.TRAM_STOP_ID) || prefs.get()?.tramStopId || null;
     
     // Per Section 11.8: Zero-Config compliant - load API key from KV storage
     const transitApiKey = await getTransitApiKey();
     const apiOptions = transitApiKey ? { apiKey: transitApiKey } : {};
     
+    // Per Section 17.4: No hardcoded stops - skip API calls if not configured
     const [trains, trams, weather, disruptions] = await Promise.all([
-      getDepartures(trainStopId, 0, apiOptions),
-      getDepartures(tramStopId, 1, apiOptions),
+      trainStopId ? getDepartures(trainStopId, 0, apiOptions) : Promise.resolve([]),
+      tramStopId ? getDepartures(tramStopId, 1, apiOptions) : Promise.resolve([]),
       getWeather(locations.home?.lat, locations.home?.lon),
       getDisruptions(0, apiOptions).catch(() => [])
     ]);
+    
+    // Log if stops not configured
+    if (!trainStopId && !tramStopId) {
+      console.log('[zones] No stop IDs configured - displaying fallback timetable data');
+    }
     
     const transitData = { trains, trams, disruptions };
     

@@ -3544,7 +3544,7 @@ app.post('/admin/smart-setup', async (req, res) => {
       clearTimeout(timeoutId);
       return res.status(400).json({
         success: false,
-        message: `Could not find home address: "${addresses.home}". Please try entering the full address with suburb and state (e.g., "1 Clara Street, South Yarra VIC 3141")`
+        message: `Could not find home address: "${addresses.home}". Please try entering the full address with suburb and state (e.g., "123 Example Street, Melbourne VIC 3000")`
       });
     }
 
@@ -3567,7 +3567,7 @@ app.post('/admin/smart-setup', async (req, res) => {
       clearTimeout(timeoutId);
       return res.status(400).json({
         success: false,
-        message: `Could not find home address: "${addresses.home}". Please try entering the full address with suburb and state (e.g., "1 Clara Street, South Yarra VIC 3141")`
+        message: `Could not find home address: "${addresses.home}". Please try entering the full address with suburb and state (e.g., "123 Example Street, Melbourne VIC 3000")`
       });
     }
 
@@ -3897,9 +3897,9 @@ app.get('/admin/multi-modal-journey/examples', (req, res) => {
         description: 'Home → Cafe → Tram → Train → Office',
         config: {
           addresses: {
-            home: '1 Clara Street, South Yarra VIC',
-            cafe: 'Norman, Toorak Road, South Yarra',
-            work: 'Collins Street, Melbourne VIC'
+            home: 'Home Address (configure in wizard)',
+            cafe: 'Local Cafe',
+            work: 'Work Address (configure in wizard)'
           },
           arrivalTime: '09:00',
           coffeeEnabled: true,
@@ -3925,9 +3925,9 @@ app.get('/admin/multi-modal-journey/examples', (req, res) => {
         description: 'Home → Cafe → Train → Office',
         config: {
           addresses: {
-            home: '100 Church Street, Richmond VIC',
-            cafe: 'Axil Coffee, Church Street, Richmond',
-            work: 'Bourke Street, Melbourne VIC'
+            home: 'Your Home Address (configure)',
+            cafe: 'Your Cafe (configure)',
+            work: 'Your Work Address (configure)'
           },
           arrivalTime: '09:00',
           coffeeEnabled: true,
@@ -6979,7 +6979,7 @@ async function buildV13DisplayData() {
     total_minutes: cachedJourney?.totalMinutes || '--',
     journey_legs: cachedJourney?.legs || [
       { type: 'walk', to: 'cafe', minutes: 3 },
-      { type: 'coffee', location: 'Norman South Yarra', minutes: 4 },
+      { type: 'coffee', location: 'Cafe', minutes: 4 },
       { type: 'walk', to: 'tram stop', minutes: 2 },
       { type: 'tram', routeNumber: '58', destination: { name: 'Collins St' }, minutes: 12 },
       { type: 'walk', to: 'work', minutes: 4 }

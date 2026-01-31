@@ -20,8 +20,10 @@
 #define EPD_BUSY_PIN 4
 
 // WiFi credentials
-const char* WIFI_SSID = "Optus_FA6C6E";
-const char* WIFI_PASS = "gular43572ch";
+// WiFi credentials - CONFIGURE BEFORE FLASHING
+// Per DEVELOPMENT-RULES.md Section 17.4: No personal data in source code
+const char* WIFI_SSID = "YOUR_WIFI_SSID";
+const char* WIFI_PASS = "YOUR_WIFI_PASSWORD";
 const char* SERVER_URL = "https://einkptdashboard.vercel.app";
 
 BBEPAPER* bbep = nullptr;

@@ -30,8 +30,8 @@ const scenarios = {
   // SCENARIO: Normal Commute with Coffee
   // ---------------------------------------------------------------------------
   'normal': {
-    origin: '1 CLARA ST, SOUTH YARRA',
-    destination: '80 COLLINS ST, MELBOURNE',
+    origin: 'HOME',
+    destination: 'WORK',
     currentTime: '7:45',
     ampm: 'AM',
     dayOfWeek: 'Tuesday',
@@ -44,21 +44,21 @@ const scenarios = {
     steps: [
       {
         type: StepType.WALK,
-        title: 'Walk to Norman Cafe',
-        subtitle: 'From home • 300 Toorak Rd',
+        title: 'Walk to Local Cafe',
+        subtitle: 'From home • From home',
         duration: 4,
         status: StepStatus.NORMAL
       },
       {
         type: StepType.COFFEE,
-        title: 'Coffee at Norman',
+        title: 'Coffee Stop',
         subtitle: '✓ TIME FOR COFFEE',
         duration: 5,
         status: StepStatus.NORMAL
       },
       {
         type: StepType.WALK,
-        title: 'Walk to South Yarra Stn',
+        title: 'Walk to Station',
         subtitle: 'Platform 1',
         duration: 6,
         status: StepStatus.NORMAL
@@ -73,7 +73,7 @@ const scenarios = {
       {
         type: StepType.WALK,
         title: 'Walk to Office',
-        subtitle: 'Parliament → 80 Collins St',
+        subtitle: 'Station → Work',
         duration: 26,
         status: StepStatus.NORMAL
       }
@@ -84,8 +84,8 @@ const scenarios = {
   // SCENARIO: Delay - Skip Coffee
   // ---------------------------------------------------------------------------
   'delay-skip-coffee': {
-    origin: '1 CLARA ST, SOUTH YARRA',
-    destination: '80 COLLINS ST, MELBOURNE',
+    origin: 'HOME',
+    destination: 'WORK',
     currentTime: '8:22',
     ampm: 'AM',
     dayOfWeek: 'Monday',
@@ -99,14 +99,14 @@ const scenarios = {
     steps: [
       {
         type: StepType.WALK,
-        title: 'Walk past Norman Cafe',
-        subtitle: 'From home • Toorak Rd',
+        title: 'Walk past Local Cafe',
+        subtitle: 'From home • Main street',
         duration: 4,
         status: StepStatus.NORMAL
       },
       {
         type: StepType.COFFEE,
-        title: 'Coffee at Norman',
+        title: 'Coffee Stop',
         subtitle: '✗ SKIP — Running late',
         duration: null,
         status: StepStatus.SKIPPED,
@@ -114,7 +114,7 @@ const scenarios = {
       },
       {
         type: StepType.WALK,
-        title: 'Walk to South Yarra Stn',
+        title: 'Walk to Station',
         subtitle: 'Platform 1',
         duration: 8,
         status: StepStatus.NORMAL
@@ -130,7 +130,7 @@ const scenarios = {
       {
         type: StepType.WALK,
         title: 'Walk to Office',
-        subtitle: 'Parliament → 80 Collins St',
+        subtitle: 'Station → Work',
         duration: 24,
         status: StepStatus.NORMAL
       }
@@ -198,8 +198,8 @@ const scenarios = {
   // SCENARIO: Major Disruption
   // ---------------------------------------------------------------------------
   'disruption': {
-    origin: '1 CLARA ST, SOUTH YARRA',
-    destination: '80 COLLINS ST, MELBOURNE',
+    origin: 'HOME',
+    destination: 'WORK',
     currentTime: '7:20',
     ampm: 'AM',
     dayOfWeek: 'Thursday',
@@ -213,7 +213,7 @@ const scenarios = {
     steps: [
       {
         type: StepType.COFFEE,
-        title: 'Coffee at Norman',
+        title: 'Coffee Stop',
         subtitle: '✓ EXTRA TIME — Disruption',
         duration: 10,
         status: StepStatus.EXTENDED,
@@ -221,7 +221,7 @@ const scenarios = {
       },
       {
         type: StepType.WALK,
-        title: 'Walk to South Yarra Stn',
+        title: 'Walk to Station',
         subtitle: 'Platform 1',
         duration: 10,
         status: StepStatus.NORMAL
@@ -355,8 +355,8 @@ const scenarios = {
   // SCENARIO: Friday Treat (Homebound with Coffee)
   // ---------------------------------------------------------------------------
   'homebound-friday': {
-    origin: '80 COLLINS ST, MELBOURNE',
-    destination: '1 CLARA ST, SOUTH YARRA',
+    origin: 'WORK',
+    destination: 'HOME',
     currentTime: '6:20',
     ampm: 'PM',
     dayOfWeek: 'Friday',
@@ -384,7 +384,7 @@ const scenarios = {
       {
         type: StepType.WALK,
         title: 'Walk to Tram Stop',
-        subtitle: 'Toorak Rd / Chapel St',
+        subtitle: 'Main street / Chapel St',
         duration: 5,
         status: StepStatus.NORMAL
       },

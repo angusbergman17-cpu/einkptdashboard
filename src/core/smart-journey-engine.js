@@ -12,11 +12,13 @@ import fs from 'fs/promises';
 import path from 'path';
 import CoffeeDecision from './coffee-decision.js';
 
-// Default config fallback
+// Default config fallback - generic placeholders only
+// Per DEVELOPMENT-RULES.md Section 17.4: No hardcoded personal data
+// Actual addresses are set by user via Setup Wizard
 const DEFAULT_CONFIG = {
-  home: { address: '1 Clara Street, South Yarra VIC 3141', lat: -37.8419, lon: 144.9931, label: 'HOME' },
-  work: { address: '80 Collins Street, Melbourne VIC 3000', lat: -37.8136, lon: 144.9689, label: 'WORK' },
-  cafe: { name: 'Norman South Yarra', address: '178 Toorak Road, South Yarra VIC 3141', lat: -37.8398, lon: 144.9915, label: 'COFFEE' },
+  home: { address: 'Home (configure in Setup Wizard)', lat: null, lon: null, label: 'HOME' },
+  work: { address: 'Work (configure in Setup Wizard)', lat: null, lon: null, label: 'WORK' },
+  cafe: { name: 'Local Cafe', address: 'Cafe (configure in Setup Wizard)', lat: null, lon: null, label: 'COFFEE' },
   arrivalTime: '09:00',
   preferCoffee: true
 };
@@ -64,7 +66,7 @@ class SmartJourneyEngine {
    */
   async loadJourneyConfig() {
     try {
-      const configPath = path.join(process.cwd(), 'config', 'angus-journey.json');
+      const configPath = path.join(process.cwd(), 'config', 'sample-journey.json');
       const data = await fs.readFile(configPath, 'utf8');
       this.journeyConfig = JSON.parse(data);
       console.log('📍 Loaded journey config from file');
@@ -350,26 +352,30 @@ class SmartJourneyEngine {
     const routes = [];
     
     // ANGUS PREFERRED: Home → Coffee → Walk → South Yarra → Train → Parliament → Walk → Office
-    // This is the primary route matching Angus's actual commute
+    // Build preferred route based on user's configured locations
+    // Per DEVELOPMENT-RULES.md Section 17.4: No hardcoded personal data
     const preferredLegs = [];
     let preferredTotal = 0;
+    const cafeName = locations.cafe?.name || 'Cafe';
+    const nearestStation = locations.nearestStation?.name || 'Station';
+    const destStation = locations.destinationStation?.name || 'City';
     
     if (includeCoffee) {
       preferredLegs.push({ type: 'walk', to: 'cafe', from: 'home', minutes: 3 });
-      preferredLegs.push({ type: 'coffee', location: locations.cafe?.name || 'Norman', minutes: 4 });
-      preferredLegs.push({ type: 'walk', to: 'South Yarra Stn', from: 'cafe', minutes: 5 });
+      preferredLegs.push({ type: 'coffee', location: cafeName, minutes: 4 });
+      preferredLegs.push({ type: 'walk', to: nearestStation, from: 'cafe', minutes: 5 });
       preferredTotal += 12;
     } else {
-      preferredLegs.push({ type: 'walk', to: 'South Yarra Stn', from: 'home', minutes: 8 });
+      preferredLegs.push({ type: 'walk', to: nearestStation, from: 'home', minutes: 8 });
       preferredTotal += 8;
     }
-    preferredLegs.push({ type: 'train', routeNumber: 'Sandringham', origin: { name: 'South Yarra' }, destination: { name: 'Parliament' }, minutes: 8 });
-    preferredLegs.push({ type: 'walk', to: 'work', from: 'Parliament', minutes: 5 });
+    preferredLegs.push({ type: 'train', routeNumber: 'City Loop', origin: { name: nearestStation }, destination: { name: destStation }, minutes: 8 });
+    preferredLegs.push({ type: 'walk', to: 'work', from: destStation, minutes: 5 });
     preferredTotal += 13;
     
     routes.push({
-      id: 'angus-preferred',
-      name: 'Train via South Yarra (Preferred)',
+      id: 'user-preferred',
+      name: 'Train via ' + nearestStation + ' (Preferred)',
       description: includeCoffee ? 'Home → Coffee → Train → Parliament → Office' : 'Home → Train → Parliament → Office',
       type: 'preferred',
       totalMinutes: preferredTotal,
@@ -516,7 +522,7 @@ class SmartJourneyEngine {
       return configRoute;
     }
     
-    // Check for preferredRoute with segments (angus-journey.json format)
+    // Check for preferredRoute with segments (sample-journey.json format)
     const preferredRoute = this.journeyConfig?.preferredRoute;
     if (preferredRoute?.segments?.length > 0) {
       return {

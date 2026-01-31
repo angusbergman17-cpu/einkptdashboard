@@ -553,7 +553,7 @@ export class LiveDash {
       }));
     }
     
-    // Check for preferredRoute.segments format (from angus-journey.json)
+    // Check for preferredRoute.segments format (from sample-journey.json)
     if (this.preferences?.preferredRoute?.segments) {
       return this.preferences.preferredRoute.segments.map(seg => ({
         type: seg.type || 'walk',

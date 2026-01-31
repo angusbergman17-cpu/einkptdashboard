@@ -61,7 +61,7 @@ async function loadJourneyConfig(configToken = null) {
   
   // Fallback to filesystem (for self-hosted)
   try {
-    const configPath = path.join(process.cwd(), 'config', 'angus-journey.json');
+    const configPath = path.join(process.cwd(), 'config', 'sample-journey.json');
     const data = await fs.readFile(configPath, 'utf8');
     const config = JSON.parse(data);
     

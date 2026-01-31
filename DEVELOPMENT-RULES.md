@@ -2006,6 +2006,82 @@ Users MUST be able to choose between:
 - ❌ Misleading "free" claims for paid services
 - ❌ Features that silently fail without paid APIs
 
+### 17.4 No Hardcoded Personal Information (MANDATORY)
+
+**🔴 CRITICAL**: The codebase MUST be completely turnkey. No personal information may be hardcoded in any source file.
+
+#### 17.4.1 Absolute Prohibition
+
+**NEVER hardcode in source files:**
+
+| Prohibited | Reason | Correct Approach |
+|------------|--------|------------------|
+| Home/work/cafe addresses | Personal location data | User enters via Setup Wizard → config token |
+| API keys | Security risk + personal account | User enters via Setup Wizard → KV storage |
+| WiFi credentials | Device-specific, security risk | WiFiManager captive portal or user config |
+| Stop IDs for specific locations | Location-specific | Auto-detect from user's configured addresses |
+| Lat/lon coordinates | Personal location data | Geocode from user-entered addresses |
+| Personal names or identifiers | Privacy | Never store; use generic labels |
+| Webhook URLs with personal tokens | Security + personal | Generated dynamically per device |
+
+#### 17.4.2 Turnkey Requirement
+
+**Definition:** The repository must be immediately usable by ANY user who forks/clones it, without:
+- Removing someone else's personal data
+- Editing source files to change addresses
+- Searching for hardcoded values to replace
+
+**Verification Command:**
+```bash
+# Check for potential hardcoded addresses (Australian patterns)
+grep -rn "[0-9]\+ [A-Z][a-z]* St\|Street\|Rd\|Road\|Ave" src/ api/ --include="*.js" | grep -v "example\|sample\|test"
+
+# Check for hardcoded coordinates (Melbourne area)
+grep -rn "\-37\.[0-9]\|144\.[0-9]" src/ api/ --include="*.js" | grep -v "DEFAULT\|MELBOURNE"
+
+# Check for hardcoded WiFi credentials
+grep -rn "SSID\|PASS\|password\|Optus\|Telstra" firmware/ --include="*.cpp" --include="*.h"
+```
+
+#### 17.4.3 Allowed Defaults
+
+**These ARE permitted as sensible defaults:**
+
+| Allowed | Example | Reason |
+|---------|---------|--------|
+| City center coordinates | Melbourne CBD: -37.8136, 144.9631 | Generic fallback, not personal |
+| Example addresses in comments | "e.g., 1 Example St, Melbourne" | Documentation only |
+| Default API endpoints | `api.opendata.transport.vic.gov.au` | Public infrastructure |
+| Stop ID ranges | "12xxx = Pakenham line citybound" | Technical documentation |
+| Sample journey in test files | `tests/sample-journey.json` | Clearly marked test data |
+
+#### 17.4.4 Configuration Flow
+
+```
+USER SETUP (personal data)          SOURCE CODE (no personal data)
+──────────────────────────          ────────────────────────────────
+1. Setup Wizard                     ✓ Generic code, no addresses
+2. User enters addresses     →      ✓ Geocoding service (runtime)
+3. User enters API keys      →      ✓ KV storage (not in code)
+4. Config token generated    →      ✓ Encoded in device webhook URL
+5. Device fetches dashboard  →      ✓ Server reads token, not hardcoded
+```
+
+#### 17.4.5 Pre-Commit Check
+
+Before ANY commit, verify no personal data:
+
+```bash
+# Run from repo root
+./scripts/check-no-personal-data.sh
+
+# Or manually:
+echo "Checking for personal data patterns..."
+! grep -rn "Clara\|Toorak\|Collins\|South Yarra\|Norman" src/ api/ --include="*.js" \
+  | grep -v "test\|example\|sample\|mock" && echo "✅ No personal data found" \
+  || echo "❌ PERSONAL DATA DETECTED - Remove before commit"
+```
+
 ---
 
 ## 🔄 Section 18: Change Management

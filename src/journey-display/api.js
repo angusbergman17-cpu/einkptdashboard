@@ -21,10 +21,10 @@ export function initJourneyDisplay(preferences) {
 export function updateConfigFromPreferences(preferences) {
   const prefs = preferences?.get() || {};
   journeyConfig = new JourneyConfig({
-    homeAddress: prefs.addresses?.home || '1 Clara Street, South Yarra',
-    workAddress: prefs.addresses?.work || '80 Collins Street, Melbourne',
+    homeAddress: prefs.addresses?.home || 'Home Address (configure in Setup Wizard)',
+    workAddress: prefs.addresses?.work || 'Work Address (configure in Setup Wizard)',
     cafeEnabled: prefs.coffee?.enabled !== false,
-    cafeName: prefs.addresses?.cafeName || prefs.coffee?.name || 'Norman',
+    cafeName: prefs.addresses?.cafeName || prefs.coffee?.name || 'Local Cafe',
     cafeAddress: prefs.addresses?.cafe || '',
     cafeDuration: prefs.coffee?.duration || 5,
     cafePosition: prefs.coffee?.position || 'before-transit',
@@ -173,20 +173,21 @@ router.get('/demo', async (req, res) => {
 function createDemoJourney(scenario) {
   const now = new Date(), arrival = new Date(now); arrival.setHours(9, 0, 0, 0);
   if (arrival < now) arrival.setDate(arrival.getDate() + 1);
+  // Demo journey - uses generic addresses (not personal data)
   const journey = new JourneyDisplay({
-    originAddress: '1 CLARA ST, SOUTH YARRA', destinationAddress: '80 COLLINS ST, MELBOURNE', currentTime: now,
+    originAddress: 'HOME', destinationAddress: 'WORK', currentTime: now,
     dayOfWeek: now.toLocaleDateString('en-AU', { weekday: 'long' }), dateString: now.toLocaleDateString('en-AU', { day: 'numeric', month: 'long' }),
-    arrivalTime: arrival, temperature: 22, weatherCondition: 'Sunny', bringUmbrella: false, destinationLabel: '80 COLLINS ST, MELBOURNE', dataSource: 'demo'
+    arrivalTime: arrival, temperature: 22, weatherCondition: 'Sunny', bringUmbrella: false, destinationLabel: 'WORK', dataSource: 'demo'
   });
-  journey.addStep(new JourneyStep({ mode: TransportMode.WALK, title: 'Walk to Norman Cafe', subtitle: 'From home • 300 Toorak Rd', duration: 4 }));
-  journey.addStep(new JourneyStep({ mode: TransportMode.COFFEE, title: 'Coffee at Norman', subtitle: '✓ TIME FOR COFFEE', duration: 5, coffeeDecision: 'time', isOptional: true }));
-  journey.addStep(new JourneyStep({ mode: TransportMode.WALK, title: 'Walk to South Yarra Stn', subtitle: 'Platform 1', duration: 6 }));
-  journey.addStep(new JourneyStep({ mode: TransportMode.TRAIN, title: 'Train to Parliament', subtitle: 'Sandringham • Next: 5, 12 min', duration: 5, nextDepartures: [5, 12] }));
-  journey.addStep(new JourneyStep({ mode: TransportMode.WALK, title: 'Walk to Office', subtitle: 'Parliament → 80 Collins St', duration: 26 }));
+  journey.addStep(new JourneyStep({ mode: TransportMode.WALK, title: 'Walk to Cafe', subtitle: 'From home', duration: 4 }));
+  journey.addStep(new JourneyStep({ mode: TransportMode.COFFEE, title: 'Coffee Stop', subtitle: '✓ TIME FOR COFFEE', duration: 5, coffeeDecision: 'time', isOptional: true }));
+  journey.addStep(new JourneyStep({ mode: TransportMode.WALK, title: 'Walk to Station', subtitle: 'Platform 1', duration: 6 }));
+  journey.addStep(new JourneyStep({ mode: TransportMode.TRAIN, title: 'Train to City', subtitle: 'City Loop • Next: 5, 12 min', duration: 5, nextDepartures: [5, 12] }));
+  journey.addStep(new JourneyStep({ mode: TransportMode.WALK, title: 'Walk to Office', subtitle: 'Station → Office', duration: 26 }));
   
-  if (scenario === 'delay') { journey.applyDelayToStep(4, 8); journey.steps[3].subtitle = 'Sandringham • +8 MIN • Next: 12, 20 min'; }
-  else if (scenario === 'skip-coffee') { journey.skipStep(2, 'Running late'); journey.steps[0].title = 'Walk past Norman Cafe'; }
-  else if (scenario === 'disruption') { journey.cancelStep(4, 'Signal fault'); journey.steps[3].title = '▲ Sandringham Line'; journey.steps[3].subtitle = 'SUSPENDED — Signal fault'; journey.extendStep(2, 5, 'Disruption'); journey.steps[1].subtitle = '✓ EXTRA TIME — Disruption'; }
+  if (scenario === 'delay') { journey.applyDelayToStep(4, 8); journey.steps[3].subtitle = 'City Loop • +8 MIN • Next: 12, 20 min'; }
+  else if (scenario === 'skip-coffee') { journey.skipStep(2, 'Running late'); journey.steps[0].title = 'Walk past Cafe'; }
+  else if (scenario === 'disruption') { journey.cancelStep(4, 'Signal fault'); journey.steps[3].title = '▲ Train Line'; journey.steps[3].subtitle = 'SUSPENDED — Signal fault'; journey.extendStep(2, 5, 'Disruption'); journey.steps[1].subtitle = '✓ EXTRA TIME — Disruption'; }
   
   journey.recalculateTotals();
   return journey;
