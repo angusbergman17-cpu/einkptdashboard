@@ -12,6 +12,9 @@ import { getDepartures, getWeather } from '../src/services/opendata-client.js';
 import CoffeeDecision from '../src/core/coffee-decision.js';
 import { renderZones } from '../src/services/zone-renderer.js';
 
+// Per Section 3.4 (Zero-Config): API key from environment (Vercel) or config token
+const ODATA_API_KEY = process.env.ODATA_API_KEY || null;
+
 // Config
 const TRAIN_STOP_ID = parseInt(process.env.TRAIN_STOP_ID) || 1071;
 const TRAM_STOP_ID = parseInt(process.env.TRAM_STOP_ID) || 2500;
@@ -96,9 +99,12 @@ export default async function handler(req, res) {
     const currentTime = formatTime(now);
     const { day, date } = formatDateParts(now);
     
+    // Per Section 11.1: Pass API key to Transport Victoria OpenData client
+    const apiOptions = ODATA_API_KEY ? { apiKey: ODATA_API_KEY } : {};
+    
     const [trains, trams, weather] = await Promise.all([
-      getDepartures(TRAIN_STOP_ID, 0),
-      getDepartures(TRAM_STOP_ID, 1),
+      getDepartures(TRAIN_STOP_ID, 0, apiOptions),
+      getDepartures(TRAM_STOP_ID, 1, apiOptions),
       getWeather()
     ]);
     

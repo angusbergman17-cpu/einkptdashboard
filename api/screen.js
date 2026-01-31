@@ -12,6 +12,9 @@
 
 import { getDepartures, getDisruptions, getWeather } from '../src/services/opendata-client.js';
 import SmartJourneyEngine from '../src/core/smart-journey-engine.js';
+
+// Per Section 3.4 (Zero-Config): API key from environment (Vercel)
+const ODATA_API_KEY = process.env.ODATA_API_KEY || null;
 import { renderFullDashboard } from '../src/services/zone-renderer.js';
 import { getScenario, getScenarioNames } from '../src/services/journey-scenarios.js';
 
@@ -585,11 +588,14 @@ export default async function handler(req, res) {
     const trainStopId = parseInt(process.env.TRAIN_STOP_ID) || 1071;
     const tramStopId = parseInt(process.env.TRAM_STOP_ID) || 2500;
     
+    // Per Section 11.1: Pass API key to Transport Victoria OpenData client
+    const apiOptions = ODATA_API_KEY ? { apiKey: ODATA_API_KEY } : {};
+    
     const [trains, trams, weather, disruptions] = await Promise.all([
-      getDepartures(trainStopId, 0),
-      getDepartures(tramStopId, 1),
+      getDepartures(trainStopId, 0, apiOptions),
+      getDepartures(tramStopId, 1, apiOptions),
       getWeather(locations.home?.lat, locations.home?.lon),
-      getDisruptions(0).catch(() => [])
+      getDisruptions(0, apiOptions).catch(() => [])
     ]);
     
     const transitData = { trains, trams, disruptions };

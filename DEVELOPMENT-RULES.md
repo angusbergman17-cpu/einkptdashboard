@@ -1,7 +1,7 @@
 # Commute Compute Development Rules
 
 **MANDATORY COMPLIANCE DOCUMENT**  
-**Version:** 1.7  
+**Version:** 1.8  
 **Last Updated:** 2026-01-31  
 **Copyright (c) 2026 Commute Compute System by Angus Bergman — Licensed under CC BY-NC 4.0**
 
@@ -76,7 +76,7 @@ The system was previously known as "Commute Compute". Update any remaining refer
 | 16 | [Documentation Standards](#-section-16-documentation-standards) | 🟡 MEDIUM | File naming, required sections |
 | 17 | [Security](#-section-17-security) | 🟠 HIGH | XSS sanitization |
 | 18 | [Change Management](#-section-18-change-management) | 🟠 HIGH | Locked elements, modification process |
-| 19 | [Refresh Timing](#-section-19-refresh-timing) | 🔴 CRITICAL | 20s partial, 10min full refresh |
+| 19 | [Refresh Timing](#-section-19-refresh-timing) | 🔴 CRITICAL | 60s partial, 5min full refresh (v1.8) |
 | 20 | [Licensing](#-section-20-licensing) | 🔴 CRITICAL | CC BY-NC 4.0 requirement |
 
 ### Appendices
@@ -134,7 +134,7 @@ The system was previously known as "Commute Compute". Update any remaining refer
 - 5.3 Flashing Procedure
 - 5.4 Critical bb_epaper ESP32-C3 Findings (2026-01-29)
 - 5.5 ESP32-C3 Troubleshooting Guide (2026-01-30)
-- 5.6 **Locked Production Firmware: CC-FW-6.0-STABLE (2026-01-31)** 🔒
+- 5.6 **Locked Production Firmware: CC-FW-6.1-60s (2026-01-31)** 🔒
 </details>
 
 <details>
@@ -190,6 +190,8 @@ The system was previously known as "Commute Compute". Update any remaining refer
 - 11.3 Google Places
 - 11.4 Lightweight Endpoints
 - 11.5 Rate Limit Awareness
+- 11.6 LiveDash Multi-Device Endpoint
+- 11.7 API Key Passing Requirements (v1.8)
 </details>
 
 <details>
@@ -271,6 +273,7 @@ The system was previously known as "Commute Compute". Update any remaining refer
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.8 | 2026-01-31 | Angus Bergman | **FIRMWARE UPDATE + API BUG FIX**: (1) Updated locked firmware to CC-FW-6.1-60s (commit 7336929) — 60-second refresh interval, consolidated FIRMWARE_VERSION define. (2) Fixed critical bug: all API endpoints now pass `ODATA_API_KEY` to `getDepartures()` per Section 11.1. Added Section 11.7 (API Key Passing Requirements). |
 | 1.7 | 2026-01-31 | Angus Bergman | **LOCKED FIRMWARE**: Added Section 5.6 — CC-FW-6.0-STABLE locked production firmware. Hardware-verified working on TRMNL OG (commit 2f8d6cf). Documents exact flashing procedure, ESP32-C3 workarounds, modification policy. |
 | 1.6 | 2026-01-30 | Angus Bergman | **REBRAND**: Commute Compute → Commute Compute System. Added Section 0 (Naming Conventions). Updated all references: CCDashDesignV10, CC LiveDash. SmartCommute engine name retained. |
 | 1.5 | 2026-01-29 | Angus Bergman | Added: API Key Validation requirements (17.2) — mandatory validation for all API keys entered via admin panel including format checks, live testing, and user feedback requirements |
@@ -779,15 +782,20 @@ pio run -e trmnl -t erase && pio run -e trmnl -t upload
 | Display shows garbage | allocBuffer() called | Remove allocBuffer() calls |
 | Text rotated 90° | FONT_12x16 bug | Use FONT_8x8 only |
 
-### 5.6 Locked Production Firmware: CC-FW-6.0-STABLE (2026-01-31)
+### 5.6 Locked Production Firmware: CC-FW-6.1-60s (2026-01-31)
 
 **🔒 LOCKED FIRMWARE VERSION — Hardware Verified Working**
 
-**Official Name:** `CC-FW-6.0-STABLE`  
-**Version:** 6.0-stable-hardcoded  
-**Commit:** `2f8d6cf` (fix: Trigger full refresh after zone rendering)  
-**Verified On:** TRMNL OG hardware, 2026-01-31 12:00 AEDT  
+**Official Name:** `CC-FW-6.1-60s`  
+**Version:** 6.1-60s  
+**Commit:** `7336929` (fix: consolidate FIRMWARE_VERSION to config.h)  
+**Previous:** `2f8d6cf` (CC-FW-6.0-STABLE)  
+**Verified On:** TRMNL OG hardware, 2026-01-31 12:45 AEDT  
 **Status:** ✅ PRODUCTION READY
+
+**Changes from 6.0:**
+- Refresh interval: 20s → 60s (reduces API load, battery friendly)
+- FIRMWARE_VERSION consolidated to `config.h` (eliminates redefinition warning)
 
 #### 5.6.1 Key Characteristics
 
@@ -1210,6 +1218,44 @@ LiveDash provides unified dashboard rendering for multiple device types from a s
 ```bash
 curl "https://your-server.vercel.app/api/livedash?device=trmnl&token=eyJ..."
 ```
+
+### 11.7 API Key Passing Requirements (Added v1.8)
+
+**🔴 CRITICAL**: All API endpoints that call `getDepartures()` or `getDisruptions()` MUST pass the API key.
+
+**Correct Pattern:**
+```javascript
+// Per Section 3.4 (Zero-Config): API key from environment (Vercel)
+const ODATA_API_KEY = process.env.ODATA_API_KEY || null;
+
+// Per Section 11.1: Pass API key to Transport Victoria OpenData client
+const apiOptions = ODATA_API_KEY ? { apiKey: ODATA_API_KEY } : {};
+
+const [trains, trams] = await Promise.all([
+  getDepartures(trainStopId, 0, apiOptions),  // ✅ CORRECT
+  getDepartures(tramStopId, 1, apiOptions),   // ✅ CORRECT
+]);
+```
+
+**Wrong Pattern (causes fallback to mock data):**
+```javascript
+// ❌ WRONG - No API key passed!
+const [trains, trams] = await Promise.all([
+  getDepartures(trainStopId, 0),   // Falls back to mock data
+  getDepartures(tramStopId, 1),    // Falls back to mock data
+]);
+```
+
+**Affected Endpoints:**
+| Endpoint | Fixed in v1.8 |
+|----------|---------------|
+| `/api/zones` | ✅ |
+| `/api/zonedata` | ✅ |
+| `/api/screen` | ✅ |
+| `/api/zones-tiered` | ✅ |
+
+**Why This Matters:**
+Without the API key, `opendata-client.js` returns `getMockDepartures()` — static fake data instead of live Transport Victoria GTFS-RT feeds.
 
 ---
 
@@ -1672,14 +1718,15 @@ grep -r "oldValue" public/    # Find UI references
 
 | Setting | Value | Location |
 |---------|-------|----------|
-| Partial Refresh | 20,000 ms | firmware/config.h, server.js, preferences |
-| Full Refresh | 600,000 ms (10 min) | Same locations |
-| Sleep Between | 18,000 ms | Same locations |
+| Partial Refresh | 60,000 ms (1 min) | firmware/src/main.cpp `REFRESH_INTERVAL` |
+| Full Refresh | 300,000 ms (5 min) | firmware/src/main.cpp `FULL_REFRESH_INTERVAL` |
+
+**v1.8 Update (2026-01-31):** Refresh interval changed from 20s to 60s.
 
 **Rationale:**
-- < 20s: Excessive e-ink wear
-- > 30s: Stale departure data
-- Balance of freshness and display longevity
+- 60s balances real-time feel with reduced API load and battery usage
+- Transit departures typically don't change dramatically within 60 seconds
+- Reduces e-ink wear (fewer partial refreshes per hour)
 
 ---
 
