@@ -493,8 +493,8 @@
                                 <label class="form-label">Select Your Device</label>
                                 <select id="device-select" class="form-input" onchange="updateDevicePreview()">
                                     <option value="">— No e-ink device (web only) —</option>
-                                    <option value="trmnl-og">CC E-Ink Display OG (7.5" - 800×480)</option>
-                                    <option value="trmnl-x" disabled>CC E-Ink Display X (Coming Soon)</option>
+                                    <option value="trmnl-og">TRMNL Display (OG) — 7.5" 800×480</option>
+                                    <option value="trmnl-mini" disabled>TRMNL Display (Mini) — Coming Soon</option>
                                     <optgroup label="Kindle Devices (Jailbreak Required)">
                                         <option value="kindle-pw3">Kindle Paperwhite 3 (6" - 1072×1448)</option>
                                         <option value="kindle-pw4">Kindle Paperwhite 4 (6" - 1072×1448)</option>
@@ -512,9 +512,12 @@
                             </div>
                             
                             <div id="device-preview" style="display: none; margin-top: 15px; padding: 15px; background: rgba(79, 178, 142, 0.1); border-radius: 8px; border-left: 3px solid #4fb28e;">
-                                <div style="font-weight: 600; margin-bottom: 8px; font-size: 14px;" id="device-preview-name">CC E-Ink Display OG</div>
+                                <div style="font-weight: 600; margin-bottom: 8px; font-size: 14px;" id="device-preview-name">TRMNL Display (OG)</div>
                                 <div style="font-size: 12px; color: #94a3b8; line-height: 1.6;" id="device-preview-specs">
                                     Resolution: 800×480 pixels • Orientation: Landscape • Chip: ESP32
+                                </div>
+                                <div style="font-size: 11px; color: #fbbf24; margin-top: 8px;">
+                                    ⚠️ Requires flashing with Commute Compute custom firmware
                                 </div>
                             </div>
                         </div>
@@ -760,7 +763,8 @@
             preview.style.display = 'block';
             
             const deviceInfo = {
-                'trmnl-og': { name: 'CC E-Ink Display OG', specs: 'Resolution: 800×480 pixels • Orientation: Landscape • Chip: ESP32' },
+                'trmnl-og': { name: 'TRMNL Display (OG)', specs: 'Resolution: 800×480 pixels • Orientation: Landscape • Chip: ESP32' },
+                'trmnl-mini': { name: 'TRMNL Display (Mini)', specs: 'Resolution: 600×448 pixels • Orientation: Landscape' },
                 'kindle-pw3': { name: 'Kindle Paperwhite 3', specs: 'Resolution: 1072×1448 pixels • Orientation: Portrait • 6" display' },
                 'kindle-pw4': { name: 'Kindle Paperwhite 4', specs: 'Resolution: 1072×1448 pixels • Orientation: Portrait • 6" display' },
                 'kindle-pw5': { name: 'Kindle Paperwhite 5', specs: 'Resolution: 1236×1648 pixels • Orientation: Portrait • 6.8" display' }

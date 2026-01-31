@@ -1677,12 +1677,21 @@
                         <div style="display: flex; align-items: center; gap: 15px; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 10px; margin-bottom: 15px;">
                             <div style="font-size: 40px;">📟</div>
                             <div style="flex: 1;">
-                                <div id="device-name" style="font-weight: 600; font-size: 16px; margin-bottom: 4px;">CC E-Ink Display OG</div>
+                                <div id="device-name" style="font-weight: 600; font-size: 16px; margin-bottom: 4px;">TRMNL Display (OG)</div>
                                 <div id="device-specs" style="font-size: 12px; opacity: 0.7;">800×480 • Landscape • ESP32</div>
                             </div>
                             <span id="device-status-badge" style="background: rgba(34, 197, 94, 0.9); color: white; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;">
                                 ✓ Ready
                             </span>
+                        </div>
+
+                        <!-- Firmware Disclaimer -->
+                        <div id="firmware-disclaimer" style="padding: 12px; background: rgba(251, 191, 36, 0.1); border-radius: 8px; border-left: 3px solid #fbbf24; margin-bottom: 15px;">
+                            <div style="font-size: 12px; line-height: 1.5; color: rgba(255,255,255,0.85);">
+                                <strong>⚠️ Custom Firmware Required:</strong> Your device must be flashed with 
+                                <a href="/flasher/" target="_blank" style="color: #fbbf24;">Commute Compute firmware</a> 
+                                to connect to this dashboard. Stock firmware will not work.
+                            </div>
                         </div>
 
                         <!-- Webhook URL -->
@@ -4613,13 +4622,14 @@
                 
                 if (deviceName) {
                     const deviceNames = {
-                        'trmnl-og': 'CC E-Ink Display OG',
-                        'trmnl-byos': 'CC E-Ink Display',
+                        'trmnl-og': 'TRMNL Display (OG)',
+                        'trmnl-byos': 'TRMNL Display',
+                        'trmnl-mini': 'TRMNL Display (Mini)',
                         'kindle-pw3': 'Kindle Paperwhite 3',
                         'kindle-pw4': 'Kindle Paperwhite 4',
                         'kindle-pw5': 'Kindle Paperwhite 5'
                     };
-                    deviceName.textContent = deviceNames[device] || 'CC E-Ink Display';
+                    deviceName.textContent = deviceNames[device] || 'TRMNL Display';
                 }
                 if (deviceSpecs) {
                     deviceSpecs.textContent = device?.startsWith('kindle') ? '1072×1448 • Portrait' : '800×480 • Landscape • ESP32';
