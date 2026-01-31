@@ -59,11 +59,12 @@ function formatDateParts(date) {
 
 /**
  * Initialize the Smart Journey Engine
+ * @param {object} preferences - Loaded preferences from PreferencesManager.get()
  */
-async function getEngine() {
+async function getEngine(preferences = {}) {
   if (!journeyEngine) {
-    journeyEngine = new SmartCommute(prefs);
-    await journeyEngine.initialize(prefs);
+    journeyEngine = new SmartCommute(preferences);
+    await journeyEngine.initialize(preferences);
   }
   return journeyEngine;
 }
@@ -356,7 +357,7 @@ export default async function handler(req, res) {
     const { day, date } = formatDateParts(now);
     
     // Initialize engine and get route
-    const engine = await getEngine();
+    const engine = await getEngine(prefs.get());
     const route = engine.getSelectedRoute();
     const locations = engine.getLocations();
     const config = engine.journeyConfig;
