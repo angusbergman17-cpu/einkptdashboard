@@ -4,7 +4,7 @@
 **Copyright:** (c) 2026 Angus Bergman — CC BY-NC 4.0
 
 **Status:** 🔒 LOCKED  
-**Last Updated:** 2026-01-28  
+**Last Updated:** 2026-01-31 (Amendment: Real-Time Arrival)  
 **Display:** 800×480px e-ink (e-ink device)  
 **Refresh:** 20-second partial refresh cycle
 
@@ -528,6 +528,7 @@ The server returns pre-rendered HTML/image optimized for e-ink display:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v10.1 | 2026-01-31 | **Amendment:** Real-time arrival calculation (Sections 4, 6) - approved by Angus |
 | v10 | 2026-01-28 | Final locked specification |
 | v9 | 2026-01-28 | Centered arrow points, edge-fill duration boxes |
 | v8 | 2026-01-28 | MIN WALK vs MIN labels |
