@@ -3,7 +3,7 @@
  * Part of the Commute Compute System™
  * 
  * Primary renderer for Commute Compute System dashboards.
- * Implements CCDashDesignV10 specification v1.38.
+ * Implements CCDashDesignV11 specification (LOCKED).
  * 
  * ============================================================================
  * FEATURES (v1.38)

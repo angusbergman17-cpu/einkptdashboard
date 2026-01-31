@@ -1,11 +1,17 @@
-# CCDashDesignV10 - Commute Compute Dashboard Specification
+# CCDashDesignV11 - Commute Compute Dashboard Specification
 
-**Status:** 🔒 LOCKED  
-**Version:** 1.38  
-**Last Updated:** 2026-01-31  
+**Status:** 🔒 LOCKED — DO NOT MODIFY WITHOUT EXPLICIT APPROVAL  
+**Version:** 11.0  
+**Locked Date:** 2026-01-31  
 **Display:** 800×480px e-ink (TRMNL device)  
 **Refresh:** 60-second partial refresh cycle  
-**Renderer:** ccdash-renderer.js (Consolidated v2.1)
+**Renderer:** ccdash-renderer.js v1.38
+
+---
+
+> ⚠️ **LOCKED SPECIFICATION**  
+> This design spec is frozen. Any changes require explicit approval from the project owner.  
+> Renderer implementations MUST match this spec exactly.
 
 ---
 
