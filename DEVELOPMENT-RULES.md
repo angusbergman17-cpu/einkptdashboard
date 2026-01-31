@@ -554,13 +554,48 @@ const apiKey = process.env.ODATA_API_KEY;  // User must configure server
 | `cc:state` | User's state (VIC, NSW, QLD) |
 | `cc:preferences` | Full preferences object |
 
-#### 3.6.4 Fallback Behavior
+#### 3.6.4 Data Sync Flow
+
+**Per Zero-Config principle: Users enter data ONCE in Setup Wizard.**
+
+```
+Setup Wizard
+    │
+    ├─► Step 4: Transit API Key
+    │       └─► /api/save-transit-key → KV (validated + saved)
+    │
+    └─► Complete Setup
+            ├─► localStorage (browser backup)
+            └─► /api/sync-config → KV (ensures server has data)
+                    │
+                    ▼
+            Admin Panel reads /api/status
+                    │
+                    └─► Shows "configured" status from KV
+```
+
+**Endpoints:**
+| Endpoint | Purpose |
+|----------|---------|
+| `/api/save-transit-key` | Save + validate Transit API key to KV |
+| `/api/save-google-key` | Save + validate Google API key to KV |
+| `/api/sync-config` | Sync full config to KV after setup |
+| `/api/status` | Read config status from KV |
+| `/api/kv-status` | Debug: verify KV connection |
+
+#### 3.6.5 Fallback Behavior
 
 | Scenario | Behavior |
 |----------|----------|
 | KV connected, key saved | ✅ Live Transport Victoria data |
 | KV connected, no key | ⚠️ Fallback to timetable data |
-| KV not connected | ⚠️ In-memory only (dev mode) |
+| KV not connected | ⚠️ In-memory only (lost on next request) |
+
+**⚠️ CRITICAL:** If KV env vars are missing after connecting database:
+1. Go to Vercel Dashboard → Storage → CCKV
+2. Verify "Linked Projects" shows einkptdashboard
+3. Redeploy project (Deployments → ⋮ → Redeploy)
+4. Check `/api/kv-status` — should show `KV_REST_API_URL: "set"`
 
 ---
 

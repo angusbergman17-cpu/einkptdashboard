@@ -1050,6 +1050,34 @@
                     localStorage.setItem('cc-config', JSON.stringify(fullConfig));
                     localStorage.setItem('cc-configured', 'true');
                     
+                    // Per Section 3.6 & 11.8: Sync config to Vercel KV for server-side access
+                    try {
+                        lastStep = 'syncing to KV';
+                        const transitKey = document.getElementById('api-key')?.value || localStorage.getItem('cc-transit-api-key') || '';
+                        const googleKey = document.getElementById('google-places-api-key')?.value || localStorage.getItem('cc-google-api-key') || '';
+                        
+                        const syncResponse = await fetch(baseUrl + '/api/sync-config', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                transitKey: transitKey,
+                                googleKey: googleKey,
+                                state: selectedAuthority,
+                                preferences: fullConfig
+                            })
+                        });
+                        const syncResult = await syncResponse.json();
+                        console.log('[Setup] KV sync result:', syncResult);
+                        
+                        if (syncResult.kv?.available) {
+                            console.log('[Setup] ✅ Config synced to Vercel KV');
+                        } else {
+                            console.log('[Setup] ⚠️ KV not available, using localStorage fallback');
+                        }
+                    } catch (syncError) {
+                        console.warn('[Setup] KV sync failed (non-critical):', syncError);
+                    }
+                    
                     let webhookHtml = '';
                     let webhookUrl = '';
                     
