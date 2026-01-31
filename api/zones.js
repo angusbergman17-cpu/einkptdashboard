@@ -149,16 +149,14 @@ function buildLegSubtitle(leg, transitData, arriveAtLegMins = 0) {
       return 'TIME FOR COFFEE';
     case 'train': {
       const parts = [];
-      const lineName = leg.lineName || leg.routeNumber || '';
       const originName = leg.origin?.name || leg.originStation || '';
-      if (lineName) parts.push(lineName);
       if (originName) parts.push(originName);
       const departures = transitData?.trains || [];
-      // v1.19: Filter to show only catchable departures (after user arrives at stop)
+      // v1.20: Show countdown to the specific departure you'd catch
       const catchable = departures.filter(d => d.minutes >= arriveAtLegMins);
       if (catchable.length > 0) {
-        const times = catchable.slice(0, 3).map(d => d.minutes).join(', ');
-        parts.push(`Next: ${times} min`);
+        // Show "Catch in X min" for the first departure you'd actually catch
+        parts.push(`Catch in ${catchable[0].minutes} min`);
       }
       return parts.join(' • ') || 'Platform';
     }
@@ -167,11 +165,10 @@ function buildLegSubtitle(leg, transitData, arriveAtLegMins = 0) {
       const originName = leg.origin?.name || leg.originStop || '';
       if (originName) parts.push(originName);
       const departures = transitData?.trams || [];
-      // v1.19: Filter to show only catchable departures
+      // v1.20: Show countdown to the specific departure you'd catch
       const catchable = departures.filter(d => d.minutes >= arriveAtLegMins);
       if (catchable.length > 0) {
-        const times = catchable.slice(0, 3).map(d => d.minutes).join(', ');
-        parts.push(`Next: ${times} min`);
+        parts.push(`Catch in ${catchable[0].minutes} min`);
       }
       return parts.join(' • ') || 'Tram stop';
     }
@@ -180,11 +177,10 @@ function buildLegSubtitle(leg, transitData, arriveAtLegMins = 0) {
       const originName = leg.origin?.name || leg.originStop || '';
       if (originName) parts.push(originName);
       const departures = transitData?.buses || [];
-      // v1.19: Filter to show only catchable departures
+      // v1.20: Show countdown to the specific departure you'd catch
       const catchable = departures.filter(d => d.minutes >= arriveAtLegMins);
       if (catchable.length > 0) {
-        const times = catchable.slice(0, 3).map(d => d.minutes).join(', ');
-        parts.push(`Next: ${times} min`);
+        parts.push(`Catch in ${catchable[0].minutes} min`);
       }
       return parts.join(' • ') || 'Bus stop';
     }
