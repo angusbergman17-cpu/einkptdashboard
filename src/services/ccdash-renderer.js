@@ -1698,14 +1698,53 @@ export function renderFullScreen(data, prefs = {}) {
     const zone = getDynamicLegZone(legNum, legs.length);
     const status = leg.status || leg.state || 'normal';
     const isDelayed = status === 'delayed' || leg.delayMinutes > 0;
+    const isSuspended = status === 'suspended' || status === 'cancelled';
+    const isDiverted = status === 'diverted';
     const isSkippedCoffee = leg.type === 'coffee' && leg.canGet === false;
     const isCoffeeCanGet = leg.type === 'coffee' && leg.canGet !== false;
+    const isExtraTimeCoffee = leg.type === 'coffee' && leg.extraTime;
     
     // -----------------------------------------------------------------------
-    // BACKGROUND
+    // BACKGROUND (varies by state per reference images 6, 8)
+    // - Suspended: Diagonal stripes pattern (//////)
+    // - Diverted: Vertical stripes pattern (|||||)
+    // - Normal: Solid white
     // -----------------------------------------------------------------------
     ctx.fillStyle = '#FFF';
     ctx.fillRect(zone.x, zone.y, zone.w, zone.h);
+    
+    // Draw stripe patterns for suspended/diverted
+    if (isSuspended) {
+      // Diagonal stripes (per ref image 6 - Sandringham Line)
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(zone.x, zone.y, zone.w, zone.h);
+      ctx.clip();
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 2;
+      for (let i = -zone.h; i < zone.w + zone.h; i += 8) {
+        ctx.beginPath();
+        ctx.moveTo(zone.x + i, zone.y);
+        ctx.lineTo(zone.x + i + zone.h, zone.y + zone.h);
+        ctx.stroke();
+      }
+      ctx.restore();
+    } else if (isDiverted) {
+      // Vertical stripes (per ref image 8 - Tram 70 Diverted)
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(zone.x, zone.y, zone.w, zone.h);
+      ctx.clip();
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 2;
+      for (let i = 0; i < zone.w; i += 6) {
+        ctx.beginPath();
+        ctx.moveTo(zone.x + i, zone.y);
+        ctx.lineTo(zone.x + i, zone.y + zone.h);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
     
     // -----------------------------------------------------------------------
     // BORDER (varies by state per reference images)
@@ -1713,23 +1752,23 @@ export function renderFullScreen(data, prefs = {}) {
     // - Coffee can-get: 3px solid (thicker)
     // - Coffee skip: 2px dashed
     // - Delayed: 2px dashed
+    // - Suspended/Diverted: 3px solid
     // -----------------------------------------------------------------------
     ctx.strokeStyle = '#000';
     
     if (isCoffeeCanGet) {
-      // Coffee can-get: 3px SOLID border (per ref image 2 - leg 2)
       ctx.lineWidth = 3;
       ctx.setLineDash([]);
     } else if (isSkippedCoffee) {
-      // Skipped coffee: 2px DASHED border (per ref image 1 - leg 2)
       ctx.lineWidth = 2;
       ctx.setLineDash([4, 4]);
     } else if (isDelayed) {
-      // Delayed transit: 2px DASHED border (per ref images 1,3 - legs 4)
       ctx.lineWidth = 2;
       ctx.setLineDash([6, 4]);
+    } else if (isSuspended || isDiverted) {
+      ctx.lineWidth = 3;
+      ctx.setLineDash([]);
     } else {
-      // Normal: 2px SOLID border
       ctx.lineWidth = 2;
       ctx.setLineDash([]);
     }
@@ -1740,32 +1779,40 @@ export function renderFullScreen(data, prefs = {}) {
     // -----------------------------------------------------------------------
     // LEG NUMBER CIRCLE (V10 Spec Section 5.2)
     // - Normal: Filled black circle with white number
-    // - Skipped: Dashed circle outline with black number (per ref image 1)
+    // - Skipped: Dashed circle outline with black number
+    // - Suspended: Dashed circle with X (per ref image 6)
     // -----------------------------------------------------------------------
-    drawLegNumber(ctx, legNum, zone.x + 8, zone.y + (zone.h - 24) / 2, status, isSkippedCoffee);
+    if (isSuspended) {
+      // Draw X in dashed circle for suspended (per ref image 6)
+      drawLegNumber(ctx, 'X', zone.x + 8, zone.y + (zone.h - 24) / 2, 'cancelled', false);
+    } else {
+      drawLegNumber(ctx, legNum, zone.x + 8, zone.y + (zone.h - 24) / 2, status, isSkippedCoffee);
+    }
     
     // -----------------------------------------------------------------------
     // MODE ICON (V10 Spec Section 5.3)
     // - Normal: Filled solid icons
-    // - Delayed/Skipped: Outline icons (per ref images 1,3)
+    // - Delayed/Skipped/Suspended/Diverted: Outline icons
     // -----------------------------------------------------------------------
-    const useOutlineIcon = isDelayed || isSkippedCoffee;
+    const useOutlineIcon = isDelayed || isSkippedCoffee || isSuspended || isDiverted;
     drawModeIcon(ctx, leg.type, zone.x + 40, zone.y + (zone.h - 32) / 2, 32, useOutlineIcon);
     
     // -----------------------------------------------------------------------
-    // TITLE (V10 Spec Section 5.4)
-    // - Delayed transit gets ⏱ prefix (per ref images)
-    // - Coffee gets ☕ prefix
+    // TITLE (V10 Spec Section 5.4) - Per reference images
+    // - Delayed: ⏱ prefix
+    // - Suspended: ⚠ prefix (per ref image 6)
+    // - Diverted: ↩ prefix (per ref image 8)
+    // - Coffee: ☕ prefix
     // -----------------------------------------------------------------------
     ctx.fillStyle = '#000';
     ctx.font = 'bold 16px Inter, sans-serif';
     ctx.textBaseline = 'top';
     
     let titlePrefix = '';
-    if (isDelayed && leg.type !== 'walk') titlePrefix = '⏱ ';
-    else if (status === 'cancelled') titlePrefix = '⚠ ';
+    if (isSuspended) titlePrefix = '⚠ ';
+    else if (isDiverted) titlePrefix = '↩ ';
+    else if (isDelayed && leg.type !== 'walk') titlePrefix = '⏱ ';
     else if (leg.type === 'coffee' && isCoffeeCanGet) titlePrefix = '☕ ';
-    // Skipped coffee: no emoji prefix, shows in outline style
     
     if (idx === 0) leg.isFirst = true;
     const legTitle = leg.title || getLegTitle(leg);
@@ -1773,21 +1820,36 @@ export function renderFullScreen(data, prefs = {}) {
     
     // -----------------------------------------------------------------------
     // SUBTITLE (V10 Spec Section 5.5) - Per reference images
-    // - Coffee can-get: "✓ TIME FOR COFFEE"
+    // - Coffee can-get: "✓ TIME FOR COFFEE" or "✓ EXTRA TIME — Disruption"
     // - Coffee skip: "✗ SKIP — Running late"
+    // - Suspended: "SUSPENDED — [reason]" (per ref image 6)
+    // - Diverted: "Next: X, Y min • [diverted stop]" (per ref image 8)
     // - Transit delayed: "+X MIN • Next: X, Y min"
-    // - Transit normal: "[Line] • Next: X, Y min"
     // -----------------------------------------------------------------------
     ctx.font = '12px Inter, sans-serif';
     let legSubtitle = leg.subtitle;
     
     if (!legSubtitle) {
-      if (isCoffeeCanGet) {
-        legSubtitle = '✓ TIME FOR COFFEE';
+      if (isExtraTimeCoffee) {
+        // Extra time due to disruption (per ref image 6)
+        legSubtitle = '✓ EXTRA TIME — Disruption';
+      } else if (isCoffeeCanGet) {
+        // Check for special day treats
+        const dayOfWeek = new Date().getDay();
+        legSubtitle = dayOfWeek === 5 ? '✓ FRIDAY TREAT' : '✓ TIME FOR COFFEE';
       } else if (isSkippedCoffee) {
         legSubtitle = '✗ SKIP — Running late';
+      } else if (isSuspended) {
+        // Suspended: "SUSPENDED — [reason]" (per ref image 6)
+        legSubtitle = `SUSPENDED — ${leg.reason || 'Service disruption'}`;
+      } else if (isDiverted) {
+        // Diverted with stop info (per ref image 8)
+        const nextTimes = leg.nextDepartures || [];
+        const divertedStop = leg.divertedStop || '';
+        legSubtitle = nextTimes.length > 0 
+          ? `Next: ${nextTimes.join(', ')} min • ${divertedStop}`
+          : divertedStop || 'Diverted route';
       } else if (isDelayed && leg.delayMinutes && leg.type !== 'walk') {
-        // Delayed transit: "+X MIN • Next: X, Y min" (per ref image 3)
         const nextTimes = leg.nextDepartures || [leg.nextDeparture, leg.nextDeparture2].filter(Boolean);
         const nextStr = nextTimes.length > 0 ? ` • Next: ${nextTimes.join(', ')} min` : '';
         legSubtitle = `+${leg.delayMinutes} MIN${nextStr}`;
@@ -1802,11 +1864,21 @@ export function renderFullScreen(data, prefs = {}) {
     // - Normal: Black fill, white text
     // - Delayed: White fill, dashed LEFT border only, black text
     // - Skipped: White fill, dashed border all around, "—" text
+    // - Suspended: "CANCELLED" text (per ref image 6)
+    // - Diverted: White fill with vertical stripes continuation
     // -----------------------------------------------------------------------
     const timeBoxW = 72;
     const timeBoxX = zone.x + zone.w - timeBoxW;
     
-    if (isSkippedCoffee) {
+    if (isSuspended) {
+      // Suspended: "CANCELLED" in time box (per ref image 6)
+      // No background fill - stripes continue through
+      ctx.fillStyle = '#000';
+      ctx.font = 'bold 11px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('CANCELLED', timeBoxX + timeBoxW / 2, zone.y + zone.h / 2);
+    } else if (isSkippedCoffee) {
       // Skipped coffee: dashed border all around, "—" (per ref image 1 - leg 2)
       ctx.strokeStyle = '#000';
       ctx.lineWidth = 2;
@@ -1818,6 +1890,16 @@ export function renderFullScreen(data, prefs = {}) {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('—', timeBoxX + timeBoxW / 2, zone.y + zone.h / 2);
+    } else if (isDiverted) {
+      // Diverted: normal time display but stripes continue (per ref image 8)
+      ctx.fillStyle = '#000';
+      ctx.font = 'bold 22px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const minutes = leg.minutes || leg.durationMinutes || '--';
+      ctx.fillText(minutes.toString(), timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 - 6);
+      ctx.font = '9px Inter, sans-serif';
+      ctx.fillText('MIN', timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 + 14);
     } else if (isDelayed && leg.type !== 'walk') {
       // Delayed transit: white background, dashed LEFT border only (per ref images 1,3)
       ctx.fillStyle = '#FFF';
