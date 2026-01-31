@@ -217,26 +217,40 @@ function buildJourneyLegs(route, transitData, coffeeDecision, currentTime) {
     const arriveAmPm = arriveAtLegH >= 12 ? 'pm' : 'am';
     const arriveTime = `${arriveH12}:${arriveAtLegM.toString().padStart(2, '0')}${arriveAmPm}`;
     
-    // Calculate depart time (for transit legs, this is when the service leaves)
-    const departMins = arriveAtLegMins;
-    const departH = Math.floor(departMins / 60) % 24;
-    const departM = departMins % 60;
-    const departH12 = departH % 12 || 12;
-    const departAmPm = departH >= 12 ? 'pm' : 'am';
-    const departTime = `${departH12}:${departM.toString().padStart(2, '0')}${departAmPm}`;
+    // v1.22: Calculate DEPART time based on actual catchable service departure
+    // For transit legs, find the first departure AFTER user arrives at stop
+    let departTime = arriveTime;  // Default to arrival time
+    let actualDepartMins = arriveAtLegMins;
+    
+    if (['train', 'tram', 'bus', 'vline', 'ferry'].includes(leg.type)) {
+      const departures = leg.type === 'train' ? transitData?.trains :
+                        leg.type === 'tram' ? transitData?.trams :
+                        leg.type === 'bus' ? transitData?.buses : [];
+      // Find first catchable departure (departs after user arrives)
+      const catchable = departures?.filter(d => d.minutes >= cumulativeMinutes) || [];
+      if (catchable.length > 0) {
+        // Actual departure is NOW + departure minutes
+        actualDepartMins = nowMins + catchable[0].minutes;
+        const dH = Math.floor(actualDepartMins / 60) % 24;
+        const dM = actualDepartMins % 60;
+        const dH12 = dH % 12 || 12;
+        const dAmPm = dH >= 12 ? 'pm' : 'am';
+        departTime = `${dH12}:${dM.toString().padStart(2, '0')}${dAmPm}`;
+      }
+    }
     
     const baseLeg = {
       number: legNumber++,
       type: leg.type,
       title: buildLegTitle(leg),
-      subtitle: buildLegSubtitle(leg, transitData, cumulativeMinutes),  // v1.19: pass arrival time for catchable filtering
+      subtitle: buildLegSubtitle(leg, transitData, cumulativeMinutes),
       minutes: legDuration,
       state: 'normal',
-      // New timing fields (v1.18)
+      // Timing fields (v1.22: departTime now reflects actual service departure)
       cumulativeMinutes,           // Minutes from journey start to reach this leg
-      catchInMinutes: cumulativeMinutes, // Same as cumulative for clarity
+      catchInMinutes: cumulativeMinutes,
       arriveTime,                  // When user arrives at this leg's start point
-      departTime                   // When user departs on this leg (for transit legs)
+      departTime                   // When the actual service departs (from live data)
     };
     
     // Handle coffee leg state
