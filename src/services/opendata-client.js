@@ -32,6 +32,19 @@ const METRO_LINE_NAMES = {
 };
 
 /**
+ * Check if a stop ID is in the Melbourne City Loop area
+ * City Loop stations: Parliament, Melbourne Central, Flagstaff, Southern Cross, Flinders Street
+ * These stops are typically 26xxx or 12204 (Flinders Street)
+ */
+function isCityLoopStop(stopId) {
+  if (!stopId) return false;
+  // City Loop terminus stops on metro lines
+  // 26xxx = City Loop stations (Parliament, Melbourne Central, Flagstaff, Southern Cross)
+  // 12204, 12205 = Flinders Street area
+  return stopId.startsWith('26') || stopId === '12204' || stopId === '12205';
+}
+
+/**
  * Extract human-readable line name from GTFS route ID
  * e.g., "aus:vic:vic-02-SHM:" → "Sandringham"
  */
@@ -225,12 +238,20 @@ function processGtfsRtDepartures(feed, stopId) {
         const delay = stu.departure?.delay || stu.arrival?.delay || 0;
         const isDelayed = delay > 60; // More than 1 minute delay
         
+        // Determine destination: check if citybound by looking at final stop
+        const stops = tripUpdate.stopTimeUpdate;
+        const finalStop = stops[stops.length - 1]?.stopId || '';
+        const isCitybound = isCityLoopStop(finalStop);
+        const destination = isCitybound ? 'City Loop' : getLineName(tripUpdate.trip?.routeId);
+        
         departures.push({
           minutes,
-          destination: getLineName(tripUpdate.trip?.routeId),
+          destination,
           headsign: tripUpdate.trip?.tripHeadsign || null,
           routeId: tripUpdate.trip?.routeId,
           tripId: tripUpdate.trip?.tripId,
+          finalStop,
+          isCitybound,
           delay: Math.round(delay / 60), // Convert to minutes
           isDelayed,
           isLive: true,
