@@ -1592,7 +1592,7 @@ export function renderFullScreen(data, prefs = {}) {
   
   // Re-render zones directly to main canvas for preview
   // =========================================================================
-  // HEADER (V10 Spec Section 2) - v1.29: Improved layout and spacing
+  // HEADER (V10 Spec Section 2) - v1.30: Clock lower, service status box
   // =========================================================================
   ctx.fillStyle = '#000';
   ctx.textBaseline = 'top';
@@ -1621,46 +1621,57 @@ export function renderFullScreen(data, prefs = {}) {
     displayTime = displayTime.replace(/\s*(am|pm)/gi, '');
   }
   
-  // v1.29: LARGE clock, positioned lower (closer to status bar)
-  const clockFontSize = 72;
+  // v1.30: LARGE clock, much lower - close to status bar
+  const clockFontSize = 76;
   ctx.font = `bold ${clockFontSize}px Inter, sans-serif`;
-  const clockY = 18;  // Lower position for better visual balance
+  const clockY = 20;  // Position so bottom of clock is near status bar
   ctx.fillText(displayTime, 12, clockY);
   
   // Measure clock width for AM/PM positioning
   const clockWidth = ctx.measureText(displayTime).width;
   
-  // AM/PM indicator - right after clock, vertically centered with clock
-  ctx.font = 'bold 18px Inter, sans-serif';
-  ctx.fillText(data.am_pm || (isPM ? 'PM' : 'AM'), 12 + clockWidth + 8, clockY + clockFontSize - 24);
+  // AM/PM indicator - right after clock, bottom-aligned
+  ctx.font = 'bold 20px Inter, sans-serif';
+  ctx.fillText(data.am_pm || (isPM ? 'PM' : 'AM'), 12 + clockWidth + 6, clockY + clockFontSize - 26);
   
-  // v1.29: Day and date - LARGER, positioned closer to clock
-  const dayDateX = 12 + clockWidth + 50;  // Close to clock
-  ctx.font = 'bold 24px Inter, sans-serif';
-  ctx.fillText(data.day || '', dayDateX, clockY + 8);
-  ctx.font = '18px Inter, sans-serif';
-  ctx.fillText(data.date || '', dayDateX, clockY + 36);
+  // v1.30: Day and date - positioned to the right
+  const dayDateX = 280;
+  ctx.font = 'bold 22px Inter, sans-serif';
+  ctx.fillText(data.day || '', dayDateX, 18);
+  ctx.font = '16px Inter, sans-serif';
+  ctx.fillText(data.date || '', dayDateX, 44);
   
-  // v1.29: Service status indicator in header
-  const serviceStatus = data.service_status || (data.disruption ? 'DISRUPTIONS' : 'ALL SERVICES OK');
-  const hasDisruption = data.disruption || data.status_type === 'disruption' || serviceStatus.includes('DISRUPTION');
-  ctx.font = 'bold 9px Inter, sans-serif';
+  // v1.30: Service status in its own box to right of date
+  const serviceStatus = data.service_status || (data.disruption ? 'DISRUPTIONS' : 'OK');
+  const hasDisruption = data.disruption || data.status_type === 'disruption' || 
+    serviceStatus.toUpperCase().includes('DISRUPTION') || serviceStatus.toUpperCase().includes('DELAY');
+  
+  const statusBoxX = dayDateX;
+  const statusBoxY = 66;
+  const statusBoxW = 120;
+  const statusBoxH = 22;
+  
+  ctx.font = 'bold 11px Inter, sans-serif';
   if (hasDisruption) {
-    // Black pill with white text for disruption
-    const statusText = '⚠ ' + serviceStatus.toUpperCase();
-    const statusWidth = ctx.measureText(statusText).width + 12;
+    // Black fill with white text for disruption
     ctx.fillStyle = '#000';
-    ctx.fillRect(dayDateX, clockY + 60, statusWidth, 16);
+    ctx.fillRect(statusBoxX, statusBoxY, statusBoxW, statusBoxH);
     ctx.fillStyle = '#FFF';
-    ctx.fillText(statusText, dayDateX + 6, clockY + 64);
+    ctx.textBaseline = 'middle';
+    ctx.fillText('⚠ DISRUPTIONS', statusBoxX + 8, statusBoxY + statusBoxH / 2);
   } else {
-    // Simple text for normal status
+    // White fill with black border for OK
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(statusBoxX, statusBoxY, statusBoxW, statusBoxH);
     ctx.fillStyle = '#000';
-    ctx.fillText('✓ ' + serviceStatus.toUpperCase(), dayDateX, clockY + 64);
+    ctx.textBaseline = 'middle';
+    ctx.fillText('✓ SERVICES OK', statusBoxX + 8, statusBoxY + statusBoxH / 2);
   }
   ctx.fillStyle = '#000';
+  ctx.textBaseline = 'top';
   
-  // v1.29: Weather box - cleaner layout with better separation
+  // v1.30: Weather box - temp centered vertically
   const weatherBoxX = 620;
   const weatherBoxY = 8;
   const weatherBoxW = 172;
@@ -1670,20 +1681,19 @@ export function renderFullScreen(data, prefs = {}) {
   ctx.lineWidth = 2;
   ctx.strokeRect(weatherBoxX, weatherBoxY, weatherBoxW, weatherBoxH);
   
-  // Temperature - large, top of box
-  ctx.font = 'bold 40px Inter, sans-serif';
+  // Temperature - centered in upper portion of box
+  ctx.font = 'bold 38px Inter, sans-serif';
   ctx.textAlign = 'center';
-  ctx.textBaseline = 'top';
-  ctx.fillText(`${data.temp || '--'}°`, weatherBoxX + weatherBoxW / 2, weatherBoxY + 4);
+  ctx.textBaseline = 'middle';
+  ctx.fillText(`${data.temp || '--'}°`, weatherBoxX + weatherBoxW / 2, weatherBoxY + 28);
   
-  // Condition - clearly separated below temp
-  ctx.font = '12px Inter, sans-serif';
+  // Condition - below temp
+  ctx.font = '11px Inter, sans-serif';
   let condition = data.condition || '';
-  // Truncate if too long
   while (ctx.measureText(condition).width > weatherBoxW - 16 && condition.length > 3) {
     condition = condition.slice(0, -1);
   }
-  ctx.fillText(condition, weatherBoxX + weatherBoxW / 2, weatherBoxY + 48);
+  ctx.fillText(condition, weatherBoxX + weatherBoxW / 2, weatherBoxY + 52);
   
   // Umbrella indicator - bottom of weather box
   const needsUmbrella = data.rain_expected || data.precipitation > 30 || 
@@ -1691,7 +1701,6 @@ export function renderFullScreen(data, prefs = {}) {
   const umbrellaY = weatherBoxY + weatherBoxH - 18;
   
   ctx.font = 'bold 10px Inter, sans-serif';
-  ctx.textBaseline = 'middle';
   if (needsUmbrella) {
     ctx.fillStyle = '#000';
     ctx.fillRect(weatherBoxX + 4, umbrellaY, weatherBoxW - 8, 14);
@@ -1957,19 +1966,19 @@ export function renderFullScreen(data, prefs = {}) {
     drawModeIcon(ctx, leg.type, iconX, zone.y + (zone.h - iconSize) / 2, iconSize, useOutlineIcon);
     
     // -----------------------------------------------------------------------
-    // TITLE (V10 Spec Section 5.4) - v1.28: proper vertical positioning
+    // TITLE (V10 Spec Section 5.4) - v1.30: title/subtitle closer together
     // -----------------------------------------------------------------------
     ctx.fillStyle = '#000';
     ctx.font = `bold ${titleSize}px Inter, sans-serif`;
     ctx.textBaseline = 'top';
     
-    // v1.28: Calculate text position based on leg box height and scaled fonts
-    // Title and subtitle should be vertically distributed within the box
+    // v1.30: Title and subtitle CLOSE together, vertically centered as a unit
     const textX = iconX + iconSize + 8;
+    const textBlockHeight = titleSize + subtitleSize + 2;  // 2px gap between title and subtitle
+    const textBlockY = zone.y + (zone.h - textBlockHeight) / 2;
+    const titleY = textBlockY;
+    const subtitleY = textBlockY + titleSize + 2;  // Just 2px below title
     const verticalPadding = Math.max(4, Math.round(zone.h * 0.08));
-    const textAreaHeight = zone.h - verticalPadding * 2;
-    const titleY = zone.y + verticalPadding;
-    const subtitleY = zone.y + zone.h - verticalPadding - subtitleSize;
     
     if (idx === 0) leg.isFirst = true;
     const legTitle = leg.title || getLegTitle(leg);
@@ -2017,20 +2026,21 @@ export function renderFullScreen(data, prefs = {}) {
     ctx.fillText(legSubtitle, textX, subtitleY);
     
     // -----------------------------------------------------------------------
-    // DEPART TIME COLUMN - v1.29: Larger text, better spacing
+    // DEPART TIME COLUMN - v1.30: Closer together, further left
     // -----------------------------------------------------------------------
     if (hasDepart) {
-      // v1.29: DEPART column with larger, more readable text
-      const departColCenter = zone.x + zone.w - timeBoxW - departColW / 2 - 2;
+      // v1.30: DEPART and time close together, further left from time box
+      const departColCenter = zone.x + zone.w - timeBoxW - departColW - 8;
+      const departBlockY = zone.y + (zone.h - departLabelSize - departTimeSize - 1) / 2;
       
-      // Single "DEPART" label above time
+      // "DEPART" label
       ctx.font = `bold ${departLabelSize}px Inter, sans-serif`;
       ctx.textAlign = 'center';
-      ctx.fillText('DEPART', departColCenter, zone.y + verticalPadding + 2);
+      ctx.fillText('DEPART', departColCenter, departBlockY);
       
-      // Time directly below, larger and bold
+      // Time directly below with minimal gap
       ctx.font = `bold ${departTimeSize}px Inter, sans-serif`;
-      ctx.fillText(leg.departTime, departColCenter, zone.y + verticalPadding + departLabelSize + departTimeSize);
+      ctx.fillText(leg.departTime, departColCenter, departBlockY + departLabelSize + 1);
       ctx.textAlign = 'left';
     }
     
