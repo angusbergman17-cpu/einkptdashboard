@@ -15,7 +15,7 @@
  */
 
 import { createHash } from 'crypto';
-import { getDepartures, getDisruptions, getWeather } from '../../src/services/ptv-api.js';
+import { getDepartures, getDisruptions, getWeather } from '../../src/services/opendata-client.js';
 import SmartJourneyEngine from '../../src/core/smart-journey-engine.js';
 import { renderSingleZone, ZONES } from '../../src/services/zone-renderer.js';
 import { getScenario } from '../../src/services/journey-scenarios.js';

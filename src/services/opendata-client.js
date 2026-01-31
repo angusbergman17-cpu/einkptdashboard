@@ -13,6 +13,8 @@
  * Licensed under CC BY-NC 4.0
  */
 
+import GtfsRealtimeBindings from 'gtfs-realtime-bindings';
+
 // Transport Victoria OpenData API Configuration
 // Per Development Rules Section 1.1 & 11.1 - GTFS-RT via OpenData
 const API_BASE = 'https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1';
@@ -33,10 +35,11 @@ export function setApiKey(apiKey) {
 }
 
 /**
- * Get current API key (runtime takes precedence, but per Section 3, should ONLY use runtime)
+ * Get current API key
  */
 function getApiKey() {
-  return runtimeApiKey; // Zero-Config: NO fallback to process.env
+  // Check runtime first (Zero-Config), then fall back to env for dev
+  return runtimeApiKey || process.env.ODATA_API_KEY;
 }
 
 /**
@@ -47,10 +50,28 @@ function getMelbourneTime() {
 }
 
 /**
+ * Decode GTFS-RT Protobuf data
+ * @param {ArrayBuffer} buffer - Raw protobuf data
+ * @returns {Object} - Decoded FeedMessage
+ */
+function decodeGtfsRt(buffer) {
+  try {
+    const feed = GtfsRealtimeBindings.transit_realtime.FeedMessage.decode(
+      new Uint8Array(buffer)
+    );
+    return feed;
+  } catch (error) {
+    console.error('[opendata] Protobuf decode error:', error.message);
+    return null;
+  }
+}
+
+/**
  * Fetch GTFS-RT feed from Transport Victoria OpenData API
  * @param {string} mode - 'metro', 'tram', or 'bus'
  * @param {string} feed - 'trip-updates', 'vehicle-positions', or 'service-alerts'
  * @param {Object} options - { apiKey }
+ * @returns {Object} - Decoded GTFS-RT FeedMessage or null
  */
 async function fetchGtfsRt(mode, feed, options = {}) {
   if (options.apiKey) {
@@ -59,48 +80,42 @@ async function fetchGtfsRt(mode, feed, options = {}) {
   
   const apiKey = getApiKey();
   if (!apiKey) {
-    console.log('[ptv-api] No API key configured - returning empty');
+    console.log('[opendata] No API key configured - returning null');
     return null;
   }
   
   const url = `${API_BASE}/${mode}/${feed}`;
-  console.log(`[ptv-api] Fetching: ${url}`);
+  console.log(`[opendata] Fetching: ${url}`);
   
   try {
     const response = await fetch(url, {
       headers: {
         'KeyId': apiKey  // Case-sensitive as per dev rules
-      },
-      timeout: 10000
+      }
     });
     
-    console.log(`[ptv-api] Response status: ${response.status}`);
+    console.log(`[opendata] Response status: ${response.status}`);
     
     if (!response.ok) {
       const errorText = await response.text().catch(() => 'no body');
-      console.log(`[ptv-api] Error: ${errorText.substring(0, 200)}`);
+      console.log(`[opendata] Error: ${errorText.substring(0, 200)}`);
       throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 100)}`);
     }
     
-    // GTFS-RT returns Protobuf - for now, check if JSON fallback available
-    const contentType = response.headers.get('content-type');
-    console.log(`[ptv-api] Content-Type: ${contentType}`);
+    // Get response as ArrayBuffer for Protobuf decoding
+    const buffer = await response.arrayBuffer();
+    console.log(`[opendata] Got ${buffer.byteLength} bytes`);
     
-    if (contentType?.includes('application/json')) {
-      return await response.json();
+    // Decode Protobuf
+    const decoded = decodeGtfsRt(buffer);
+    if (decoded) {
+      console.log(`[opendata] Decoded ${decoded.entity?.length || 0} entities`);
     }
     
-    // Protobuf response - would need protobuf decoder
-    // For now, return raw buffer for processing
-    const buffer = await response.arrayBuffer();
-    console.log(`[ptv-api] Got ${buffer.byteLength} bytes of protobuf data`);
-    
-    // TODO: Decode protobuf with gtfs-realtime-bindings
-    // For now, return indicator that we got live data
-    return { raw: true, size: buffer.byteLength, contentType };
+    return decoded;
     
   } catch (error) {
-    console.error(`[ptv-api] Fetch error: ${error.message}`);
+    console.error(`[opendata] Fetch error: ${error.message}`);
     throw error;
   }
 }
@@ -113,74 +128,92 @@ async function fetchGtfsRt(mode, feed, options = {}) {
  * @returns {Array} - Array of departure objects
  */
 export async function getDepartures(stopId, routeType, options = {}) {
-  console.log(`[ptv-api] getDepartures: stopId=${stopId}, routeType=${routeType}, hasApiKey=${!!options.apiKey}`);
+  console.log(`[opendata] getDepartures: stopId=${stopId}, routeType=${routeType}`);
   
   // Map route type to GTFS-RT mode
   const modeMap = { 0: 'metro', 1: 'tram', 2: 'bus' };
   const mode = modeMap[routeType] || 'metro';
   
   try {
-    const data = await fetchGtfsRt(mode, 'trip-updates', options);
+    const feed = await fetchGtfsRt(mode, 'trip-updates', options);
     
-    if (!data) {
-      // No API key - return mock data
-      console.log('[ptv-api] Using mock data (no API key)');
-      return getMockDepartures(routeType);
+    if (!feed) {
+      console.log('[opendata] No feed data - using fallback');
+      return getMockDepartures(routeType, 'no-key');
     }
     
-    if (data.raw) {
-      // Got protobuf data but can't decode yet
-      // TODO: Install gtfs-realtime-bindings and decode
-      console.log('[ptv-api] Got live protobuf data, using scheduled fallback until decoder implemented');
-      return getMockDepartures(routeType, 'scheduled');
+    // Process GTFS-RT TripUpdates
+    const departures = processGtfsRtDepartures(feed, stopId);
+    
+    if (departures.length === 0) {
+      console.log(`[opendata] No departures found for stop ${stopId} - using fallback`);
+      return getMockDepartures(routeType, 'no-data');
     }
     
-    // Process JSON response (if API provides JSON fallback)
-    // This would need to be adapted based on actual response format
-    return processGtfsRtDepartures(data, stopId);
+    console.log(`[opendata] Found ${departures.length} live departures`);
+    return departures;
     
   } catch (error) {
-    console.log(`[ptv-api] getDepartures error: ${error.message}`);
+    console.log(`[opendata] getDepartures error: ${error.message}`);
     return getMockDepartures(routeType, 'error');
   }
 }
 
 /**
  * Process GTFS-RT trip updates into departure format
+ * @param {Object} feed - Decoded FeedMessage
+ * @param {number} stopId - Stop ID to filter
+ * @returns {Array} - Departure objects
  */
-function processGtfsRtDepartures(data, stopId) {
-  // GTFS-RT TripUpdates structure:
-  // entity[].tripUpdate.stopTimeUpdate[].{stopId, arrival, departure}
-  
-  const now = new Date();
+function processGtfsRtDepartures(feed, stopId) {
+  const now = getMelbourneTime();
+  const nowMs = now.getTime();
   const departures = [];
+  const stopIdStr = String(stopId);
   
-  if (data.entity) {
-    for (const entity of data.entity) {
-      const tripUpdate = entity.tripUpdate;
-      if (!tripUpdate) continue;
+  if (!feed?.entity) {
+    return departures;
+  }
+  
+  for (const entity of feed.entity) {
+    const tripUpdate = entity.tripUpdate;
+    if (!tripUpdate?.stopTimeUpdate) continue;
+    
+    for (const stu of tripUpdate.stopTimeUpdate) {
+      // Match stop ID (GTFS uses string IDs)
+      if (stu.stopId !== stopIdStr) continue;
       
-      for (const stu of tripUpdate.stopTimeUpdate || []) {
-        if (stu.stopId === String(stopId)) {
-          const departureTime = stu.departure?.time || stu.arrival?.time;
-          if (departureTime) {
-            const depDate = new Date(departureTime * 1000);
-            const minutes = Math.round((depDate - now) / 60000);
-            if (minutes >= 0) {
-              departures.push({
-                minutes,
-                destination: tripUpdate.trip?.tripHeadsign || 'City',
-                platform: null,
-                isLive: true,
-                source: 'gtfs-rt'
-              });
-            }
-          }
-        }
+      // Get departure or arrival time
+      const depTime = stu.departure?.time || stu.arrival?.time;
+      if (!depTime) continue;
+      
+      // Convert to milliseconds (GTFS-RT uses Unix seconds)
+      const depMs = (depTime.low || depTime) * 1000;
+      const minutes = Math.round((depMs - nowMs) / 60000);
+      
+      // Only include upcoming departures (next 60 min)
+      if (minutes >= 0 && minutes <= 60) {
+        // Get delay info
+        const delay = stu.departure?.delay || stu.arrival?.delay || 0;
+        const isDelayed = delay > 60; // More than 1 minute delay
+        
+        departures.push({
+          minutes,
+          destination: tripUpdate.trip?.routeId || 'City',
+          headsign: tripUpdate.trip?.tripHeadsign || null,
+          routeId: tripUpdate.trip?.routeId,
+          tripId: tripUpdate.trip?.tripId,
+          delay: Math.round(delay / 60), // Convert to minutes
+          isDelayed,
+          isLive: true,
+          source: 'gtfs-rt'
+        });
       }
     }
   }
   
+  // Sort by departure time and limit to 5
+  departures.sort((a, b) => a.minutes - b.minutes);
   return departures.slice(0, 5);
 }
 
@@ -188,17 +221,16 @@ function processGtfsRtDepartures(data, stopId) {
  * Get mock departures for testing/fallback
  */
 function getMockDepartures(routeType, source = 'mock') {
-  const now = getMelbourneTime();
   const destinations = {
-    0: 'City', // Metro
-    1: 'City', // Tram
-    2: 'City'  // Bus
+    0: 'City',      // Metro
+    1: 'City',      // Tram
+    2: 'City'       // Bus
   };
   
   return [
-    { minutes: 3, destination: destinations[routeType], platform: '1', isLive: false, source },
-    { minutes: 8, destination: destinations[routeType], platform: '1', isLive: false, source },
-    { minutes: 15, destination: destinations[routeType], platform: '1', isLive: false, source }
+    { minutes: 3, destination: destinations[routeType], isLive: false, source },
+    { minutes: 8, destination: destinations[routeType], isLive: false, source },
+    { minutes: 15, destination: destinations[routeType], isLive: false, source }
   ];
 }
 
@@ -212,22 +244,27 @@ export async function getDisruptions(routeType, options = {}) {
   const mode = modeMap[routeType] || 'metro';
   
   try {
-    const data = await fetchGtfsRt(mode, 'service-alerts', options);
+    const feed = await fetchGtfsRt(mode, 'service-alerts', options);
     
-    if (!data || data.raw) {
+    if (!feed?.entity) {
       return [];
     }
     
     // Process GTFS-RT service alerts
-    return (data.entity || []).map(entity => ({
-      id: entity.id,
-      title: entity.alert?.headerText?.translation?.[0]?.text || 'Alert',
-      description: entity.alert?.descriptionText?.translation?.[0]?.text || '',
-      type: 'disruption'
-    }));
+    return feed.entity.map(entity => {
+      const alert = entity.alert;
+      return {
+        id: entity.id,
+        title: alert?.headerText?.translation?.[0]?.text || 'Alert',
+        description: alert?.descriptionText?.translation?.[0]?.text || '',
+        cause: alert?.cause,
+        effect: alert?.effect,
+        type: 'disruption'
+      };
+    });
     
   } catch (error) {
-    console.log(`[ptv-api] getDisruptions error: ${error.message}`);
+    console.log(`[opendata] getDisruptions error: ${error.message}`);
     return [];
   }
 }
@@ -242,7 +279,7 @@ export async function getDisruptions(routeType, options = {}) {
 export async function getWeather(lat = MELBOURNE_LAT, lon = MELBOURNE_LON) {
   try {
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,precipitation&timezone=Australia%2FMelbourne`;
-    const res = await fetch(url, { timeout: 10000 });
+    const res = await fetch(url);
     
     if (!res.ok) throw new Error('Weather API error');
     const data = await res.json();
@@ -276,7 +313,7 @@ export async function getWeather(lat = MELBOURNE_LAT, lon = MELBOURNE_LON) {
     };
     
   } catch (e) {
-    console.error('[ptv-api] Weather error:', e.message);
+    console.error('[opendata] Weather error:', e.message);
     return {
       temp: 20,
       condition: 'Unknown',

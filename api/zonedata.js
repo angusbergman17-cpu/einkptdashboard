@@ -8,7 +8,7 @@
  * Licensed under CC BY-NC 4.0
  */
 
-import { getDepartures, getWeather } from '../src/services/ptv-api.js';
+import { getDepartures, getWeather } from '../src/services/opendata-client.js';
 import CoffeeDecision from '../src/core/coffee-decision.js';
 import { renderZones } from '../src/services/zone-renderer.js';
 

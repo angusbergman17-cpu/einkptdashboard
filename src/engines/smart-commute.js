@@ -28,7 +28,7 @@
  */
 
 import SmartRouteRecommender from '../services/smart-route-recommender.js';
-import * as ptvApi from '../services/ptv-api.js';
+import * as ptvApi from '../services/opendata-client.js';
 import CoffeeDecision from '../core/coffee-decision.js';
 
 // =============================================================================
@@ -209,7 +209,7 @@ export class SmartCommute {
       console.log('⚠️ No API keys configured - using fallback timetables');
     } else {
       console.log('✅ API keys detected - live data enabled');
-      // Per Dev Rules Section 3: Zero-Config - pass API key to ptv-api module
+      // Per Dev Rules Section 3: Zero-Config - pass API key to opendata-client module
       if (this.state === 'VIC' && this.apiKeys.transitKey) {
         ptvApi.setApiKey(this.apiKeys.transitKey);
       }
@@ -562,7 +562,7 @@ export class SmartCommute {
             isScheduled: !b.isLive,
             source: b.isLive ? 'live' : 'scheduled'
           })),
-          source: 'ptv-api',
+          source: 'opendata',
           timestamp: new Date().toISOString()
         };
       } catch (error) {
@@ -611,10 +611,10 @@ export class SmartCommute {
   }
 
   /**
-   * Fetch weather from Open-Meteo API (via ptv-api module)
+   * Fetch weather from Open-Meteo API (via opendata-client module)
    */
   async fetchBomWeather(location) {
-    // Use Open-Meteo (free, no key) via ptv-api client
+    // Use Open-Meteo (free, no key) via opendata-client
     try {
       const lat = location?.lat || this.preferences.homeLocation?.lat || -37.8136;
       const lon = location?.lon || this.preferences.homeLocation?.lon || 144.9631;

@@ -12,7 +12,7 @@
  */
 
 import { createCanvas } from '@napi-rs/canvas';
-import { getDepartures, getDisruptions, getWeather } from '../src/services/ptv-api.js';
+import { getDepartures, getDisruptions, getWeather } from '../src/services/opendata-client.js';
 import SmartJourneyEngine from '../src/core/smart-journey-engine.js';
 import CCDashRendererV13 from '../src/services/ccdash-renderer-v13.js';
 import PreferencesManager from '../src/data/preferences-manager.js';

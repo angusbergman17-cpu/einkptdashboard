@@ -16,7 +16,7 @@
  * Licensed under CC BY-NC 4.0
  */
 
-import { getDepartures, getDisruptions, getWeather } from '../src/services/ptv-api.js';
+import { getDepartures, getDisruptions, getWeather } from '../src/services/opendata-client.js';
 import SmartJourneyEngine from '../src/core/smart-journey-engine.js';
 import { renderZones, clearCache, ZONES } from '../src/services/zone-renderer.js';
 import { getScenario, getScenarioNames } from '../src/services/journey-scenarios.js';
