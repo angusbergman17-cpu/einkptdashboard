@@ -1862,22 +1862,25 @@ export function renderFullScreen(data, prefs = {}) {
     
     // -----------------------------------------------------------------------
     // ARROW CONNECTOR ▼ (between legs) - Per reference images
-    // Small downward-pointing triangle between leg boxes
-    // Arrow must fit in the 4px gap between legs
+    // Downward-pointing triangle centered between leg boxes
     // -----------------------------------------------------------------------
     if (idx < legs.length - 1) {
       const nextZone = getDynamicLegZone(legNum + 1, legs.length);
-      const gapCenter = zone.y + zone.h + (nextZone.y - (zone.y + zone.h)) / 2;
+      const gapTop = zone.y + zone.h;
+      const gapBottom = nextZone.y;
+      const gapCenter = gapTop + (gapBottom - gapTop) / 2;
       const arrowX = 400;  // Center of screen
       
+      // Draw filled black arrow pointing down
+      ctx.save();
       ctx.fillStyle = '#000';
       ctx.beginPath();
-      // Small arrow: 12px wide, 8px tall
-      ctx.moveTo(arrowX - 6, gapCenter - 4);
-      ctx.lineTo(arrowX + 6, gapCenter - 4);
-      ctx.lineTo(arrowX, gapCenter + 4);
+      ctx.moveTo(arrowX - 8, gapCenter - 5);  // Top left
+      ctx.lineTo(arrowX + 8, gapCenter - 5);  // Top right
+      ctx.lineTo(arrowX, gapCenter + 5);      // Bottom point
       ctx.closePath();
       ctx.fill();
+      ctx.restore();
     }
   });
   
@@ -1893,19 +1896,18 @@ export function renderFullScreen(data, prefs = {}) {
   ctx.fillStyle = '#FFF';
   
   // Destination address (left side, uppercase, bold) - per ref images
-  ctx.font = 'bold 16px Inter, sans-serif';
+  ctx.font = 'bold 14px Inter, sans-serif';
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'left';
   ctx.fillText((data.destination || 'WORK').toUpperCase(), 16, 464);
   
-  // "ARRIVE" label (positioned before time) - per ref images
-  ctx.font = '12px Inter, sans-serif';
+  // "ARRIVE" label + time (right aligned) - per ref images
+  // Format: "ARRIVE    9:18"
   ctx.textAlign = 'right';
-  ctx.fillText('ARRIVE', 710, 464);
-  
-  // Arrival time (far right, large bold) - per ref images  
-  ctx.font = 'bold 24px Inter, sans-serif';
   const footerArrival = data._calculatedArrival || data.arrive_by || '--:--';
+  ctx.font = '11px Inter, sans-serif';
+  ctx.fillText('ARRIVE', 716, 464);
+  ctx.font = 'bold 22px Inter, sans-serif';
   ctx.fillText(footerArrival, 784, 464);
   
   // Target time indicator (V10 Spec Section 6.4 Amendment)
