@@ -1,5 +1,6 @@
 /**
- * Commute Compute Firmware - Tiered Refresh System
+ * CCFirm™ — Tiered Refresh Variant
+ * Part of the Commute Compute System™
  * 
  * Refresh Tiers:
  * - Tier 1 (1 min): Clock, duration boxes, departure times
@@ -10,6 +11,7 @@
  * 
  * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
+ * https://creativecommons.org/licenses/by-nc/4.0/
  */
 
 #include <Arduino.h>

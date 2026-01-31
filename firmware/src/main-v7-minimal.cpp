@@ -1,8 +1,13 @@
 /**
- * CCFirmTRMNL v7.1.0-minimal - Diagnostic build
+ * CCFirm™ v7.1.0 — Minimal Diagnostic Build
+ * Part of the Commute Compute System™
  * 
- * MINIMAL TEST: NO display operations, just WiFi + serial
- * Purpose: Verify ESP32-C3 stability without bb_epaper
+ * MINIMAL TEST: NO display operations, just WiFi + serial.
+ * Purpose: Verify ESP32-C3 stability without bb_epaper.
+ * 
+ * Copyright (c) 2026 Angus Bergman
+ * Licensed under CC BY-NC 4.0
+ * https://creativecommons.org/licenses/by-nc/4.0/
  */
 
 #include <Arduino.h>

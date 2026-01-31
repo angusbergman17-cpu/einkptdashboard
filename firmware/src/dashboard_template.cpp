@@ -1,9 +1,14 @@
 /**
- * Dashboard Template Implementation
- * Based on dashboard-preview.png design
- *
- * Layout: 800×480 landscape with prominent time display
- * Style: Modern PIDS with station branding
+ * CCDash™ Dashboard Template Implementation
+ * Part of the Commute Compute System™
+ * 
+ * Based on dashboard-preview.png design.
+ * Layout: 800×480 landscape with prominent time display.
+ * Style: Modern PIDS with station branding.
+ * 
+ * Copyright (c) 2026 Angus Bergman
+ * Licensed under CC BY-NC 4.0
+ * https://creativecommons.org/licenses/by-nc/4.0/
  */
 
 // This is a reference implementation showing the exact C++ code

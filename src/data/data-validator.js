@@ -1,11 +1,16 @@
 /**
  * Data Validator - Multi-Layer Validation with Confidence Scores
+ * Part of the Commute Compute System™
  *
  * Provides:
  * - Geocoding confidence scores (0-100%)
  * - Cross-reference validation across sources
  * - Transit stop validation
  * - Data quality indicators
+ * 
+ * Copyright (c) 2026 Angus Bergman
+ * Licensed under CC BY-NC 4.0
+ * https://creativecommons.org/licenses/by-nc/4.0/
  *
  * Design Principles:
  * - Accuracy from up-to-date sources

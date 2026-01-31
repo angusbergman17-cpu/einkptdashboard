@@ -1,10 +1,12 @@
 /**
- * Smart Route Recommender
- * Auto-detects and recommends optimal routes based on user preferences
- * Identifies preferred patterns: coffee-before-transit, minimal walking, train preference
+ * SmartCommute™ Route Recommender
+ * Part of the Commute Compute System™
+ * 
+ * Auto-detects and recommends optimal routes based on user preferences.
+ * Identifies preferred patterns: coffee-before-transit, minimal walking, train preference.
  *
- * Copyright (c) 2025 Angus Bergman
- * Licensed under CC BY-NC 4.0 (Creative Commons Attribution-NonCommercial 4.0 International License)
+ * Copyright (c) 2026 Angus Bergman
+ * Licensed under CC BY-NC 4.0
  * https://creativecommons.org/licenses/by-nc/4.0/
  */
 

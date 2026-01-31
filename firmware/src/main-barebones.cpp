@@ -1,6 +1,13 @@
 /**
- * Absolute minimal test - just blink + serial
- * NO WiFi, NO Preferences, NO HTTP
+ * CCFirm™ — Barebones Test Variant
+ * Part of the Commute Compute System™
+ * 
+ * Absolute minimal test - just blink + serial.
+ * NO WiFi, NO Preferences, NO HTTP.
+ * 
+ * Copyright (c) 2026 Angus Bergman
+ * Licensed under CC BY-NC 4.0
+ * https://creativecommons.org/licenses/by-nc/4.0/
  */
 
 #include <Arduino.h>

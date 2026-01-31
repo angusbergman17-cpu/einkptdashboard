@@ -1,6 +1,12 @@
 /**
- * Journey Display Module - Server-side journey planning display for e-ink devices
- * Copyright (c) 2026 Angus Bergman - Licensed under CC BY-NC 4.0
+ * CCDash™ Journey Display Module
+ * Part of the Commute Compute System™
+ * 
+ * Server-side journey planning display for e-ink devices.
+ * 
+ * Copyright (c) 2026 Angus Bergman
+ * Licensed under CC BY-NC 4.0
+ * https://creativecommons.org/licenses/by-nc/4.0/
  */
 
 export { TransportMode, ModeConfig, StepStatus, JourneyStatus, UmbrellaConditions, JourneyStep, JourneyDisplay, DisplayRegion, DisplayRegions } from './models.js';

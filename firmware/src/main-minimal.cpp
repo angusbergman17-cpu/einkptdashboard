@@ -1,7 +1,13 @@
 /**
- * MINIMAL TEST FIRMWARE
- * Only initializes display and shows test pattern
- * No WiFi, no network, no zones
+ * CCFirm™ — Minimal Test Variant
+ * Part of the Commute Compute System™
+ * 
+ * Only initializes display and shows test pattern.
+ * No WiFi, no network, no zones.
+ * 
+ * Copyright (c) 2026 Angus Bergman
+ * Licensed under CC BY-NC 4.0
+ * https://creativecommons.org/licenses/by-nc/4.0/
  */
 
 #include <Arduino.h>

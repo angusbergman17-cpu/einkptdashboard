@@ -1,15 +1,17 @@
 /**
- * /api/livedash - LiveDash API Endpoint
+ * CC LiveDash™ API Endpoint
+ * Part of the Commute Compute System™
  * 
- * Renders the SmartCommute dashboard for different e-ink devices.
+ * Renders the SmartCommute™ dashboard for different e-ink devices.
  * 
  * Query params:
  * - device: Device ID (trmnl-og, trmnl-mini, kindle-pw3, etc.)
  * - format: Output format (png, json, html)
  * - refresh: Force refresh (true/false)
  * 
- * Copyright (c) 2025 Angus Bergman
+ * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
+ * https://creativecommons.org/licenses/by-nc/4.0/
  */
 
 import LiveDash, { DEVICE_CONFIGS } from '../src/services/livedash.js';

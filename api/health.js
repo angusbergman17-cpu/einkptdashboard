@@ -1,3 +1,12 @@
+/**
+ * Health Check API
+ * Part of the Commute Compute System™
+ * 
+ * Copyright (c) 2026 Angus Bergman
+ * Licensed under CC BY-NC 4.0
+ * https://creativecommons.org/licenses/by-nc/4.0/
+ */
+
 // Simple health check that doesn't import the full app
 export default function handler(req, res) {
   res.status(200).json({

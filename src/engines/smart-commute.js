@@ -1,5 +1,6 @@
 /**
- * SMARTCOMMUTE™ ENGINE (Consolidated v2.0)
+ * SmartCommute™ Engine (Consolidated v2.0)
+ * Part of the Commute Compute System™
  * 
  * Unified intelligent commute planning for Australian public transport.
  * Auto-detects state from user's home address and configures appropriate
@@ -11,6 +12,10 @@
  * - journey-planner.js (segment building)
  * 
  * Per DEVELOPMENT-RULES.md Section 24: Single source of truth for journey calculations.
+ * 
+ * Copyright (c) 2026 Angus Bergman
+ * Licensed under CC BY-NC 4.0
+ * https://creativecommons.org/licenses/by-nc/4.0/
  * 
  * Supports all Australian states/territories:
  * - VIC: Transport Victoria (via OpenData API)

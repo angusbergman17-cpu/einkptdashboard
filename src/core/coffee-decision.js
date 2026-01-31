@@ -1,12 +1,13 @@
 /**
- * COFFEE DECISION ENGINE
- * Calculates whether there's time to get coffee before work
- *
+ * CoffeeDecision Engine
+ * Part of the SmartCommute™ Component of Commute Compute System™
+ * 
+ * Calculates whether there's time to get coffee before work.
  * Commute timing is configurable based on user's journey settings.
  * Uses Journey Planner configuration for accurate calculations.
  *
  * Copyright (c) 2026 Angus Bergman
- * Licensed under CC BY-NC 4.0 (Creative Commons Attribution-NonCommercial 4.0 International License)
+ * Licensed under CC BY-NC 4.0
  * https://creativecommons.org/licenses/by-nc/4.0/
  */
 

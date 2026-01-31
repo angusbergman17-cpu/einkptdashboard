@@ -1,5 +1,13 @@
-// Vercel Serverless Function Handler - V3 (force rebuild 2026-01-29)
-// This wraps the Express app for Vercel's serverless environment
+/**
+ * Vercel Serverless Function Handler
+ * Part of the Commute Compute System™
+ * 
+ * Wraps the Express app for Vercel's serverless environment.
+ * 
+ * Copyright (c) 2026 Angus Bergman
+ * Licensed under CC BY-NC 4.0
+ * https://creativecommons.org/licenses/by-nc/4.0/
+ */
 
 const HANDLER_VERSION = '3.0.0'; // Force rebuild marker
 let app;

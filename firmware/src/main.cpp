@@ -1,3 +1,19 @@
+/**
+ * CCFirm™ — Custom Firmware for TRMNL Devices
+ * Part of the Commute Compute System™
+ * 
+ * Fetches dashboard zones from CCDash™ API and renders to e-ink display.
+ * 
+ * Copyright (c) 2026 Angus Bergman
+ * Licensed under CC BY-NC 4.0
+ * https://creativecommons.org/licenses/by-nc/4.0/
+ * 
+ * THIRD-PARTY COMPONENTS (excluded from copyright claim):
+ * - Arduino/ESP-IDF: Apache 2.0 (Espressif Systems)
+ * - bb_epaper: MIT License (Larry Bank)
+ * - base64: MIT License
+ */
+
 #include <Arduino.h>
 #include <WiFi.h>
 #include <HTTPClient.h>

@@ -1,5 +1,7 @@
 /**
  * CCDash™ Renderer (Consolidated v2.0)
+ * Part of the Commute Compute System™
+ * 
  * Primary renderer for Commute Compute System dashboards.
  * Implements CCDashDesignV10 specification.
  * 
@@ -9,6 +11,10 @@
  * - zone-renderer-tiered.js (tiered refresh intervals)
  * 
  * Per DEVELOPMENT-RULES.md Section 24: Single source of truth for rendering.
+ * 
+ * Copyright (c) 2026 Angus Bergman
+ * Licensed under CC BY-NC 4.0
+ * https://creativecommons.org/licenses/by-nc/4.0/
  * 
  * Features:
  * - Full screen rendering (800×480)

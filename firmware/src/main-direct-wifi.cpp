@@ -1,6 +1,13 @@
 /**
- * Direct WiFi test - bypasses WiFiManager
- * Connects directly to known network
+ * CCFirm™ — Direct WiFi Test Variant
+ * Part of the Commute Compute System™
+ * 
+ * Direct WiFi test - bypasses WiFiManager.
+ * Connects directly to known network.
+ * 
+ * Copyright (c) 2026 Angus Bergman
+ * Licensed under CC BY-NC 4.0
+ * https://creativecommons.org/licenses/by-nc/4.0/
  */
 
 #include <Arduino.h>

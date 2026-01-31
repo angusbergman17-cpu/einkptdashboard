@@ -1,5 +1,6 @@
 /**
- * /api/zones - V10 Dashboard Zone API
+ * CCDash™ Zone API — /api/zones
+ * Part of the Commute Compute System™
  * 
  * Returns changed zones for e-ink partial refresh.
  * 
@@ -14,6 +15,7 @@
  * 
  * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
+ * https://creativecommons.org/licenses/by-nc/4.0/
  */
 
 import { getDepartures, getDisruptions, getWeather } from '../src/services/opendata-client.js';

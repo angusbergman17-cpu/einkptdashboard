@@ -1,6 +1,12 @@
 /**
  * Landing Page Handler for Vercel
- * Serves public/index.html directly
+ * Part of the Commute Compute System™
+ * 
+ * Serves public/index.html directly.
+ * 
+ * Copyright (c) 2026 Angus Bergman
+ * Licensed under CC BY-NC 4.0
+ * https://creativecommons.org/licenses/by-nc/4.0/
  */
 
 import { readFileSync, existsSync } from 'fs';

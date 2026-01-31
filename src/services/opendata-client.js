@@ -1,13 +1,22 @@
 /**
- * Transport Victoria OpenData API Client
+ * SmartCommute™ OpenData Client
+ * Part of the Commute Compute System™
  * 
- * Uses Transport Victoria OpenData API with GTFS-RT format
+ * Uses Transport Victoria OpenData API with GTFS-RT format.
  * Per DEVELOPMENT-RULES Section 1.3 and 11.1:
  * - Base URL: https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1
  * - Auth: KeyId header (case-sensitive) with UUID format API key
  * - Format: GTFS Realtime (Protobuf)
  * 
- * Uses Open-Meteo for weather (free, no API key required)
+ * Uses Open-Meteo for weather (free, no API key required).
+ * 
+ * THIRD-PARTY DATA ATTRIBUTION:
+ * - Transit data: Transport Victoria OpenData (CC BY 4.0)
+ * - Weather data: Open-Meteo API (free tier)
+ * 
+ * Copyright (c) 2026 Angus Bergman
+ * Licensed under CC BY-NC 4.0
+ * https://creativecommons.org/licenses/by-nc/4.0/
  * 
  * Copyright (c) 2025-2026 Angus Bergman
  * Licensed under CC BY-NC 4.0

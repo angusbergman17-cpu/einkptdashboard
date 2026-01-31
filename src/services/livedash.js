@@ -1,7 +1,8 @@
 /**
- * LIVEDASH - Live Dashboard Renderer
+ * CC LiveDash™ — Multi-Device Dashboard Renderer
+ * Part of the Commute Compute System™
  * 
- * Renders SmartCommute output as a live dashboard image
+ * Renders SmartCommute™ output as a live dashboard image
  * optimized for different e-ink device variants.
  * 
  * Supported devices:
@@ -13,8 +14,9 @@
  * - Inkplate 6 (800×600 landscape)
  * - Inkplate 10 (1200×825 landscape)
  * 
- * Copyright (c) 2025 Angus Bergman
+ * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
+ * https://creativecommons.org/licenses/by-nc/4.0/
  */
 
 import { createCanvas } from '@napi-rs/canvas';

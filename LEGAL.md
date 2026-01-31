@@ -1,7 +1,7 @@
 # Commute Compute System — Legal & Intellectual Property
 
-**Document Version:** 1.0  
-**Last Updated:** 2026-01-30  
+**Document Version:** 1.1  
+**Last Updated:** 2026-01-31  
 **Owner:** Angus Bergman
 
 ---
@@ -148,6 +148,65 @@ When displaying data from external sources, the following attributions are requi
 
 ---
 
+## File Attribution Audit
+
+**Last Audit:** 2026-01-31  
+**Files with Copyright Headers:** 84  
+**Compliance Status:** ✅ Complete
+
+### Trademark Family File Registry
+
+All source files contain appropriate trademark attribution in their headers:
+
+| Trademark | Files | Key Components |
+|-----------|-------|----------------|
+| **SmartCommute™** | 9 | `smart-commute.js`, `smart-journey-engine.js`, `smart-route-recommender.js`, `journey-planner.js`, `opendata-client.js`, `coffee-decision.js` |
+| **CCDash™** | 5 | `ccdash-renderer.js`, `zones.js`, `dashboard_template.cpp`, `journey-display/` module |
+| **CC LiveDash™** | 2 | `livedash.js`, `api/livedash.js` |
+| **CCFirm™** | 7 | `main.cpp`, `main-tiered.cpp`, `main-minimal.cpp`, and all firmware variants |
+
+### Standard File Header Format
+
+All original source files MUST include:
+
+```
+/**
+ * [Component Name] — [Description]
+ * Part of the Commute Compute System™
+ * 
+ * [Additional description if needed]
+ * 
+ * Copyright (c) 2026 Angus Bergman
+ * Licensed under CC BY-NC 4.0
+ * https://creativecommons.org/licenses/by-nc/4.0/
+ */
+```
+
+### Third-Party Code Exclusions
+
+The following files/directories contain third-party code and are **excluded** from copyright claims:
+
+| Path | Content | License |
+|------|---------|---------|
+| `node_modules/` | npm dependencies | Various (MIT, Apache, ISC, etc.) |
+| `firmware/.pio/libdeps/` | PlatformIO libraries | Various (MIT, Apache, etc.) |
+| `firmware/src/base64.hpp` | Base64 encoding | MIT |
+
+### Firmware Third-Party Attribution
+
+CCFirm™ firmware files include explicit third-party attribution in headers:
+
+```cpp
+/**
+ * THIRD-PARTY COMPONENTS (excluded from copyright claim):
+ * - Arduino/ESP-IDF: Apache 2.0 (Espressif Systems)
+ * - bb_epaper: MIT License (Larry Bank)
+ * - base64: MIT License
+ */
+```
+
+---
+
 ## Contact
 
 For licensing inquiries, trademark permissions, or legal questions:
@@ -161,6 +220,7 @@ GitHub: [@angusbergman17-cpu](https://github.com/angusbergman17-cpu)
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.1 | 2026-01-31 | Added File Attribution Audit section, Trademark Family File Registry, third-party exclusions documentation |
 | 1.0 | 2026-01-30 | Initial IP documentation |
 
 ---

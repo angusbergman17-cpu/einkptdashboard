@@ -1,11 +1,13 @@
 /**
- * Journey Planner Service
- * Builds dynamic route segments based on user-configured journey preferences
- * All routing is derived from user preferences - no hardcoded addresses
- * Integrates SmartRouteRecommender for auto-detection of optimal routes
+ * SmartCommute™ Journey Planner
+ * Part of the Commute Compute System™
+ * 
+ * Builds dynamic route segments based on user-configured journey preferences.
+ * All routing is derived from user preferences - no hardcoded addresses.
+ * Integrates SmartRouteRecommender for auto-detection of optimal routes.
  *
- * Copyright (c) 2025 Angus Bergman
- * Licensed under CC BY-NC 4.0 (Creative Commons Attribution-NonCommercial 4.0 International License)
+ * Copyright (c) 2026 Angus Bergman
+ * Licensed under CC BY-NC 4.0
  * https://creativecommons.org/licenses/by-nc/4.0/
  */
 

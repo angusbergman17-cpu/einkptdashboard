@@ -1,6 +1,13 @@
 /**
- * Display-only test - NO WiFi libraries
- * Tests bb_epaper initialization and drawing
+ * CCFirm™ — Display Test Variant
+ * Part of the Commute Compute System™
+ * 
+ * Display-only test - NO WiFi libraries.
+ * Tests bb_epaper initialization and drawing.
+ * 
+ * Copyright (c) 2026 Angus Bergman
+ * Licensed under CC BY-NC 4.0
+ * https://creativecommons.org/licenses/by-nc/4.0/
  */
 
 #include <Arduino.h>

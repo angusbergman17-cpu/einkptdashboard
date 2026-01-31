@@ -1,14 +1,16 @@
 /**
- * Smart Journey Integration
- * Connects SmartRouteRecommender with CoffeeDecision engine and live transit data
+ * SmartCommute™ Journey Integration
+ * Part of the Commute Compute System™
+ * 
+ * Connects SmartRouteRecommender with CoffeeDecision engine and live transit data.
  * 
  * This is the glue layer that:
  * - Uses SmartRouteRecommender to find optimal routes
  * - Feeds route timings to CoffeeDecision engine
  * - Incorporates live transit updates for real-time decisions
  * 
- * Copyright (c) 2025 Angus Bergman
- * Licensed under CC BY-NC 4.0 (Creative Commons Attribution-NonCommercial 4.0 International License)
+ * Copyright (c) 2026 Angus Bergman
+ * Licensed under CC BY-NC 4.0
  * https://creativecommons.org/licenses/by-nc/4.0/
  */
 
