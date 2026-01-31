@@ -125,19 +125,17 @@ Your server will be live at: `https://[your-project-name].vercel.app`
 
 ### Step 2: Set Up Vercel KV Storage
 
-**Required for API key persistence (Zero-Config compliant).**
+**Required for API key persistence. Zero-Config compliant — no manual env var editing.**
 
 1. In Vercel Dashboard, go to your project → **Storage** tab
 2. Click **Create Database** → Select **KV** (Redis)
 3. Choose region: **Sydney, Australia (Southeast)** recommended for AU users
 4. Select plan: **Redis/30 MB** (free tier — plenty for config storage)
 5. Name it (e.g., `CCKV` or `commute-compute-kv`)
-6. Click **Create**
-7. Vercel auto-connects and injects `KV_REST_API_URL` and `KV_REST_API_TOKEN`
-8. **Redeploy** your project to pick up the KV environment variables:
-   - Go to **Deployments** → click ⋮ on latest → **Redeploy**
+6. Click **Create** → Vercel auto-links to your project
+7. **Redeploy** to activate (Deployments → ⋮ → Redeploy)
 
-> **Why KV?** Per Zero-Config architecture, API keys are stored server-side in persistent storage. No manual environment variable configuration required.
+> **Zero-Config:** Vercel automatically injects the KV credentials when you connect the database — you never manually edit environment variables. This is the same as how Vercel auto-injects `VERCEL_URL`. Your Transit API key (entered in Setup Wizard) is then stored in KV, not in env vars.
 
 ### Step 3: Run the Setup Wizard
 

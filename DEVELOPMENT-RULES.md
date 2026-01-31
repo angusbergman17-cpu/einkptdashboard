@@ -509,7 +509,20 @@ const apiKey = process.env.ODATA_API_KEY;  // User must configure server
 
 ### 3.6 Vercel KV Setup (Required)
 
-**Vercel KV provides persistent storage for API keys — no manual environment variable configuration.**
+**Vercel KV provides persistent storage for API keys.**
+
+**Zero-Config Compliance:** Vercel KV is compliant because:
+- ✅ User clicks "Create KV" and "Connect to Project" in Vercel UI
+- ✅ Vercel **auto-injects** `KV_REST_API_URL` and `KV_REST_API_TOKEN`
+- ✅ User never types, copies, or sees these credentials
+- ✅ Similar to how Vercel auto-injects `VERCEL_URL`, `VERCEL_ENV`, etc.
+
+**This is NOT the same as:**
+- ❌ User manually adding `ODATA_API_KEY=xxx` to env vars
+- ❌ User editing `.env` files
+- ❌ User running CLI commands to set secrets
+
+The KV connection is a **one-click UI action**, not manual env var configuration.
 
 #### 3.6.1 Setup Steps
 
