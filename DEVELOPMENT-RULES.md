@@ -192,6 +192,7 @@ The system was previously known as "Commute Compute". Update any remaining refer
 - 11.5 Rate Limit Awareness
 - 11.6 LiveDash Multi-Device Endpoint
 - 11.7 API Key Passing Requirements (v1.8)
+- 11.8 Zero-Config Gap: Direct Endpoint API Keys (v1.8)
 </details>
 
 <details>
@@ -273,7 +274,7 @@ The system was previously known as "Commute Compute". Update any remaining refer
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 1.8 | 2026-01-31 | Angus Bergman | **FIRMWARE UPDATE + API BUG FIX**: (1) Updated locked firmware to CC-FW-6.1-60s (commit 7336929) — 60-second refresh interval, consolidated FIRMWARE_VERSION define. (2) Fixed critical bug: all API endpoints now pass `ODATA_API_KEY` to `getDepartures()` per Section 11.1. Added Section 11.7 (API Key Passing Requirements). |
+| 1.8 | 2026-01-31 | Angus Bergman | **FIRMWARE UPDATE + API BUG FIX + ZERO-CONFIG GAP**: (1) Updated locked firmware to CC-FW-6.1-60s (commit 7336929) — 60s refresh. (2) Fixed API endpoints to pass API key to `getDepartures()`. (3) Documented Zero-Config architectural gap (Section 11.8) — direct endpoints require env var workaround until config token support added. |
 | 1.7 | 2026-01-31 | Angus Bergman | **LOCKED FIRMWARE**: Added Section 5.6 — CC-FW-6.0-STABLE locked production firmware. Hardware-verified working on TRMNL OG (commit 2f8d6cf). Documents exact flashing procedure, ESP32-C3 workarounds, modification policy. |
 | 1.6 | 2026-01-30 | Angus Bergman | **REBRAND**: Commute Compute → Commute Compute System. Added Section 0 (Naming Conventions). Updated all references: CCDashDesignV10, CC LiveDash. SmartCommute engine name retained. |
 | 1.5 | 2026-01-29 | Angus Bergman | Added: API Key Validation requirements (17.2) — mandatory validation for all API keys entered via admin panel including format checks, live testing, and user feedback requirements |
@@ -1256,6 +1257,36 @@ const [trains, trams] = await Promise.all([
 
 **Why This Matters:**
 Without the API key, `opendata-client.js` returns `getMockDepartures()` — static fake data instead of live Transport Victoria GTFS-RT feeds.
+
+### 11.8 Zero-Config Gap: Direct Endpoint API Keys
+
+**⚠️ KNOWN ARCHITECTURAL GAP**
+
+**Issue:** The direct endpoints (`/api/zones`, `/api/zonedata`, `/api/screen`) currently read API keys from `process.env.ODATA_API_KEY`, which **violates Section 3.1 (Zero-Config)**.
+
+**Per Section 3.4, the correct approach is:**
+```javascript
+// ✅ CORRECT - Keys from config token in URL:
+const config = decodeConfigToken(req.params.token);
+const apiKey = config.k || '';  // From URL token
+```
+
+**Current workaround (v1.8):**
+```javascript
+// ⚠️ TEMPORARY - Violates Zero-Config but enables live data:
+const ODATA_API_KEY = process.env.ODATA_API_KEY || null;
+```
+
+**Root Cause:**
+- Firmware calls `/api/zones` directly without a config token
+- `/api/device/[token]` endpoint supports config tokens, but direct endpoints do not
+- PreferencesManager uses local JSON file which doesn't persist in Vercel serverless
+
+**Resolution Required:**
+1. Firmware should call `/api/device/[token]/zones` with embedded config token, OR
+2. Direct endpoints should load API key from user's stored preferences (requires persistent storage like Vercel KV)
+
+**Until resolved:** Users deploying their own instance must set `ODATA_API_KEY` in Vercel environment variables.
 
 ---
 
