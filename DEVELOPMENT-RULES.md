@@ -1,7 +1,7 @@
 # Commute Compute Development Rules
 
 **MANDATORY COMPLIANCE DOCUMENT**  
-**Version:** 1.16  
+**Version:** 1.17  
 **Last Updated:** 2026-01-31  
 **Copyright (c) 2026 Commute Compute System by Angus Bergman — Licensed under CC BY-NC 4.0**
 
@@ -292,6 +292,17 @@ The system was previously known as "Commute Compute". Update any remaining refer
 - 22.1 Color Palette
 - 22.2 Typography
 - 22.3 Icons & Imagery (NO EMOJIS)
+- 22.4 Card & Container Styles
+- 22.5 Spacing & Layout
+- 22.6 Interactive Elements
+- 22.7 Readability Requirements
+- 22.8 Consistency Checklist
+- 22.9 Global System Footer (MANDATORY) 🔴
+  - 22.9.1 Footer Requirements
+  - 22.9.2 Dynamic Attribution Logic
+  - 22.9.3 Footer Styling
+  - 22.9.4 Version Display Format
+  - 22.9.5 Prohibited
 - 22.4 Card & Container Styles
 - 22.5 Spacing & Layout
 - 22.6 Interactive Elements
@@ -2575,6 +2586,68 @@ Before deploying UI changes, verify:
 - [ ] Spacing is consistent (use defined values)
 - [ ] Interactive elements have hover/focus states
 - [ ] Text is readable (contrast, line-height, spacing)
+- [ ] **Global System Footer is visible** (Section 22.9)
+
+### 22.9 Global System Footer (MANDATORY) 🔴
+
+**CRITICAL:** A persistent footer MUST appear on ALL tabs of the Admin Panel, displaying live version info and dynamic attributions.
+
+#### 22.9.1 Footer Requirements
+
+| Element | Requirement |
+|---------|-------------|
+| **Position** | Fixed at bottom of viewport, visible on ALL tabs |
+| **SmartCommute Version** | Live from `/api/version` → `components.smartcommute.version` |
+| **CCDash Renderer Version** | Live from `/api/version` → `components.renderer.version` |
+| **System Version** | Live from `/api/version` → `system.version` |
+| **Build Date** | Live from `/api/version` → `date` |
+| **Attribution** | Dynamic based on user's configured data sources |
+| **Auto-refresh** | Update every 5 minutes |
+
+#### 22.9.2 Dynamic Attribution Logic
+
+The footer MUST display attributions based on what the user has configured in `localStorage cc-config`:
+
+| Data Source | When to Show | Attribution Text |
+|-------------|--------------|------------------|
+| **Always** | Always | `© 2026 Angus Bergman • CC BY-NC 4.0` |
+| **Transit API** | When `cc-transit-api-key` exists or addresses configured | `Transit data: Transport Victoria OpenData API (CC BY 4.0)` |
+| **Weather** | When addresses configured | `Weather: Bureau of Meteorology (CC BY 3.0 AU)` |
+| **Google Places** | When `cc-places-api-key` exists | `Places: Powered by Google` |
+| **OpenStreetMap** | When maps enabled or OSM geocoding used | `Maps: © OpenStreetMap contributors` |
+
+#### 22.9.3 Footer Styling
+
+```css
+.cc-system-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(180deg, rgba(26, 39, 68, 0.95) 0%, rgba(18, 28, 51, 0.98) 100%);
+    border-top: 1px solid #3d5278;
+    padding: 10px 20px;
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+}
+```
+
+#### 22.9.4 Version Display Format
+
+```
+[●] SmartCommute v3.0  |  CCDash Renderer v2.1  |  System v3.0.0  |  Build 2026-01-31
+```
+
+- Green pulsing dot indicates live/connected status
+- Version values pulled from `/api/version` endpoint
+- Monospace font for version numbers (`Space Grotesk` or `JetBrains Mono`)
+
+#### 22.9.5 Prohibited
+
+- ❌ Hiding the footer on any tab
+- ❌ Removing attribution to Angus Bergman
+- ❌ Hardcoding version numbers (must be dynamic from API)
+- ❌ Omitting required data source attributions
 
 ---
 

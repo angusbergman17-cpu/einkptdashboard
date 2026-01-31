@@ -593,6 +593,88 @@
             color: #cbd5e1;
         }
 
+        /* Global System Footer - appears on ALL tabs */
+        .cc-system-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(180deg, rgba(26, 39, 68, 0.95) 0%, rgba(18, 28, 51, 0.98) 100%);
+            border-top: 1px solid #3d5278;
+            padding: 10px 20px;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        .cc-system-footer-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .cc-footer-versions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        .cc-footer-version-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .cc-footer-version-label {
+            opacity: 0.6;
+            font-weight: 500;
+        }
+
+        .cc-footer-version-value {
+            color: #4fb28e;
+            font-weight: 600;
+            font-family: 'Space Grotesk', monospace;
+        }
+
+        .cc-footer-attribution {
+            font-size: 10px;
+            color: #64748b;
+            text-align: right;
+            line-height: 1.5;
+        }
+
+        .cc-footer-attribution a {
+            color: #4fb28e;
+            text-decoration: none;
+        }
+
+        .cc-footer-live-dot {
+            width: 6px;
+            height: 6px;
+            background: #22c55e;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        body {
+            padding-bottom: 60px !important;
+        }
+
+        @media (max-width: 768px) {
+            .cc-system-footer-inner {
+                flex-direction: column;
+                text-align: center;
+            }
+            .cc-footer-attribution {
+                text-align: center;
+            }
+        }
+
         /* Autocomplete dropdown */
         .autocomplete-dropdown {
             position: absolute;
@@ -8247,7 +8329,109 @@
             setupAddressAutocomplete('home-address', 'home-suggestions');
             setupAddressAutocomplete('work-address', 'work-suggestions');
             setupAddressAutocomplete('cafe-address', 'cafe-suggestions');
+            
+            // Initialize global system footer
+            initGlobalSystemFooter();
         });
+
+        // ============================================
+        // Global System Footer - Appears on ALL tabs
+        // Shows version, build, and dynamic attributions
+        // ============================================
+        function initGlobalSystemFooter() {
+            updateGlobalFooterVersions();
+            updateGlobalFooterAttributions();
+            
+            // Auto-refresh every 5 minutes
+            setInterval(() => {
+                updateGlobalFooterVersions();
+                updateGlobalFooterAttributions();
+            }, 300000);
+        }
+
+        function updateGlobalFooterVersions() {
+            fetch('/api/version')
+                .then(r => r.json())
+                .then(v => {
+                    const scVersion = v.components?.smartcommute?.version || 'v3.0';
+                    const rendererVersion = v.components?.renderer?.version || 'v2.1';
+                    const buildDate = v.date || new Date().toISOString().split('T')[0];
+                    const systemVersion = v.system?.version || '3.0.0';
+                    
+                    document.getElementById('cc-footer-smartcommute-version').textContent = scVersion;
+                    document.getElementById('cc-footer-renderer-version').textContent = rendererVersion;
+                    document.getElementById('cc-footer-build-date').textContent = buildDate;
+                    document.getElementById('cc-footer-system-version').textContent = `v${systemVersion}`;
+                })
+                .catch(() => {
+                    document.getElementById('cc-footer-smartcommute-version').textContent = 'v3.0';
+                    document.getElementById('cc-footer-renderer-version').textContent = 'v2.1';
+                    document.getElementById('cc-footer-build-date').textContent = new Date().toISOString().split('T')[0];
+                    document.getElementById('cc-footer-system-version').textContent = 'v3.0.0';
+                });
+        }
+
+        function updateGlobalFooterAttributions() {
+            const config = JSON.parse(localStorage.getItem('cc-config') || '{}');
+            const transitKey = localStorage.getItem('cc-transit-api-key');
+            const attributions = [];
+            
+            // Always include Commute Compute attribution
+            attributions.push('© 2026 Angus Bergman');
+            
+            // Transit API attribution (if configured)
+            if (transitKey || config.addresses?.home) {
+                attributions.push('Transit data: Transport Victoria OpenData API (CC BY 4.0)');
+            }
+            
+            // Weather attribution (always used when configured)
+            if (config.addresses?.home) {
+                attributions.push('Weather: Bureau of Meteorology (CC BY 3.0 AU)');
+            }
+            
+            // Google Places (if used for address lookup)
+            if (config.googlePlacesEnabled || localStorage.getItem('cc-places-api-key')) {
+                attributions.push('Places: Powered by Google');
+            }
+            
+            // OpenStreetMap (if maps used)
+            if (config.mapsEnabled || config.mapProvider === 'osm') {
+                attributions.push('Maps: © OpenStreetMap contributors');
+            }
+            
+            const el = document.getElementById('cc-footer-attributions');
+            if (el) {
+                el.innerHTML = attributions.join(' • ') + ' • <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">CC BY-NC 4.0</a>';
+            }
+        }
     </script>
+
+    <!-- Global System Footer - FIXED AT BOTTOM OF ALL TABS -->
+    <div class="cc-system-footer">
+        <div class="cc-system-footer-inner">
+            <div class="cc-footer-versions">
+                <div class="cc-footer-version-item">
+                    <div class="cc-footer-live-dot"></div>
+                    <span class="cc-footer-version-label">SmartCommute</span>
+                    <span class="cc-footer-version-value" id="cc-footer-smartcommute-version">v3.0</span>
+                </div>
+                <div class="cc-footer-version-item">
+                    <span class="cc-footer-version-label">CCDash Renderer</span>
+                    <span class="cc-footer-version-value" id="cc-footer-renderer-version">v2.1</span>
+                </div>
+                <div class="cc-footer-version-item">
+                    <span class="cc-footer-version-label">System</span>
+                    <span class="cc-footer-version-value" id="cc-footer-system-version">v3.0.0</span>
+                </div>
+                <div class="cc-footer-version-item">
+                    <span class="cc-footer-version-label">Build</span>
+                    <span class="cc-footer-version-value" id="cc-footer-build-date">--</span>
+                </div>
+            </div>
+            <div class="cc-footer-attribution" id="cc-footer-attributions">
+                © 2026 Angus Bergman • <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">CC BY-NC 4.0</a>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
