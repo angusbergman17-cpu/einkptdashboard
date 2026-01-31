@@ -2324,28 +2324,303 @@
 
         <!-- Architecture Tab -->
         <div id="tab-architecture" class="tab-content">
-            <div class="card" style="margin-bottom: 2rem; border-radius: 12px; border-left: 4px solid #4fb28e;">
+            <!-- Architecture Overview -->
+            <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-radius: 12px; border-left: 4px solid #4fb28e;">
                 <div class="card-header" style="display: flex; align-items: center; gap: 12px;">
                     <svg width="22" height="22" style="color: #4fb28e;"><use href="#icon-layers"/></svg>
-                    <h2 style="margin: 0; font-size: 18px; font-weight: 600;">System Architecture</h2>
+                    <h2 style="margin: 0; font-size: 18px; font-weight: 600;">Commute Compute System Architecture</h2>
                 </div>
-                <p style="margin-bottom: 1.5rem; color: #cbd5e1; line-height: 1.7;">
-                    The Commute Compute system consists of a Node.js backend server that orchestrates real-time transit data collection,
-                    journey planning, and intelligent decision-making. The server interfaces with multiple external APIs (Google Maps,
-                    OpenWeather, PTV/TfNSW APIs) to gather live departure data, weather conditions, and optimal route information.
-                    This data is processed and rendered into an e-ink optimized image that's delivered to your e-ink device.
+                <p style="margin-bottom: 20px; color: #cbd5e1; line-height: 1.7; font-size: 14px;">
+                    A fully self-hosted smart transit display system for Australian public transport. Each user deploys their own complete stack with zero external dependencies.
                 </p>
+                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                    <span style="padding: 6px 14px; background: rgba(79, 178, 142, 0.2); border-radius: 20px; font-size: 12px; font-weight: 600; color: #4fb28e;">v4.0</span>
+                    <span style="padding: 6px 14px; background: rgba(102, 126, 234, 0.2); border-radius: 20px; font-size: 12px; font-weight: 600; color: #667eea;">CCDash V10 LOCKED</span>
+                    <span style="padding: 6px 14px; background: rgba(251, 191, 36, 0.2); border-radius: 20px; font-size: 12px; font-weight: 600; color: #fbbf24;">CC-FW-6.1-60s</span>
+                </div>
+            </div>
 
-                <div class="arch-viz-container">
-                    <div class="arch-viz-card">
-                        <h3>Data Flow Diagram</h3>
-                        <img src="/assets/data-flow-diagram.svg" alt="Data Flow Diagram showing how data moves through the system" />
+            <!-- Core Principles -->
+            <div class="card" style="margin-bottom: 20px; background: rgba(30, 41, 59, 0.8); border-radius: 12px; border-left: 4px solid #4fb28e;">
+                <div class="card-header" style="display: flex; align-items: center; gap: 12px;">
+                    <svg width="22" height="22" style="color: #4fb28e;"><use href="#icon-check"/></svg>
+                    <h2 style="margin: 0; font-size: 18px; font-weight: 600;">Core Principles</h2>
+                </div>
+                <div style="display: grid; gap: 12px; margin-top: 15px;">
+                    <div style="display: flex; align-items: flex-start; gap: 12px; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px;">
+                        <svg width="20" height="20" style="color: #4fb28e; flex-shrink: 0; margin-top: 2px;"><use href="#icon-user"/></svg>
+                        <div>
+                            <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">Self-Hosted</div>
+                            <div style="font-size: 13px; color: #94a3b8;">User owns server, device, and API keys. Complete data isolation.</div>
+                        </div>
                     </div>
+                    <div style="display: flex; align-items: flex-start; gap: 12px; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px;">
+                        <svg width="20" height="20" style="color: #667eea; flex-shrink: 0; margin-top: 2px;"><use href="#icon-settings"/></svg>
+                        <div>
+                            <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">Zero-Config</div>
+                            <div style="font-size: 13px; color: #94a3b8;">No environment variables. All configuration via Setup Wizard and URL tokens.</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: flex-start; gap: 12px; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px;">
+                        <svg width="20" height="20" style="color: #fbbf24; flex-shrink: 0; margin-top: 2px;"><use href="#icon-cpu"/></svg>
+                        <div>
+                            <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">Server-Side Rendering</div>
+                            <div style="font-size: 13px; color: #94a3b8;">All computation on server. Device receives pre-rendered 1-bit BMP images.</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: flex-start; gap: 12px; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px;">
+                        <svg width="20" height="20" style="color: #22c55e; flex-shrink: 0; margin-top: 2px;"><use href="#icon-globe"/></svg>
+                        <div>
+                            <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">Multi-State Support</div>
+                            <div style="font-size: 13px; color: #94a3b8;">Victoria (PTV), NSW (TfNSW), Queensland (TransLink) with more states planned.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                    <div class="arch-viz-card">
-                        <h3>System Mind Map</h3>
-                        <img src="/assets/system-mind-map.svg" alt="System Mind Map showing all components and their relationships" />
+            <!-- Technology Stack -->
+            <div class="card" style="margin-bottom: 20px; background: rgba(30, 41, 59, 0.8); border-radius: 12px; border-left: 4px solid #667eea;">
+                <div class="card-header" style="display: flex; align-items: center; gap: 12px;">
+                    <svg width="22" height="22" style="color: #667eea;"><use href="#icon-database"/></svg>
+                    <h2 style="margin: 0; font-size: 18px; font-weight: 600;">Technology Stack</h2>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 15px;">
+                    <div style="padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px;">
+                        <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Server</div>
+                        <div style="font-size: 14px; font-weight: 500;">Node.js 18+, Vercel Serverless</div>
                     </div>
+                    <div style="padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px;">
+                        <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Rendering</div>
+                        <div style="font-size: 14px; font-weight: 500;">@napi-rs/canvas, 1-bit BMP</div>
+                    </div>
+                    <div style="padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px;">
+                        <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Transit Data</div>
+                        <div style="font-size: 14px; font-weight: 500;">GTFS-RT (VIC/NSW/QLD)</div>
+                    </div>
+                    <div style="padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px;">
+                        <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Firmware</div>
+                        <div style="font-size: 14px; font-weight: 500;">ESP32-C3, PlatformIO, C++</div>
+                    </div>
+                    <div style="padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px;">
+                        <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Display</div>
+                        <div style="font-size: 14px; font-weight: 500;">E-ink 800×480 (TRMNL/Kindle)</div>
+                    </div>
+                    <div style="padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px;">
+                        <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Typography</div>
+                        <div style="font-size: 14px; font-weight: 500;">Inter (bundled TTF)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Layer Architecture -->
+            <div class="card" style="margin-bottom: 20px; background: rgba(30, 41, 59, 0.8); border-radius: 12px; border-left: 4px solid #4fb28e;">
+                <div class="card-header" style="display: flex; align-items: center; gap: 12px;">
+                    <svg width="22" height="22" style="color: #4fb28e;"><use href="#icon-layers"/></svg>
+                    <h2 style="margin: 0; font-size: 18px; font-weight: 600;">Layer Architecture</h2>
+                </div>
+                <div style="margin-top: 15px; font-family: 'JetBrains Mono', monospace; font-size: 12px; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 16px; overflow-x: auto;">
+                    <div style="color: #94a3b8; margin-bottom: 8px;">/* Presentation → API → Service → Core → Data */</div>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <div style="padding: 10px 14px; background: linear-gradient(90deg, rgba(79, 178, 142, 0.3) 0%, rgba(79, 178, 142, 0.1) 100%); border-radius: 6px; border-left: 3px solid #4fb28e;">
+                            <span style="color: #4fb28e; font-weight: 600;">PRESENTATION</span>
+                            <span style="color: #94a3b8; margin-left: 12px;">admin.html, setup-wizard.html, simulator</span>
+                        </div>
+                        <div style="padding: 10px 14px; background: linear-gradient(90deg, rgba(102, 126, 234, 0.3) 0%, rgba(102, 126, 234, 0.1) 100%); border-radius: 6px; border-left: 3px solid #667eea;">
+                            <span style="color: #667eea; font-weight: 600;">API LAYER</span>
+                            <span style="color: #94a3b8; margin-left: 12px;">/api/zones, /api/livedash, /api/screen, /api/admin/*</span>
+                        </div>
+                        <div style="padding: 10px 14px; background: linear-gradient(90deg, rgba(251, 191, 36, 0.3) 0%, rgba(251, 191, 36, 0.1) 100%); border-radius: 6px; border-left: 3px solid #fbbf24;">
+                            <span style="color: #fbbf24; font-weight: 600;">SERVICE LAYER</span>
+                            <span style="color: #94a3b8; margin-left: 12px;">SmartCommute, CC LiveDash, Zone Renderer, Weather</span>
+                        </div>
+                        <div style="padding: 10px 14px; background: linear-gradient(90deg, rgba(239, 68, 68, 0.3) 0%, rgba(239, 68, 68, 0.1) 100%); border-radius: 6px; border-left: 3px solid #ef4444;">
+                            <span style="color: #ef4444; font-weight: 600;">CORE LAYER</span>
+                            <span style="color: #94a3b8; margin-left: 12px;">CoffeeDecision, Route Planner, Journey Engine</span>
+                        </div>
+                        <div style="padding: 10px 14px; background: linear-gradient(90deg, rgba(168, 85, 247, 0.3) 0%, rgba(168, 85, 247, 0.1) 100%); border-radius: 6px; border-left: 3px solid #a855f7;">
+                            <span style="color: #a855f7; font-weight: 600;">DATA LAYER</span>
+                            <span style="color: #94a3b8; margin-left: 12px;">OpenData Client, GTFS Static, Preferences, Fallback Timetables</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Flow -->
+            <div class="card" style="margin-bottom: 20px; background: rgba(30, 41, 59, 0.8); border-radius: 12px; border-left: 4px solid #667eea;">
+                <div class="card-header" style="display: flex; align-items: center; gap: 12px;">
+                    <svg width="22" height="22" style="color: #667eea;"><use href="#icon-route"/></svg>
+                    <h2 style="margin: 0; font-size: 18px; font-weight: 600;">Data Flow</h2>
+                </div>
+                <p style="margin: 15px 0; font-size: 14px; color: #94a3b8; line-height: 1.6;">
+                    Real-time transit data flows from external APIs through the processing pipeline to your e-ink display.
+                </p>
+                <div style="display: grid; gap: 12px;">
+                    <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px;">
+                        <div style="width: 32px; height: 32px; background: #4fb28e; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;">1</div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; font-size: 14px;">External APIs</div>
+                            <div style="font-size: 12px; color: #94a3b8;">Transport Victoria OpenData, BOM Weather, Google Places</div>
+                        </div>
+                        <div style="font-size: 11px; color: #4fb28e; padding: 4px 8px; background: rgba(79, 178, 142, 0.1); border-radius: 4px;">30s cache</div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px;">
+                        <div style="width: 32px; height: 32px; background: #667eea; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;">2</div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; font-size: 14px;">SmartCommute Engine</div>
+                            <div style="font-size: 12px; color: #94a3b8;">Route calculation, CoffeeDecision, journey optimization</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px;">
+                        <div style="width: 32px; height: 32px; background: #fbbf24; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;">3</div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; font-size: 14px;">CCDash Renderer V13</div>
+                            <div style="font-size: 12px; color: #94a3b8;">1-bit BMP generation, zone diffing, partial refresh</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px;">
+                        <div style="width: 32px; height: 32px; background: #a855f7; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;">4</div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; font-size: 14px;">E-ink Device</div>
+                            <div style="font-size: 12px; color: #94a3b8;">CCFirm fetches zones, applies partial refresh every 60s</div>
+                        </div>
+                        <div style="font-size: 11px; color: #a855f7; padding: 4px 8px; background: rgba(168, 85, 247, 0.1); border-radius: 4px;">60s refresh</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Zone Layout (V10 LOCKED) -->
+            <div class="card" style="margin-bottom: 20px; background: rgba(30, 41, 59, 0.8); border-radius: 12px; border-left: 4px solid #fbbf24;">
+                <div class="card-header" style="display: flex; align-items: center; gap: 12px;">
+                    <svg width="22" height="22" style="color: #fbbf24;"><use href="#icon-sliders"/></svg>
+                    <h2 style="margin: 0; font-size: 18px; font-weight: 600;">Zone Layout (CCDash V10)</h2>
+                    <span style="padding: 4px 10px; background: rgba(239, 68, 68, 0.2); border-radius: 12px; font-size: 11px; font-weight: 600; color: #ef4444;">LOCKED</span>
+                </div>
+                <p style="margin: 15px 0; font-size: 14px; color: #94a3b8;">
+                    800×480 display divided into 5 zones for efficient partial refresh.
+                </p>
+                <div style="display: grid; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 12px;">
+                    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: rgba(79, 178, 142, 0.15); border-radius: 6px; border: 1px solid rgba(79, 178, 142, 0.3);">
+                        <span style="color: #4fb28e; font-weight: 600; min-width: 70px;">HEADER</span>
+                        <span style="color: #94a3b8;">y: 0-94 (94px)</span>
+                        <span style="color: #f1f5f9; margin-left: auto;">Time, weather, location</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: rgba(102, 126, 234, 0.15); border-radius: 6px; border: 1px solid rgba(102, 126, 234, 0.3);">
+                        <span style="color: #667eea; font-weight: 600; min-width: 70px;">SUMMARY</span>
+                        <span style="color: #94a3b8;">y: 96-124 (28px)</span>
+                        <span style="color: #f1f5f9; margin-left: auto;">Leave time, arrival estimate</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: rgba(251, 191, 36, 0.15); border-radius: 6px; border: 1px solid rgba(251, 191, 36, 0.3);">
+                        <span style="color: #fbbf24; font-weight: 600; min-width: 70px;">LEGS</span>
+                        <span style="color: #94a3b8;">y: 132-448 (316px)</span>
+                        <span style="color: #f1f5f9; margin-left: auto;">Journey leg cards (~31.7 KB)</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: rgba(168, 85, 247, 0.15); border-radius: 6px; border: 1px solid rgba(168, 85, 247, 0.3);">
+                        <span style="color: #a855f7; font-weight: 600; min-width: 70px;">FOOTER</span>
+                        <span style="color: #94a3b8;">y: 448-480 (32px)</span>
+                        <span style="color: #f1f5f9; margin-left: auto;">Destination, arrival time</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- API Endpoints -->
+            <div class="card" style="margin-bottom: 20px; background: rgba(30, 41, 59, 0.8); border-radius: 12px; border-left: 4px solid #4fb28e;">
+                <div class="card-header" style="display: flex; align-items: center; gap: 12px;">
+                    <svg width="22" height="22" style="color: #4fb28e;"><use href="#icon-globe"/></svg>
+                    <h2 style="margin: 0; font-size: 18px; font-weight: 600;">API Endpoints</h2>
+                </div>
+                <div style="display: grid; gap: 8px; margin-top: 15px; font-family: 'JetBrains Mono', monospace; font-size: 12px;">
+                    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: rgba(255,255,255,0.03); border-radius: 6px;">
+                        <span style="padding: 2px 8px; background: #22c55e; border-radius: 4px; font-size: 10px; font-weight: 700;">GET</span>
+                        <span style="color: #4fb28e;">/api/zones</span>
+                        <span style="color: #94a3b8; margin-left: auto;">Zone refresh for TRMNL</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: rgba(255,255,255,0.03); border-radius: 6px;">
+                        <span style="padding: 2px 8px; background: #22c55e; border-radius: 4px; font-size: 10px; font-weight: 700;">GET</span>
+                        <span style="color: #4fb28e;">/api/livedash</span>
+                        <span style="color: #94a3b8; margin-left: auto;">Multi-device renderer</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: rgba(255,255,255,0.03); border-radius: 6px;">
+                        <span style="padding: 2px 8px; background: #22c55e; border-radius: 4px; font-size: 10px; font-weight: 700;">GET</span>
+                        <span style="color: #4fb28e;">/api/screen</span>
+                        <span style="color: #94a3b8; margin-left: auto;">Full screen PNG</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: rgba(255,255,255,0.03); border-radius: 6px;">
+                        <span style="padding: 2px 8px; background: #22c55e; border-radius: 4px; font-size: 10px; font-weight: 700;">GET</span>
+                        <span style="color: #4fb28e;">/api/health</span>
+                        <span style="color: #94a3b8; margin-left: auto;">Health check</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: rgba(255,255,255,0.03); border-radius: 6px;">
+                        <span style="padding: 2px 8px; background: #3b82f6; border-radius: 4px; font-size: 10px; font-weight: 700;">POST</span>
+                        <span style="color: #667eea;">/api/admin/*</span>
+                        <span style="color: #94a3b8; margin-left: auto;">Setup & configuration</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hardware Support -->
+            <div class="card" style="margin-bottom: 20px; background: rgba(30, 41, 59, 0.8); border-radius: 12px; border-left: 4px solid #667eea;">
+                <div class="card-header" style="display: flex; align-items: center; gap: 12px;">
+                    <svg width="22" height="22" style="color: #667eea;"><use href="#icon-smartphone"/></svg>
+                    <h2 style="margin: 0; font-size: 18px; font-weight: 600;">Supported Hardware</h2>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 15px;">
+                    <div style="padding: 14px; background: rgba(79, 178, 142, 0.1); border-radius: 8px; border: 1px solid rgba(79, 178, 142, 0.2);">
+                        <div style="font-weight: 600; font-size: 14px; color: #4fb28e; margin-bottom: 8px;">TRMNL OG</div>
+                        <div style="font-size: 12px; color: #94a3b8; line-height: 1.6;">
+                            800×480 • ESP32-C3<br>
+                            7.5" E-ink • 60s partial refresh
+                        </div>
+                    </div>
+                    <div style="padding: 14px; background: rgba(102, 126, 234, 0.1); border-radius: 8px; border: 1px solid rgba(102, 126, 234, 0.2);">
+                        <div style="font-weight: 600; font-size: 14px; color: #667eea; margin-bottom: 8px;">TRMNL Mini</div>
+                        <div style="font-size: 12px; color: #94a3b8; line-height: 1.6;">
+                            400×300 • ESP32-C3<br>
+                            Compact form factor
+                        </div>
+                    </div>
+                    <div style="padding: 14px; background: rgba(251, 191, 36, 0.1); border-radius: 8px; border: 1px solid rgba(251, 191, 36, 0.2);">
+                        <div style="font-weight: 600; font-size: 14px; color: #fbbf24; margin-bottom: 8px;">Kindle (Jailbroken)</div>
+                        <div style="font-size: 12px; color: #94a3b8; line-height: 1.6;">
+                            PW2-5, Voyage, Basic<br>
+                            kindle-dash package required
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visual Diagrams -->
+            <div class="card" style="margin-bottom: 20px; background: rgba(30, 41, 59, 0.8); border-radius: 12px; border-left: 4px solid #a855f7;">
+                <div class="card-header" style="display: flex; align-items: center; gap: 12px;">
+                    <svg width="22" height="22" style="color: #a855f7;"><use href="#icon-search"/></svg>
+                    <h2 style="margin: 0; font-size: 18px; font-weight: 600;">Visual Diagrams</h2>
+                </div>
+                <div class="arch-viz-container" style="margin-top: 15px;">
+                    <div class="arch-viz-card" style="background: rgba(255,255,255,0.03); border-radius: 8px; padding: 16px;">
+                        <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                            <svg width="16" height="16" style="color: #4fb28e;"><use href="#icon-route"/></svg>
+                            Data Flow Diagram
+                        </h3>
+                        <img src="/assets/data-flow-diagram.svg" alt="Data Flow Diagram showing how data moves through the system" style="border-radius: 6px;" />
+                    </div>
+                    <div class="arch-viz-card" style="background: rgba(255,255,255,0.03); border-radius: 8px; padding: 16px;">
+                        <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                            <svg width="16" height="16" style="color: #667eea;"><use href="#icon-cpu"/></svg>
+                            System Mind Map
+                        </h3>
+                        <img src="/assets/system-mind-map.svg" alt="System Mind Map showing all components and their relationships" style="border-radius: 6px;" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documentation Links -->
+            <div style="padding: 16px; background: rgba(79, 178, 142, 0.1); border-radius: 12px; border-left: 4px solid #4fb28e;">
+                <div style="font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                    <svg width="18" height="18" style="color: #4fb28e;"><use href="#icon-book"/></svg>
+                    <span>Full Documentation</span>
+                </div>
+                <div style="font-size: 13px; color: #94a3b8; line-height: 1.6;">
+                    For complete architecture details, see <strong>docs/ARCHITECTURE.md</strong> (v4.0, 20 sections).
+                    Development rules in <strong>DEVELOPMENT-RULES.md</strong> (v1.12, 22 sections).
                 </div>
             </div>
         </div>
