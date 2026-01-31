@@ -1081,11 +1081,20 @@ function getLegSubtitle(leg) {
       return dist ? `${location} • ${dist}m` : location;
       
     case 'coffee':
-      // Coffee status subtitles
+      // Coffee status subtitles - check reason for skip
       if (leg.canGet === false || status === 'skipped') {
+        // Check specific skip reasons
+        if (leg.skipReason === 'closed' || leg.cafeClosed) {
+          return '✗ SKIP — Cafe closed';
+        } else if (leg.skipReason === 'late' || leg.runningLate) {
+          return '✗ SKIP — Running late';
+        }
+        // Default skip reason
         return '✗ SKIP — Running late';
       } else if (leg.extraTime || status === 'extended') {
         return '✓ EXTRA TIME — Disruption';
+      } else if (leg.fridayTreat || leg.isFriday) {
+        return '✓ FRIDAY TREAT';
       }
       return '✓ TIME FOR COFFEE';
       
@@ -1164,11 +1173,12 @@ function renderHeaderTime(data, prefs) {
   ctx.fillRect(0, 0, zone.w, zone.h);
   
   ctx.fillStyle = '#000';
-  ctx.font = 'bold 48px Inter, sans-serif';
+  // V10 Spec: 68px, weight 900 - increased from 48px per user feedback
+  ctx.font = '900 64px Inter, sans-serif';
   ctx.textBaseline = 'top';
   
   const time = data.current_time || data.time || '--:--';
-  ctx.fillText(time, 0, 0);
+  ctx.fillText(time, 0, -4);  // Slight offset to maximize vertical space
   
   return canvasToBMP(canvas);
 }
@@ -1576,26 +1586,36 @@ export function renderFullScreen(data, prefs = {}) {
   
   // Umbrella indicator (V10 Spec Section 2.7)
   // Position: right: 20px, top: 68px, size: 132×18px
+  // Fixed: Use textBaseline middle, avoid emoji rendering issues on e-ink
   const needsUmbrella = data.rain_expected || data.precipitation > 30 || 
     (data.condition && /rain|shower|storm|drizzle/i.test(data.condition));
   const umbrellaX = 800 - 20 - 132;  // 648px per spec
   const umbrellaY = 68;
+  const umbrellaW = 132;
+  const umbrellaH = 18;
+  
+  ctx.textBaseline = 'middle';
+  
   if (needsUmbrella) {
     ctx.fillStyle = '#000';
-    ctx.fillRect(umbrellaX, umbrellaY, 132, 18);
+    ctx.fillRect(umbrellaX, umbrellaY, umbrellaW, umbrellaH);
     ctx.fillStyle = '#FFF';
-    ctx.font = 'bold 10px Inter, sans-serif';
+    ctx.font = 'bold 9px Inter, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('🌧 BRING UMBRELLA', umbrellaX + 66, umbrellaY + 12);
+    // Use text marker instead of emoji for e-ink compatibility
+    ctx.fillText('* BRING UMBRELLA', umbrellaX + umbrellaW / 2, umbrellaY + umbrellaH / 2);
   } else {
-    ctx.strokeRect(umbrellaX, umbrellaY, 132, 18);
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(umbrellaX, umbrellaY, umbrellaW, umbrellaH);
     ctx.fillStyle = '#000';
-    ctx.font = 'bold 10px Inter, sans-serif';
+    ctx.font = 'bold 9px Inter, sans-serif';
     ctx.textAlign = 'center';
-    const icon = /cloud|overcast/i.test(data.condition || '') ? '☁' : '☀';
-    ctx.fillText(`${icon} NO UMBRELLA`, umbrellaX + 66, umbrellaY + 12);
+    // Use text marker instead of emoji for e-ink compatibility
+    ctx.fillText('* NO UMBRELLA', umbrellaX + umbrellaW / 2, umbrellaY + umbrellaH / 2);
   }
   ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = '#000';
   
   // Divider line
@@ -2025,28 +2045,19 @@ export function renderFullScreen(data, prefs = {}) {
   ctx.fillText(footerDest, 16, 464);
   
   // "ARRIVE" label + time (right aligned) - per ref images
-  // Format: "ARRIVE    9:18"
+  // Fixed layout: "ARRIVE" small label above, time large below - no overlap
   ctx.textAlign = 'right';
   const footerArrival = data._calculatedArrival || data.arrive_by || '--:--';
-  ctx.font = '11px Inter, sans-serif';
-  ctx.fillText('ARRIVE', 716, 464);
-  ctx.font = 'bold 22px Inter, sans-serif';
-  ctx.fillText(footerArrival, 784, 464);
   
-  // Target time indicator (V10 Spec Section 6.4 Amendment)
-  const targetTime = data._targetArrival || data.arrive_by || '09:00';
-  // Format target to 12h if needed
-  let targetDisplay = targetTime;
-  if (targetTime.includes(':') && !targetTime.includes('am') && !targetTime.includes('pm')) {
-    const [tH, tM] = targetTime.split(':').map(Number);
-    const tH12 = tH % 12 || 12;
-    const tAmPm = tH >= 12 ? 'pm' : 'am';
-    targetDisplay = `${tH12}:${(tM || 0).toString().padStart(2, '0')}${tAmPm}`;
-  }
+  // ARRIVE label - positioned above the time, smaller font
   ctx.font = '9px Inter, sans-serif';
-  ctx.globalAlpha = 0.6;
-  ctx.fillText(`Target: ${targetDisplay}`, 784, 472);
+  ctx.globalAlpha = 0.7;
+  ctx.fillText('ARRIVE', 784, 454);
   ctx.globalAlpha = 1.0;
+  
+  // Arrival time - large, right-aligned, clear of destination text
+  ctx.font = 'bold 20px Inter, sans-serif';
+  ctx.fillText(footerArrival, 784, 470);
   
   return canvas.toBuffer('image/png');
 }

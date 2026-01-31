@@ -352,6 +352,90 @@ class CafeBusyDetector {
       startTime: `${firstPeak.start}:00 (tomorrow)`
     };
   }
+
+  /**
+   * Check if cafe is currently open
+   * Uses Google Places API opening hours if available, else assumes open during business hours
+   * @param {number} lat - Latitude
+   * @param {number} lon - Longitude
+   * @param {Object} cafeHours - Optional cached cafe hours { open: 'HH:MM', close: 'HH:MM', days: [0-6] }
+   * @returns {Promise<{isOpen: boolean, reason?: string, opensAt?: string, closesAt?: string}>}
+   */
+  async isCafeOpen(lat, lon, cafeHours = null) {
+    // Get user's timezone from preferences
+    const prefs = this.preferences 
+      ? (typeof this.preferences.get === 'function' ? this.preferences.get() : this.preferences)
+      : {};
+    const state = prefs.state || 'VIC';
+    const timezone = this.getTimezoneForState(state);
+
+    const now = new Date();
+    const localTime = new Date(now.toLocaleString('en-US', { timeZone: timezone }));
+    const currentHour = localTime.getHours();
+    const currentMinutes = localTime.getMinutes();
+    const currentDay = localTime.getDay(); // 0 = Sunday
+    const currentTimeDecimal = currentHour + currentMinutes / 60;
+
+    // If we have cached cafe hours, use those
+    if (cafeHours && cafeHours.open && cafeHours.close) {
+      const [openH, openM] = cafeHours.open.split(':').map(Number);
+      const [closeH, closeM] = cafeHours.close.split(':').map(Number);
+      const openTimeDecimal = openH + openM / 60;
+      const closeTimeDecimal = closeH + closeM / 60;
+
+      // Check if cafe operates on this day
+      if (cafeHours.days && !cafeHours.days.includes(currentDay)) {
+        return { isOpen: false, reason: 'Closed today' };
+      }
+
+      if (currentTimeDecimal < openTimeDecimal) {
+        return { isOpen: false, reason: 'Not open yet', opensAt: cafeHours.open };
+      }
+      if (currentTimeDecimal >= closeTimeDecimal) {
+        return { isOpen: false, reason: 'Closed for the day', closesAt: cafeHours.close };
+      }
+      return { isOpen: true, closesAt: cafeHours.close };
+    }
+
+    // Try Google Places API for live opening hours
+    if (this.googleApiKey && lat && lon) {
+      try {
+        const searchUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lon}&radius=50&type=cafe&key=${this.googleApiKey}`;
+        const searchResponse = await fetch(searchUrl);
+        const searchData = await searchResponse.json();
+
+        if (searchData.status === 'OK' && searchData.results.length > 0) {
+          const place = searchData.results[0];
+          
+          // open_now is a simple boolean from Google Places
+          if (place.opening_hours && typeof place.opening_hours.open_now === 'boolean') {
+            return {
+              isOpen: place.opening_hours.open_now,
+              reason: place.opening_hours.open_now ? undefined : 'Cafe is closed'
+            };
+          }
+        }
+      } catch (error) {
+        console.warn(`  ⚠️ Could not check cafe hours: ${error.message}`);
+      }
+    }
+
+    // Default fallback: assume open during typical cafe hours (6am - 6pm weekdays, 7am - 5pm weekends)
+    const isWeekend = currentDay === 0 || currentDay === 6;
+    const defaultOpen = isWeekend ? 7 : 6;
+    const defaultClose = isWeekend ? 17 : 18;
+
+    if (currentHour < defaultOpen || currentHour >= defaultClose) {
+      return {
+        isOpen: false,
+        reason: currentHour < defaultOpen ? 'Not open yet' : 'Closed for the day',
+        opensAt: `${defaultOpen}:00`,
+        closesAt: `${defaultClose}:00`
+      };
+    }
+
+    return { isOpen: true };
+  }
 }
 
 export default CafeBusyDetector;

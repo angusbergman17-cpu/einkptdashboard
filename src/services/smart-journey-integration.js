@@ -16,6 +16,7 @@
 
 import SmartRouteRecommender from './smart-route-recommender.js';
 import CoffeeDecision from '../core/coffee-decision.js';
+import CafeBusyDetector from './cafe-busy-detector.js';
 
 /**
  * Integration service connecting route planning with coffee decisions
@@ -25,8 +26,10 @@ export class SmartJourneyIntegration {
     this.preferences = preferences;
     this.recommender = new SmartRouteRecommender();
     this.coffeeDecision = null;
+    this.cafeBusyDetector = new CafeBusyDetector(preferences);
     this.currentRoute = null;
     this.liveData = null;
+    this.cafeOpenStatus = null;
     
     // Cache
     this.routeCache = null;
@@ -234,10 +237,42 @@ export class SmartJourneyIntegration {
 
   /**
    * Calculate coffee decision using live transit data
+   * Now includes cafe open/closed status check
    */
-  calculateCoffeeDecision(route, liveTransit, alertText) {
+  async calculateCoffeeDecision(route, liveTransit, alertText) {
     if (!this.coffeeDecision) {
       return { decision: 'NO DATA', subtext: 'Not initialized', canGet: false, urgent: false };
+    }
+    
+    // Check if cafe is currently open (v1.18 - cafe closed detection)
+    const prefs = this.preferences?.get ? this.preferences.get() : this.preferences;
+    const cafeLocation = prefs?.cafeLocation || prefs?.coffeeLocation;
+    
+    if (cafeLocation?.lat && cafeLocation?.lon) {
+      try {
+        const openStatus = await this.cafeBusyDetector.isCafeOpen(
+          cafeLocation.lat, 
+          cafeLocation.lon,
+          prefs?.cafeHours  // Optional cached hours from setup
+        );
+        this.cafeOpenStatus = openStatus;
+        
+        if (!openStatus.isOpen) {
+          console.log(`☕ Cafe is closed: ${openStatus.reason}`);
+          return {
+            decision: 'SKIP',
+            subtext: `✗ SKIP — Cafe ${openStatus.reason?.toLowerCase() || 'closed'}`,
+            canGet: false,
+            cafeClosed: true,
+            skipReason: 'closed',
+            urgent: false,
+            opensAt: openStatus.opensAt
+          };
+        }
+      } catch (error) {
+        console.warn('⚠️ Could not check cafe status:', error.message);
+        // Continue with normal coffee decision if check fails
+      }
     }
     
     // Find next relevant departure
@@ -270,6 +305,12 @@ export class SmartJourneyIntegration {
     result.routeName = route?.name || 'Unknown route';
     result.pattern = route?.pattern || 'direct';
     result.nextDeparture = nextDeparture;
+    
+    // If can't get coffee due to timing, mark the skip reason
+    if (!result.canGet) {
+      result.skipReason = 'late';
+      result.runningLate = true;
+    }
     
     // Adjust decision for multi-modal coffee pattern
     if (route?.coffeeSegments?.position === 'before-transit' && result.canGet) {
