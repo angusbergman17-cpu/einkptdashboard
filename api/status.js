@@ -2,9 +2,14 @@
  * /api/status - System Status Endpoint
  * Returns current system status for dashboard display.
  * 
+ * Per DEVELOPMENT-RULES Section 3.6 & 11.8:
+ * Checks Vercel KV for API key configuration status.
+ * 
  * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
  */
+
+import { getTransitApiKey, getGoogleApiKey, getStorageStatus } from '../src/data/kv-preferences.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -15,25 +20,44 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Check for config token or return default status
     const now = new Date();
+    
+    // Check KV for API key status
+    const transitKey = await getTransitApiKey();
+    const googleKey = await getGoogleApiKey();
+    const kvStatus = await getStorageStatus();
+    
+    // Determine if system is configured (has transit API key)
+    const isConfigured = !!transitKey;
+    const transitStatus = transitKey 
+      ? { status: 'live', message: 'Transport Victoria OpenData connected' }
+      : { status: 'fallback', message: 'Using timetable data' };
     
     res.json({
       status: 'ok',
-      configured: false, // Will be true when config is provided
+      configured: isConfigured,
       timestamp: now.toISOString(),
       services: {
-        transit: { status: 'fallback', message: 'Using timetable data' },
+        transit: transitStatus,
         weather: { status: 'ok' },
-        geocoding: { status: 'ok', provider: 'nominatim' }
+        geocoding: { 
+          status: googleKey ? 'google' : 'ok', 
+          provider: googleKey ? 'google-places' : 'nominatim' 
+        }
       },
       journey: {
         arrivalTime: '09:00',
         coffeeEnabled: true
       },
+      kv: {
+        available: kvStatus.kvAvailable,
+        hasTransitKey: kvStatus.hasTransitKey,
+        hasGoogleKey: kvStatus.hasGoogleKey
+      },
       environment: 'vercel-serverless'
     });
   } catch (error) {
+    console.error('[status] Error:', error);
     res.status(500).json({ status: 'error', error: error.message });
   }
 }
