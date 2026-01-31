@@ -1,7 +1,7 @@
 # Commute Compute Development Rules
 
 **MANDATORY COMPLIANCE DOCUMENT**  
-**Version:** 1.15  
+**Version:** 1.16  
 **Last Updated:** 2026-01-31  
 **Copyright (c) 2026 Commute Compute System by Angus Bergman — Licensed under CC BY-NC 4.0**
 
@@ -156,6 +156,11 @@ The system was previously known as "Commute Compute". Update any remaining refer
 - 7.1 V10 Spec is Immutable
 - 7.2 Zone Boundaries are Sacred
 - 7.3 Zone Dimensions are Fixed
+- 7.4 Spec-Renderer Parity (MANDATORY) 🔴
+  - 7.4.1 Required Parity Elements
+  - 7.4.2 Verification Checklist
+  - 7.4.3 Prohibited: Partial Implementation
+  - 7.4.4 Spec-Renderer Sync Process
 </details>
 
 <details>
@@ -1202,6 +1207,50 @@ Zone pixel coordinates defined in the spec are fixed. Never modify the x, y, wid
 
 ### 7.3 Zone Dimensions are Fixed
 Each zone has exact dimensions per the specification. Content must fit within these bounds—no overflow, no dynamic resizing.
+
+### 7.4 Spec-Renderer Parity (MANDATORY) 🔴
+
+**CRITICAL RULE: The CCDashRenderer MUST implement ALL elements defined in CCDashDesignV10.**
+
+Every visual element, state, icon, or behavior specified in `specs/CCDASH-SPEC-V10.md` MUST have a corresponding implementation in the renderer files. No exceptions.
+
+#### 7.4.1 Required Parity Elements
+
+| Spec Section | Element | Renderer Must Include |
+|--------------|---------|----------------------|
+| 2.6 | Weather Box | Temperature, condition text |
+| 2.7 | Umbrella Indicator | Rain/no-rain state with correct styling |
+| 4.1 | Summary Bar Left | All status variants (LEAVE NOW, DELAY, DISRUPTION, etc.) |
+| 4.2 | Summary Bar Right | Total journey time in minutes |
+| 5.2 | Leg Numbers | Sequential numbered circles (1, 2, 3...) |
+| 5.3 | Mode Icons | Canvas-drawn icons for walk, train, tram, bus, coffee |
+| 5.4 | Leg Titles | Status prefixes (⏱, ⚠, ↩, ☕) |
+| 5.5 | Leg Subtitles | "Next: X, Y min" for transit, coffee status text |
+| 5.6 | Duration Boxes | All states (normal, delayed, skip, cancelled) |
+
+#### 7.4.2 Verification Checklist
+
+Before any renderer PR is merged, verify:
+
+- [ ] All spec sections have corresponding render functions
+- [ ] All icons from spec Section 5.3 are implemented
+- [ ] All leg states from spec Section 5.1 are styled correctly
+- [ ] All status bar variants from spec Section 4.1 are supported
+- [ ] Umbrella indicator renders for both rain/no-rain states
+- [ ] Leg numbers appear on every leg
+- [ ] Transit subtitles include real-time departure info when available
+
+#### 7.4.3 Prohibited: Partial Implementation
+
+**NEVER** implement only a subset of spec elements. If the spec defines it, the renderer MUST support it. Placeholder text, missing icons, or unimplemented states are **not acceptable** in production code.
+
+#### 7.4.4 Spec-Renderer Sync Process
+
+When the spec is updated (with approval):
+1. Document ALL new/changed elements
+2. Update renderer to implement ALL changes
+3. Verify parity with visual comparison test
+4. Both spec update and renderer update MUST be in the same PR or sequential PRs
 
 ---
 

@@ -1,5 +1,5 @@
 /**
- * CCDash™ Renderer (Consolidated v2.0)
+ * CCDash™ Renderer (Consolidated v2.1)
  * Part of the Commute Compute System™
  * 
  * Primary renderer for Commute Compute System dashboards.
@@ -10,7 +10,24 @@
  * - zone-renderer.js (zone-based refresh)
  * - zone-renderer-tiered.js (tiered refresh intervals)
  * 
- * Per DEVELOPMENT-RULES.md Section 24: Single source of truth for rendering.
+ * ============================================================================
+ * 🔴 MANDATORY: SPEC-RENDERER PARITY (DEVELOPMENT-RULES.md Section 7.4)
+ * ============================================================================
+ * This renderer MUST implement ALL elements defined in specs/CCDASH-SPEC-V10.md.
+ * No exceptions. Every visual element, state, icon, or behavior in the spec
+ * MUST have a corresponding implementation here.
+ * 
+ * Required parity elements (from Section 7.4.1):
+ * - Weather Box: temp, condition, umbrella indicator
+ * - Summary Bar: all status variants + total journey time
+ * - Leg Numbers: sequential numbered circles
+ * - Mode Icons: canvas-drawn walk/train/tram/bus/coffee
+ * - Leg Titles: status prefixes (⏱, ⚠, ↩, ☕)
+ * - Leg Subtitles: "Next: X, Y min" for transit
+ * - Duration Boxes: all states (normal, delayed, skip, cancelled)
+ * 
+ * PROHIBITED: Partial implementation, placeholder text, missing icons.
+ * ============================================================================
  * 
  * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
