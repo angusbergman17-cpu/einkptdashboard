@@ -1,11 +1,11 @@
 /**
  * /api/screen - Full Dashboard PNG for TRMNL Webhook
- * 
+ *
  * Renders the complete V10 dashboard as an 800×480 PNG image.
- * 
+ *
  * Data Flow (per DEVELOPMENT-RULES.md v3):
  * User Config → Data Sources → Engines → Data Model → Renderer
- * 
+ *
  * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
  */
@@ -57,7 +57,7 @@ async function getEngine() {
   const kvPrefs = await getPreferences();
   const state = await getUserState();
   const transitKey = await getTransitApiKey();
-  
+
   // Build preferences object for SmartCommute
   const preferences = {
     ...kvPrefs,
@@ -73,20 +73,20 @@ async function getEngine() {
     api: { key: transitKey },
     transitApiKey: transitKey
   };
-  
+
   // Create hash to detect preference changes
   const prefsHash = JSON.stringify({ state, home: preferences.homeAddress, work: preferences.workAddress });
-  
+
   // Re-initialize engine if preferences changed or no engine exists
   if (!journeyEngine || prefsHash !== lastPrefsHash) {
     console.log(`[screen] Initializing SmartCommute engine with KV preferences`);
     console.log(`[screen] State: ${state}, Home: ${preferences.homeAddress?.substring(0, 30) || 'not set'}...`);
-    
+
     journeyEngine = new SmartCommute();
     await journeyEngine.initialize(preferences);
     lastPrefsHash = prefsHash;
   }
-  
+
   return journeyEngine;
 }
 
@@ -96,28 +96,28 @@ async function getEngine() {
  */
 function buildJourneyLegs(route, transitData, coffeeDecision, currentTime) {
   if (!route?.legs) return [];
-  
+
   const legs = [];
   let legNumber = 1;
   let cumulativeMinutes = 0;  // Minutes from journey start
-  
+
   // Parse current time for DEPART calculation
   const now = currentTime || new Date(new Date().toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
   const nowMins = now.getHours() * 60 + now.getMinutes();
-  
+
   for (const leg of route.legs) {
     const legDuration = leg.minutes || leg.durationMinutes || 0;
-    
+
     // Calculate when user arrives at this leg's starting point
     const arriveAtLegMins = nowMins + cumulativeMinutes;
     const arriveAtLegH = Math.floor(arriveAtLegMins / 60) % 24;
     const arriveAtLegM = arriveAtLegMins % 60;
-    
+
     // Format as 12-hour time
     const arriveH12 = arriveAtLegH % 12 || 12;
     const arriveAmPm = arriveAtLegH >= 12 ? 'pm' : 'am';
     const arriveTime = `${arriveH12}:${arriveAtLegM.toString().padStart(2, '0')}${arriveAmPm}`;
-    
+
     // Calculate depart time (for transit legs, this is when the service leaves)
     const departMins = arriveAtLegMins;
     const departH = Math.floor(departMins / 60) % 24;
@@ -125,7 +125,7 @@ function buildJourneyLegs(route, transitData, coffeeDecision, currentTime) {
     const departH12 = departH % 12 || 12;
     const departAmPm = departH >= 12 ? 'pm' : 'am';
     const departTime = `${departH12}:${departM.toString().padStart(2, '0')}${departAmPm}`;
-    
+
     const baseLeg = {
       number: legNumber++,
       type: leg.type,
@@ -139,9 +139,9 @@ function buildJourneyLegs(route, transitData, coffeeDecision, currentTime) {
       arriveTime,                  // When user arrives at this leg's start point
       departTime                   // When user departs on this leg (for transit legs)
     };
-    
+
     // Handle coffee leg state based on coffee decision
-    // V10 Spec Section 5.5: Coffee subtitle must be "✓ TIME FOR COFFEE" or "✗ SKIP — Running late"
+    // V10 Spec Section 5.5: Coffee subtitle must be "✓ TIME FOR COFFEE" or "✗ SKIP - Running late"
     if (leg.type === 'coffee') {
       baseLeg.canGet = coffeeDecision.canGet;  // Pass to renderer for styling
       if (!coffeeDecision.canGet) {
@@ -149,13 +149,13 @@ function buildJourneyLegs(route, transitData, coffeeDecision, currentTime) {
         baseLeg.status = 'skipped';  // Also set status for renderer
         baseLeg.cafeClosed = coffeeDecision.cafeClosed;
         baseLeg.skipReason = coffeeDecision.skipReason;
-        baseLeg.subtitle = coffeeDecision.subtext || '✗ SKIP — Running late';
+        baseLeg.subtitle = coffeeDecision.subtext || '✗ SKIP - Running late';
         legNumber--; // Don't increment for skipped leg
       } else {
         baseLeg.subtitle = coffeeDecision.subtext || '✓ TIME FOR COFFEE';
       }
     }
-    
+
     // Check for delays on transit legs
     if (['train', 'tram', 'bus'].includes(leg.type)) {
       const liveData = findMatchingDeparture(leg, transitData);
@@ -173,15 +173,15 @@ function buildJourneyLegs(route, transitData, coffeeDecision, currentTime) {
         }
       }
     }
-    
+
     legs.push(baseLeg);
-    
+
     // Accumulate time (skip skipped legs)
     if (baseLeg.state !== 'skip') {
       cumulativeMinutes += legDuration;
     }
   }
-  
+
   return legs;
 }
 
@@ -191,7 +191,7 @@ function buildJourneyLegs(route, transitData, coffeeDecision, currentTime) {
 function buildLegTitle(leg) {
   // Capitalize first letter helper
   const cap = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
-  
+
   // Extract short name from address (e.g., "Norman South Yarra, Toorak Road" → "Norman")
   const extractName = (location) => {
     if (!location) return null;
@@ -209,7 +209,7 @@ function buildLegTitle(leg) {
     }
     return null;
   };
-  
+
   switch (leg.type) {
     case 'walk': {
       const dest = leg.to || leg.destination?.name;
@@ -226,8 +226,8 @@ function buildLegTitle(leg) {
     }
     case 'coffee': {
       // Extract cafe name from location data
-      const cafeName = extractName(leg.location) || 
-                       leg.cafeName || 
+      const cafeName = extractName(leg.location) ||
+                       leg.cafeName ||
                        leg.name ||
                        'Cafe';
       return `Coffee at ${cafeName}`;
@@ -278,16 +278,16 @@ function buildLegSubtitle(leg, transitData) {
       const parts = [];
       const lineName = leg.lineName || leg.routeNumber || '';
       const originName = leg.origin?.name || leg.originStation || '';
-      
+
       if (lineName) parts.push(lineName);
       if (originName) parts.push(originName);
-      
+
       const departures = findDeparturesForLeg(leg, transitData);
       if (departures.length > 0) {
         const times = departures.slice(0, 3).map(d => d.minutes).join(', ');
         parts.push(`Next: ${times} min`);
       }
-      
+
       return parts.join(' • ') || 'Platform';
     }
     case 'tram': {
@@ -295,29 +295,29 @@ function buildLegSubtitle(leg, transitData) {
       // e.g., "Route 58 • Chapel St • Next: 4, 12 min"
       const parts = [];
       const originName = leg.origin?.name || leg.originStop || '';
-      
+
       if (originName) parts.push(originName);
-      
+
       const departures = findDeparturesForLeg(leg, transitData);
       if (departures.length > 0) {
         const times = departures.slice(0, 3).map(d => d.minutes).join(', ');
         parts.push(`Next: ${times} min`);
       }
-      
+
       return parts.join(' • ') || 'Tram stop';
     }
     case 'bus': {
       const parts = [];
       const originName = leg.origin?.name || leg.originStop || '';
-      
+
       if (originName) parts.push(originName);
-      
+
       const departures = findDeparturesForLeg(leg, transitData);
       if (departures.length > 0) {
         const times = departures.slice(0, 3).map(d => d.minutes).join(', ');
         parts.push(`Next: ${times} min`);
       }
-      
+
       return parts.join(' • ') || 'Bus stop';
     }
     default:
@@ -330,21 +330,21 @@ function buildLegSubtitle(leg, transitData) {
  */
 function findMatchingDeparture(leg, transitData) {
   if (!transitData) return null;
-  
+
   const departures = leg.type === 'train' ? transitData.trains :
                      leg.type === 'tram' ? transitData.trams :
                      leg.type === 'bus' ? transitData.buses : [];
-  
+
   if (!departures?.length) return null;
-  
+
   // Find by route number if available
   if (leg.routeNumber) {
-    const match = departures.find(d => 
+    const match = departures.find(d =>
       d.routeNumber?.toString() === leg.routeNumber.toString()
     );
     if (match) return match;
   }
-  
+
   // Otherwise return first departure
   return departures[0];
 }
@@ -354,7 +354,7 @@ function findMatchingDeparture(leg, transitData) {
  */
 function findDeparturesForLeg(leg, transitData) {
   if (!transitData) return [];
-  
+
   return leg.type === 'train' ? (transitData.trains || []) :
          leg.type === 'tram' ? (transitData.trams || []) :
          leg.type === 'bus' ? (transitData.buses || []) : [];
@@ -377,17 +377,17 @@ function getStatusType(legs, disruptions) {
   if (legs.some(l => l.state === 'suspended' || l.state === 'cancelled')) {
     return 'disruption';
   }
-  
+
   // Check for delays
   if (legs.some(l => l.state === 'delayed')) {
     return 'delay';
   }
-  
+
   // Check for active disruptions
   if (disruptions?.length > 0) {
     return 'disruption';
   }
-  
+
   return 'normal';
 }
 
@@ -442,39 +442,39 @@ const RANDOM_LOCATIONS = {
  */
 function generateRandomJourney(targetLegs = null) {
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
-  
+
   const home = pick(RANDOM_LOCATIONS.homes);
   const work = pick(RANDOM_LOCATIONS.works);
   const cafe = pick(RANDOM_LOCATIONS.cafes);
-  
+
   // Random transit type with weighted probability
   const rand = Math.random();
   const transitType = rand < 0.4 ? 'train' : rand < 0.8 ? 'tram' : 'bus';
-  
+
   // v1.23: Support target leg count (3-7)
-  // Calculate what features to include based on target
-  let includeCoffee, includeTransfer, includeExtraWalk;
-  
+  // Leg counts:
+  // - Base (no coffee): walk + transit + walk = 3 legs
+  // - With coffee: walk + coffee + walk + transit + walk = 5 legs
+  // - With transfer: adds walk + transit = +2 legs
+  // So: 3 (base), 5 (coffee), 7 (coffee+transfer)
+  let includeCoffee, includeTransfer;
+
   if (targetLegs !== null && targetLegs >= 3 && targetLegs <= 7) {
-    // Target: 3 legs = walk + transit + walk (no coffee, no transfer)
-    // Target: 4 legs = walk + coffee + transit + walk OR walk + transit + transfer + walk
-    // Target: 5 legs = walk + coffee + walk + transit + walk
-    // Target: 6 legs = walk + coffee + walk + transit + transfer + walk
-    // Target: 7 legs = walk + coffee + walk + transit + walk + transit2 + walk
-    includeCoffee = targetLegs >= 4;
-    includeTransfer = targetLegs >= 6;
-    includeExtraWalk = targetLegs === 7;
+    // 3 legs: no coffee, no transfer
+    // 5 legs: coffee, no transfer
+    // 7 legs: coffee + transfer
+    includeCoffee = targetLegs >= 5;
+    includeTransfer = targetLegs >= 7;
   } else {
     // Random (original behavior)
     includeCoffee = Math.random() > 0.25; // 75% chance of coffee
     includeTransfer = Math.random() > 0.6; // 40% chance of transfer
-    includeExtraWalk = false;
   }
-  
+
   // Build legs dynamically
   const legs = [];
   let legNum = 1;
-  
+
   // Leg 1: Walk to cafe or transit
   if (includeCoffee) {
     legs.push({
@@ -485,7 +485,7 @@ function generateRandomJourney(targetLegs = null) {
       minutes: 3 + Math.floor(Math.random() * 6),
       state: 'normal'
     });
-    
+
     // Leg 2: Coffee
     const coffeeTime = 4 + Math.floor(Math.random() * 4);
     legs.push({
@@ -496,7 +496,7 @@ function generateRandomJourney(targetLegs = null) {
       minutes: coffeeTime,
       state: 'normal'
     });
-    
+
     // Leg 3: Walk to transit
     legs.push({
       number: legNum++,
@@ -516,12 +516,12 @@ function generateRandomJourney(targetLegs = null) {
       state: 'normal'
     });
   }
-  
+
   // Main transit leg
   const transitMins = 8 + Math.floor(Math.random() * 15);
   const nextDep = 2 + Math.floor(Math.random() * 8);
   const nextDep2 = nextDep + 5 + Math.floor(Math.random() * 8);
-  
+
   if (transitType === 'train') {
     const line = pick(RANDOM_LOCATIONS.transit.trains);
     legs.push({
@@ -553,7 +553,7 @@ function generateRandomJourney(targetLegs = null) {
       state: 'normal'
     });
   }
-  
+
   // Optional transfer (for 6+ legs)
   if (includeTransfer) {
     const transferType = transitType === 'tram' ? 'train' : 'tram';
@@ -565,7 +565,7 @@ function generateRandomJourney(targetLegs = null) {
       minutes: 2 + Math.floor(Math.random() * 3),
       state: 'normal'
     });
-    
+
     if (transferType === 'train') {
       legs.push({
         number: legNum++,
@@ -587,19 +587,7 @@ function generateRandomJourney(targetLegs = null) {
       });
     }
   }
-  
-  // v1.23: Extra walk for 7 legs
-  if (includeExtraWalk) {
-    legs.push({
-      number: legNum++,
-      type: 'walk',
-      title: 'Walk Through Mall',
-      subtitle: 'Bourke St Mall • Covered',
-      minutes: 2 + Math.floor(Math.random() * 2),
-      state: 'normal'
-    });
-  }
-  
+
   // Final walk to office
   legs.push({
     number: legNum++,
@@ -609,16 +597,16 @@ function generateRandomJourney(targetLegs = null) {
     minutes: 3 + Math.floor(Math.random() * 8),
     state: 'normal'
   });
-  
+
   // Calculate totals
   const totalMinutes = legs.reduce((sum, leg) => sum + leg.minutes, 0);
-  
+
   // Random time
   const hour = 7 + Math.floor(Math.random() * 2);
   const mins = Math.floor(Math.random() * 45);
   const arriveHour = hour + Math.floor((mins + totalMinutes) / 60);
   const arriveMins = (mins + totalMinutes) % 60;
-  
+
   return {
     origin: home.address.toUpperCase(),
     destination: work.address.toUpperCase(),
@@ -648,10 +636,10 @@ async function handleRandomJourney(req, res) {
     // v1.23: Accept legs parameter for target leg count
     const targetLegs = parseInt(req.query?.legs) || null;
     const journey = generateRandomJourney(targetLegs);
-    
+
     console.log(`[random] Generated journey: ${journey.origin} → ${journey.destination}`);
     console.log(`[random] ${journey.legs.length} legs, ${journey.totalDuration} min, transit: ${journey.transitType}`);
-    
+
     // Build dashboard data
     const dashboardData = {
       location: journey.origin,
@@ -667,10 +655,10 @@ async function handleRandomJourney(req, res) {
       total_minutes: journey.totalDuration,
       legs: journey.legs
     };
-    
+
     // Render using V10 renderer
     const pngBuffer = await renderFullDashboard(dashboardData);
-    
+
     res.setHeader('Content-Type', 'image/png');
     res.setHeader('Cache-Control', 'no-cache, no-store');
     res.setHeader('X-Journey-Origin', journey.origin);
@@ -678,7 +666,7 @@ async function handleRandomJourney(req, res) {
     res.setHeader('X-Journey-Legs', journey.legs.length.toString());
     res.setHeader('X-Journey-Transit', journey.transitType);
     res.send(pngBuffer);
-    
+
   } catch (err) {
     console.error('[random] Error:', err);
     res.status(500).json({ error: err.message });
@@ -693,13 +681,13 @@ async function handleDemoMode(req, res, scenarioName) {
     const scenario = getScenario(scenarioName);
     if (!scenario) {
       const available = getScenarioNames().join(', ');
-      res.status(400).json({ 
-        error: `Unknown scenario: ${scenarioName}`, 
-        available 
+      res.status(400).json({
+        error: `Unknown scenario: ${scenarioName}`,
+        available
       });
       return;
     }
-    
+
     // Build dashboard data from scenario
     const dashboardData = {
       location: scenario.origin || 'HOME',
@@ -724,17 +712,17 @@ async function handleDemoMode(req, res, scenarioName) {
       })),
       destination: scenario.destination || 'WORK'
     };
-    
+
     // Render to PNG
     const png = renderFullDashboard(dashboardData);
-    
+
     // Send response
     res.setHeader('Content-Type', 'image/png');
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('X-Demo-Scenario', scenarioName);
     res.setHeader('Content-Length', png.length);
     return res.send(png);
-    
+
   } catch (err) {
     console.error('[screen] Demo mode error:', err);
     res.status(500).json({ error: err.message });
@@ -749,23 +737,23 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  
+
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
-  
+
   try {
     // Check for random mode - generates dynamic journey using SmartJourney patterns
     if (req.query?.random === '1' || req.query?.random === 'true') {
       return handleRandomJourney(req, res);
     }
-    
+
     // Check for demo mode
     const demoScenario = req.query?.demo;
     if (demoScenario) {
       return handleDemoMode(req, res, demoScenario);
     }
-    
+
     // =========================================================================
     // SIMULATOR OVERRIDES - for testing SmartCommute engine
     // =========================================================================
@@ -779,7 +767,7 @@ export default async function handler(req, res) {
       weather: req.query?.weather  // auto, sunny, cloudy, rain, storm
     };
     const hasSimOverrides = Object.values(simOverrides).some(v => v);
-    
+
     // Get current time (or simulated time for testing)
     let now = getMelbourneTime();
     if (simOverrides.simulatedTime) {
@@ -790,37 +778,37 @@ export default async function handler(req, res) {
     }
     const currentTime = formatTime(now);
     const { day, date } = formatDateParts(now);
-    
+
     // Initialize engine and get route
     const engine = await getEngine();
     const route = engine.getSelectedRoute();
     const locations = engine.getLocations();
     const config = engine.journeyConfig;
-    
+
     // If no journey configured, fall back to random mode for preview
     // This ensures the Live Data tab shows something useful even before full config
     if (!locations.home?.address && !route?.legs?.length) {
       console.log('[screen] No journey configured - falling back to random mode');
       return handleRandomJourney(req, res);
     }
-    
+
     // Fetch live data from sources
     const trainStopId = parseInt(process.env.TRAIN_STOP_ID) || 1071;
     const tramStopId = parseInt(process.env.TRAM_STOP_ID) || 2500;
-    
+
     // Per Section 11.8: Zero-Config compliant - load API key from KV storage
     const transitApiKey = await getTransitApiKey();
     const apiOptions = transitApiKey ? { apiKey: transitApiKey } : {};
-    
+
     const [trains, trams, weather, disruptions] = await Promise.all([
       getDepartures(trainStopId, 0, apiOptions),
       getDepartures(tramStopId, 1, apiOptions),
       getWeather(locations.home?.lat, locations.home?.lon),
       getDisruptions(0, apiOptions).catch(() => [])
     ]);
-    
+
     const transitData = { trains, trams, disruptions };
-    
+
     // =========================================================================
     // APPLY SIMULATOR OVERRIDES
     // =========================================================================
@@ -835,7 +823,7 @@ export default async function handler(req, res) {
       weatherData = weatherPresets[simOverrides.weather] || weather;
       console.log(`[screen] Using simulated weather: ${simOverrides.weather}`);
     }
-    
+
     // Apply status override to transit data
     if (simOverrides.status && simOverrides.status !== 'normal') {
       console.log(`[screen] Applying status override: ${simOverrides.status}`);
@@ -847,39 +835,39 @@ export default async function handler(req, res) {
         transitData.disruptions = [{ title: 'Major Disruption', description: 'Simulated disruption for testing' }];
       }
     }
-    
+
     // Get coffee decision from engine
     const coffeeDecision = engine.calculateCoffeeDecision(transitData, route?.legs || []);
-    
+
     // Build journey legs with cumulative timing (Data Model v1.18)
     const journeyLegs = buildJourneyLegs(route, transitData, coffeeDecision, now);
     const totalMinutes = calculateTotalMinutes(journeyLegs);
     let statusType = getStatusType(journeyLegs, transitData.disruptions);
-    
+
     // Override status type if specified
     if (simOverrides.status && simOverrides.status !== 'normal') {
-      statusType = simOverrides.status === 'disruption' ? 'disruption' : 
+      statusType = simOverrides.status === 'disruption' ? 'disruption' :
                    simOverrides.status === 'delayed' ? 'delay' : statusType;
     }
-    
+
     // Build display values (use simulated overrides if provided)
     const displayHome = simOverrides.home || locations.home?.address || process.env.HOME_ADDRESS || 'Home';
     const displayWork = simOverrides.work || locations.work?.address || process.env.WORK_ADDRESS || 'Work';
     const displayArrival = simOverrides.arrivalTime || config?.journey?.arrivalTime || '09:00';
-    
+
     // Calculate timing using display arrival (respects simulator override)
     const [arrH, arrM] = displayArrival.split(':').map(Number);
     const targetMins = arrH * 60 + arrM;
     const nowMins = now.getHours() * 60 + now.getMinutes();
     const leaveInMinutes = Math.max(0, targetMins - totalMinutes - nowMins);
-    
+
     // Calculate delay if applicable
     let delayMinutes = null;
     if (statusType === 'delay' || statusType === 'disruption') {
       const delayedLegs = journeyLegs.filter(l => l.state === 'delayed');
       delayMinutes = delayedLegs.reduce((sum, l) => sum + (l.delayMinutes || 0), 0);
     }
-    
+
     const dashboardData = {
       location: displayHome,
       current_time: currentTime,
@@ -896,22 +884,22 @@ export default async function handler(req, res) {
       journey_legs: journeyLegs,
       destination: displayWork
     };
-    
+
     // Render to PNG (V10 Renderer)
     const png = renderFullDashboard(dashboardData);
-    
+
     // Send response
     res.setHeader('Content-Type', 'image/png');
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('X-Dashboard-Timestamp', now.toISOString());
     res.setHeader('X-Route-Name', (route?.name || 'default').replace(/[^\x20-\x7E]/g, '-'));
     res.setHeader('Content-Length', png.length);
-    
+
     return res.status(200).send(png);
-    
+
   } catch (error) {
     console.error('Screen render error:', error);
-    
+
     // Return error image or message
     res.setHeader('Content-Type', 'text/plain');
     return res.status(500).send(`Render failed: ${error.message}`);
