@@ -942,22 +942,32 @@ function renderLegZone(ctx, leg, zone, legNumber = 1, isHighlighted = false) {
   ctx.fillText(title, textX, y + 6);
   
   // Subtitle (V10 Spec Section 5.5)
+  // Calculate max width to prevent overlap with DEPART column
+  const hasDepart = ['train', 'tram', 'bus', 'vline', 'ferry'].includes(leg.type) && leg.departTime;
+  const subtitleMaxWidth = hasDepart ? (w - textX - 140) : (w - textX - 80);  // Leave room for DEPART/duration
+  
   ctx.font = '12px Inter, sans-serif';
-  const subtitle = leg.subtitle || getLegSubtitle(leg);
+  let subtitle = leg.subtitle || getLegSubtitle(leg);
+  
+  // Truncate subtitle if too long
+  while (ctx.measureText(subtitle).width > subtitleMaxWidth && subtitle.length > 10) {
+    subtitle = subtitle.slice(0, -4) + '...';
+  }
   ctx.fillText(subtitle, textX, y + 26);
   
   // DEPART time column for transit legs (v1.18 - per user request)
   // Shows when user should catch this service based on journey timing
-  if (['train', 'tram', 'bus', 'vline', 'ferry'].includes(leg.type) && leg.departTime) {
-    const departX = w - 150;  // Position before duration box
+  // Position: Fixed at right edge of subtitle area, before duration box
+  if (hasDepart) {
+    const departX = w - 115;  // Moved left to prevent overlap with duration box
     ctx.fillStyle = textColor;
-    ctx.font = '8px Inter, sans-serif';
+    ctx.font = '7px Inter, sans-serif';
     ctx.textAlign = 'center';
-    ctx.globalAlpha = 0.7;
-    ctx.fillText('DEPART', departX, y + 10);
+    ctx.globalAlpha = 0.6;
+    ctx.fillText('DEPART', departX, y + 8);
     ctx.globalAlpha = 1.0;
-    ctx.font = 'bold 14px Inter, sans-serif';
-    ctx.fillText(leg.departTime, departX, y + 26);
+    ctx.font = 'bold 11px Inter, sans-serif';
+    ctx.fillText(leg.departTime, departX, y + 22);
     ctx.textAlign = 'left';
   }
   
@@ -1588,26 +1598,31 @@ export function renderFullScreen(data, prefs = {}) {
   ctx.fillStyle = '#000';  // E-ink 1-bit: NO GRAY TEXT
   ctx.fillText(data.date || '', 300, 50);
   
-  // Weather box (V10 Spec Section 2.6)
+  // Weather box (V10 Spec Section 2.6) - Fixed layout to prevent overlap
   ctx.strokeStyle = '#000';
   ctx.lineWidth = 2;
   ctx.strokeRect(644, 12, 140, 78);
-  ctx.font = 'bold 34px Inter, sans-serif';
+  
+  // Temperature - top portion
+  ctx.font = 'bold 32px Inter, sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText(`${data.temp || '--'}°`, 714, 30);
-  ctx.font = '12px Inter, sans-serif';
-  ctx.fillText(data.condition || '', 714, 64);
+  ctx.fillText(`${data.temp || '--'}°`, 714, 35);
+  
+  // Condition - middle, smaller font to fit
+  ctx.font = '10px Inter, sans-serif';
+  const condition = (data.condition || '').slice(0, 12);  // Truncate if too long
+  ctx.fillText(condition, 714, 52);
   ctx.textAlign = 'left';
   
   // Umbrella indicator (V10 Spec Section 2.7)
-  // Position: right: 20px, top: 68px, size: 132×18px
-  // Fixed: Use textBaseline middle, avoid emoji rendering issues on e-ink
+  // Position: Inside weather box, bottom portion
+  // Fixed: Moved down to prevent overlap with condition text
   const needsUmbrella = data.rain_expected || data.precipitation > 30 || 
     (data.condition && /rain|shower|storm|drizzle/i.test(data.condition));
-  const umbrellaX = 800 - 20 - 132;  // 648px per spec
-  const umbrellaY = 68;
+  const umbrellaX = 648;  // Inside weather box (644 + 4px padding)
+  const umbrellaY = 70;   // Moved down from 68 to prevent overlap
   const umbrellaW = 132;
-  const umbrellaH = 18;
+  const umbrellaH = 16;   // Slightly smaller to fit
   
   ctx.textBaseline = 'middle';
   
@@ -1921,22 +1936,29 @@ export function renderFullScreen(data, prefs = {}) {
         legSubtitle = getLegSubtitle(leg);
       }
     }
+    // Truncate subtitle if too long to prevent overlap
+    const hasDepart = ['train', 'tram', 'bus', 'vline', 'ferry'].includes(leg.type) && leg.departTime;
+    const subtitleMaxWidth = hasDepart ? (zone.w - 82 - 140) : (zone.w - 82 - 80);
+    
+    while (ctx.measureText(legSubtitle).width > subtitleMaxWidth && legSubtitle.length > 10) {
+      legSubtitle = legSubtitle.slice(0, -4) + '...';
+    }
     ctx.fillText(legSubtitle, zone.x + 82, zone.y + 26);
     
     // -----------------------------------------------------------------------
     // DEPART TIME COLUMN (v1.18) - Per user request / EXPRESS image reference
     // Shows when user should catch this service based on journey timing
-    // Position: Between subtitle and duration box
+    // Position: Fixed position to prevent overlap
     // -----------------------------------------------------------------------
-    if (['train', 'tram', 'bus', 'vline', 'ferry'].includes(leg.type) && leg.departTime) {
-      const departX = zone.x + zone.w - 145;  // Position before duration box
-      ctx.font = '8px Inter, sans-serif';
+    if (hasDepart) {
+      const departX = zone.x + zone.w - 115;  // Moved left to prevent overlap
+      ctx.font = '7px Inter, sans-serif';
       ctx.textAlign = 'center';
       ctx.globalAlpha = 0.6;
       ctx.fillText('DEPART', departX, zone.y + 8);
       ctx.globalAlpha = 1.0;
-      ctx.font = 'bold 14px Inter, sans-serif';
-      ctx.fillText(leg.departTime, departX, zone.y + 26);
+      ctx.font = 'bold 11px Inter, sans-serif';
+      ctx.fillText(leg.departTime, departX, zone.y + 22);
       ctx.textAlign = 'left';
     }
     
