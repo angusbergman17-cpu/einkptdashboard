@@ -510,9 +510,177 @@ function drawCoffeeIcon(ctx, x, y, size = 32) {
 }
 
 /**
- * Draw mode icon by type
+ * Draw train icon OUTLINE variant (for delayed state)
  */
-function drawModeIcon(ctx, type, x, y, size = 32) {
+function drawTrainIconOutline(ctx, x, y, size = 32) {
+  const scale = size / 32;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(scale, scale);
+  
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 2;
+  ctx.fillStyle = '#FFF';
+  
+  // Main body outline
+  ctx.beginPath();
+  ctx.roundRect(5, 4, 22, 22, 5);
+  ctx.stroke();
+  
+  // Window
+  ctx.strokeRect(8, 7, 16, 10);
+  
+  // Wheels
+  ctx.beginPath();
+  ctx.arc(10, 28, 2, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(22, 28, 2, 0, Math.PI * 2);
+  ctx.stroke();
+  
+  ctx.restore();
+}
+
+/**
+ * Draw tram icon OUTLINE variant (for delayed state)
+ */
+function drawTramIconOutline(ctx, x, y, size = 32) {
+  const scale = size / 32;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(scale, scale);
+  
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 2;
+  
+  // Pantograph
+  ctx.beginPath();
+  ctx.moveTo(16, 2);
+  ctx.lineTo(16, 8);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(12, 2);
+  ctx.lineTo(20, 2);
+  ctx.stroke();
+  
+  // Main body outline
+  ctx.beginPath();
+  ctx.roundRect(4, 8, 24, 16, 4);
+  ctx.stroke();
+  
+  // Windows
+  ctx.strokeRect(6, 11, 6, 6);
+  ctx.strokeRect(13, 11, 6, 6);
+  ctx.strokeRect(20, 11, 6, 6);
+  
+  // Wheels
+  ctx.beginPath();
+  ctx.arc(9, 26, 2.5, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(23, 26, 2.5, 0, Math.PI * 2);
+  ctx.stroke();
+  
+  ctx.restore();
+}
+
+/**
+ * Draw bus icon OUTLINE variant (for delayed state)
+ */
+function drawBusIconOutline(ctx, x, y, size = 32) {
+  const scale = size / 32;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(scale, scale);
+  
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 2;
+  
+  // Main body outline
+  ctx.beginPath();
+  ctx.roundRect(3, 6, 26, 18, 3);
+  ctx.stroke();
+  
+  // Windshield
+  ctx.strokeRect(5, 8, 22, 8);
+  
+  // Side windows
+  ctx.strokeRect(5, 17, 5, 4);
+  ctx.strokeRect(11, 17, 5, 4);
+  ctx.strokeRect(17, 17, 5, 4);
+  
+  // Wheels
+  ctx.beginPath();
+  ctx.arc(9, 26, 3, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(23, 26, 3, 0, Math.PI * 2);
+  ctx.stroke();
+  
+  ctx.restore();
+}
+
+/**
+ * Draw coffee icon OUTLINE variant (for skipped state)
+ */
+function drawCoffeeIconOutline(ctx, x, y, size = 32) {
+  const scale = size / 32;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(scale, scale);
+  
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 2.5;
+  
+  // Cup body outline
+  ctx.beginPath();
+  ctx.moveTo(6, 10);
+  ctx.lineTo(6, 13);
+  ctx.quadraticCurveTo(6, 24, 14, 24);
+  ctx.quadraticCurveTo(22, 24, 22, 13);
+  ctx.lineTo(22, 10);
+  ctx.closePath();
+  ctx.stroke();
+  
+  // Handle
+  ctx.beginPath();
+  ctx.moveTo(22, 12);
+  ctx.lineTo(25, 12);
+  ctx.quadraticCurveTo(28.5, 12, 28.5, 15.5);
+  ctx.quadraticCurveTo(28.5, 19, 25, 19);
+  ctx.lineTo(22, 19);
+  ctx.stroke();
+  
+  // Saucer outline
+  ctx.strokeRect(4, 26, 20, 3);
+  
+  ctx.restore();
+}
+
+/**
+ * Draw mode icon by type
+ * @param {boolean} outline - If true, draw outline variant (for delayed/skipped states)
+ */
+function drawModeIcon(ctx, type, x, y, size = 32, outline = false) {
+  if (outline) {
+    switch (type) {
+      case 'train':
+      case 'vline':
+        drawTrainIconOutline(ctx, x, y, size);
+        return;
+      case 'tram':
+        drawTramIconOutline(ctx, x, y, size);
+        return;
+      case 'bus':
+        drawBusIconOutline(ctx, x, y, size);
+        return;
+      case 'coffee':
+        drawCoffeeIconOutline(ctx, x, y, size);
+        return;
+      // Walk icon doesn't have outline variant - always show solid
+    }
+  }
+  
   switch (type) {
     case 'walk':
       drawWalkIcon(ctx, x, y, size);
@@ -548,26 +716,30 @@ function drawModeIcon(ctx, type, x, y, size = 32) {
 
 /**
  * Draw leg number circle (V10 Spec Section 5.2)
- * 24x24 black circle with white number
+ * Per design reference images:
+ * - Normal: Filled black circle with white number
+ * - Skipped/Coffee-skip: Dashed circle outline with black number inside
+ * - Cancelled: Dashed circle with ✗
  */
-function drawLegNumber(ctx, number, x, y, status = 'normal') {
+function drawLegNumber(ctx, number, x, y, status = 'normal', isSkippedCoffee = false) {
   const size = 24;
   const centerX = x + size / 2;
   const centerY = y + size / 2;
   
   ctx.fillStyle = '#000';
   
-  if (status === 'skipped' || status === 'cancelled') {
-    // Dashed circle for skipped (1-bit: use #000, not gray)
-    ctx.strokeStyle = '#000';  // E-ink 1-bit: NO GRAY
+  // Skipped coffee or cancelled: dashed circle outline
+  if (status === 'skipped' || status === 'cancelled' || isSkippedCoffee) {
+    // Dashed circle outline (per reference image 1 - leg 2)
+    ctx.strokeStyle = '#000';
     ctx.lineWidth = 2;
-    ctx.setLineDash([3, 3]);
+    ctx.setLineDash([4, 3]);
     ctx.beginPath();
     ctx.arc(centerX, centerY, size / 2 - 1, 0, Math.PI * 2);
     ctx.stroke();
     ctx.setLineDash([]);
     
-    // X mark for cancelled
+    // Number inside (black, no fill behind)
     if (status === 'cancelled') {
       ctx.fillStyle = '#000';
       ctx.font = 'bold 14px Inter, sans-serif';
@@ -575,7 +747,7 @@ function drawLegNumber(ctx, number, x, y, status = 'normal') {
       ctx.textBaseline = 'middle';
       ctx.fillText('✗', centerX, centerY);
     } else {
-      ctx.fillStyle = '#000';  // E-ink 1-bit: NO GRAY
+      ctx.fillStyle = '#000';
       ctx.font = 'bold 13px Inter, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -1447,28 +1619,46 @@ export function renderFullScreen(data, prefs = {}) {
   ctx.font = 'bold 13px Inter, sans-serif';
   ctx.textBaseline = 'middle';
   
-  // Left: Status message with calculated arrival
+  // -----------------------------------------------------------------------
+  // Left: Status message - Per reference images:
+  // - "LEAVE NOW → Arrive X:XX" (ready to go)
+  // - "LEAVE IN X MIN → Arrive X:XX" (buffer time)
+  // - "⏱ DELAY → Arrive X:XX (+X min)" (single delay)
+  // - "⏱ DELAYS → Arrive X:XX (+X min)" (multiple delays)
+  // - "⚠ DISRUPTION → Arrive X:XX" (major issue)
+  // -----------------------------------------------------------------------
   let statusText;
-  const statusIcon = isLate ? '⚠ ' : (isEarly || isOnTime ? '' : '');
-  const checkmark = (!isLate) ? ' ✓' : '';
+  
+  // Check for delays in journey legs
+  const delayedLegCount = data._delayedLegCount || 0;
+  const totalDelayMins = data.delay_minutes || (isLate ? Math.abs(diffMins) : 0);
   
   if (data.status_type === 'disruption' || data.disruption) {
+    // Disruption state
     statusText = `⚠ DISRUPTION → Arrive ${calculatedArrival}`;
+    if (totalDelayMins > 0) statusText += ` (+${totalDelayMins} min)`;
+  } else if (delayedLegCount > 0 || data.status_type === 'delay') {
+    // Delay state - DELAY (singular) vs DELAYS (plural) per ref images
+    const delayWord = delayedLegCount > 1 ? 'DELAYS' : 'DELAY';
+    statusText = `⏱ ${delayWord} → Arrive ${calculatedArrival}`;
+    if (totalDelayMins > 0) statusText += ` (+${totalDelayMins} min)`;
+  } else if (isEarly && Math.abs(diffMins) > 5) {
+    // Buffer time - "LEAVE IN X MIN" per ref image 4
+    const leaveInMins = Math.abs(diffMins);
+    statusText = `LEAVE IN ${leaveInMins} MIN → Arrive ${calculatedArrival}`;
   } else {
-    statusText = `${statusIcon}LEAVE NOW → Arrive ${calculatedArrival}${checkmark}`;
+    // Ready to go
+    statusText = `LEAVE NOW → Arrive ${calculatedArrival}`;
+    if (!isLate) statusText += ' ✓';
   }
+  
   ctx.fillText(statusText, 16, 110);
   
-  // Right: Early/On-time/Late status (instead of total minutes)
+  // -----------------------------------------------------------------------
+  // Right: Total journey time (per ref images: "56 min", "47 min" etc)
+  // -----------------------------------------------------------------------
   ctx.textAlign = 'right';
-  let statusRight;
-  if (isEarly) {
-    statusRight = `${Math.abs(diffMins)} min early`;
-  } else if (isOnTime) {
-    statusRight = 'On time';
-  } else {
-    statusRight = `+${diffMins} min late`;
-  }
+  const statusRight = `${totalMinutes} min`;
   ctx.fillText(statusRight, 784, 110);
   ctx.textAlign = 'left';
   
@@ -1477,60 +1667,166 @@ export function renderFullScreen(data, prefs = {}) {
   data._targetArrival = targetArrival;
   
   // =========================================================================
-  // JOURNEY LEGS (V10 Spec Section 5)
+  // =========================================================================
+  // JOURNEY LEGS (V10 Spec Section 5) - Per Reference Design Images
   // =========================================================================
   const legs = data.journey_legs || data.legs || [];
+  
+  // Count delayed legs for status bar (DELAY vs DELAYS)
+  const delayedLegs = legs.filter(l => l.status === 'delayed' || l.delayMinutes > 0);
+  const hasMultipleDelays = delayedLegs.length > 1;
+  
   legs.forEach((leg, idx) => {
     const legNum = idx + 1;
     const zone = getDynamicLegZone(legNum, legs.length);
-    const status = leg.status || 'normal';
+    const status = leg.status || leg.state || 'normal';
+    const isDelayed = status === 'delayed' || leg.delayMinutes > 0;
     const isSkippedCoffee = leg.type === 'coffee' && leg.canGet === false;
+    const isCoffeeCanGet = leg.type === 'coffee' && leg.canGet !== false;
     
-    // Background
+    // -----------------------------------------------------------------------
+    // BACKGROUND
+    // -----------------------------------------------------------------------
     ctx.fillStyle = '#FFF';
     ctx.fillRect(zone.x, zone.y, zone.w, zone.h);
     
-    // Border (varies by status)
+    // -----------------------------------------------------------------------
+    // BORDER (varies by state per reference images)
+    // - Normal: 2px solid
+    // - Coffee can-get: 3px solid (thicker)
+    // - Coffee skip: 2px dashed
+    // - Delayed: 2px dashed
+    // -----------------------------------------------------------------------
     ctx.strokeStyle = '#000';
-    ctx.lineWidth = (status === 'delayed' || (leg.type === 'coffee' && leg.canGet)) ? 3 : 2;
-    if (status === 'delayed' || isSkippedCoffee) {
-      ctx.setLineDash(status === 'delayed' ? [6, 4] : [4, 4]);
+    
+    if (isCoffeeCanGet) {
+      // Coffee can-get: 3px SOLID border (per ref image 2 - leg 2)
+      ctx.lineWidth = 3;
+      ctx.setLineDash([]);
+    } else if (isSkippedCoffee) {
+      // Skipped coffee: 2px DASHED border (per ref image 1 - leg 2)
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 4]);
+    } else if (isDelayed) {
+      // Delayed transit: 2px DASHED border (per ref images 1,3 - legs 4)
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 4]);
+    } else {
+      // Normal: 2px SOLID border
+      ctx.lineWidth = 2;
+      ctx.setLineDash([]);
     }
+    
     ctx.strokeRect(zone.x + 1, zone.y + 1, zone.w - 2, zone.h - 2);
     ctx.setLineDash([]);
     
-    // Leg number circle (V10 Spec Section 5.2)
-    drawLegNumber(ctx, legNum, zone.x + 8, zone.y + (zone.h - 24) / 2, status);
+    // -----------------------------------------------------------------------
+    // LEG NUMBER CIRCLE (V10 Spec Section 5.2)
+    // - Normal: Filled black circle with white number
+    // - Skipped: Dashed circle outline with black number (per ref image 1)
+    // -----------------------------------------------------------------------
+    drawLegNumber(ctx, legNum, zone.x + 8, zone.y + (zone.h - 24) / 2, status, isSkippedCoffee);
     
-    // Mode icon (V10 Spec Section 5.3)
-    if (isSkippedCoffee) ctx.globalAlpha = 0.4;
-    drawModeIcon(ctx, leg.type, zone.x + 40, zone.y + (zone.h - 32) / 2, 32);
-    ctx.globalAlpha = 1.0;
+    // -----------------------------------------------------------------------
+    // MODE ICON (V10 Spec Section 5.3)
+    // - Normal: Filled solid icons
+    // - Delayed/Skipped: Outline icons (per ref images 1,3)
+    // -----------------------------------------------------------------------
+    const useOutlineIcon = isDelayed || isSkippedCoffee;
+    drawModeIcon(ctx, leg.type, zone.x + 40, zone.y + (zone.h - 32) / 2, 32, useOutlineIcon);
     
-    // Title (V10 Spec Section 5.4) - 1-bit: ALL text #000
-    ctx.fillStyle = '#000';  // E-ink 1-bit: NO GRAY
+    // -----------------------------------------------------------------------
+    // TITLE (V10 Spec Section 5.4)
+    // - Delayed transit gets ⏱ prefix (per ref images)
+    // - Coffee gets ☕ prefix
+    // -----------------------------------------------------------------------
+    ctx.fillStyle = '#000';
     ctx.font = 'bold 16px Inter, sans-serif';
     ctx.textBaseline = 'top';
+    
     let titlePrefix = '';
-    if (status === 'delayed') titlePrefix = '⏱ ';
+    if (isDelayed && leg.type !== 'walk') titlePrefix = '⏱ ';
     else if (status === 'cancelled') titlePrefix = '⚠ ';
-    else if (leg.type === 'coffee') titlePrefix = '☕ ';
+    else if (leg.type === 'coffee' && isCoffeeCanGet) titlePrefix = '☕ ';
+    // Skipped coffee: no emoji prefix, shows in outline style
     
     if (idx === 0) leg.isFirst = true;
-    // Use leg.title if explicitly set, otherwise generate from leg data
     const legTitle = leg.title || getLegTitle(leg);
     ctx.fillText(titlePrefix + legTitle, zone.x + 82, zone.y + 6);
     
-    // Subtitle (V10 Spec Section 5.5) - use leg.subtitle if set
+    // -----------------------------------------------------------------------
+    // SUBTITLE (V10 Spec Section 5.5) - Per reference images
+    // - Coffee can-get: "✓ TIME FOR COFFEE"
+    // - Coffee skip: "✗ SKIP — Running late"
+    // - Transit delayed: "+X MIN • Next: X, Y min"
+    // - Transit normal: "[Line] • Next: X, Y min"
+    // -----------------------------------------------------------------------
     ctx.font = '12px Inter, sans-serif';
-    const legSubtitle = leg.subtitle || getLegSubtitle(leg);
+    let legSubtitle = leg.subtitle;
+    
+    if (!legSubtitle) {
+      if (isCoffeeCanGet) {
+        legSubtitle = '✓ TIME FOR COFFEE';
+      } else if (isSkippedCoffee) {
+        legSubtitle = '✗ SKIP — Running late';
+      } else if (isDelayed && leg.delayMinutes && leg.type !== 'walk') {
+        // Delayed transit: "+X MIN • Next: X, Y min" (per ref image 3)
+        const nextTimes = leg.nextDepartures || [leg.nextDeparture, leg.nextDeparture2].filter(Boolean);
+        const nextStr = nextTimes.length > 0 ? ` • Next: ${nextTimes.join(', ')} min` : '';
+        legSubtitle = `+${leg.delayMinutes} MIN${nextStr}`;
+      } else {
+        legSubtitle = getLegSubtitle(leg);
+      }
+    }
     ctx.fillText(legSubtitle, zone.x + 82, zone.y + 26);
     
-    // Time box (V10 Spec Section 5.6)
+    // -----------------------------------------------------------------------
+    // TIME BOX (V10 Spec Section 5.6) - Per reference images
+    // - Normal: Black fill, white text
+    // - Delayed: White fill, dashed LEFT border only, black text
+    // - Skipped: White fill, dashed border all around, "—" text
+    // -----------------------------------------------------------------------
     const timeBoxW = 72;
     const timeBoxX = zone.x + zone.w - timeBoxW;
     
-    if (!isSkippedCoffee) {
+    if (isSkippedCoffee) {
+      // Skipped coffee: dashed border all around, "—" (per ref image 1 - leg 2)
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 4]);
+      ctx.strokeRect(timeBoxX + 2, zone.y + 2, timeBoxW - 4, zone.h - 4);
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#000';
+      ctx.font = 'bold 22px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('—', timeBoxX + timeBoxW / 2, zone.y + zone.h / 2);
+    } else if (isDelayed && leg.type !== 'walk') {
+      // Delayed transit: white background, dashed LEFT border only (per ref images 1,3)
+      ctx.fillStyle = '#FFF';
+      ctx.fillRect(timeBoxX, zone.y, timeBoxW, zone.h);
+      
+      // Dashed left border only
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([6, 4]);
+      ctx.beginPath();
+      ctx.moveTo(timeBoxX, zone.y);
+      ctx.lineTo(timeBoxX, zone.y + zone.h);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      // Black text
+      ctx.fillStyle = '#000';
+      ctx.font = 'bold 22px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const minutes = leg.minutes || leg.durationMinutes || '--';
+      ctx.fillText(minutes.toString(), timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 - 6);
+      ctx.font = '9px Inter, sans-serif';
+      ctx.fillText('MIN', timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 + 14);
+    } else {
+      // Normal: black fill, white text
       ctx.fillStyle = '#000';
       ctx.fillRect(timeBoxX, zone.y, timeBoxW, zone.h);
       ctx.fillStyle = '#FFF';
@@ -1542,21 +1838,14 @@ export function renderFullScreen(data, prefs = {}) {
       ctx.fillText(displayMin, timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 - 6);
       ctx.font = '9px Inter, sans-serif';
       ctx.fillText(leg.type === 'walk' ? 'MIN WALK' : 'MIN', timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 + 14);
-    } else {
-      // Skipped coffee: dashed border, "—" (1-bit: use #000, not gray)
-      ctx.strokeStyle = '#000';  // E-ink 1-bit: NO GRAY
-      ctx.setLineDash([4, 4]);
-      ctx.strokeRect(timeBoxX + 2, zone.y + 2, timeBoxW - 4, zone.h - 4);
-      ctx.setLineDash([]);
-      ctx.fillStyle = '#000';  // E-ink 1-bit: NO GRAY
-      ctx.font = 'bold 22px Inter, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('—', timeBoxX + timeBoxW / 2, zone.y + zone.h / 2);
     }
+    
     ctx.textAlign = 'left';
     ctx.fillStyle = '#000';
   });
+  
+  // Store delay count for status bar
+  data._delayedLegCount = delayedLegs.length;
   
   // =========================================================================
   // FOOTER (V10 Spec Section 6) - Real-Time Arrival Amendment 2026-01-31
