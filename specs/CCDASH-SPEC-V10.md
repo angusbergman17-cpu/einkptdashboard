@@ -277,14 +277,41 @@ For fewer legs, larger heights can be used (64px or 80px)
 |----------|--------|
 | Walk (first leg) | "From home • [destination]" |
 | Walk (other) | "[location/platform]" |
-| Transit (normal) | "[Line name] • Next: X, Y min" |
-| Transit (delayed) | "+X MIN • Next: X, Y min" |
-| Coffee (can get) | "✓ TIME FOR COFFEE" or "✓ EXTRA TIME — Disruption" |
-| Coffee (skip) | "✗ SKIP — Running late" |
+| Transit (normal) | "[Line name] • [Origin stop] • Next: X, Y min" |
+| Transit (delayed) | "+X MIN • [Origin stop] • Next: X, Y min" |
+| Coffee (can get) | "✓ TIME FOR COFFEE" or "✓ EXTRA TIME — Disruption" or "✓ FRIDAY TREAT" |
+| Coffee (skip - late) | "✗ SKIP — Running late" |
+| Coffee (skip - closed) | "✗ SKIP — Cafe closed" |
 | Suspended | "SUSPENDED — [reason]" |
 | Diverted | "Next: X, Y min • [stop name]" |
 
-**Source:** PTV API real-time departures
+**Source:** Transport Victoria OpenData API real-time departures
+
+#### 5.5.1 Actual Location Names (Amendment 2026-01-31)
+
+Leg titles and subtitles MUST display actual configured location names, not generic placeholders.
+
+**Title Examples:**
+
+| Leg Type | ❌ Generic | ✅ Actual |
+|----------|-----------|----------|
+| Walk | "Walk to Cafe" | "Walk to Norman" |
+| Coffee | "Coffee at Cafe" | "Coffee at Norman" |
+| Tram | "Tram to Station" | "Tram 58 to South Yarra" |
+| Train | "Train to City" | "Sandringham to Parliament" |
+
+**Subtitle Examples:**
+
+| Leg Type | ❌ Generic | ✅ Actual |
+|----------|-----------|----------|
+| Tram | "Next: 4, 12 min" | "Toorak Rd • Next: 4, 12 min" |
+| Train | "Next: 5, 12 min" | "Sandringham • South Yarra • Next: 5, 12 min" |
+
+**Name Extraction Priority:**
+1. `location.name` field (if set during geocoding)
+2. First part of `formattedAddress` before comma
+3. First part of `address` string before comma
+4. Generic fallback (only if all else fails)
 
 ### 5.6 Duration Box
 - **Position:** `right: -2px, top: -2px` (fills to edge)
@@ -313,6 +340,31 @@ For fewer legs, larger heights can be used (64px or 80px)
 
 - **Number font:** 26px (22px for ~X), weight: 900
 - **Label font:** 8px
+
+#### 5.6.2 DEPART Time Column (Amendment 2026-01-31)
+
+For transit legs (train/tram/bus), display the planned departure time based on cumulative journey timing.
+
+- **Position:** Between subtitle and duration box (`right: 145px`)
+- **Elements:**
+  - "DEPART" label: 8px, opacity 0.6
+  - Time: 14px bold, 12-hour format with am/pm
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│ 3  🚋  Tram 58 to South Yarra                DEPART    6        │
+│       Toorak Rd • Next: 4, 12 min            8:13am   MIN       │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+**Calculation:**
+- Based on cumulative journey time from start
+- Example: If journey starts at 8:10am and first 2 legs take 3 minutes:
+  - Leg 3 (Tram) DEPART = 8:13am
+
+**When to show:**
+- Transit legs only (train, tram, bus, vline, ferry)
+- Always show when `departTime` field is populated
 
 ### 5.7 Arrow Connector
 - **Position:** Centered horizontally (`left: 50%, transform: translateX(-50%)`)
@@ -399,22 +451,55 @@ For fewer legs, larger heights can be used (64px or 80px)
   - Disruption type (suspension, delay, diversion)
   - Affected stops/lines
 
-### 7.2 Coffee Stop Logic
+### 7.2 Coffee Stop Logic (Amendment 2026-01-31)
 
 ```
 IF journey has configured coffee stop:
   coffee_time = configured_coffee_duration (default: 5 min)
   
+  // Step 1: Check if cafe is open (Amendment 2026-01-31)
+  IF cafe_is_closed:
+    coffee_status = "SKIP"
+    subtitle = "✗ SKIP — Cafe closed"
+    skip_reason = "closed"
+    RETURN
+  
+  // Step 2: Check timing
   IF (departure_time + journey_time_without_coffee + coffee_time) <= required_arrival_time:
-    coffee_status = "CAN_GET"
-    subtitle = "✓ TIME FOR COFFEE"
-  ELSE IF disruption_causes_extra_time:
-    coffee_status = "CAN_GET"
-    subtitle = "✓ EXTRA TIME — Disruption"
+    // Step 3: Check for special occasions
+    IF day_of_week == FRIDAY:
+      coffee_status = "CAN_GET"
+      subtitle = "✓ FRIDAY TREAT"
+    ELSE IF disruption_causes_extra_time:
+      coffee_status = "CAN_GET"
+      subtitle = "✓ EXTRA TIME — Disruption"
+    ELSE:
+      coffee_status = "CAN_GET"
+      subtitle = "✓ TIME FOR COFFEE"
   ELSE:
     coffee_status = "SKIP"
     subtitle = "✗ SKIP — Running late"
+    skip_reason = "late"
 ```
+
+#### 7.2.1 Cafe Open Detection (Amendment 2026-01-31)
+
+Check if configured cafe is currently open before calculating coffee decision.
+
+**Data Sources (in priority order):**
+1. Google Places API `opening_hours.open_now` (if API key configured)
+2. Cached cafe hours from setup (`cafeHours.open`, `cafeHours.close`)
+3. Default business hours fallback:
+   - Weekdays: 6:00am - 6:00pm
+   - Weekends: 7:00am - 5:00pm
+
+**Skip Reasons:**
+
+| Reason | Subtitle | Visual State |
+|--------|----------|--------------|
+| Cafe closed | "✗ SKIP — Cafe closed" | Dashed border, dimmed |
+| Running late | "✗ SKIP — Running late" | Dashed border, dimmed |
+| Not open yet | "✗ SKIP — Cafe not open yet" | Dashed border, dimmed |
 
 ### 7.3 Data Flow
 
@@ -528,6 +613,8 @@ The server returns pre-rendered HTML/image optimized for e-ink display:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v10.3 | 2026-01-31 | **Amendment:** Cafe closed detection (Section 7.2.1) - detect closed cafes, skip reasons |
+| v10.2 | 2026-01-31 | **Amendment:** DEPART time column (Section 5.6.2), Actual location names (Section 5.5.1) - approved by Angus |
 | v10.1 | 2026-01-31 | **Amendment:** Real-time arrival calculation (Sections 4, 6) - approved by Angus |
 | v10 | 2026-01-28 | Final locked specification |
 | v9 | 2026-01-28 | Centered arrow points, edge-fill duration boxes |
