@@ -1983,7 +1983,7 @@
                     <div id="journey-config-summary" style="font-size: 13px; color: #94a3b8; line-height: 1.6;">Loading configuration...</div>
                 </div>
 
-                <!-- SmartCommute Engine Output Panel -->
+                <!-- SmartCommute Engine Output Panel - REAL-TIME "LEAVE NOW" VIEW -->
                 <div id="smartcommute-output-panel" class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(79, 178, 142, 0.08) 0%, rgba(102, 126, 234, 0.08) 100%); border-radius: 12px; padding: 20px; border: 1px solid rgba(79, 178, 142, 0.2);">
                     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
                         <div style="display: flex; align-items: center; gap: 12px;">
@@ -1991,48 +1991,55 @@
                                 <svg width="22" height="22" style="color: white;"><use href="#icon-cpu"/></svg>
                             </div>
                             <div>
-                                <h3 style="font-size: 16px; font-weight: 600; color: #f1f5f9; margin: 0;">SmartCommute Engine Output</h3>
-                                <span style="font-size: 12px; color: #94a3b8;">Calculated journey based on your preferences</span>
+                                <h3 style="font-size: 16px; font-weight: 600; color: #f1f5f9; margin: 0;">If You Leave NOW</h3>
+                                <span style="font-size: 12px; color: #94a3b8;">Real-time journey calculation • <span id="sc-last-update">--</span></span>
                             </div>
                         </div>
-                        <div style="display: flex; gap: 8px;">
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <div id="sc-auto-refresh-indicator" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(34, 197, 94, 0.15); border-radius: 20px; font-size: 11px; color: #22c55e;">
+                                <div style="width: 8px; height: 8px; background: #22c55e; border-radius: 50%; animation: pulse 1.5s infinite;"></div>
+                                Auto-refresh
+                            </div>
                             <button onclick="toggleSmartCommuteDetails()" class="btn btn-secondary" style="padding: 8px 14px; font-size: 12px;">
                                 <svg width="14" height="14"><use href="#icon-layers"/></svg>
                                 Details
                             </button>
                             <button onclick="loadSmartCommuteOutput(true)" class="btn btn-secondary" style="padding: 8px 14px; font-size: 12px;">
                                 <svg width="14" height="14"><use href="#icon-refresh"/></svg>
-                                Reload
+                                Refresh
                             </button>
                         </div>
                     </div>
                     
-                    <!-- Engine Summary -->
+                    <!-- Real-Time Summary Cards -->
                     <div id="smartcommute-summary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px;">
-                        <div style="padding: 12px; background: rgba(79, 178, 142, 0.15); border-radius: 8px; text-align: center;">
-                            <div style="font-size: 11px; opacity: 0.7; margin-bottom: 4px;">LEAVE TIME</div>
-                            <div id="sc-leave-time" style="font-size: 20px; font-weight: 700; color: #4fb28e;">--:--</div>
+                        <div style="padding: 14px; background: rgba(79, 178, 142, 0.15); border-radius: 10px; text-align: center; border: 1px solid rgba(79, 178, 142, 0.2);">
+                            <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.7; margin-bottom: 6px;">🚪 LEAVE NOW</div>
+                            <div id="sc-leave-time" style="font-size: 24px; font-weight: 700; color: #4fb28e;">--:--</div>
                         </div>
-                        <div style="padding: 12px; background: rgba(102, 126, 234, 0.15); border-radius: 8px; text-align: center;">
-                            <div style="font-size: 11px; opacity: 0.7; margin-bottom: 4px;">ARRIVE TIME</div>
-                            <div id="sc-arrive-time" style="font-size: 20px; font-weight: 700; color: #667eea;">--:--</div>
+                        <div style="padding: 14px; background: rgba(102, 126, 234, 0.15); border-radius: 10px; text-align: center; border: 1px solid rgba(102, 126, 234, 0.2);">
+                            <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.7; margin-bottom: 6px;">📍 ARRIVE AT</div>
+                            <div id="sc-arrive-time" style="font-size: 24px; font-weight: 700; color: #667eea;">--:--</div>
                         </div>
-                        <div style="padding: 12px; background: rgba(251, 191, 36, 0.15); border-radius: 8px; text-align: center;">
-                            <div style="font-size: 11px; opacity: 0.7; margin-bottom: 4px;">TOTAL TIME</div>
-                            <div id="sc-total-time" style="font-size: 20px; font-weight: 700; color: #fbbf24;">-- min</div>
+                        <div style="padding: 14px; background: rgba(251, 191, 36, 0.15); border-radius: 10px; text-align: center; border: 1px solid rgba(251, 191, 36, 0.2);">
+                            <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.7; margin-bottom: 6px;">⏱️ TOTAL TIME</div>
+                            <div id="sc-total-time" style="font-size: 24px; font-weight: 700; color: #fbbf24;">-- min</div>
                         </div>
-                        <div style="padding: 12px; background: rgba(167, 139, 250, 0.15); border-radius: 8px; text-align: center;">
-                            <div style="font-size: 11px; opacity: 0.7; margin-bottom: 4px;">COFFEE</div>
-                            <div id="sc-coffee-decision" style="font-size: 20px; font-weight: 700; color: #a78bfa;">--</div>
+                        <div style="padding: 14px; background: rgba(167, 139, 250, 0.15); border-radius: 10px; text-align: center; border: 1px solid rgba(167, 139, 250, 0.2);">
+                            <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.7; margin-bottom: 6px;">☕ COFFEE?</div>
+                            <div id="sc-coffee-decision" style="font-size: 24px; font-weight: 700; color: #a78bfa;">--</div>
                         </div>
                     </div>
 
-                    <!-- Journey Legs Visual -->
+                    <!-- Journey Legs Visual - Real-Time -->
                     <div id="smartcommute-legs" style="padding: 16px; background: rgba(0,0,0,0.2); border-radius: 10px; margin-bottom: 16px;">
-                        <div style="font-weight: 600; margin-bottom: 12px; font-size: 13px; color: #94a3b8;">JOURNEY LEGS</div>
+                        <div style="font-weight: 600; margin-bottom: 12px; font-size: 13px; color: #94a3b8; display: flex; align-items: center; justify-content: space-between;">
+                            <span>YOUR COMMUTE IF YOU LEAVE NOW</span>
+                            <span id="sc-current-time" style="font-family: monospace; color: #4fb28e;"></span>
+                        </div>
                         <div id="sc-legs-display" style="display: flex; flex-direction: column; gap: 8px;">
                             <div style="padding: 15px; text-align: center; color: #94a3b8; font-size: 13px;">
-                                Loading SmartCommute calculation...
+                                Loading real-time commute data...
                             </div>
                         </div>
                     </div>
@@ -4251,6 +4258,36 @@
             // Load SmartCommute settings and output
             loadSmartCommuteSettings();
             loadSmartCommuteOutput();
+            
+            // Auto-refresh SmartCommute every 30 seconds for real-time view
+            setInterval(() => {
+                loadSmartCommuteOutput(false);
+                // Update current time display
+                const timeEl = document.getElementById('sc-current-time');
+                const updateEl = document.getElementById('sc-last-update');
+                if (timeEl) {
+                    timeEl.textContent = new Date().toLocaleTimeString('en-AU', { 
+                        hour: 'numeric', minute: '2-digit', hour12: true 
+                    }).toLowerCase();
+                }
+                if (updateEl) {
+                    updateEl.textContent = 'Updated ' + new Date().toLocaleTimeString('en-AU', { 
+                        hour: 'numeric', minute: '2-digit', hour12: true 
+                    }).toLowerCase();
+                }
+            }, 30000);
+            
+            // Initial time display
+            const timeEl = document.getElementById('sc-current-time');
+            const updateEl = document.getElementById('sc-last-update');
+            if (timeEl) {
+                timeEl.textContent = new Date().toLocaleTimeString('en-AU', { 
+                    hour: 'numeric', minute: '2-digit', hour12: true 
+                }).toLowerCase();
+            }
+            if (updateEl) {
+                updateEl.textContent = 'Loading...';
+            }
         });
 
         // Load version control info
@@ -5476,6 +5513,20 @@
                 if (rawOutput) {
                     rawOutput.textContent = JSON.stringify(result, null, 2);
                 }
+                
+                // Update timestamp
+                const updateEl = document.getElementById('sc-last-update');
+                const timeEl = document.getElementById('sc-current-time');
+                if (updateEl) {
+                    updateEl.textContent = 'Updated ' + new Date().toLocaleTimeString('en-AU', { 
+                        hour: 'numeric', minute: '2-digit', hour12: true 
+                    }).toLowerCase();
+                }
+                if (timeEl) {
+                    timeEl.textContent = result.localTime || new Date().toLocaleTimeString('en-AU', { 
+                        hour: 'numeric', minute: '2-digit', hour12: true 
+                    }).toLowerCase();
+                }
 
             } catch (error) {
                 console.error('SmartCommute load error:', error);
@@ -5488,33 +5539,59 @@
             }
         }
 
-        // Update SmartCommute summary cards
+        // Update SmartCommute summary cards - REAL-TIME "Leave Now" view
         function updateSmartCommuteSummary(result) {
             const leaveTime = document.getElementById('sc-leave-time');
             const arriveTime = document.getElementById('sc-arrive-time');
             const totalTime = document.getElementById('sc-total-time');
             const coffeeDecision = document.getElementById('sc-coffee-decision');
 
-            if (result.success && result.journey) {
-                const journey = result.journey;
+            // Use leaveNow data for real-time view
+            const leaveNow = result.leaveNow;
+            
+            if (result.success && leaveNow) {
+                // Show current time as "leave now"
+                if (leaveTime) {
+                    leaveTime.textContent = result.localTime || 'NOW';
+                    leaveTime.title = 'If you leave right now';
+                }
                 
-                if (leaveTime) leaveTime.textContent = formatTime12h(journey.leaveTime) || '--:--';
-                if (arriveTime) arriveTime.textContent = formatTime12h(journey.arriveTime) || '--:--';
-                if (totalTime) totalTime.textContent = journey.totalMinutes ? `${journey.totalMinutes} min` : '-- min';
+                // Show calculated arrival
+                if (arriveTime) {
+                    arriveTime.textContent = leaveNow.arriveTime || '--:--';
+                    // Color based on arrival status
+                    if (leaveNow.arrival?.status === 'late') {
+                        arriveTime.style.color = '#ef4444';
+                        arriveTime.title = leaveNow.arrival.message;
+                    } else if (leaveNow.arrival?.status === 'early') {
+                        arriveTime.style.color = '#22c55e';
+                        arriveTime.title = leaveNow.arrival.message;
+                    } else {
+                        arriveTime.style.color = '#667eea';
+                        arriveTime.title = 'On time';
+                    }
+                }
+                
+                // Total journey time
+                if (totalTime) {
+                    totalTime.textContent = leaveNow.totalMinutes ? `${leaveNow.totalMinutes} min` : '-- min';
+                }
+                
+                // Coffee decision
                 if (coffeeDecision) {
-                    const coffee = result.coffee || journey.coffee;
+                    const coffee = leaveNow.coffee;
                     if (coffee) {
                         coffeeDecision.textContent = coffee.canGet ? 'YES' : 'NO';
                         coffeeDecision.style.color = coffee.canGet ? '#22c55e' : '#ef4444';
+                        coffeeDecision.title = coffee.reason || '';
                     } else {
                         coffeeDecision.textContent = '--';
                         coffeeDecision.style.color = '#a78bfa';
                     }
                 }
             } else if (result.fallbackMode) {
-                // Fallback data
-                if (leaveTime) leaveTime.textContent = '--:--';
-                if (arriveTime) arriveTime.textContent = formatTime12h(result.arrivalTime) || '--:--';
+                if (leaveTime) leaveTime.textContent = result.localTime || 'NOW';
+                if (arriveTime) arriveTime.textContent = '--:--';
                 if (totalTime) totalTime.textContent = '-- min';
                 if (coffeeDecision) {
                     coffeeDecision.textContent = 'N/A';
@@ -5523,64 +5600,99 @@
             }
         }
 
-        // Update SmartCommute legs display
+        // Update SmartCommute legs display - REAL-TIME with times
         function updateSmartCommuteLegs(result) {
             const legsDisplay = document.getElementById('sc-legs-display');
             if (!legsDisplay) return;
 
-            if (result.success && result.journey?.legs?.length > 0) {
-                const modeIcons = {
-                    walk: '🚶',
-                    train: '🚃',
-                    tram: '🚊',
-                    bus: '🚌',
-                    coffee: '☕',
-                    vline: '🚂'
-                };
+            const leaveNow = result.leaveNow;
 
+            if (result.success && leaveNow?.legs?.length > 0) {
                 let html = '';
-                result.journey.legs.forEach((leg, index) => {
-                    const icon = modeIcons[leg.mode?.toLowerCase()] || '📍';
-                    const isLast = index === result.journey.legs.length - 1;
+                
+                // Show next departure countdown prominently
+                if (leaveNow.nextDeparture) {
+                    const dep = leaveNow.nextDeparture;
+                    html += `
+                        <div style="padding: 12px 16px; background: linear-gradient(135deg, rgba(79, 178, 142, 0.2) 0%, rgba(102, 126, 234, 0.2) 100%); border-radius: 10px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
+                            <div>
+                                <div style="font-size: 12px; opacity: 0.7; margin-bottom: 2px;">NEXT ${dep.mode.toUpperCase()}</div>
+                                <div style="font-size: 16px; font-weight: 600; color: #f1f5f9;">${dep.destination || 'City'}</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 28px; font-weight: 700; color: ${dep.minutes <= 3 ? '#ef4444' : '#4fb28e'};">${dep.countdown}</div>
+                                <div style="font-size: 11px; opacity: 0.7;">${dep.departureTime}</div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Journey legs with times
+                leaveNow.legs.forEach((leg, index) => {
+                    const isLast = index === leaveNow.legs.length - 1;
+                    const bgColor = leg.mode === 'wait' ? 'rgba(251, 191, 36, 0.15)' : 
+                                   leg.mode === 'coffee' ? 'rgba(167, 139, 250, 0.15)' :
+                                   leg.mode === 'train' || leg.mode === 'tram' ? 'rgba(102, 126, 234, 0.15)' :
+                                   'rgba(79, 178, 142, 0.15)';
                     
                     html += `
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(79, 178, 142, 0.2); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
-                                ${icon}
+                        <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: ${bgColor}; border-radius: 8px;">
+                            <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
+                                ${leg.icon || '📍'}
                             </div>
                             <div style="flex: 1; min-width: 0;">
-                                <div style="font-weight: 500; font-size: 14px; color: #f1f5f9;">${leg.description || leg.mode || 'Unknown'}</div>
+                                <div style="font-weight: 600; font-size: 14px; color: #f1f5f9;">${leg.description || leg.mode || 'Unknown'}</div>
                                 <div style="font-size: 12px; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${leg.details || ''}</div>
                             </div>
                             <div style="text-align: right; flex-shrink: 0;">
-                                <div style="font-weight: 700; font-size: 16px; color: #4fb28e;">${leg.duration || '--'} min</div>
-                                ${leg.time ? `<div style="font-size: 11px; color: #94a3b8;">${formatTime12h(leg.time)}</div>` : ''}
+                                <div style="font-weight: 700; font-size: 18px; color: #f1f5f9;">${leg.duration} min</div>
+                                <div style="font-size: 11px; color: #94a3b8;">${leg.startTime} → ${leg.endTime}</div>
                             </div>
                         </div>
-                        ${!isLast ? '<div style="border-left: 2px dashed rgba(255,255,255,0.2); margin-left: 17px; height: 12px;"></div>' : ''}
+                        ${!isLast ? '<div style="border-left: 2px dashed rgba(255,255,255,0.15); margin-left: 19px; height: 8px;"></div>' : ''}
                     `;
                 });
+                
+                // Arrival status
+                if (leaveNow.arrival) {
+                    const statusColor = leaveNow.arrival.status === 'late' ? '#ef4444' : 
+                                       leaveNow.arrival.status === 'early' ? '#22c55e' : '#4fb28e';
+                    const statusBg = leaveNow.arrival.status === 'late' ? 'rgba(239, 68, 68, 0.15)' : 
+                                    leaveNow.arrival.status === 'early' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(79, 178, 142, 0.15)';
+                    html += `
+                        <div style="margin-top: 16px; padding: 14px 16px; background: ${statusBg}; border-radius: 10px; border-left: 4px solid ${statusColor}; display: flex; align-items: center; justify-content: space-between;">
+                            <div>
+                                <div style="font-size: 12px; opacity: 0.7; margin-bottom: 2px;">ARRIVAL STATUS</div>
+                                <div style="font-size: 16px; font-weight: 700; color: ${statusColor};">${leaveNow.arrival.message}</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 11px; opacity: 0.7;">Target: ${leaveNow.arrival.targetTime}</div>
+                                <div style="font-size: 14px; font-weight: 600; color: #f1f5f9;">Actual: ${leaveNow.arrival.actualTime}</div>
+                            </div>
+                        </div>
+                    `;
+                }
 
                 legsDisplay.innerHTML = html;
 
             } else if (result.fallbackMode) {
                 legsDisplay.innerHTML = `
-                    <div style="padding: 16px; background: rgba(251, 191, 36, 0.1); border-radius: 8px; text-align: center;">
-                        <div style="font-size: 24px; margin-bottom: 8px;">📋</div>
-                        <div style="font-weight: 600; color: #fbbf24; margin-bottom: 4px;">Using Timetable Data</div>
-                        <div style="font-size: 12px; color: #94a3b8;">Add a Transit API key for real-time journey calculation</div>
+                    <div style="padding: 20px; background: rgba(251, 191, 36, 0.1); border-radius: 10px; text-align: center;">
+                        <div style="font-size: 32px; margin-bottom: 12px;">📋</div>
+                        <div style="font-weight: 600; font-size: 16px; color: #fbbf24; margin-bottom: 6px;">Using Timetable Data</div>
+                        <div style="font-size: 13px; color: #94a3b8; line-height: 1.5;">Add a Transit API key in API Settings for real-time departure data</div>
                     </div>
                 `;
             } else if (result.error) {
                 legsDisplay.innerHTML = `
-                    <div style="padding: 16px; background: rgba(239, 68, 68, 0.1); border-radius: 8px; text-align: center;">
-                        <div style="font-size: 24px; margin-bottom: 8px;">⚠️</div>
-                        <div style="font-weight: 600; color: #ef4444; margin-bottom: 4px;">Calculation Error</div>
-                        <div style="font-size: 12px; color: #94a3b8;">${result.error}</div>
+                    <div style="padding: 20px; background: rgba(239, 68, 68, 0.1); border-radius: 10px; text-align: center;">
+                        <div style="font-size: 32px; margin-bottom: 12px;">⚠️</div>
+                        <div style="font-weight: 600; font-size: 16px; color: #ef4444; margin-bottom: 6px;">Calculation Error</div>
+                        <div style="font-size: 13px; color: #94a3b8;">${result.error}</div>
                     </div>
                 `;
             } else {
-                legsDisplay.innerHTML = '<div style="padding: 15px; text-align: center; color: #94a3b8; font-size: 13px;">No journey data available</div>';
+                legsDisplay.innerHTML = '<div style="padding: 20px; text-align: center; color: #94a3b8; font-size: 14px;">Configure your journey in Setup to see real-time commute data</div>';
             }
         }
 
