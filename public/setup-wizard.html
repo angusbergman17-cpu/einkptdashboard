@@ -281,9 +281,65 @@
             margin: 0 10px;
             color: #cbd5e0;
         }
+        /* Icon system - compliant with DEVELOPMENT-RULES Section 22.3 */
+        .icon { display: inline-block; width: 20px; height: 20px; vertical-align: middle; }
+        .icon-sm { width: 16px; height: 16px; }
+        .icon-lg { width: 24px; height: 24px; }
+        .icon-xl { width: 32px; height: 32px; }
     </style>
 </head>
 <body>
+    <!-- SVG Icon Sprite - DEVELOPMENT-RULES Section 22.3 Compliant -->
+    <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+        <symbol id="icon-key" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+        </symbol>
+        <symbol id="icon-save" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+        </symbol>
+        <symbol id="icon-warning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+        </symbol>
+        <symbol id="icon-check-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+        </symbol>
+        <symbol id="icon-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>
+        </symbol>
+        <symbol id="icon-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+        </symbol>
+        <symbol id="icon-briefcase" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+        </symbol>
+        <symbol id="icon-coffee" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/>
+        </symbol>
+        <symbol id="icon-train" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="3" width="16" height="16" rx="2"/><path d="M4 11h16"/><path d="M12 3v8"/><circle cx="8" cy="15" r="1"/><circle cx="16" cy="15" r="1"/><path d="m9 19-2 3"/><path d="m15 19 2 3"/>
+        </symbol>
+        <symbol id="icon-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+        </symbol>
+        <symbol id="icon-cloud" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+        </symbol>
+        <symbol id="icon-tv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/>
+        </symbol>
+        <symbol id="icon-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>
+        </symbol>
+        <symbol id="icon-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+        </symbol>
+        <symbol id="icon-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+        </symbol>
+        <symbol id="icon-x-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>
+        </symbol>
+    </svg>
     <div class="container">
         <div class="wizard-card">
             <div class="wizard-header">
@@ -303,7 +359,7 @@
 
             <!-- Step 1: Google Places API Key -->
             <div class="step-content active" id="step-1">
-                <h2 style="margin-bottom: 20px;">🔑 Step 1: Google Places API Key (Recommended)</h2>
+                <h2 style="margin-bottom: 20px;"><svg class="icon"><use href="#icon-key"/></svg> Step 1: Google Places API Key (Recommended)</h2>
                 <p style="color: #718096; margin-bottom: 25px;">
                     For accurate address geocoding, we recommend adding your <strong>Google Places API (new)</strong> key. This will be saved and tested before proceeding.
                 </p>
@@ -326,7 +382,7 @@
 
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
                     <button type="button" class="btn" onclick="saveAndTestGoogleKey()" style="background: #48bb78; flex: 1;" id="save-api-key-btn">
-                        💾 Save & Test API Key
+                        <svg class="icon-sm"><use href="#icon-save"/></svg> Save & Test API Key
                     </button>
                     <button type="button" class="btn btn-secondary" onclick="skipGoogleKey()" style="flex: 1;">
                         Skip for Now
@@ -337,7 +393,7 @@
 
                 <!-- Warning box for skipping -->
                 <div id="skip-warning" style="display: none; margin-top: 20px; padding: 15px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px;">
-                    <strong style="color: #856404;">⚠️ Limited Features Without API Key</strong>
+                    <strong style="color: #856404;"><svg class="icon-sm"><use href="#icon-warning"/></svg> Limited Features Without API Key</strong>
                     <p style="color: #856404; font-size: 13px; margin-top: 8px; margin-bottom: 0;">
                         Without the Google Places API key:
                     </p>
@@ -347,7 +403,7 @@
                         <li>You'll need to manually configure your entire route</li>
                     </ul>
                     <p style="color: #856404; font-size: 13px; margin-top: 10px; margin-bottom: 0;">
-                        <strong>✅ Still works:</strong> Intelligent transit mode communication and real-time service updates
+                        <strong><svg class="icon-sm" style="color: #22c55e;"><use href="#icon-check-circle"/></svg> Still works:</strong> Intelligent transit mode communication and real-time service updates
                     </p>
                 </div>
 
@@ -358,31 +414,31 @@
 
             <!-- Step 2: Addresses -->
             <div class="step-content" id="step-2">
-                <h2 style="margin-bottom: 20px;">📍 Step 2: Your Addresses</h2>
+                <h2 style="margin-bottom: 20px;"><svg class="icon"><use href="#icon-pin"/></svg> Step 2: Your Addresses</h2>
                 <p style="color: #718096; margin-bottom: 25px;">
                     Enter your home and work addresses. We'll automatically detect your state and suggest the right transit authority.
                 </p>
 
                 <div class="form-group" style="position: relative;">
-                    <label class="form-label">🏠 Home Address</label>
+                    <label class="form-label"><svg class="icon-sm"><use href="#icon-home"/></svg> Home Address</label>
                     <input type="text" id="home-address" class="form-input" placeholder="Start typing your home address..." autocomplete="off" inputmode="text">
                     <div id="home-suggestions" class="autocomplete-dropdown"></div>
                 </div>
 
                 <div class="form-group" style="position: relative;">
-                    <label class="form-label">💼 Work Address</label>
+                    <label class="form-label"><svg class="icon-sm"><use href="#icon-briefcase"/></svg> Work Address</label>
                     <input type="text" id="work-address" class="form-input" placeholder="Start typing your work address..." autocomplete="off" inputmode="text">
                     <div id="work-suggestions" class="autocomplete-dropdown"></div>
                 </div>
 
                 <div class="form-group" style="position: relative;">
-                    <label class="form-label">☕ Favorite Cafe (Optional)</label>
+                    <label class="form-label"><svg class="icon-sm"><use href="#icon-coffee"/></svg> Favorite Cafe (Optional)</label>
                     <input type="text" id="cafe-address" class="form-input" placeholder="Your go-to coffee spot..." autocomplete="off" inputmode="text">
                     <div id="cafe-suggestions" class="autocomplete-dropdown"></div>
                 </div>
 
                 <div id="state-detection" style="display: none;" class="info-box">
-                    <strong>✓ Detected:</strong> <span id="detected-state"></span>
+                    <strong><svg class="icon-sm" style="color: #22c55e;"><use href="#icon-check-circle"/></svg> Detected:</strong> <span id="detected-state"></span>
                 </div>
 
                 <div class="btn-row">
@@ -393,7 +449,7 @@
 
             <!-- Step 3: Transit Authority -->
             <div class="step-content" id="step-3">
-                <h2 style="margin-bottom: 20px;">🚆 Step 3: Transit Authority</h2>
+                <h2 style="margin-bottom: 20px;"><svg class="icon"><use href="#icon-train"/></svg> Step 3: Transit Authority</h2>
                 <p style="color: #718096; margin-bottom: 25px;">
                     We've detected your location. Please confirm or choose your transit authority.
                 </p>
@@ -408,13 +464,13 @@
 
             <!-- Step 4: Transit API Credentials -->
             <div class="step-content" id="step-4">
-                <h2 style="margin-bottom: 20px;">🔑 Step 4: Transit API Key (Optional)</h2>
+                <h2 style="margin-bottom: 20px;"><svg class="icon"><use href="#icon-key"/></svg> Step 4: Transit API Key (Optional)</h2>
                 <p style="color: #a0aec0; margin-bottom: 15px;">
                     For <strong>real-time</strong> transit data, enter your API key. Without it, we'll use <strong>timetable data</strong> as a fallback.
                 </p>
 
                 <div class="info-box" style="background: rgba(79, 178, 142, 0.1); border-left: 3px solid #4fb28e; padding: 12px 15px; margin-bottom: 20px; border-radius: 6px;">
-                    <strong style="color: #a0aec0;">💡 Why get an API key?</strong><br>
+                    <strong style="color: #a0aec0;">Why get an API key?</strong><br>
                     <span style="color: #718096; font-size: 13px;">Real-time data shows live delays, cancellations, and accurate arrival times. Timetable fallback uses scheduled times only.</span>
                 </div>
 
@@ -426,7 +482,7 @@
 
                 <div class="btn-row" style="gap: 10px;">
                     <button type="button" class="btn btn-secondary" onclick="previousStep(4)">← Back</button>
-                    <button type="button" class="btn" id="save-transit-key-btn" onclick="saveAndTestTransitKey()" style="background: #48bb78;">💾 Save & Test</button>
+                    <button type="button" class="btn" id="save-transit-key-btn" onclick="saveAndTestTransitKey()" style="background: #48bb78;"><svg class="icon-sm"><use href="#icon-save"/></svg> Save & Test</button>
                     <button type="button" class="btn" id="skip-transit-btn" onclick="skipTransitKey()" style="background: #718096;">Skip for Now</button>
                 </div>
                 <div id="step-4-next-btn" style="display: none; margin-top: 15px;">
@@ -437,7 +493,7 @@
             <!-- Step 5: Journey Settings -->
             <div class="step-content" id="step-5">
                 <form novalidate onsubmit="return false;">
-                    <h2 style="margin-bottom: 20px;">⏰ Step 5: Journey Preferences</h2>
+                    <h2 style="margin-bottom: 20px;"><svg class="icon"><use href="#icon-clock"/></svg> Step 5: Journey Preferences</h2>
                     <p style="color: #718096; margin-bottom: 25px;">
                         When do you need to arrive at work?
                     </p>
@@ -455,7 +511,7 @@
                     </div>
 
                     <div class="form-group" style="margin-top: 20px; padding: 15px; background: rgba(79, 178, 142, 0.1); border-radius: 8px;">
-                        <label class="form-label" style="margin-bottom: 10px;">☁️ API Usage Mode</label>
+                        <label class="form-label" style="margin-bottom: 10px;"><svg class="icon-sm"><use href="#icon-cloud"/></svg> API Usage Mode</label>
                         <div style="margin-bottom: 10px;">
                             <label style="display: flex; align-items: center; cursor: pointer;">
                                 <input type="radio" name="api-mode" value="cached" checked style="margin-right: 8px;">
@@ -478,7 +534,7 @@
                         <button type="button" onclick="toggleDeviceSection()" 
                             style="width: 100%; padding: 15px 20px; background: rgba(102, 126, 234, 0.1); border: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; color: #f1f5f9;">
                             <span style="display: flex; align-items: center; gap: 10px; font-weight: 600;">
-                                <span style="font-size: 20px;">📺</span>
+                                <svg class="icon"><use href="#icon-tv"/></svg>
                                 E-Ink Display Configuration (Optional)
                             </span>
                             <span id="device-section-arrow" style="font-size: 18px; transition: transform 0.2s;">▼</span>
@@ -506,7 +562,7 @@
                             <!-- Device Model Warning for CC E-Ink -->
                             <div id="trmnl-model-warning" style="display: none; margin-top: 15px; padding: 12px; background: rgba(234, 88, 12, 0.1); border: 1px solid rgba(234, 88, 12, 0.3); border-radius: 8px;">
                                 <div style="font-size: 12px; color: rgba(255,255,255,0.9); line-height: 1.5;">
-                                    <strong>⚠️ Important:</strong> Check the back of your device for the model number.
+                                    <strong><svg class="icon-sm"><use href="#icon-warning"/></svg> Important:</strong> Check the back of your device for the model number.
                                     Only CC Display OG is currently supported. Display X firmware coming soon.
                                 </div>
                             </div>
@@ -517,7 +573,7 @@
                                     Resolution: 800×480 pixels • Orientation: Landscape • Chip: ESP32
                                 </div>
                                 <div style="font-size: 11px; color: #fbbf24; margin-top: 8px;">
-                                    ⚠️ Requires flashing with Commute Compute custom firmware
+                                    <svg class="icon-sm"><use href="#icon-warning"/></svg> Requires flashing with Commute Compute custom firmware
                                 </div>
                             </div>
                         </div>
@@ -527,7 +583,7 @@
                     
                     <!-- Fallback navigation - always visible after attempting setup -->
                     <div id="manual-navigation" style="display: none; margin-top: 20px; padding: 15px; background: rgba(79, 178, 142, 0.15); border: 2px solid #4fb28e; border-radius: 8px; text-align: center;">
-                        <p style="color: #f1f5f9; margin-bottom: 10px; font-weight: 600;">✓ Setup submitted!</p>
+                        <p style="color: #f1f5f9; margin-bottom: 10px; font-weight: 600;"><svg class="icon-sm" style="color: #22c55e;"><use href="#icon-check-circle"/></svg> Setup submitted!</p>
                         <a href="/admin.html" class="btn" style="display: inline-block; text-decoration: none; background: #4fb28e; color: #fff; padding: 12px 24px; border-radius: 8px; font-weight: 600;">
                             Go to Dashboard →
                         </a>
@@ -535,7 +591,7 @@
 
                     <div class="btn-row" id="setup-buttons">
                         <button type="button" class="btn btn-secondary" onclick="previousStep(5)">← Back</button>
-                        <button type="button" class="btn" id="complete-setup-btn" formnovalidate>🚀 Complete Setup</button>
+                        <button type="button" class="btn" id="complete-setup-btn" formnovalidate><svg class="icon-sm"><use href="#icon-check-circle"/></svg> Complete Setup</button>
                     </div>
                 </form>
                 <script>
@@ -580,15 +636,15 @@
             <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px;">
                 <a href="https://buymeacoffee.com/angusbergman" target="_blank" rel="noopener" 
                    style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background: #FFDD00; color: #000; border-radius: 8px; text-decoration: none; font-weight: 500; font-size: 13px;">
-                    ☕ Buy me a coffee
+                    <svg class="icon-sm"><use href="#icon-coffee"/></svg> Buy me a coffee
                 </a>
                 <a href="https://github.com/sponsors/angusbergman17-cpu" target="_blank" rel="noopener"
                    style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background: #db61a2; color: #fff; border-radius: 8px; text-decoration: none; font-weight: 500; font-size: 13px;">
-                    💖 Sponsor
+                    <svg class="icon-sm"><use href="#icon-heart"/></svg> Sponsor
                 </a>
                 <a href="https://github.com/angusbergman17-cpu/einkptdashboard/issues/new?template=feedback.md&title=[Setup Feedback]" target="_blank" rel="noopener"
                    style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background: #4fb28e; color: #fff; border-radius: 8px; text-decoration: none; font-weight: 500; font-size: 13px;">
-                    📝 Feedback
+                    Feedback
                 </a>
             </div>
             
@@ -789,13 +845,13 @@
             if (!apiKey) {
                 status.style.display = 'block';
                 status.style.color = '#e53e3e';
-                status.innerHTML = '⚠️ Please enter an API key';
+                status.innerHTML = '<svg class="icon-sm"><use href="#icon-warning"/></svg> Please enter an API key';
                 return;
             }
 
             // Disable button during save
             btn.disabled = true;
-            btn.textContent = '💾 Saving and Testing...';
+            btn.innerHTML = '<svg class="icon-sm"><use href="#icon-save"/></svg> Saving and Testing...';
             status.style.display = 'block';
             status.style.color = '#718096';
             status.innerHTML = '⏳ Saving and testing API key...';
@@ -817,8 +873,8 @@
                     console.log('✅ Google key saved to localStorage for address searches');
                     
                     status.style.color = '#48bb78';
-                    status.innerHTML = `✅ API key saved and validated! Google Places is working.<br><small style="color: #718096;">${result.testResult?.predictions || 0} test predictions returned</small>`;
-                    btn.textContent = '✓ Saved & Tested';
+                    status.innerHTML = `<svg class="icon-sm" style="color: #22c55e;"><use href="#icon-check-circle"/></svg> API key saved and validated! Google Places is working.<br><small style="color: #718096;">${result.testResult?.predictions || 0} test predictions returned</small>`;
+                    btn.innerHTML = '<svg class="icon-sm" style="color: #22c55e;"><use href="#icon-check-circle"/></svg> Saved & Tested';
                     btn.style.background = '#48bb78';
 
                     // Show the Next button
@@ -829,21 +885,21 @@
                 } else if (result.success && !result.saved) {
                     // Validation failed - key NOT saved
                     status.style.color = '#e53e3e';
-                    status.innerHTML = `❌ API key validation failed - NOT saved:<br><small>${result.testResult?.message || 'Unknown error'}</small><br><small>Check your Google Cloud Console - ensure Places API (New) is enabled.</small>`;
+                    status.innerHTML = `<svg class="icon-sm" style="color: #f87171;"><use href="#icon-x-circle"/></svg> API key validation failed - NOT saved:<br><small>${result.testResult?.message || 'Unknown error'}</small><br><small>Check your Google Cloud Console - ensure Places API (New) is enabled.</small>`;
                     btn.disabled = false;
-                    btn.textContent = '💾 Save & Test API Key';
+                    btn.innerHTML = '<svg class="icon-sm"><use href="#icon-save"/></svg> Save & Test API Key';
                     return;
                 } else {
                     status.style.color = '#e53e3e';
-                    status.innerHTML = `❌ Failed to save: ${result.message}`;
+                    status.innerHTML = `<svg class="icon-sm" style="color: #f87171;"><use href="#icon-x-circle"/></svg> Failed to save: ${result.message}`;
                     btn.disabled = false;
-                    btn.textContent = '💾 Save & Test API Key';
+                    btn.innerHTML = '<svg class="icon-sm"><use href="#icon-save"/></svg> Save & Test API Key';
                 }
             } catch (error) {
                 status.style.color = '#e53e3e';
-                status.innerHTML = `❌ Error: ${error.message}`;
+                status.innerHTML = `<svg class="icon-sm" style="color: #f87171;"><use href="#icon-x-circle"/></svg> Error: ${error.message}`;
                 btn.disabled = false;
-                btn.textContent = '💾 Save & Test API Key';
+                btn.innerHTML = '<svg class="icon-sm"><use href="#icon-save"/></svg> Save & Test API Key';
             }
         };
 
@@ -925,7 +981,7 @@
                 const isDetected = code === detectedState;
                 html += `
                     <div class="authority-card ${isDetected ? 'selected' : ''}" onclick="selectAuthority('${code}')">
-                        <div class="authority-name">${auth.name} ${isDetected ? '✓' : ''}</div>
+                        <div class="authority-name">${auth.name} ${isDetected ? '<svg class="icon-sm" style="color: #22c55e;"><use href="#icon-check-circle"/></svg>' : ''}</div>
                         <div class="authority-desc">${auth.state}</div>
                         <a href="${auth.url}" target="_blank" class="authority-link">Register for API →</a>
                     </div>
@@ -949,7 +1005,7 @@
         function showAPIForm() {
             const auth = AUTHORITIES[selectedAuthority];
             document.getElementById('api-info').innerHTML = `
-                <strong style="color: #e2e8f0;">📄 Get ${auth.name} API Key</strong><br>
+                <strong style="color: #e2e8f0;">Get ${auth.name} API Key</strong><br>
                 <span style="color: #a0aec0;">Visit: <a href="${auth.url}" target="_blank" style="color: #4fb28e;">${auth.url}</a></span>
             `;
 
@@ -988,14 +1044,14 @@
 
             if (!apiKey) {
                 status.style.display = 'block';
-                status.innerHTML = '<span style="color: #e53e3e;">⚠️ Please enter an API key or click "Skip for Now"</span>';
+                status.innerHTML = '<span style="color: #e53e3e;"><svg class="icon-sm"><use href="#icon-warning"/></svg> Please enter an API key or click "Skip for Now"</span>';
                 return;
             }
 
             btn.disabled = true;
             btn.textContent = '⏳ Validating...';
             status.style.display = 'block';
-            status.innerHTML = '<span style="color: #a0aec0;">🔄 Testing API key...</span>';
+            status.innerHTML = '<span style="color: #a0aec0;"><svg class="icon-sm"><use href="#icon-refresh"/></svg> Testing API key...</span>';
 
             try {
                 const response = await fetch('/api/save-transit-key', {
@@ -1012,20 +1068,20 @@
                     localStorage.setItem('cc-transit-api-validated', 'true');
                     localStorage.setItem('cc-transit-state', selectedAuthority);
                     
-                    status.innerHTML = `<span style="color: #48bb78;">✅ API key saved and validated! Real-time data enabled.</span>`;
-                    btn.textContent = '✓ Saved & Tested';
+                    status.innerHTML = `<span style="color: #48bb78;"><svg class="icon-sm"><use href="#icon-check-circle"/></svg> API key saved and validated! Real-time data enabled.</span>`;
+                    btn.innerHTML = '<svg class="icon-sm" style="color: #22c55e;"><use href="#icon-check-circle"/></svg> Saved & Tested';
                     btn.style.background = '#48bb78';
                     nextBtn.style.display = 'block';
                     document.getElementById('skip-transit-btn').style.display = 'none';
                 } else {
-                    status.innerHTML = `<span style="color: #e53e3e;">❌ Validation failed: ${result.testResult?.message || result.message || 'Unknown error'}</span><br><small style="color: #a0aec0;">Check your key and try again, or skip to use timetable fallback.</small>`;
+                    status.innerHTML = `<span style="color: #e53e3e;"><svg class="icon-sm" style="color: #f87171;"><use href="#icon-x-circle"/></svg> Validation failed: ${result.testResult?.message || result.message || 'Unknown error'}</span><br><small style="color: #a0aec0;">Check your key and try again, or skip to use timetable fallback.</small>`;
                     btn.disabled = false;
-                    btn.textContent = '💾 Save & Test';
+                    btn.innerHTML = '<svg class="icon-sm"><use href="#icon-save"/></svg> Save & Test';
                 }
             } catch (error) {
-                status.innerHTML = `<span style="color: #e53e3e;">❌ Error: ${error.message}</span>`;
+                status.innerHTML = `<span style="color: #e53e3e;"><svg class="icon-sm" style="color: #f87171;"><use href="#icon-x-circle"/></svg> Error: ${error.message}</span>`;
                 btn.disabled = false;
-                btn.textContent = '💾 Save & Test';
+                btn.innerHTML = '<svg class="icon-sm"><use href="#icon-save"/></svg> Save & Test';
             }
         };
 
@@ -1041,7 +1097,7 @@
             localStorage.setItem('cc-transit-state', selectedAuthority);
             
             status.style.display = 'block';
-            status.innerHTML = '<span style="color: #f6ad55;">⚠️ Using timetable fallback. You can add an API key later in Settings.</span>';
+            status.innerHTML = '<span style="color: #f6ad55;"><svg class="icon-sm"><use href="#icon-warning"/></svg> Using timetable fallback. You can add an API key later in Settings.</span>';
             nextBtn.style.display = 'block';
         };
 
@@ -1205,7 +1261,7 @@
                             
                             webhookHtml = `
                                 <div style="margin-top: 20px; padding: 15px; background: rgba(79, 178, 142, 0.1); border-radius: 8px; border: 1px solid rgba(79, 178, 142, 0.3);">
-                                    <h4 style="color: #4fb28e; margin-bottom: 10px;">🔗 Your Device Webhook URL:</h4>
+                                    <h4 style="color: #4fb28e; margin-bottom: 10px;"><svg class="icon-sm"><use href="#icon-link"/></svg> Your Device Webhook URL:</h4>
                                     <input type="text" value="${webhookUrl}" readonly 
                                         style="width: 100%; padding: 10px; font-family: monospace; font-size: 12px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; color: #f1f5f9;"
                                         onclick="this.select(); document.execCommand('copy'); alert('Copied!');">
@@ -1235,12 +1291,12 @@
                     
                     document.getElementById('setup-status').innerHTML = `
                         <div class="success-box" style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); padding: 20px; border-radius: 12px;">
-                            <h3 style="color: #22c55e; margin-bottom: 10px;">✅ Setup Complete!</h3>
+                            <h3 style="color: #22c55e; margin-bottom: 10px;"><svg class="icon"><use href="#icon-check-circle"/></svg> Setup Complete!</h3>
                             <p style="color: #86efac;">Your intelligent transit display is ready.</p>
                             
                             <!-- Device Pairing Section -->
                             <div style="margin-top: 20px; padding: 15px; background: rgba(79, 178, 142, 0.15); border: 2px solid #4fb28e; border-radius: 8px;">
-                                <h4 style="color: #4fb28e; margin-bottom: 10px;">📺 Pair Your Display</h4>
+                                <h4 style="color: #4fb28e; margin-bottom: 10px;"><svg class="icon-sm"><use href="#icon-tv"/></svg> Pair Your Display</h4>
                                 <p style="color: #94a3b8; font-size: 13px; margin-bottom: 12px;">
                                     Enter the code shown on your CC Display:
                                 </p>
@@ -1317,7 +1373,7 @@
                 if (result.success) {
                     statusDiv.innerHTML = `
                         <div style="color: #22c55e; font-weight: 600;">
-                            ✅ Device paired successfully!
+                            <svg class="icon-sm" style="color: #22c55e;"><use href="#icon-check-circle"/></svg> Device paired successfully!
                         </div>
                         <p style="color: #94a3b8; font-size: 12px; margin-top: 5px;">
                             Your display will update within 30 seconds.
@@ -1325,11 +1381,11 @@
                     `;
                     codeInput.disabled = true;
                 } else {
-                    statusDiv.innerHTML = `<span style="color: #f87171;">❌ ${result.error || 'Pairing failed'}</span>`;
+                    statusDiv.innerHTML = `<span style="color: #f87171;"><svg class="icon-sm" style="color: #f87171;"><use href="#icon-x-circle"/></svg> ${result.error || 'Pairing failed'}</span>`;
                 }
             } catch (error) {
                 console.error('Pairing error:', error);
-                statusDiv.innerHTML = `<span style="color: #f87171;">❌ Connection error. Try again.</span>`;
+                statusDiv.innerHTML = `<span style="color: #f87171;"><svg class="icon-sm" style="color: #f87171;"><use href="#icon-x-circle"/></svg> Connection error. Try again.</span>`;
             }
         }
         window.pairDevice = pairDevice;

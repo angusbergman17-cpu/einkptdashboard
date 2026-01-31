@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <!--
-    Commute Compute - Intelligent Transit Display System
+    Commute Compute - Smart Journey Dashboard
     Copyright (c) 2026 Angus Bergman
     Licensed under CC BY-NC 4.0
     https://creativecommons.org/licenses/by-nc/4.0/
@@ -777,7 +777,7 @@
         }
 
         .onboarding-features li:before {
-            content: "✓";
+            content: "\2713";
             display: inline-block;
             width: 24px;
             height: 24px;
@@ -1263,7 +1263,7 @@
         }
 
         .field-error:before {
-            content: "⚠";
+            content: "!";
         }
 
         .field-success {
@@ -1276,7 +1276,7 @@
         }
 
         .field-success:before {
-            content: "✓";
+            content: "\2713";
         }
 
         /* Responsive Design - Mobile Friendly */
@@ -1509,9 +1509,133 @@
         @media (max-width: 600px) {
             .global-nav .nav-links-global { display: none; }
         }
+        /* Icon system - compliant with DEVELOPMENT-RULES Section 22.3 */
+        .icon { display: inline-block; width: 20px; height: 20px; vertical-align: middle; }
+        .icon-sm { width: 16px; height: 16px; }
+        .icon-lg { width: 24px; height: 24px; }
+        .icon-xl { width: 32px; height: 32px; }
+        .icon-xxl { width: 48px; height: 48px; }
+        .icon-hero { width: 80px; height: 80px; }
     </style>
 </head>
 <body>
+    <!-- SVG Icon Sprite - DEVELOPMENT-RULES Section 22.3 Compliant -->
+    <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+        <symbol id="icon-rocket" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>
+        </symbol>
+        <symbol id="icon-sparkles" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>
+        </symbol>
+        <symbol id="icon-map" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/>
+        </symbol>
+        <symbol id="icon-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>
+        </symbol>
+        <symbol id="icon-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+        </symbol>
+        <symbol id="icon-coffee" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/>
+        </symbol>
+        <symbol id="icon-briefcase" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+        </symbol>
+        <symbol id="icon-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>
+        </symbol>
+        <symbol id="icon-tv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/>
+        </symbol>
+        <symbol id="icon-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+        </symbol>
+        <symbol id="icon-zap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+        </symbol>
+        <symbol id="icon-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+        </symbol>
+        <symbol id="icon-image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+        </symbol>
+        <symbol id="icon-key" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+        </symbol>
+        <symbol id="icon-save" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+        </symbol>
+        <symbol id="icon-train" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="3" width="16" height="16" rx="2"/><path d="M4 11h16"/><path d="M12 3v8"/><circle cx="8" cy="15" r="1"/><circle cx="16" cy="15" r="1"/><path d="m9 19-2 3"/><path d="m15 19 2 3"/>
+        </symbol>
+        <symbol id="icon-check-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+        </symbol>
+        <symbol id="icon-warning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+        </symbol>
+        <symbol id="icon-bus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 6v6"/><path d="M15 6v6"/><path d="M2 12h19.6"/><path d="M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3"/><circle cx="7" cy="18" r="2"/><path d="M9 18h5"/><circle cx="16" cy="18" r="2"/>
+        </symbol>
+        <symbol id="icon-tram" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="3" width="16" height="16" rx="2"/><path d="M4 11h16"/><path d="M12 3v8"/><circle cx="8" cy="15" r="1"/><circle cx="16" cy="15" r="1"/><path d="m9 19-2 3"/><path d="m15 19 2 3"/><path d="M9 3 5 1"/><path d="M15 3l4-2"/>
+        </symbol>
+        <symbol id="icon-walk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="5" r="1"/><path d="m9 20 3-6 3 6"/><path d="m6 8 3 2v4"/><path d="m18 8-3 2-2 4"/>
+        </symbol>
+        <symbol id="icon-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>
+        </symbol>
+        <symbol id="icon-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </symbol>
+        <symbol id="icon-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+        </symbol>
+        <symbol id="icon-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+        </symbol>
+        <symbol id="icon-umbrella" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 12a10.06 10.06 0 0 0-20 0Z"/><path d="M12 12v8a2 2 0 0 0 4 0"/><path d="M12 2v1"/>
+        </symbol>
+        <symbol id="icon-thermometer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/>
+        </symbol>
+        <symbol id="icon-cloud" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+        </symbol>
+        <symbol id="icon-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </symbol>
+        <symbol id="icon-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>
+        </symbol>
+        <symbol id="icon-smartphone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>
+        </symbol>
+        <symbol id="icon-monitor" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+        </symbol>
+        <symbol id="icon-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+        </symbol>
+        <symbol id="icon-file-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+        </symbol>
+        <symbol id="icon-run" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="5" r="1"/><path d="m9 20 3-6 3 6"/><path d="m6 8 6 2"/><path d="m18 8-5 2-3 6"/>
+        </symbol>
+        <symbol id="icon-dice" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="2" width="20" height="20" rx="2"/><circle cx="8" cy="8" r="1"/><circle cx="16" cy="8" r="1"/><circle cx="8" cy="16" r="1"/><circle cx="16" cy="16" r="1"/><circle cx="12" cy="12" r="1"/>
+        </symbol>
+        <symbol id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>
+        </symbol>
+        <symbol id="icon-database" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+        </symbol>
+    </svg>
     <!-- Global Navigation -->
     <nav class="global-nav">
         <a href="/" class="nav-brand">
@@ -1592,13 +1716,13 @@
         <div id="tab-setup" class="tab-content">
             <!-- Not Configured State -->
             <div id="setup-not-configured" style="display: none; text-align: center; padding: 60px 20px;">
-                <div style="font-size: 80px; margin-bottom: 20px;">🚀</div>
+                <div style="margin-bottom: 20px;"><svg class="icon-hero" style="color: #4fb28e;"><use href="#icon-rocket"/></svg></div>
                 <h2 style="margin-bottom: 15px; font-size: 24px;">Welcome to Commute Compute</h2>
                 <p style="opacity: 0.8; margin-bottom: 30px; max-width: 500px; margin-left: auto; margin-right: auto; line-height: 1.7; font-size: 15px;">
                     Set up your commute in just a few steps. We'll find the best route and keep your e-ink display updated with live transit data.
                 </p>
                 <a href="/setup-wizard.html" class="btn btn-primary" style="padding: 15px 40px; font-size: 18px; text-decoration: none; display: inline-block;">
-                    ✨ Start Setup Wizard
+                    <svg class="icon"><use href="#icon-sparkles"/></svg> Start Setup Wizard
                 </a>
             </div>
 
@@ -1607,10 +1731,10 @@
                 <!-- Journey Configuration Card - Inline Editable -->
                 <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(79, 178, 142, 0.1) 0%, rgba(102, 126, 234, 0.1) 100%); border-left: 4px solid #4fb28e;">
                     <div class="card-header" style="margin-bottom: 20px;">
-                        <span class="card-icon">🗺️</span>
+                        <span class="card-icon"><svg class="icon-lg"><use href="#icon-map"/></svg></span>
                         <h2>Your Commute</h2>
                         <a href="/setup-wizard.html" class="btn btn-secondary" style="margin-left: auto; padding: 8px 16px; font-size: 13px;">
-                            🔄 Full Wizard
+                            <svg class="icon-sm"><use href="#icon-refresh"/></svg> Full Wizard
                         </a>
                     </div>
 
@@ -1620,17 +1744,17 @@
                             <div style="display: flex; flex-direction: column; gap: 12px;">
                                 <!-- HOME - Editable -->
                                 <div class="editable-row" style="display: flex; align-items: flex-start; gap: 12px;">
-                                    <span style="font-size: 20px; width: 28px; text-align: center;">🏠</span>
+                                    <span style="width: 28px; text-align: center;"><svg class="icon"><use href="#icon-home"/></svg></span>
                                     <div style="flex: 1;">
                                         <div style="font-size: 11px; opacity: 0.6; margin-bottom: 2px;">HOME</div>
                                         <div id="summary-home-display" style="font-size: 14px; font-weight: 500; cursor: pointer;" onclick="toggleEditField('home')">
                                             <span id="summary-home">Not configured</span>
-                                            <span style="margin-left: 8px; opacity: 0.5; font-size: 12px;">✏️</span>
+                                            <span style="margin-left: 8px; opacity: 0.5;"><svg class="icon-sm"><use href="#icon-edit"/></svg></span>
                                         </div>
                                         <div id="edit-home-container" style="display: none; margin-top: 8px;">
                                             <input type="text" id="edit-home-input" class="form-input" placeholder="Enter home address" style="margin-bottom: 8px;">
                                             <div style="display: flex; gap: 8px;">
-                                                <button onclick="saveFieldEdit('home')" class="btn btn-success" style="padding: 6px 12px; font-size: 12px;">✓ Save</button>
+                                                <button onclick="saveFieldEdit('home')" class="btn btn-success" style="padding: 6px 12px; font-size: 12px;"><svg class="icon-sm"><use href="#icon-check-circle"/></svg> Save</button>
                                                 <button onclick="cancelFieldEdit('home')" class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;">✗ Cancel</button>
                                             </div>
                                         </div>
@@ -1642,7 +1766,7 @@
                                 <!-- COFFEE STOP - Editable with Toggle -->
                                 <div id="summary-cafe-row">
                                     <div class="editable-row" style="display: flex; align-items: flex-start; gap: 12px;">
-                                        <span style="font-size: 20px; width: 28px; text-align: center;">☕</span>
+                                        <span style="width: 28px; text-align: center;"><svg class="icon"><use href="#icon-coffee"/></svg></span>
                                         <div style="flex: 1;">
                                             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
                                                 <span style="font-size: 11px; opacity: 0.6;">COFFEE STOP</span>
@@ -1653,12 +1777,12 @@
                                             </div>
                                             <div id="summary-cafe-display" style="font-size: 14px; font-weight: 500; cursor: pointer;" onclick="toggleEditField('cafe')">
                                                 <span id="summary-cafe">Not configured</span>
-                                                <span style="margin-left: 8px; opacity: 0.5; font-size: 12px;">✏️</span>
+                                                <span style="margin-left: 8px; opacity: 0.5;"><svg class="icon-sm"><use href="#icon-edit"/></svg></span>
                                             </div>
                                             <div id="edit-cafe-container" style="display: none; margin-top: 8px;">
                                                 <input type="text" id="edit-cafe-input" class="form-input" placeholder="Enter cafe name/address" style="margin-bottom: 8px;">
                                                 <div style="display: flex; gap: 8px;">
-                                                    <button onclick="saveFieldEdit('cafe')" class="btn btn-success" style="padding: 6px 12px; font-size: 12px;">✓ Save</button>
+                                                    <button onclick="saveFieldEdit('cafe')" class="btn btn-success" style="padding: 6px 12px; font-size: 12px;"><svg class="icon-sm"><use href="#icon-check-circle"/></svg> Save</button>
                                                     <button onclick="cancelFieldEdit('cafe')" class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;">✗ Cancel</button>
                                                 </div>
                                             </div>
@@ -1669,17 +1793,17 @@
                                 
                                 <!-- WORK - Editable -->
                                 <div class="editable-row" style="display: flex; align-items: flex-start; gap: 12px;">
-                                    <span style="font-size: 20px; width: 28px; text-align: center;">💼</span>
+                                    <span style="width: 28px; text-align: center;"><svg class="icon"><use href="#icon-briefcase"/></svg></span>
                                     <div style="flex: 1;">
                                         <div style="font-size: 11px; opacity: 0.6; margin-bottom: 2px;">WORK</div>
                                         <div id="summary-work-display" style="font-size: 14px; font-weight: 500; cursor: pointer;" onclick="toggleEditField('work')">
                                             <span id="summary-work">Not configured</span>
-                                            <span style="margin-left: 8px; opacity: 0.5; font-size: 12px;">✏️</span>
+                                            <span style="margin-left: 8px; opacity: 0.5;"><svg class="icon-sm"><use href="#icon-edit"/></svg></span>
                                         </div>
                                         <div id="edit-work-container" style="display: none; margin-top: 8px;">
                                             <input type="text" id="edit-work-input" class="form-input" placeholder="Enter work address" style="margin-bottom: 8px;">
                                             <div style="display: flex; gap: 8px;">
-                                                <button onclick="saveFieldEdit('work')" class="btn btn-success" style="padding: 6px 12px; font-size: 12px;">✓ Save</button>
+                                                <button onclick="saveFieldEdit('work')" class="btn btn-success" style="padding: 6px 12px; font-size: 12px;"><svg class="icon-sm"><use href="#icon-check-circle"/></svg> Save</button>
                                                 <button onclick="cancelFieldEdit('work')" class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;">✗ Cancel</button>
                                             </div>
                                         </div>
@@ -1692,16 +1816,16 @@
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;">
                             <!-- Arrival Time - Editable -->
                             <div style="padding: 15px; background: rgba(79, 178, 142, 0.15); border-radius: 10px; text-align: center; cursor: pointer;" onclick="toggleEditField('arrival')">
-                                <div style="font-size: 24px; margin-bottom: 5px;">⏰</div>
+                                <div style="margin-bottom: 5px;"><svg class="icon-lg"><use href="#icon-clock"/></svg></div>
                                 <div style="font-size: 11px; opacity: 0.6; margin-bottom: 3px;">ARRIVE BY</div>
                                 <div id="summary-arrival-display">
                                     <span id="summary-arrival" style="font-size: 18px; font-weight: 700;">9:00am</span>
-                                    <span style="font-size: 10px; opacity: 0.5;"> ✏️</span>
+                                    <span style="opacity: 0.5;"><svg class="icon-sm"><use href="#icon-edit"/></svg></span>
                                 </div>
                                 <div id="edit-arrival-container" style="display: none; margin-top: 8px;" onclick="event.stopPropagation()">
                                     <input type="time" id="edit-arrival-input" class="form-input" style="text-align: center; font-size: 14px; padding: 8px;">
                                     <div style="display: flex; gap: 6px; justify-content: center; margin-top: 8px;">
-                                        <button onclick="saveFieldEdit('arrival'); event.stopPropagation();" class="btn btn-success" style="padding: 4px 10px; font-size: 11px;">✓</button>
+                                        <button onclick="saveFieldEdit('arrival'); event.stopPropagation();" class="btn btn-success" style="padding: 4px 10px; font-size: 11px;"><svg class="icon-sm"><use href="#icon-check-circle"/></svg></button>
                                         <button onclick="cancelFieldEdit('arrival'); event.stopPropagation();" class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;">✗</button>
                                     </div>
                                 </div>
@@ -1709,11 +1833,11 @@
                             
                             <!-- State - Editable -->
                             <div style="padding: 15px; background: rgba(102, 126, 234, 0.15); border-radius: 10px; text-align: center; cursor: pointer;" onclick="toggleEditField('state')">
-                                <div style="font-size: 24px; margin-bottom: 5px;">📍</div>
+                                <div style="margin-bottom: 5px;"><svg class="icon-lg"><use href="#icon-pin"/></svg></div>
                                 <div style="font-size: 11px; opacity: 0.6; margin-bottom: 3px;">STATE</div>
                                 <div id="summary-state-display">
                                     <span id="summary-state" style="font-size: 18px; font-weight: 700;">VIC</span>
-                                    <span style="font-size: 10px; opacity: 0.5;"> ✏️</span>
+                                    <span style="opacity: 0.5;"><svg class="icon-sm"><use href="#icon-edit"/></svg></span>
                                 </div>
                                 <div id="edit-state-container" style="display: none; margin-top: 8px;" onclick="event.stopPropagation()">
                                     <select id="edit-state-input" class="form-input" style="text-align: center; font-size: 14px; padding: 8px;">
@@ -1727,7 +1851,7 @@
                                         <option value="ACT">ACT</option>
                                     </select>
                                     <div style="display: flex; gap: 6px; justify-content: center; margin-top: 8px;">
-                                        <button onclick="saveFieldEdit('state'); event.stopPropagation();" class="btn btn-success" style="padding: 4px 10px; font-size: 11px;">✓</button>
+                                        <button onclick="saveFieldEdit('state'); event.stopPropagation();" class="btn btn-success" style="padding: 4px 10px; font-size: 11px;"><svg class="icon-sm"><use href="#icon-check-circle"/></svg></button>
                                         <button onclick="cancelFieldEdit('state'); event.stopPropagation();" class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;">✗</button>
                                     </div>
                                 </div>
@@ -1735,7 +1859,7 @@
                             
                             <!-- Mode - Read Only -->
                             <div style="padding: 15px; background: rgba(251, 191, 36, 0.15); border-radius: 10px; text-align: center;">
-                                <div style="font-size: 24px; margin-bottom: 5px;">☁️</div>
+                                <div style="margin-bottom: 5px;"><svg class="icon-lg"><use href="#icon-cloud"/></svg></div>
                                 <div style="font-size: 11px; opacity: 0.6; margin-bottom: 3px;">MODE</div>
                                 <div id="summary-mode" style="font-size: 14px; font-weight: 700;">Free</div>
                             </div>
@@ -1749,26 +1873,26 @@
                 <!-- Device Configuration Card -->
                 <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-left: 4px solid #818cf8;">
                     <div class="card-header" style="margin-bottom: 20px;">
-                        <span class="card-icon">📺</span>
+                        <span class="card-icon"><svg class="icon-lg"><use href="#icon-tv"/></svg></span>
                         <h2>Display Device</h2>
                     </div>
 
                     <div id="device-status-content">
                         <div style="display: flex; align-items: center; gap: 15px; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 10px; margin-bottom: 15px;">
-                            <div style="font-size: 40px;">📟</div>
+                            <div><svg class="icon-xl" style="color: #4fb28e;"><use href="#icon-monitor"/></svg></div>
                             <div style="flex: 1;">
                                 <div id="device-name" style="font-weight: 600; font-size: 16px; margin-bottom: 4px;">TRMNL Display (OG)</div>
                                 <div id="device-specs" style="font-size: 12px; opacity: 0.7;">800×480 • Landscape • ESP32</div>
                             </div>
                             <span id="device-status-badge" style="background: rgba(34, 197, 94, 0.9); color: white; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;">
-                                ✓ Ready
+                                <svg class="icon-sm"><use href="#icon-check-circle"/></svg> Ready
                             </span>
                         </div>
 
                         <!-- Firmware Disclaimer -->
                         <div id="firmware-disclaimer" style="padding: 12px; background: rgba(251, 191, 36, 0.1); border-radius: 8px; border-left: 3px solid #fbbf24; margin-bottom: 15px;">
                             <div style="font-size: 12px; line-height: 1.5; color: rgba(255,255,255,0.85);">
-                                <strong>⚠️ Custom Firmware Required:</strong> Your device must be flashed with 
+                                <strong><svg class="icon-sm"><use href="#icon-warning"/></svg> Custom Firmware Required:</strong> Your device must be flashed with 
                                 <a href="/flasher/" target="_blank" style="color: #fbbf24;">Commute Compute firmware</a> 
                                 to connect to this dashboard. Stock firmware will not work.
                             </div>
@@ -1776,7 +1900,7 @@
 
                         <!-- Webhook URL -->
                         <div id="webhook-section" style="display: none; padding: 15px; background: rgba(79, 178, 142, 0.1); border-radius: 10px; border: 1px solid rgba(79, 178, 142, 0.3);">
-                            <div style="font-weight: 600; font-size: 13px; margin-bottom: 10px;">🔗 Device Webhook URL</div>
+                            <div style="font-weight: 600; font-size: 13px; margin-bottom: 10px;"><svg class="icon-sm"><use href="#icon-link"/></svg> Device Webhook URL</div>
                             <div style="display: flex; gap: 10px;">
                                 <input type="text" id="webhook-url-display" readonly 
                                     style="flex: 1; padding: 10px 12px; font-family: monospace; font-size: 11px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; color: #f1f5f9;">
@@ -1795,7 +1919,7 @@
                                 No e-ink device configured yet
                             </div>
                             <a href="/setup-wizard.html" class="btn btn-secondary" style="padding: 10px 20px; font-size: 13px; text-decoration: none;">
-                                📱 Add Device
+                                <svg class="icon-sm"><use href="#icon-smartphone"/></svg> Add Device
                             </a>
                         </div>
                     </div>
@@ -1894,19 +2018,19 @@
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;">
                             <label style="display: flex; align-items: center; gap: 10px; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; cursor: pointer;">
                                 <input type="checkbox" id="sc-prefer-train" checked style="width: 18px; height: 18px; accent-color: #4fb28e;">
-                                <span style="font-size: 13px;">🚃 Train</span>
+                                <span style="font-size: 13px;"><svg class="icon-sm"><use href="#icon-train"/></svg> Train</span>
                             </label>
                             <label style="display: flex; align-items: center; gap: 10px; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; cursor: pointer;">
                                 <input type="checkbox" id="sc-prefer-tram" checked style="width: 18px; height: 18px; accent-color: #4fb28e;">
-                                <span style="font-size: 13px;">🚊 Tram</span>
+                                <span style="font-size: 13px;"><svg class="icon-sm"><use href="#icon-tram"/></svg> Tram</span>
                             </label>
                             <label style="display: flex; align-items: center; gap: 10px; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; cursor: pointer;">
                                 <input type="checkbox" id="sc-prefer-bus" style="width: 18px; height: 18px; accent-color: #4fb28e;">
-                                <span style="font-size: 13px;">🚌 Bus</span>
+                                <span style="font-size: 13px;"><svg class="icon-sm"><use href="#icon-bus"/></svg> Bus</span>
                             </label>
                             <label style="display: flex; align-items: center; gap: 10px; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; cursor: pointer;">
                                 <input type="checkbox" id="sc-minimize-walking" checked style="width: 18px; height: 18px; accent-color: #4fb28e;">
-                                <span style="font-size: 13px;">🚶 Min Walking</span>
+                                <span style="font-size: 13px;"><svg class="icon-sm"><use href="#icon-walk"/></svg> Min Walking</span>
                             </label>
                         </div>
                     </div>
@@ -2004,21 +2128,21 @@
                 <!-- Quick Actions Card -->
                 <div class="card" style="background: rgba(255,255,255,0.03);">
                     <div class="card-header" style="margin-bottom: 15px;">
-                        <span class="card-icon">⚡</span>
+                        <span class="card-icon"><svg class="icon-lg"><use href="#icon-zap"/></svg></span>
                         <h2>Quick Actions</h2>
                     </div>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
                         <button onclick="forceRecalculation()" class="btn btn-secondary" style="padding: 15px; font-size: 14px;">
-                            🔄 Recalculate Journey
+                            <svg class="icon-sm"><use href="#icon-refresh"/></svg> Recalculate Journey
                         </button>
                         <button onclick="showTab('live', this)" class="btn btn-secondary" style="padding: 15px; font-size: 14px;">
-                            📊 View Live Data
+                            <svg class="icon-sm"><use href="#icon-chart"/></svg> View Live Data
                         </button>
                         <a href="/preview.html" target="_blank" class="btn btn-secondary" style="padding: 15px; font-size: 14px; text-decoration: none; text-align: center;">
-                            🖼️ E-Ink Preview
+                            <svg class="icon-sm"><use href="#icon-image"/></svg> E-Ink Preview
                         </a>
                         <button onclick="clearConfig()" class="btn btn-secondary" style="padding: 15px; font-size: 14px; opacity: 0.7;">
-                            🗑️ Reset Config
+                            <svg class="icon-sm"><use href="#icon-trash"/></svg> Reset Config
                         </button>
                     </div>
                 </div>
@@ -2425,13 +2549,13 @@
         <div id="tab-api" class="tab-content">
             <!-- Not Configured State -->
             <div id="api-not-configured" style="display: none; text-align: center; padding: 60px 20px;">
-                <div style="font-size: 80px; margin-bottom: 20px;">🔑</div>
+                <div style="margin-bottom: 20px;"><svg class="icon-hero" style="color: #4fb28e;"><use href="#icon-key"/></svg></div>
                 <h2 style="margin-bottom: 15px; font-size: 24px;">API Keys Not Configured</h2>
                 <p style="opacity: 0.8; margin-bottom: 30px; max-width: 500px; margin-left: auto; margin-right: auto; line-height: 1.7; font-size: 15px;">
                     Complete the setup wizard to configure your API keys. The wizard will guide you through obtaining and validating your credentials.
                 </p>
                 <a href="/setup-wizard.html" class="btn btn-primary" style="padding: 15px 40px; font-size: 18px; text-decoration: none; display: inline-block;">
-                    ✨ Go to Setup Wizard
+                    <svg class="icon"><use href="#icon-sparkles"/></svg> Go to Setup Wizard
                 </a>
             </div>
 
@@ -2440,7 +2564,7 @@
                 <!-- Data Mode Banner -->
                 <div id="api-data-mode-banner" style="margin-bottom: 25px; padding: 18px 20px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 15px;">
                     <div style="display: flex; align-items: center; gap: 15px;">
-                        <span id="api-mode-icon" style="font-size: 32px;">🟢</span>
+                        <span id="api-mode-icon"><svg class="icon-xl" style="color: #22c55e;"><use href="#icon-check-circle"/></svg></span>
                         <div>
                             <div id="api-mode-title" style="font-weight: 700; font-size: 17px; margin-bottom: 4px;">Real-Time Data Enabled</div>
                             <div id="api-mode-subtitle" style="font-size: 13px; opacity: 0.85;">Transit API validated and active</div>
@@ -2451,21 +2575,21 @@
                 <!-- Transit API Card -->
                 <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(79, 178, 142, 0.1) 0%, rgba(34, 197, 94, 0.1) 100%); border-left: 4px solid #4fb28e;">
                     <div class="card-header" style="margin-bottom: 15px;">
-                        <span class="card-icon">🚆</span>
+                        <span class="card-icon"><svg class="icon-lg"><use href="#icon-train"/></svg></span>
                         <h2>Transport Victoria OpenData API</h2>
                     </div>
 
                     <div id="transit-api-status-card" style="padding: 15px; background: rgba(0,0,0,0.2); border-radius: 10px; margin-bottom: 15px;">
                         <div style="display: flex; align-items: center; justify-content: space-between;">
                             <div style="display: flex; align-items: center; gap: 12px;">
-                                <span id="transit-status-icon" style="font-size: 24px;">✅</span>
+                                <span id="transit-status-icon"><svg class="icon-lg" style="color: #22c55e;"><use href="#icon-check-circle"/></svg></span>
                                 <div>
                                     <div id="transit-status-text" style="font-weight: 600; font-size: 14px;">Configured & Validated</div>
                                     <div id="transit-key-preview" style="font-size: 12px; opacity: 0.7; font-family: monospace; margin-top: 4px;">ce606b90-****-****-****-************</div>
                                 </div>
                             </div>
                             <span id="transit-status-badge" style="background: rgba(34, 197, 94, 0.9); color: white; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;">
-                                ✓ Active
+                                <svg class="icon-sm"><use href="#icon-check-circle"/></svg> Active
                             </span>
                         </div>
                     </div>
@@ -2473,7 +2597,7 @@
                     <!-- Edit Transit API (collapsed by default) -->
                     <details style="margin-top: 15px;">
                         <summary style="cursor: pointer; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; font-size: 14px; font-weight: 500;">
-                            ✏️ Edit Transit API Key
+                            <svg class="icon-sm"><use href="#icon-edit"/></svg> Edit Transit API Key
                         </summary>
                         <div style="padding: 15px; margin-top: 10px; background: rgba(0,0,0,0.1); border-radius: 8px;">
                             <div class="form-group" style="margin-bottom: 15px;">
@@ -2484,8 +2608,8 @@
                                 </small>
                             </div>
                             <div style="display: flex; gap: 10px;">
-                                <button class="btn" onclick="updateTransitKey()">💾 Save & Validate</button>
-                                <button class="btn btn-secondary" onclick="testTransitKey()">🔄 Test Current</button>
+                                <button class="btn" onclick="updateTransitKey()"><svg class="icon-sm"><use href="#icon-save"/></svg> Save & Validate</button>
+                                <button class="btn btn-secondary" onclick="testTransitKey()"><svg class="icon-sm"><use href="#icon-refresh"/></svg> Test Current</button>
                             </div>
                             <div id="transit-edit-message" style="display: none; margin-top: 12px; padding: 10px; border-radius: 6px; font-size: 13px;"></div>
                         </div>
@@ -2495,33 +2619,33 @@
                 <!-- Google Places API Card -->
                 <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-left: 4px solid #818cf8;">
                     <div class="card-header" style="margin-bottom: 15px;">
-                        <span class="card-icon">📍</span>
+                        <span class="card-icon"><svg class="icon-lg"><use href="#icon-pin"/></svg></span>
                         <h2>Google Places API</h2>
                     </div>
 
                     <div id="google-api-status-card" style="padding: 15px; background: rgba(0,0,0,0.2); border-radius: 10px; margin-bottom: 15px;">
                         <div style="display: flex; align-items: center; justify-content: space-between;">
                             <div style="display: flex; align-items: center; gap: 12px;">
-                                <span id="google-status-icon" style="font-size: 24px;">✅</span>
+                                <span id="google-status-icon"><svg class="icon-lg" style="color: #22c55e;"><use href="#icon-check-circle"/></svg></span>
                                 <div>
                                     <div id="google-status-text" style="font-weight: 600; font-size: 14px;">Configured & Validated</div>
                                     <div id="google-key-preview" style="font-size: 12px; opacity: 0.7; font-family: monospace; margin-top: 4px;">AIza****************************</div>
                                 </div>
                             </div>
                             <span id="google-status-badge" style="background: rgba(34, 197, 94, 0.9); color: white; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;">
-                                ✓ Active
+                                <svg class="icon-sm"><use href="#icon-check-circle"/></svg> Active
                             </span>
                         </div>
                     </div>
 
                     <div style="padding: 12px; background: rgba(251, 191, 36, 0.1); border-radius: 8px; font-size: 13px; line-height: 1.5;">
-                        <strong>💡 Usage:</strong> Google Places enhances address search accuracy and enables real-time cafe busy-ness detection in Live Mode.
+                        <strong><svg class="icon-sm"><use href="#icon-zap"/></svg> Usage:</strong> Google Places enhances address search accuracy and enables real-time cafe busy-ness detection in Live Mode.
                     </div>
 
                     <!-- Edit Google API (collapsed by default) -->
                     <details style="margin-top: 15px;">
                         <summary style="cursor: pointer; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; font-size: 14px; font-weight: 500;">
-                            ✏️ Edit Google Places API Key
+                            <svg class="icon-sm"><use href="#icon-edit"/></svg> Edit Google Places API Key
                         </summary>
                         <div style="padding: 15px; margin-top: 10px; background: rgba(0,0,0,0.1); border-radius: 8px;">
                             <div class="form-group" style="margin-bottom: 15px;">
@@ -2532,8 +2656,8 @@
                                 </small>
                             </div>
                             <div style="display: flex; gap: 10px;">
-                                <button class="btn" onclick="updateGoogleKey()">💾 Save & Validate</button>
-                                <button class="btn btn-secondary" onclick="testGoogleKey()">🔄 Test Current</button>
+                                <button class="btn" onclick="updateGoogleKey()"><svg class="icon-sm"><use href="#icon-save"/></svg> Save & Validate</button>
+                                <button class="btn btn-secondary" onclick="testGoogleKey()"><svg class="icon-sm"><use href="#icon-refresh"/></svg> Test Current</button>
                             </div>
                             <div id="google-edit-message" style="display: none; margin-top: 12px; padding: 10px; border-radius: 6px; font-size: 13px;"></div>
                         </div>
@@ -2543,7 +2667,7 @@
                 <!-- API Mode Selection -->
                 <div class="card" style="margin-bottom: 20px;">
                     <div class="card-header" style="margin-bottom: 15px;">
-                        <span class="card-icon">☁️</span>
+                        <span class="card-icon"><svg class="icon-lg"><use href="#icon-cloud"/></svg></span>
                         <h2>Data Mode</h2>
                     </div>
 
@@ -2559,7 +2683,7 @@
                         <label id="mode-live-option" style="display: flex; align-items: center; padding: 15px; background: rgba(102, 126, 234, 0.1); border: 2px solid rgba(102, 126, 234, 0.3); border-radius: 10px; cursor: pointer;">
                             <input type="radio" name="api-mode-select" value="live" style="margin-right: 12px; width: 18px; height: 18px;" onchange="updateApiMode('live')">
                             <div style="flex: 1;">
-                                <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">⚡ Live Mode</div>
+                                <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;"><svg class="icon-sm"><use href="#icon-zap"/></svg> Live Mode</div>
                                 <div style="font-size: 12px; opacity: 0.8;">Real-time transit data + cafe busy-ness. Requires valid API keys.</div>
                             </div>
                         </label>
@@ -2571,18 +2695,18 @@
                 <!-- Quick Actions -->
                 <div class="card">
                     <div class="card-header" style="margin-bottom: 15px;">
-                        <span class="card-icon">⚡</span>
+                        <span class="card-icon"><svg class="icon-lg"><use href="#icon-zap"/></svg></span>
                         <h2>Quick Actions</h2>
                     </div>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
                         <button onclick="testAllApis()" class="btn btn-secondary" style="padding: 15px; font-size: 14px;">
-                            🔄 Test All APIs
+                            <svg class="icon-sm"><use href="#icon-refresh"/></svg> Test All APIs
                         </button>
                         <button onclick="refreshApiStatus()" class="btn btn-secondary" style="padding: 15px; font-size: 14px;">
-                            📊 Refresh Status
+                            <svg class="icon-sm"><use href="#icon-chart"/></svg> Refresh Status
                         </button>
                         <a href="/setup-wizard.html" class="btn btn-secondary" style="padding: 15px; font-size: 14px; text-decoration: none; text-align: center;">
-                            ✨ Re-run Setup Wizard
+                            <svg class="icon-sm"><use href="#icon-sparkles"/></svg> Re-run Setup Wizard
                         </a>
                     </div>
                 </div>
@@ -3186,7 +3310,7 @@
                         <div style="padding: 12px; background: rgba(64, 220, 165, 0.1); border-radius: 6px; margin-top: 10px;">
                             <div style="margin-bottom: 8px;"><strong>Decision Logic:</strong></div>
                             If (home_to_station_walk + coffee_prep + cafe_to_station_walk + buffer) < time_until_next_train:<br>
-                            <span style="margin-left: 20px; color: #40DCA5;">✓ <strong>Go for coffee!</strong></span><br>
+                            <span style="margin-left: 20px; color: #40DCA5;"><svg class="icon-sm"><use href="#icon-check-circle"/></svg> <strong>Go for coffee!</strong></span><br>
                             Else:<br>
                             <span style="margin-left: 20px; color: #fc8181;">✗ <strong>Go direct</strong></span>
                         </div>
@@ -3745,29 +3869,29 @@
                 <div style="font-weight: 600; font-size: 13px; margin-bottom: 12px; opacity: 0.9;">Quick Links</div>
                 <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
                     <a href="/api/livedash?device=trmnl-og&format=html" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; background: rgba(79, 178, 142, 0.2); border: 1px solid rgba(79, 178, 142, 0.3); border-radius: 6px; color: #4fb28e; text-decoration: none; font-size: 13px; transition: all 0.2s;">
-                        <span>📊</span> Live Display
+                        <svg class="icon-sm"><use href="#icon-chart"/></svg> Live Display
                     </a>
                     <a href="/preview.html" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; background: rgba(79, 178, 142, 0.2); border: 1px solid rgba(79, 178, 142, 0.3); border-radius: 6px; color: #4fb28e; text-decoration: none; font-size: 13px; transition: all 0.2s;">
-                        <span>🖥️</span> E-Ink Preview
+                        <svg class="icon-sm"><use href="#icon-monitor"/></svg> E-Ink Preview
                     </a>
                     <a href="/api/livedash?device=trmnl-og&format=html" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; background: rgba(79, 178, 142, 0.2); border: 1px solid rgba(79, 178, 142, 0.3); border-radius: 6px; color: #4fb28e; text-decoration: none; font-size: 13px; transition: all 0.2s;">
                         <span>🚉</span> CC Dashboard
                     </a>
                     <a href="/journey-display.html" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; background: rgba(79, 178, 142, 0.2); border: 1px solid rgba(79, 178, 142, 0.3); border-radius: 6px; color: #4fb28e; text-decoration: none; font-size: 13px; transition: all 0.2s;">
-                        <span>🗺️</span> Journey Visualizer
+                        <svg class="icon-sm"><use href="#icon-map"/></svg> Journey Visualizer
                     </a>
                     <a href="/api/status" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; background: rgba(6, 182, 212, 0.2); border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 6px; color: #67e8f9; text-decoration: none; font-size: 13px; transition: all 0.2s;">
-                        <span>💚</span> API Status
+                        <svg class="icon-sm" style="color: #22c55e;"><use href="#icon-check-circle"/></svg> API Status
                     </a>
                 </div>
             </div>
             <p style="margin-top: 15px; font-size: 12px; opacity: 0.7;">
                 © 2026 Angus Bergman. Licensed under <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" style="color: #4fb28e;">CC BY-NC 4.0</a><br>
-                Commute Compute - Intelligent Transit Display System
+                Commute Compute - Smart Journey Dashboard
             </p>
             <p style="margin-top: 12px; font-size: 13px;">
                 <a href="https://buymeacoffee.com/angusbergman" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background: #FFDD00; color: #000; border-radius: 6px; font-weight: 500; text-decoration: none; transition: transform 0.2s;">
-                    <span>☕</span> Buy Me a Coffee
+                    <svg class="icon-sm"><use href="#icon-coffee"/></svg> Buy Me a Coffee
                 </a>
             </p>
 
@@ -3780,7 +3904,7 @@
             <!-- License Information (Collapsible) -->
             <details style="margin-top: 15px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px; font-size: 12px; line-height: 1.7; cursor: pointer;">
                 <summary style="font-weight: 600; font-size: 13px; cursor: pointer; user-select: none;">
-                    📄 License Information (Click to expand)
+                    <svg class="icon-sm"><use href="#icon-file-text"/></svg> License Information (Click to expand)
                 </summary>
                 <div style="margin-top: 15px;">
                     <p style="margin-bottom: 10px;">
@@ -3792,14 +3916,14 @@
                         </a>
                     </p>
                     <div style="padding: 10px; background: rgba(0,0,0,0.1); border-radius: 6px; margin-top: 10px;">
-                        <div style="font-weight: 600; margin-bottom: 6px;">✅ You ARE free to:</div>
+                        <div style="font-weight: 600; margin-bottom: 6px;"><svg class="icon-sm" style="color: #22c55e;"><use href="#icon-check-circle"/></svg> You ARE free to:</div>
                         <ul style="margin-left: 20px; margin-bottom: 10px;">
                             <li>Use this software for personal, non-commercial purposes</li>
                             <li>Modify and adapt the code for your own use</li>
                             <li>Share the software with proper attribution to Angus Bergman</li>
                             <li>Study how it works and learn from it</li>
                         </ul>
-                        <div style="font-weight: 600; margin-bottom: 6px;">❌ You are NOT allowed to:</div>
+                        <div style="font-weight: 600; margin-bottom: 6px;"><svg class="icon-sm" style="color: #f87171;"><use href="#icon-x-circle"/></svg> You are NOT allowed to:</div>
                         <ul style="margin-left: 20px;">
                             <li>Use this software for commercial purposes without written permission</li>
                             <li>Sell or profit from this software or derivatives</li>
@@ -3884,7 +4008,7 @@
 
         const ONBOARDING_STEPS = [
             {
-                title: "Welcome to Commute Compute! 🚊",
+                title: "Welcome to Commute Compute!",
                 content: `
                     <p>Your intelligent transit display system for smart commute decisions.</p>
                     <ul class="onboarding-features">
@@ -3897,7 +4021,7 @@
                 `
             },
             {
-                title: "Step 1: Configure Your Journey 🏠",
+                title: "Step 1: Configure Your Journey",
                 content: `
                     <p>Start by setting up your daily journey locations:</p>
                     <ul class="onboarding-features">
@@ -3923,7 +4047,7 @@
                 `
             },
             {
-                title: "Step 3: View Live Departures 🔴",
+                title: "Step 3: View Live Departures",
                 content: `
                     <p>Once configured, enjoy real-time transit information:</p>
                     <ul class="onboarding-features">
@@ -3990,7 +4114,7 @@
                 skipBtn.style.display = 'block';
             } else if (currentOnboardingStep === ONBOARDING_STEPS.length - 1) {
                 prevBtn.style.display = 'block';
-                nextBtn.textContent = 'Get Started! 🚀';
+                nextBtn.innerHTML = '<svg class="icon-sm"><use href="#icon-rocket"/></svg> Get Started!';
                 skipBtn.style.display = 'none';
             } else {
                 prevBtn.style.display = 'block';
@@ -4078,10 +4202,10 @@
             toast.className = `toast toast-${type}`;
 
             const icons = {
-                success: '✓',
-                error: '✗',
-                warning: '⚠',
-                info: 'ℹ'
+                success: '<svg class="icon-sm"><use href="#icon-check-circle"/></svg>',
+                error: '<svg class="icon-sm"><use href="#icon-x-circle"/></svg>',
+                warning: '<svg class="icon-sm"><use href="#icon-warning"/></svg>',
+                info: '<svg class="icon-sm"><use href="#icon-zap"/></svg>'
             };
 
             toast.innerHTML = `
@@ -4274,7 +4398,7 @@
                                     ${isActive ? '<span style="background: rgba(102, 126, 234, 0.3); color: #4fb28e; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">ACTIVE</span>' : ''}
                                 </div>
                                 <div style="font-size: 13px; opacity: 0.8;">
-                                    📅 ${scheduleText}
+                                    <svg class="icon-sm"><use href="#icon-calendar"/></svg> ${scheduleText}
                                 </div>
                             </div>
                             <div style="display: flex; gap: 8px;">
@@ -4688,7 +4812,7 @@
                     <div style="font-size: 48px; font-weight: 700; color: #f1f5f9;">${weather.temp || '--'}°</div>
                     <div>
                         <div style="font-size: 16px; font-weight: 500; color: #f1f5f9;">${sanitize(weather.condition) || 'N/A'}</div>
-                        ${weather.umbrella ? '<div style="font-size: 12px; color: #fbbf24; margin-top: 4px;">☂️ Bring umbrella</div>' : ''}
+                        ${weather.umbrella ? '<div style="font-size: 12px; color: #fbbf24; margin-top: 4px;"><svg class="icon-sm"><use href="#icon-umbrella"/></svg> Bring umbrella</div>' : ''}
                     </div>
                 </div>`;
         }
@@ -4711,7 +4835,7 @@
             
             el.innerHTML = `
                 <div style="text-align: center; padding: 16px;">
-                    <div style="font-size: 40px; margin-bottom: 8px;">${canGet ? '☕' : '🏃'}</div>
+                    <div style="margin-bottom: 8px;"><svg class="icon-xl">${canGet ? '<use href="#icon-coffee"/>' : '<use href="#icon-run"/>'}</svg></div>
                     <div style="font-size: 18px; font-weight: 700; color: ${canGet ? '#22c55e' : '#ef4444'};">${canGet ? 'TIME FOR COFFEE!' : 'SKIP COFFEE'}</div>
                     <div style="font-size: 13px; color: #94a3b8; margin-top: 8px;">${sanitize(coffee.subtext) || (canGet ? 'You have time for a quick coffee' : 'Not enough time today')}</div>
                 </div>`;
@@ -4737,11 +4861,11 @@
             
             // Journey legs
             scData.journey_legs.forEach((leg, idx) => {
-                const icon = { walk: '🚶', coffee: '☕', train: '🚆', tram: '🚊', bus: '🚌' }[leg.type] || '🚇';
+                const iconType = { walk: 'walk', coffee: 'coffee', train: 'train', tram: 'tram', bus: 'bus' }[leg.type] || 'train';
                 const stateColor = leg.state === 'delayed' ? '#fbbf24' : leg.state === 'skip' ? '#94a3b8' : '#f1f5f9';
                 html += `
                     <div style="display: flex; align-items: center; gap: 12px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px; opacity: ${leg.state === 'skip' ? '0.5' : '1'};">
-                        <span style="font-size: 20px;">${icon}</span>
+                        <svg class="icon-lg"><use href="#icon-${iconType}"/></svg>
                         <div style="flex: 1;">
                             <div style="font-size: 14px; font-weight: 500; color: ${stateColor};">${sanitize(leg.title)}</div>
                             <div style="font-size: 11px; color: #94a3b8;">${sanitize(leg.subtitle)}</div>
@@ -4788,8 +4912,8 @@
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; font-size: 12px;">
                         <div><strong>Location:</strong> ${status.location.city}, ${status.location.state}</div>
                         <div><strong>Transit Authority:</strong> ${status.location.transitAuthority}</div>
-                        <div><strong>Status:</strong> <span style="color: ${isConfigured ? '#22c55e' : '#fc8181'}; font-weight: 600;">${isConfigured ? '✓ Configured' : '✗ Not Configured'}</span></div>
-                        <div><strong>Auto-Calc:</strong> ${status.journey.autoCalculation.active ? '✓ Active' : '✗ Inactive'}</div>
+                        <div><strong>Status:</strong> <span style="color: ${isConfigured ? '#22c55e' : '#fc8181'}; font-weight: 600;">${isConfigured ? '<svg class="icon-sm"><use href="#icon-check-circle"/></svg> Configured' : '✗ Not Configured'}</span></div>
+                        <div><strong>Auto-Calc:</strong> ${status.journey.autoCalculation.active ? '<svg class="icon-sm"><use href="#icon-check-circle"/></svg> Active' : '✗ Inactive'}</div>
                     </div>
                 `;
             }
@@ -4844,9 +4968,9 @@
             sources.push(`
                 <div style="padding: 15px; background: rgba(102, 126, 234, 0.1); border-radius: 8px; border-left: 3px solid ${apis.transitAuthority.configured ? '#22c55e' : '#fc8181'};">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <div style="font-weight: 600; font-size: 14px;">🚆 ${apis.transitAuthority.name}</div>
+                        <div style="font-weight: 600; font-size: 14px;"><svg class="icon-sm"><use href="#icon-train"/></svg> ${apis.transitAuthority.name}</div>
                         <span style="padding: 4px 10px; background: ${apis.transitAuthority.configured ? 'rgba(72, 187, 120, 0.2)' : 'rgba(252, 129, 129, 0.2)'}; border-radius: 12px; font-size: 11px; font-weight: 600; color: ${apis.transitAuthority.configured ? '#22c55e' : '#fc8181'};">
-                            ${apis.transitAuthority.configured ? '✓ Active' : '✗ Not Configured'}
+                            ${apis.transitAuthority.configured ? '<svg class="icon-sm"><use href="#icon-check-circle"/></svg> Active' : '✗ Not Configured'}
                         </span>
                     </div>
                     <div style="font-size: 12px; opacity: 0.8; margin-bottom: 5px;">
@@ -4860,9 +4984,9 @@
             sources.push(`
                 <div style="padding: 15px; background: rgba(16, 185, 129, 0.1); border-radius: 8px; border-left: 3px solid #22c55e;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <div style="font-weight: 600; font-size: 14px;">🗺️ OpenStreetMap / Nominatim</div>
+                        <div style="font-weight: 600; font-size: 14px;"><svg class="icon-sm"><use href="#icon-map"/></svg> OpenStreetMap / Nominatim</div>
                         <span style="padding: 4px 10px; background: rgba(72, 187, 120, 0.2); border-radius: 12px; font-size: 11px; font-weight: 600; color: #22c55e;">
-                            ✓ Always Active
+                            <svg class="icon-sm"><use href="#icon-check-circle"/></svg> Always Active
                         </span>
                     </div>
                     <div style="font-size: 12px; opacity: 0.8; margin-bottom: 5px;">
@@ -4877,9 +5001,9 @@
                 sources.push(`
                     <div style="padding: 15px; background: rgba(251, 191, 36, 0.1); border-radius: 8px; border-left: 3px solid #fbbf24;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <div style="font-weight: 600; font-size: 14px;">📍 Google Places API</div>
+                            <div style="font-weight: 600; font-size: 14px;"><svg class="icon-sm"><use href="#icon-pin"/></svg> Google Places API</div>
                             <span style="padding: 4px 10px; background: rgba(72, 187, 120, 0.2); border-radius: 12px; font-size: 11px; font-weight: 600; color: #22c55e;">
-                                ✓ Active
+                                <svg class="icon-sm"><use href="#icon-check-circle"/></svg> Active
                             </span>
                         </div>
                         <div style="font-size: 12px; opacity: 0.8; margin-bottom: 5px;">
@@ -4895,9 +5019,9 @@
                 sources.push(`
                     <div style="padding: 15px; background: rgba(72, 187, 120, 0.1); border-radius: 8px; border-left: 3px solid #22c55e;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <div style="font-weight: 600; font-size: 14px;">🌤️ Bureau of Meteorology</div>
+                            <div style="font-weight: 600; font-size: 14px;"><svg class="icon-sm"><use href="#icon-sun"/></svg> Bureau of Meteorology</div>
                             <span style="padding: 4px 10px; background: rgba(72, 187, 120, 0.2); border-radius: 12px; font-size: 11px; font-weight: 600; color: #22c55e;">
-                                ✓ Active
+                                <svg class="icon-sm"><use href="#icon-check-circle"/></svg> Active
                             </span>
                         </div>
                         <div style="font-size: 12px; opacity: 0.8; margin-bottom: 5px;">
@@ -4913,7 +5037,7 @@
                 sources.push(`
                     <div style="padding: 15px; background: rgba(102, 126, 234, 0.1); border-radius: 8px; border-left: 3px solid #4fb28e;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <div style="font-weight: 600; font-size: 14px;">🚂 Transport for Victoria - GTFS Realtime</div>
+                            <div style="font-weight: 600; font-size: 14px;"><svg class="icon-sm"><use href="#icon-train"/></svg> Transport for Victoria - GTFS Realtime</div>
                             <span style="padding: 4px 10px; background: rgba(251, 191, 36, 0.2); border-radius: 12px; font-size: 11px; font-weight: 600; color: #fbbf24;">
                                 Configure in API section
                             </span>
@@ -4932,9 +5056,9 @@
             sources.push(`
                 <div style="padding: 15px; background: rgba(139, 92, 246, 0.1); border-radius: 8px; border-left: 3px solid #4fb28e;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <div style="font-weight: 600; font-size: 14px;">🗃️ Fallback Timetables</div>
+                        <div style="font-weight: 600; font-size: 14px;"><svg class="icon-sm"><use href="#icon-database"/></svg> Fallback Timetables</div>
                         <span style="padding: 4px 10px; background: rgba(72, 187, 120, 0.2); border-radius: 12px; font-size: 11px; font-weight: 600; color: #22c55e;">
-                            ✓ Ready
+                            <svg class="icon-sm"><use href="#icon-check-circle"/></svg> Ready
                         </span>
                     </div>
                     <div style="font-size: 12px; opacity: 0.8; margin-bottom: 5px;">
@@ -4968,16 +5092,16 @@
                 // Live data mode
                 indicator.style.background = 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.15) 100%)';
                 indicator.style.borderLeft = '4px solid #22c55e';
-                icon.textContent = '🟢';
+                icon.innerHTML = '<svg class="icon" style="color: #22c55e;"><use href="#icon-check-circle"/></svg>';
                 title.textContent = 'Live Data Active';
                 subtitle.textContent = 'Real-time transit updates enabled • Refreshing automatically';
-                actionBtn.textContent = '🔄 Refresh Now';
+                actionBtn.innerHTML = '<svg class="icon-sm"><use href="#icon-refresh"/></svg> Refresh Now';
                 actionBtn.onclick = () => loadAllData();
             } else {
                 // Fallback data mode
                 indicator.style.background = 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.15) 100%)';
                 indicator.style.borderLeft = '4px solid #fbbf24';
-                icon.textContent = '🔴';
+                icon.innerHTML = '<svg class="icon" style="color: #f87171;"><use href="#icon-x-circle"/></svg>';
                 title.textContent = 'Using Fallback Timetable Data';
                 subtitle.textContent = 'Configure API keys in API Settings to enable real-time updates';
                 actionBtn.textContent = '→ API Settings';
@@ -4998,15 +5122,15 @@
             if (isLive) {
                 indicator.style.background = 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.15) 100%)';
                 indicator.style.borderLeft = '4px solid #22c55e';
-                icon.textContent = '🟢';
+                icon.innerHTML = '<svg class="icon" style="color: #22c55e;"><use href="#icon-check-circle"/></svg>';
                 title.textContent = 'Live Data Active';
                 subtitle.textContent = 'Transit API validated • Real-time updates enabled';
-                actionBtn.textContent = '🔄 Refresh Now';
+                actionBtn.innerHTML = '<svg class="icon-sm"><use href="#icon-refresh"/></svg> Refresh Now';
                 actionBtn.onclick = () => loadAllData();
             } else if (hasKey && !isValidated) {
                 indicator.style.background = 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.15) 100%)';
                 indicator.style.borderLeft = '4px solid #fbbf24';
-                icon.textContent = '🟡';
+                icon.innerHTML = '<svg class="icon" style="color: #fbbf24;"><use href="#icon-warning"/></svg>';
                 title.textContent = 'API Key Pending Validation';
                 subtitle.textContent = 'Go to API Settings to test and validate your key';
                 actionBtn.textContent = '→ Validate Key';
@@ -5026,7 +5150,7 @@
             if (!isConfigured) {
                 userConfigDisplay.innerHTML = `
                     <div style="padding: 30px; background: rgba(255,255,255,0.05); border-radius: 8px; text-align: center;">
-                        <div style="font-size: 40px; opacity: 0.3; margin-bottom: 15px;">⚙️</div>
+                        <div style="margin-bottom: 15px; opacity: 0.3;"><svg class="icon-xl"><use href="#icon-settings"/></svg></div>
                         <div style="opacity: 0.7; margin-bottom: 15px;">No configuration yet</div>
                         <button class="btn btn-primary" onclick="showTab('setup', this)">→ Go to Setup</button>
                     </div>
@@ -5039,7 +5163,7 @@
             // Addresses
             config.push(`
                 <div style="padding: 15px; background: rgba(102, 126, 234, 0.1); border-radius: 8px;">
-                    <div style="font-weight: 600; margin-bottom: 10px; font-size: 14px;">📍 Addresses</div>
+                    <div style="font-weight: 600; margin-bottom: 10px; font-size: 14px;"><svg class="icon-sm"><use href="#icon-pin"/></svg> Addresses</div>
                     <div style="font-size: 13px; line-height: 1.8;">
                         <div><strong>Home:</strong> ${sanitize(status.addresses.home || 'Not set')}</div>
                         <div><strong>Work:</strong> ${sanitize(status.addresses.work || 'Not set')}</div>
@@ -5068,10 +5192,10 @@
             // Journey Preferences
             config.push(`
                 <div style="padding: 15px; background: rgba(246, 173, 85, 0.1); border-radius: 8px;">
-                    <div style="font-weight: 600; margin-bottom: 10px; font-size: 14px;">⏰ Journey Preferences</div>
+                    <div style="font-weight: 600; margin-bottom: 10px; font-size: 14px;"><svg class="icon-sm"><use href="#icon-clock"/></svg> Journey Preferences</div>
                     <div style="font-size: 13px; line-height: 1.8;">
                         <div><strong>Arrival Time:</strong> ${formatTime12h(status.journey.arrivalTime) || 'Not set'}</div>
-                        <div><strong>Coffee Stops:</strong> ${status.journey.coffeeEnabled ? '✓ Enabled' : '✗ Disabled'}</div>
+                        <div><strong>Coffee Stops:</strong> ${status.journey.coffeeEnabled ? '<svg class="icon-sm"><use href="#icon-check-circle"/></svg> Enabled' : '✗ Disabled'}</div>
                         ${status.journey.walkingTimes ? `
                             <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1);">
                                 <strong>Walking Times:</strong><br>
@@ -5136,7 +5260,7 @@
 
             // Weather API
             apiCards.push(createApiCard(
-                '🌤️',
+                '<svg class="icon"><use href="#icon-sun"/></svg>',
                 apis.weather.name,
                 apis.weather.service,
                 apis.weather.status,
@@ -5145,7 +5269,7 @@
 
             // Geocoding
             apiCards.push(createApiCard(
-                '📍',
+                '<svg class="icon"><use href="#icon-pin"/></svg>',
                 apis.geocoding.name,
                 `${apis.geocoding.services.length} Services Available`,
                 apis.geocoding.status,
@@ -5155,7 +5279,7 @@
             // Google Places (if configured)
             if (apis.googlePlaces.configured) {
                 apiCards.push(createApiCard(
-                    '🗺️',
+                    '<svg class="icon"><use href="#icon-map"/></svg>',
                     apis.googlePlaces.name,
                     'Enhanced Geocoding',
                     apis.googlePlaces.status,
@@ -5274,7 +5398,7 @@
         async function forceRecalculation() {
             const btn = document.getElementById('recalc-btn');
             btn.disabled = true;
-            btn.textContent = '🔄 Calculating...';
+            btn.innerHTML = '<svg class="icon-sm"><use href="#icon-refresh"/></svg> Calculating...';
 
             try {
                 const response = await fetch(BASE_URL + '/api/journey-recalculate', {
@@ -5283,17 +5407,17 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    alert('✅ Journey recalculated successfully!');
+                    alert('Journey recalculated successfully!');
                     loadAutoCalcStatus();
                     loadJourneySummary();
                 } else {
-                    alert('❌ ' + (data.message || 'Calculation failed. Check your configuration.'));
+                    alert('Error: ' + (data.message || 'Calculation failed. Check your configuration.'));
                 }
             } catch (error) {
-                alert('❌ Error: ' + error.message);
+                alert('Error: ' + error.message);
             } finally {
                 btn.disabled = false;
-                btn.textContent = '🔄 Recalculate Now';
+                btn.innerHTML = '<svg class="icon-sm"><use href="#icon-refresh"/></svg> Recalculate Now';
             }
         }
 
@@ -5345,20 +5469,20 @@
                 const route = await fetch(BASE_URL + '/admin/route').then(r => r.json());
                 if (route?.coffee_decision) {
                     document.getElementById('coffee-decision').innerHTML = `
-                        <div class="coffee-icon">${route.coffee_decision.can_get_coffee ? '☕' : '⏰'}</div>
+                        <div class="coffee-icon"><svg class="icon-xxl">${route.coffee_decision.can_get_coffee ? '<use href="#icon-coffee"/>' : '<use href="#icon-clock"/>'}</svg></div>
                         <div class="coffee-text">${route.coffee_decision.can_get_coffee ? 'Time for Coffee!' : 'Skip Coffee'}</div>
                         <div class="coffee-subtext">${route.coffee_decision.message || ''}</div>
                     `;
                 } else {
                     document.getElementById('coffee-decision').innerHTML = `
-                        <div class="coffee-icon">☕</div>
+                        <div class="coffee-icon"><svg class="icon-xxl"><use href="#icon-coffee"/></svg></div>
                         <div class="coffee-text">Plan a Journey</div>
                         <div class="coffee-subtext">Configure your route first</div>
                     `;
                 }
             } catch (e) {
                 document.getElementById('coffee-decision').innerHTML = `
-                    <div class="coffee-icon">☕</div><div class="coffee-text">Plan a Journey</div>
+                    <div class="coffee-icon"><svg class="icon-xxl"><use href="#icon-coffee"/></svg></div><div class="coffee-text">Plan a Journey</div>
                 `;
             }
         }
@@ -5375,18 +5499,18 @@
                     // Display all journey legs
                     if (route.legs && route.legs.length > 0) {
                         legsHTML = route.legs.map((leg, idx) => {
-                            const icon = {
-                                'train': '🚆',
-                                'tram': '🚊',
-                                'bus': '🚌',
-                                'walk': '🚶',
-                                'walking': '🚶',
-                                'coffee': '☕'
-                            }[leg.type?.toLowerCase()] || '🚶';
+                            const iconType = {
+                                'train': 'train',
+                                'tram': 'tram',
+                                'bus': 'bus',
+                                'walk': 'walk',
+                                'walking': 'walk',
+                                'coffee': 'coffee'
+                            }[leg.type?.toLowerCase()] || 'walk';
 
                             return `
                                 <div style="display: flex; align-items: center; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 10px;">
-                                    <div style="font-size: 28px; margin-right: 15px;">${icon}</div>
+                                    <div style="margin-right: 15px;"><svg class="icon-xl"><use href="#icon-${iconType}"/></svg></div>
                                     <div style="flex: 1;">
                                         <div style="font-weight: 600; margin-bottom: 4px;">${leg.route || leg.description || 'Walking'}</div>
                                         <div style="font-size: 13px; opacity: 0.8;">
@@ -5407,28 +5531,28 @@
                         <div style="margin-bottom: 20px;">
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
                                 <div style="padding: 15px; background: rgba(102, 126, 234, 0.15); border-radius: 8px;">
-                                    <div style="font-size: 12px; opacity: 0.8; margin-bottom: 5px;">🏠 Leave Home</div>
+                                    <div style="font-size: 12px; opacity: 0.8; margin-bottom: 5px;"><svg class="icon-sm"><use href="#icon-home"/></svg> Leave Home</div>
                                     <div style="font-size: 24px; font-weight: 700;">${journey.summary?.must_leave_home || route.startTime || '--:--'}</div>
                                 </div>
                                 <div style="padding: 15px; background: rgba(72, 187, 120, 0.15); border-radius: 8px;">
-                                    <div style="font-size: 12px; opacity: 0.8; margin-bottom: 5px;">🏢 Arrive Work</div>
+                                    <div style="font-size: 12px; opacity: 0.8; margin-bottom: 5px;"><svg class="icon-sm"><use href="#icon-briefcase"/></svg> Arrive Work</div>
                                     <div style="font-size: 24px; font-weight: 700;">${journey.arrivalTime || journey.summary?.arrival_at_work || '--:--'}</div>
                                 </div>
                             </div>
 
                             ${route.includedCoffee ? `
                                 <div style="padding: 12px; background: rgba(237, 137, 54, 0.15); border-radius: 8px; margin-bottom: 15px; text-align: center;">
-                                    ☕ Coffee stop included at ${route.cafeName || 'selected cafe'}
+                                    <svg class="icon-sm"><use href="#icon-coffee"/></svg> Coffee stop included at ${route.cafeName || 'selected cafe'}
                                     ${route.coffeeWaitTime ? ` (${route.coffeeWaitTime} min wait)` : ''}
                                 </div>
                             ` : ''}
 
-                            <div style="font-weight: 600; margin-bottom: 10px; font-size: 14px;">📍 Journey Breakdown:</div>
+                            <div style="font-weight: 600; margin-bottom: 10px; font-size: 14px;"><svg class="icon-sm"><use href="#icon-pin"/></svg> Journey Breakdown:</div>
                             ${legsHTML || '<div style="opacity: 0.6;">No journey legs available</div>'}
 
                             ${journey.warnings && journey.warnings.length > 0 ? `
                                 <div style="margin-top: 15px; padding: 12px; background: rgba(252, 129, 129, 0.15); border-radius: 8px;">
-                                    <div style="font-weight: 600; margin-bottom: 8px;">⚠️ Warnings:</div>
+                                    <div style="font-weight: 600; margin-bottom: 8px;"><svg class="icon-sm" style="color: #fbbf24;"><use href="#icon-warning"/></svg> Warnings:</div>
                                     ${journey.warnings.map(w => `<div style="font-size: 13px; margin-bottom: 4px;">• ${w}</div>`).join('')}
                                 </div>
                             ` : ''}
@@ -5980,7 +6104,7 @@
             if (loadingOverlay) {
                 loadingOverlay.innerHTML = `
                     <div style="text-align: center; color: #ef4444;">
-                        <div style="font-size: 32px; margin-bottom: 10px;">⚠️</div>
+                        <div style="margin-bottom: 10px;"><svg class="icon-xl" style="color: #fbbf24;"><use href="#icon-warning"/></svg></div>
                         <div style="font-size: 14px; margin-bottom: 8px;">${sanitize(errorMsg)}</div>
                         <div style="font-size: 12px; opacity: 0.7;">
                             <button onclick="loadEinkPreview(true)" style="background: rgba(79, 178, 142, 0.2); border: 1px solid #4fb28e; color: #4fb28e; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 10px;">
@@ -6040,7 +6164,7 @@
             if (msg) {
                 msg.style.display = 'block';
                 msg.style.background = 'rgba(34, 197, 94, 0.2)';
-                msg.innerHTML = '✅ SmartCommute settings saved! <a href="#" onclick="loadSmartCommuteOutput(true); return false;" style="color: #4fb28e; text-decoration: underline;">Recalculate now</a>';
+                msg.innerHTML = '<svg class="icon-sm"><use href="#icon-check-circle"/></svg> SmartCommute settings saved! <a href="#" onclick="loadSmartCommuteOutput(true); return false;" style="color: #4fb28e; text-decoration: underline;">Recalculate now</a>';
                 setTimeout(() => msg.style.display = 'none', 5000);
             }
         }
@@ -6129,7 +6253,7 @@
             const value = input?.value?.trim();
             
             if (!value && field !== 'cafe') {
-                showInlineEditMessage('⚠️ Value cannot be empty', 'warning');
+                showInlineEditMessage('Value cannot be empty', 'warning');
                 return;
             }
             
@@ -6167,7 +6291,7 @@
             cancelFieldEdit(field);
             
             // Show success
-            showInlineEditMessage('✅ Saved! Refresh preview to see changes.', 'success');
+            showInlineEditMessage('Saved! Refresh preview to see changes.', 'success');
             
             // Optionally refresh routes and preview
             if (['home', 'work', 'cafe'].includes(field)) {
@@ -6190,7 +6314,7 @@
                 cafeDisplay.style.opacity = checkbox.checked ? '1' : '0.5';
             }
             
-            showInlineEditMessage(checkbox.checked ? '☕ Coffee stop enabled' : '☕ Coffee stop disabled', 'info');
+            showInlineEditMessage(checkbox.checked ? 'Coffee stop enabled' : 'Coffee stop disabled', 'info');
         }
 
         // Show inline edit message
@@ -6309,10 +6433,10 @@
             }
 
             const modeColors = {
-                train: { bg: 'rgba(79, 178, 142, 0.15)', border: '#4fb28e', icon: '🚃' },
-                tram: { bg: 'rgba(102, 126, 234, 0.15)', border: '#667eea', icon: '🚊' },
-                bus: { bg: 'rgba(251, 191, 36, 0.15)', border: '#fbbf24', icon: '🚌' },
-                transit: { bg: 'rgba(147, 51, 234, 0.15)', border: '#9333ea', icon: '🚇' }
+                train: { bg: 'rgba(79, 178, 142, 0.15)', border: '#4fb28e', icon: '<svg class="icon"><use href="#icon-train"/></svg>' },
+                tram: { bg: 'rgba(102, 126, 234, 0.15)', border: '#667eea', icon: '<svg class="icon"><use href="#icon-tram"/></svg>' },
+                bus: { bg: 'rgba(251, 191, 36, 0.15)', border: '#fbbf24', icon: '<svg class="icon"><use href="#icon-bus"/></svg>' },
+                transit: { bg: 'rgba(147, 51, 234, 0.15)', border: '#9333ea', icon: '<svg class="icon"><use href="#icon-train"/></svg>' }
             };
 
             listEl.innerHTML = alternatives.map((route, idx) => {
@@ -6343,7 +6467,7 @@
                         </div>
                         ${isSelected ? `
                             <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 11px; color: ${colors.border}; font-weight: 600;">
-                                ✓ Currently Selected
+                                <svg class="icon-sm"><use href="#icon-check-circle"/></svg> Currently Selected
                             </div>
                         ` : ''}
                     </div>
@@ -6363,7 +6487,7 @@
                 if (msgEl) {
                     msgEl.style.display = 'block';
                     msgEl.style.background = 'rgba(102, 126, 234, 0.2)';
-                    msgEl.innerHTML = '🔄 Selecting route...';
+                    msgEl.innerHTML = '<svg class="icon-sm"><use href="#icon-refresh"/></svg> Selecting route...';
                 }
 
                 // Call API to save selection
@@ -6398,7 +6522,7 @@
                 // Show success
                 if (msgEl) {
                     msgEl.style.background = 'rgba(34, 197, 94, 0.2)';
-                    msgEl.innerHTML = '✅ Route selected! <a href="#" onclick="refreshEinkPreview(); return false;" style="color: #4fb28e; text-decoration: underline;">Refresh preview</a>';
+                    msgEl.innerHTML = '<svg class="icon-sm"><use href="#icon-check-circle"/></svg> Route selected! <a href="#" onclick="refreshEinkPreview(); return false;" style="color: #4fb28e; text-decoration: underline;">Refresh preview</a>';
                     setTimeout(() => msgEl.style.display = 'none', 4000);
                 }
 
@@ -6407,7 +6531,7 @@
                 if (msgEl) {
                     msgEl.style.display = 'block';
                     msgEl.style.background = 'rgba(239, 68, 68, 0.2)';
-                    msgEl.innerHTML = '❌ ' + error.message;
+                    msgEl.innerHTML = '<svg class="icon-sm" style="color: #f87171;"><use href="#icon-x-circle"/></svg> ' + error.message;
                 }
             }
         }
@@ -6514,7 +6638,7 @@
                 // Brief visual feedback
                 const btn = event.target;
                 const originalText = btn.textContent;
-                btn.textContent = '✓ Copied!';
+                btn.innerHTML = '<svg class="icon-sm"><use href="#icon-check-circle"/></svg> Copied!';
                 setTimeout(() => btn.textContent = originalText, 1500);
             }
         }
@@ -6576,13 +6700,13 @@
                 const transitStatusBadge = document.getElementById('transit-status-badge');
                 
                 if (transitKey) {
-                    transitStatusIcon.textContent = transitValidated ? '✅' : '⚠️';
+                    transitStatusIcon.innerHTML = transitValidated ? '<svg class="icon-lg" style="color: #22c55e;"><use href="#icon-check-circle"/></svg>' : '<svg class="icon-lg" style="color: #fbbf24;"><use href="#icon-warning"/></svg>';
                     transitStatusText.textContent = transitValidated ? 'Configured & Validated' : 'Configured (Not Validated)';
                     transitKeyPreview.textContent = maskApiKey(transitKey);
-                    transitStatusBadge.textContent = transitValidated ? '✓ Active' : '⚠️ Pending';
+                    transitStatusBadge.innerHTML = transitValidated ? '<svg class="icon-sm"><use href="#icon-check-circle"/></svg> Active' : '<svg class="icon-sm"><use href="#icon-warning"/></svg> Pending';
                     transitStatusBadge.style.background = transitValidated ? 'rgba(34, 197, 94, 0.9)' : 'rgba(251, 191, 36, 0.9)';
                 } else {
-                    transitStatusIcon.textContent = '❌';
+                    transitStatusIcon.innerHTML = '<svg class="icon-lg" style="color: #f87171;"><use href="#icon-x-circle"/></svg>';
                     transitStatusText.textContent = 'Not Configured';
                     transitKeyPreview.textContent = 'No key set';
                     transitStatusBadge.textContent = 'Using Fallback';
@@ -6596,13 +6720,13 @@
                 const googleStatusBadge = document.getElementById('google-status-badge');
                 
                 if (googleKey) {
-                    googleStatusIcon.textContent = googleValidated ? '✅' : '⚠️';
+                    googleStatusIcon.innerHTML = googleValidated ? '<svg class="icon-lg" style="color: #22c55e;"><use href="#icon-check-circle"/></svg>' : '<svg class="icon-lg" style="color: #fbbf24;"><use href="#icon-warning"/></svg>';
                     googleStatusText.textContent = googleValidated ? 'Configured & Validated' : 'Configured (Not Validated)';
                     googleKeyPreview.textContent = maskGoogleKey(googleKey);
-                    googleStatusBadge.textContent = googleValidated ? '✓ Active' : '⚠️ Pending';
+                    googleStatusBadge.innerHTML = googleValidated ? '<svg class="icon-sm"><use href="#icon-check-circle"/></svg> Active' : '<svg class="icon-sm"><use href="#icon-warning"/></svg> Pending';
                     googleStatusBadge.style.background = googleValidated ? 'rgba(34, 197, 94, 0.9)' : 'rgba(251, 191, 36, 0.9)';
                 } else {
-                    googleStatusIcon.textContent = '⚪';
+                    googleStatusIcon.innerHTML = '<svg class="icon-lg" style="color: #6b7280;"><use href="#icon-zap"/></svg>';
                     googleStatusText.textContent = 'Not Configured (Optional)';
                     googleKeyPreview.textContent = 'Using free geocoding';
                     googleStatusBadge.textContent = 'Optional';
@@ -6616,19 +6740,19 @@
                 const apiModeBanner = document.getElementById('api-data-mode-banner');
                 
                 if (transitKey && transitValidated) {
-                    apiModeIcon.textContent = '🟢';
+                    apiModeIcon.innerHTML = '<svg class="icon-xl" style="color: #22c55e;"><use href="#icon-check-circle"/></svg>';
                     apiModeTitle.textContent = 'Real-Time Data Enabled';
                     apiModeSubtitle.textContent = 'Transit API validated and active';
                     apiModeBanner.style.background = 'linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(22, 163, 74, 0.15) 100%)';
                     apiModeBanner.style.borderLeft = '4px solid #22c55e';
                 } else if (transitKey) {
-                    apiModeIcon.textContent = '🟡';
+                    apiModeIcon.innerHTML = '<svg class="icon-xl" style="color: #fbbf24;"><use href="#icon-warning"/></svg>';
                     apiModeTitle.textContent = 'API Key Pending Validation';
                     apiModeSubtitle.textContent = 'Test your API key to enable real-time data';
                     apiModeBanner.style.background = 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.15) 100%)';
                     apiModeBanner.style.borderLeft = '4px solid #fbbf24';
                 } else {
-                    apiModeIcon.textContent = '🔴';
+                    apiModeIcon.innerHTML = '<svg class="icon-xl" style="color: #f87171;"><use href="#icon-x-circle"/></svg>';
                     apiModeTitle.textContent = 'Using Fallback Timetable Data';
                     apiModeSubtitle.textContent = 'Add a Transit API key for real-time updates';
                     apiModeBanner.style.background = 'linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%)';
@@ -6656,7 +6780,7 @@
             const msg = document.getElementById('mode-change-message');
             if (msg) {
                 msg.style.display = 'block';
-                msg.innerHTML = `✅ Data mode changed to <strong>${mode === 'live' ? 'Live Mode' : 'Free Mode'}</strong>. Changes take effect immediately.`;
+                msg.innerHTML = `<svg class="icon-sm"><use href="#icon-check-circle"/></svg> Data mode changed to <strong>${mode === 'live' ? 'Live Mode' : 'Free Mode'}</strong>. Changes take effect immediately.`;
                 setTimeout(() => msg.style.display = 'none', 3000);
             }
         }
@@ -6666,18 +6790,18 @@
             const input = document.getElementById('edit-transit-key');
             const msg = document.getElementById('transit-edit-message');
             const key = input?.value?.trim();
-            
+
             if (!key) {
                 msg.style.display = 'block';
                 msg.style.background = 'rgba(239, 68, 68, 0.2)';
-                msg.textContent = '⚠️ Please enter an API key';
+                msg.innerHTML = '<svg class="icon-sm" style="color: #fbbf24;"><use href="#icon-warning"/></svg> Please enter an API key';
                 return;
             }
-            
+
             msg.style.display = 'block';
             msg.style.background = 'rgba(102, 126, 234, 0.2)';
-            msg.textContent = '🔄 Validating API key...';
-            
+            msg.innerHTML = '<svg class="icon-sm"><use href="#icon-refresh"/></svg> Validating API key...';
+
             try {
                 // Validate the key
                 const response = await fetch(BASE_URL + '/api/validate-transit-key', {
@@ -6686,30 +6810,30 @@
                     body: JSON.stringify({ apiKey: key, state: 'VIC' })
                 });
                 const result = await response.json();
-                
+
                 if (result.valid) {
                     localStorage.setItem('cc-transit-api-key', key);
                     localStorage.setItem('cc-transit-api-validated', 'true');
-                    
+
                     // Update config
                     const config = JSON.parse(localStorage.getItem('cc-config') || '{}');
                     config.api = config.api || {};
                     config.api.key = key;
                     localStorage.setItem('cc-config', JSON.stringify(config));
-                    
+
                     msg.style.background = 'rgba(34, 197, 94, 0.2)';
-                    msg.textContent = '✅ API key validated and saved!';
+                    msg.innerHTML = '<svg class="icon-sm"><use href="#icon-check-circle"/></svg> API key validated and saved!';
                     input.value = '';
-                    
+
                     // Refresh the tab
                     updateApiSettingsTab(config);
                 } else {
                     msg.style.background = 'rgba(239, 68, 68, 0.2)';
-                    msg.textContent = '❌ API key validation failed: ' + (result.error || 'Invalid key');
+                    msg.innerHTML = '<svg class="icon-sm" style="color: #f87171;"><use href="#icon-x-circle"/></svg> API key validation failed: ' + (result.error || 'Invalid key');
                 }
             } catch (error) {
                 msg.style.background = 'rgba(239, 68, 68, 0.2)';
-                msg.textContent = '❌ Error validating key: ' + error.message;
+                msg.innerHTML = '<svg class="icon-sm" style="color: #f87171;"><use href="#icon-x-circle"/></svg> Error validating key: ' + error.message;
             }
         }
         
@@ -6722,14 +6846,14 @@
             if (!key) {
                 msg.style.display = 'block';
                 msg.style.background = 'rgba(239, 68, 68, 0.2)';
-                msg.textContent = '⚠️ Please enter an API key';
+                msg.innerHTML = '<svg class="icon-sm" style="color: #fbbf24;"><use href="#icon-warning"/></svg> Please enter an API key';
                 return;
             }
-            
+
             msg.style.display = 'block';
             msg.style.background = 'rgba(102, 126, 234, 0.2)';
-            msg.textContent = '🔄 Validating API key...';
-            
+            msg.innerHTML = '<svg class="icon-sm"><use href="#icon-refresh"/></svg> Validating API key...';
+
             try {
                 const response = await fetch(BASE_URL + '/api/validate-google-key', {
                     method: 'POST',
@@ -6741,21 +6865,21 @@
                 if (result.valid) {
                     localStorage.setItem('cc-google-places-key', key);
                     localStorage.setItem('cc-google-places-validated', 'true');
-                    
+
                     msg.style.background = 'rgba(34, 197, 94, 0.2)';
-                    msg.textContent = '✅ Google API key validated and saved!';
+                    msg.innerHTML = '<svg class="icon-sm"><use href="#icon-check-circle"/></svg> Google API key validated and saved!';
                     input.value = '';
-                    
+
                     // Refresh the tab
                     const config = JSON.parse(localStorage.getItem('cc-config') || '{}');
                     updateApiSettingsTab(config);
                 } else {
                     msg.style.background = 'rgba(239, 68, 68, 0.2)';
-                    msg.textContent = '❌ Validation failed: ' + (result.error || 'Invalid key');
+                    msg.innerHTML = '<svg class="icon-sm" style="color: #f87171;"><use href="#icon-x-circle"/></svg> Validation failed: ' + (result.error || 'Invalid key');
                 }
             } catch (error) {
                 msg.style.background = 'rgba(239, 68, 68, 0.2)';
-                msg.textContent = '❌ Error validating key: ' + error.message;
+                msg.innerHTML = '<svg class="icon-sm" style="color: #f87171;"><use href="#icon-x-circle"/></svg> Error validating key: ' + error.message;
             }
         }
         
@@ -6774,15 +6898,15 @@
                         body: JSON.stringify({ apiKey: transitKey, state: 'VIC' })
                     });
                     const result = await resp.json();
-                    results.push(`Transit API: ${result.valid ? '✅ Valid' : '❌ Invalid'}`);
+                    results.push(`Transit API: ${result.valid ? 'Valid' : 'Invalid'}`);
                     if (result.valid) localStorage.setItem('cc-transit-api-validated', 'true');
                 } catch (e) {
-                    results.push('Transit API: ❌ Error');
+                    results.push('Transit API: Error');
                 }
             } else {
-                results.push('Transit API: ⚪ Not configured');
+                results.push('Transit API: Not configured');
             }
-            
+
             if (googleKey) {
                 try {
                     const resp = await fetch(BASE_URL + '/api/validate-google-key', {
@@ -6791,13 +6915,13 @@
                         body: JSON.stringify({ apiKey: googleKey })
                     });
                     const result = await resp.json();
-                    results.push(`Google API: ${result.valid ? '✅ Valid' : '❌ Invalid'}`);
+                    results.push(`Google API: ${result.valid ? 'Valid' : 'Invalid'}`);
                     if (result.valid) localStorage.setItem('cc-google-places-validated', 'true');
                 } catch (e) {
-                    results.push('Google API: ❌ Error');
+                    results.push('Google API: Error');
                 }
             } else {
-                results.push('Google API: ⚪ Not configured');
+                results.push('Google API: Not configured');
             }
             
             alert('API Test Results:\\n\\n' + results.join('\\n'));
@@ -6815,7 +6939,7 @@
             const msg = document.getElementById('mode-change-message');
             if (msg) {
                 msg.style.display = 'block';
-                msg.innerHTML = '✅ Status refreshed';
+                msg.innerHTML = '<svg class="icon-sm"><use href="#icon-check-circle"/></svg> Status refreshed';
                 setTimeout(() => msg.style.display = 'none', 2000);
             }
         }
@@ -6828,14 +6952,14 @@
             if (!key) {
                 msg.style.display = 'block';
                 msg.style.background = 'rgba(239, 68, 68, 0.2)';
-                msg.textContent = '⚠️ No Transit API key configured';
+                msg.innerHTML = '<svg class="icon-sm" style="color: #fbbf24;"><use href="#icon-warning"/></svg> No Transit API key configured';
                 return;
             }
             
             msg.style.display = 'block';
             msg.style.background = 'rgba(102, 126, 234, 0.2)';
-            msg.textContent = '🔄 Testing current key...';
-            
+            msg.innerHTML = '<svg class="icon-sm"><use href="#icon-refresh"/></svg> Testing current key...';
+
             try {
                 const resp = await fetch(BASE_URL + '/api/validate-transit-key', {
                     method: 'POST',
@@ -6843,33 +6967,33 @@
                     body: JSON.stringify({ apiKey: key, state: 'VIC' })
                 });
                 const result = await resp.json();
-                
+
                 msg.style.background = result.valid ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)';
-                msg.textContent = result.valid ? '✅ Current key is valid!' : '❌ Key validation failed';
-                
+                msg.innerHTML = result.valid ? '<svg class="icon-sm"><use href="#icon-check-circle"/></svg> Current key is valid!' : '<svg class="icon-sm" style="color: #f87171;"><use href="#icon-x-circle"/></svg> Key validation failed';
+
                 if (result.valid) localStorage.setItem('cc-transit-api-validated', 'true');
             } catch (e) {
                 msg.style.background = 'rgba(239, 68, 68, 0.2)';
-                msg.textContent = '❌ Test error: ' + e.message;
+                msg.innerHTML = '<svg class="icon-sm" style="color: #f87171;"><use href="#icon-x-circle"/></svg> Test error: ' + e.message;
             }
         }
-        
+
         // Test current Google key
         async function testGoogleKey() {
             const key = localStorage.getItem('cc-google-places-key');
             const msg = document.getElementById('google-edit-message');
-            
+
             if (!key) {
                 msg.style.display = 'block';
                 msg.style.background = 'rgba(251, 191, 36, 0.2)';
-                msg.textContent = 'ℹ️ No Google API key configured (optional)';
+                msg.innerHTML = '<svg class="icon-sm"><use href="#icon-zap"/></svg> No Google API key configured (optional)';
                 return;
             }
-            
+
             msg.style.display = 'block';
             msg.style.background = 'rgba(102, 126, 234, 0.2)';
-            msg.textContent = '🔄 Testing current key...';
-            
+            msg.innerHTML = '<svg class="icon-sm"><use href="#icon-refresh"/></svg> Testing current key...';
+
             try {
                 const resp = await fetch(BASE_URL + '/api/validate-google-key', {
                     method: 'POST',
@@ -6877,27 +7001,27 @@
                     body: JSON.stringify({ apiKey: key })
                 });
                 const result = await resp.json();
-                
+
                 msg.style.background = result.valid ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)';
-                msg.textContent = result.valid ? '✅ Current key is valid!' : '❌ Key validation failed';
-                
+                msg.innerHTML = result.valid ? '<svg class="icon-sm"><use href="#icon-check-circle"/></svg> Current key is valid!' : '<svg class="icon-sm" style="color: #f87171;"><use href="#icon-x-circle"/></svg> Key validation failed';
+
                 if (result.valid) localStorage.setItem('cc-google-places-validated', 'true');
             } catch (e) {
                 msg.style.background = 'rgba(239, 68, 68, 0.2)';
-                msg.textContent = '❌ Test error: ' + e.message;
+                msg.innerHTML = '<svg class="icon-sm" style="color: #f87171;"><use href="#icon-x-circle"/></svg> Test error: ' + e.message;
             }
         }
 
         async function savePtvConfig() {
             const apiKey = document.getElementById('ptv-dev-id').value;
             const apiToken = document.getElementById('ptv-api-key').value;
-            
+
             if (!apiKey || apiKey.trim() === '') {
-                showMessage('api-message', '⚠️ Please enter an API key', 'error');
+                showMessage('api-message', 'Please enter an API key', 'error');
                 return;
             }
-            
-            showMessage('api-message', '🔄 Validating API key...', 'info');
+
+            showMessage('api-message', 'Validating API key...', 'info');
             
             try {
                 // Get current state from preferences
@@ -6922,20 +7046,20 @@
                 
                 if (result.success) {
                     if (result.testResult && result.testResult.success) {
-                        showMessage('api-message', '✅ ' + result.message + ' (Key: ' + result.keyMasked + ')', 'success');
+                        showMessage('api-message', result.message + ' (Key: ' + result.keyMasked + ')', 'success');
                     } else {
-                        showMessage('api-message', '⚠️ Key saved but validation failed: ' + (result.testResult?.message || 'Unknown error'), 'warning');
+                        showMessage('api-message', 'Key saved but validation failed: ' + (result.testResult?.message || 'Unknown error'), 'warning');
                     }
                 } else {
-                    showMessage('api-message', '❌ ' + result.message, 'error');
+                    showMessage('api-message', result.message, 'error');
                     return;
                 }
-                
+
                 // Refresh API keys status display
                 setTimeout(() => updateAPIKeysStatus(), 500);
             } catch (e) {
                 console.error('Transit API save error:', e);
-                showMessage('api-message', '❌ Error saving: ' + e.message, 'error');
+                showMessage('api-message', 'Error saving: ' + e.message, 'error');
             }
         }
 
@@ -6952,11 +7076,11 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ subscription_key: key })
                 });
-                showMessage('api-message', '✅ GTFS Realtime key saved!', 'success');
+                showMessage('api-message', 'GTFS Realtime key saved!', 'success');
                 // Refresh API keys status display
                 setTimeout(() => updateAPIKeysStatus(), 500);
             } catch (e) {
-                showMessage('api-message', '❌ Error saving key', 'error');
+                showMessage('api-message', 'Error saving key', 'error');
                 console.error('GTFS Realtime save error:', e);
             }
         }
@@ -6965,11 +7089,11 @@
             try {
                 const key = document.getElementById('gtfs-realtime-key').value;
                 if (!key) {
-                    showMessage('api-message', '⚠️ Please enter a subscription key first', 'error');
+                    showMessage('api-message', 'Please enter a subscription key first', 'error');
                     return;
                 }
 
-                showMessage('api-message', '🔄 Testing connection...', 'info');
+                showMessage('api-message', 'Testing connection...', 'info');
 
                 const response = await fetch(BASE_URL + '/admin/apis/gtfs-realtime/test', {
                     method: 'POST',
@@ -6980,12 +7104,12 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    showMessage('api-message', `✅ Connected! Received ${result.tripCount || 0} trip updates`, 'success');
+                    showMessage('api-message', `Connected! Received ${result.tripCount || 0} trip updates`, 'success');
                 } else {
-                    showMessage('api-message', `❌ ${result.message || 'Connection failed'}`, 'error');
+                    showMessage('api-message', `${result.message || 'Connection failed'}`, 'error');
                 }
             } catch (e) {
-                showMessage('api-message', '❌ Test failed: ' + e.message, 'error');
+                showMessage('api-message', 'Test failed: ' + e.message, 'error');
                 console.error('GTFS Realtime test error:', e);
             }
         }
@@ -7000,13 +7124,13 @@
                 status.style.display = 'block';
                 status.style.background = 'rgba(229, 62, 62, 0.2)';
                 status.style.color = '#fc8181';
-                status.innerHTML = '⚠️ Please enter an API key';
+                status.innerHTML = '<svg class="icon-sm" style="color: #fbbf24;"><use href="#icon-warning"/></svg> Please enter an API key';
                 return;
             }
 
             // Disable button during save
             btn.disabled = true;
-            btn.textContent = '💾 Saving & Testing...';
+            btn.innerHTML = '<svg class="icon-sm"><use href="#icon-save"/></svg> Saving & Testing...';
             status.style.display = 'block';
             status.style.background = 'rgba(113, 128, 150, 0.2)';
             status.style.color = '#cbd5e1';
@@ -7025,11 +7149,11 @@
                     status.style.background = 'rgba(72, 187, 120, 0.2)';
                     status.style.color = '#68d391';
                     if (result.testResult && result.testResult.success) {
-                        status.innerHTML = `✅ API key saved and tested successfully!<br><small style="opacity: 0.8;">Service: ${result.testResult.service}<br>Test: "${result.testResult.testAddress}" → "${result.testResult.foundAddress}"<br>Available services: ${result.availableServices.join(', ')}</small>`;
+                        status.innerHTML = `<svg class="icon-sm"><use href="#icon-check-circle"/></svg> API key saved and tested successfully!<br><small style="opacity: 0.8;">Service: ${result.testResult.service}<br>Test: "${result.testResult.testAddress}" → "${result.testResult.foundAddress}"<br>Available services: ${result.availableServices.join(', ')}</small>`;
                     } else {
-                        status.innerHTML = '✅ API key saved (test inconclusive - will be used for address searches)<br><small style="opacity: 0.8;">The key will be tried for all address lookups</small>';
+                        status.innerHTML = '<svg class="icon-sm"><use href="#icon-check-circle"/></svg> API key saved (test inconclusive - will be used for address searches)<br><small style="opacity: 0.8;">The key will be tried for all address lookups</small>';
                     }
-                    btn.textContent = '✓ Saved & Activated';
+                    btn.innerHTML = '<svg class="icon-sm"><use href="#icon-check-circle"/></svg> Saved & Activated';
                     btn.style.background = '#22c55e';
 
                     // Refresh data mode indicator
@@ -7037,16 +7161,16 @@
                 } else {
                     status.style.background = 'rgba(229, 62, 62, 0.2)';
                     status.style.color = '#fc8181';
-                    status.innerHTML = `❌ Failed to save: ${result.message}`;
+                    status.innerHTML = `<svg class="icon-sm" style="color: #f87171;"><use href="#icon-x-circle"/></svg> Failed to save: ${result.message}`;
                     btn.disabled = false;
-                    btn.textContent = '💾 Save & Test Immediately (No Restart)';
+                    btn.innerHTML = '<svg class="icon-sm"><use href="#icon-save"/></svg> Save & Test Immediately (No Restart)';
                 }
             } catch (error) {
                 status.style.background = 'rgba(229, 62, 62, 0.2)';
                 status.style.color = '#fc8181';
-                status.innerHTML = `❌ Error: ${error.message}`;
+                status.innerHTML = `<svg class="icon-sm" style="color: #f87171;"><use href="#icon-x-circle"/></svg> Error: ${error.message}`;
                 btn.disabled = false;
-                btn.textContent = '💾 Save & Test Immediately (No Restart)';
+                btn.innerHTML = '<svg class="icon-sm"><use href="#icon-save"/></svg> Save & Test Immediately (No Restart)';
             }
         }
 
@@ -7065,11 +7189,11 @@
                     })
                 });
 
-                showMessage('api-message', '✅ Additional APIs saved!', 'success');
+                showMessage('api-message', 'Additional APIs saved!', 'success');
                 // Refresh API keys status display
                 setTimeout(() => updateAPIKeysStatus(), 500);
             } catch (e) {
-                showMessage('api-message', '❌ Error saving', 'error');
+                showMessage('api-message', 'Error saving', 'error');
                 console.error('Additional APIs save error:', e);
             }
         }
@@ -7152,7 +7276,7 @@
                 // Google Places API
                 const googleKey = prefs.additionalAPIs?.google_places || process.env?.GOOGLE_PLACES_API_KEY;
                 apis.push({
-                    name: '📍 Google Places API',
+                    name: 'Google Places API',
                     value: googleKey,
                     status: googleKey ? 'active' : 'not-configured',
                     note: googleKey ? 'Enhanced geocoding enabled' : 'Optional - improves address search'
@@ -7161,7 +7285,7 @@
                 // Mapbox API
                 const mapboxToken = prefs.additionalAPIs?.mapbox;
                 apis.push({
-                    name: '🗺️ Mapbox Geocoding',
+                    name: 'Mapbox Geocoding',
                     value: mapboxToken,
                     status: mapboxToken ? 'active' : 'not-configured',
                     note: mapboxToken ? 'Additional geocoding coverage' : 'Optional - backup geocoding'
@@ -7183,7 +7307,7 @@
                 const authorityName = authorityNames[state] || 'Transit Authority';
 
                 apis.push({
-                    name: `🚂 ${authorityName}`,
+                    name: authorityName,
                     value: transitKey,
                     status: transitKey ? 'active' : 'not-configured',
                     note: transitKey ? `Real-time data for ${state}` : 'Optional - enables real-time departures'
@@ -7193,7 +7317,7 @@
                 if (state === 'VIC') {
                     const gtfsKey = prefs.additionalAPIs?.gtfs_realtime_key;
                     apis.push({
-                        name: '🚆 GTFS Realtime (Victoria)',
+                        name: 'GTFS Realtime (Victoria)',
                         value: gtfsKey,
                         status: gtfsKey ? 'active' : 'not-configured',
                         note: gtfsKey ? 'Live metro train updates' : 'Optional - Victoria only'
@@ -7202,7 +7326,7 @@
 
                 // Nominatim (always available)
                 apis.push({
-                    name: '🌍 OpenStreetMap Nominatim',
+                    name: 'OpenStreetMap Nominatim',
                     value: 'built-in',
                     status: 'active',
                     note: 'Free geocoding - always available'
@@ -7210,7 +7334,7 @@
 
                 // BOM Weather (always available)
                 apis.push({
-                    name: '🌤️ Bureau of Meteorology',
+                    name: 'Bureau of Meteorology',
                     value: 'built-in',
                     status: 'active',
                     note: 'Weather data - always available'
@@ -7219,9 +7343,9 @@
                 // Render API status items
                 statusList.innerHTML = apis.map(api => {
                     const statusColors = {
-                        'active': { bg: 'rgba(72, 187, 120, 0.15)', border: '#22c55e', icon: '✓', iconColor: '#22c55e' },
-                        'not-configured': { bg: 'rgba(251, 191, 36, 0.15)', border: '#fbbf24', icon: '⚠️', iconColor: '#fbbf24' },
-                        'invalid': { bg: 'rgba(239, 68, 68, 0.15)', border: '#ef4444', icon: '❌', iconColor: '#ef4444' }
+                        'active': { bg: 'rgba(72, 187, 120, 0.15)', border: '#22c55e', icon: '<svg class="icon-sm"><use href="#icon-check-circle"/></svg>', iconColor: '#22c55e' },
+                        'not-configured': { bg: 'rgba(251, 191, 36, 0.15)', border: '#fbbf24', icon: '<svg class="icon-sm"><use href="#icon-warning"/></svg>', iconColor: '#fbbf24' },
+                        'invalid': { bg: 'rgba(239, 68, 68, 0.15)', border: '#ef4444', icon: '<svg class="icon-sm"><use href="#icon-x-circle"/></svg>', iconColor: '#ef4444' }
                     };
                     const colors = statusColors[api.status];
 
@@ -7296,7 +7420,7 @@
                     messageDiv.style.padding = '12px';
                     messageDiv.style.borderRadius = '8px';
                     messageDiv.style.color = '#22c55e';
-                    messageDiv.innerHTML = `✅ ${result.message}`;
+                    messageDiv.innerHTML = `<svg class="icon-sm"><use href="#icon-check-circle"/></svg> ${result.message}`;
 
                     setTimeout(() => {
                         messageDiv.style.display = 'none';
@@ -7315,7 +7439,7 @@
                 messageDiv.style.padding = '12px';
                 messageDiv.style.borderRadius = '8px';
                 messageDiv.style.color = '#fca5a5';
-                messageDiv.innerHTML = `❌ Error: ${error.message}`;
+                messageDiv.innerHTML = `<svg class="icon-sm" style="color: #f87171;"><use href="#icon-x-circle"/></svg> Error: ${error.message}`;
             }
         }
 
@@ -7607,7 +7731,7 @@
                 html += `
                     <div style="background: ${canGetCoffee ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)'}; padding: 20px; border-radius: 12px; margin-bottom: 20px; text-align: center;">
                         <div style="font-size: 24px; font-weight: 700; margin-bottom: 10px;">
-                            ${canGetCoffee ? '☕ YES - YOU HAVE TIME FOR COFFEE!' : '⚡ NO - GO DIRECT TO WORK'}
+                            ${canGetCoffee ? '<svg class="icon"><use href="#icon-coffee"/></svg> YES - YOU HAVE TIME FOR COFFEE!' : '<svg class="icon"><use href="#icon-zap"/></svg> NO - GO DIRECT TO WORK'}
                         </div>
                         <div style="opacity: 0.9;">${journey.coffee_decision.message || ''}</div>
                     </div>
@@ -7745,7 +7869,7 @@
                         <div class="arch-node-title">9️⃣ Coffee Decision</div>
                         <div class="arch-node-desc">
                             Compares available time vs required time (walk + coffee purchase + walk)<br>
-                            <strong>Result:</strong> ☕ YES or ⚡ NO
+                            <strong>Result:</strong> YES (coffee time) or NO (go direct)
                         </div>
                     </div>
 
@@ -8135,7 +8259,7 @@
 
                         <!-- Layer 2: Data Processing -->
                         <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px;">
-                            <div style="font-weight: 700; margin-bottom: 10px; font-size: 14px; text-align: center;">⚙️ DATA PROCESSING LAYER</div>
+                            <div style="font-weight: 700; margin-bottom: 10px; font-size: 14px; text-align: center;"><svg class="icon-sm"><use href="#icon-settings"/></svg> DATA PROCESSING LAYER</div>
                             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
                                 <div style="padding: 8px; background: rgba(64, 220, 165, 0.3); border-radius: 6px; text-align: center;">
                                     <div style="font-weight: 600; font-size: 12px;">Geocoding</div>
@@ -8189,7 +8313,7 @@
 
                         <!-- Layer 5: Auto Calculation -->
                         <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px;">
-                            <div style="font-weight: 700; margin-bottom: 10px; font-size: 14px; text-align: center;">🔄 AUTO-CALCULATION LAYER</div>
+                            <div style="font-weight: 700; margin-bottom: 10px; font-size: 14px; text-align: center;"><svg class="icon-sm"><use href="#icon-refresh"/></svg> AUTO-CALCULATION LAYER</div>
                             <div style="text-align: center;">
                                 <div style="padding: 10px; background: rgba(102, 126, 234, 0.3); border-radius: 6px; display: inline-block;">
                                     <div style="font-weight: 600; font-size: 12px;">Background Process</div>
@@ -8202,7 +8326,7 @@
 
                         <!-- Layer 6: Output -->
                         <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px;">
-                            <div style="font-weight: 700; margin-bottom: 10px; font-size: 14px; text-align: center;">📱 OUTPUT LAYER</div>
+                            <div style="font-weight: 700; margin-bottom: 10px; font-size: 14px; text-align: center;"><svg class="icon-sm"><use href="#icon-tv"/></svg> OUTPUT LAYER</div>
                             <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
                                 <div style="padding: 10px 15px; background: rgba(64, 220, 165, 0.3); border-radius: 6px; font-weight: 600;">
                                     CC Display
@@ -8218,7 +8342,7 @@
 
                         <!-- Data Flow Indicators -->
                         <div style="margin-top: 15px; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 8px;">
-                            <div style="font-weight: 600; margin-bottom: 10px; text-align: center; font-size: 13px;">🔄 Live Data Flow</div>
+                            <div style="font-weight: 600; margin-bottom: 10px; text-align: center; font-size: 13px;"><svg class="icon-sm"><use href="#icon-refresh"/></svg> Live Data Flow</div>
                             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; font-size: 11px;">
                                 <div style="padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px;">
                                     <strong>Transit Data:</strong> Refreshes every 30 seconds
