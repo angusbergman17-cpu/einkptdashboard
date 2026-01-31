@@ -115,6 +115,7 @@ The system was previously known as "Commute Compute". Update any remaining refer
 - 3.4 Implementation
 - 3.5 Benefits
 - 3.6 Vercel KV Setup (Required)
+- 3.7 Admin Panel localStorage Architecture (v1.9)
 </details>
 
 <details>
@@ -275,6 +276,7 @@ The system was previously known as "Commute Compute". Update any remaining refer
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.9 | 2026-01-31 | Angus Bergman | **ADMIN PANEL LOCALSTORAGE ARCHITECTURE**: (1) Admin panel tabs rebuilt to read from localStorage (Setup Wizard saves here). (2) Device naming: Use "TRMNL Display (OG)" not "CC E-Ink Display". (3) Firmware disclaimer required for all device references. (4) API Settings auto-populates from wizard data. (5) Added Section 3.7 (Admin Panel localStorage Keys). |
 | 1.8 | 2026-01-31 | Angus Bergman | **FIRMWARE UPDATE + ZERO-CONFIG KV STORAGE**: (1) Updated locked firmware to CC-FW-6.1-60s (commit 7336929) — 60s refresh. (2) Implemented Vercel KV storage for API keys (Section 11.8) — direct endpoints now Zero-Config compliant, no env vars required. (3) Added `src/data/kv-preferences.js` for persistent KV storage. |
 | 1.7 | 2026-01-31 | Angus Bergman | **LOCKED FIRMWARE**: Added Section 5.6 — CC-FW-6.0-STABLE locked production firmware. Hardware-verified working on TRMNL OG (commit 2f8d6cf). Documents exact flashing procedure, ESP32-C3 workarounds, modification policy. |
 | 1.6 | 2026-01-30 | Angus Bergman | **REBRAND**: Commute Compute → Commute Compute System. Added Section 0 (Naming Conventions). Updated all references: CCDashDesignV10, CC LiveDash. SmartCommute engine name retained. |
@@ -609,6 +611,69 @@ Setup Wizard
 2. Verify "Linked Projects" shows einkptdashboard
 3. Redeploy project (Deployments → ⋮ → Redeploy)
 4. Check `/api/kv-status` — should show `KV_REST_API_URL: "set"`
+
+### 3.7 Admin Panel localStorage Architecture (v1.9)
+
+**The Admin Panel reads configuration from browser localStorage, populated by the Setup Wizard.**
+
+This ensures zero-config compliance: users complete the wizard ONCE, and all admin tabs auto-populate.
+
+#### 3.7.1 localStorage Keys
+
+| Key | Description | Set By |
+|-----|-------------|--------|
+| `cc-config` | Full configuration object (JSON) | Setup Wizard |
+| `cc-configured` | "true" when setup complete | Setup Wizard |
+| `cc-transit-api-key` | Transport Victoria API key | Setup Wizard Step 4 |
+| `cc-transit-api-validated` | "true" if key validated | Setup Wizard / API Settings |
+| `cc-google-places-key` | Google Places API key | Setup Wizard Step 1 |
+| `cc-google-places-validated` | "true" if key validated | Setup Wizard / API Settings |
+| `cc-device` | Selected device (trmnl-og, kindle-pw3, etc.) | Setup Wizard Step 5 |
+| `cc-webhook-url` | Generated webhook URL for device | Setup Wizard |
+| `cc-api-mode` | "cached" or "live" | Setup Wizard / API Settings |
+
+#### 3.7.2 Admin Tab Data Flow
+
+```
+Setup Wizard
+    │
+    └─► localStorage.setItem('cc-config', fullConfig)
+    └─► localStorage.setItem('cc-configured', 'true')
+    └─► localStorage.setItem('cc-transit-api-key', key)
+            │
+            ▼
+Admin Panel Load
+    │
+    ├─► loadSavedPreferences() reads localStorage
+    │       │
+    │       ├─► updateConfigSummary() → Live Data banner
+    │       ├─► updateSetupTabSummary() → Setup & Journey tab
+    │       └─► updateApiSettingsTab() → API Settings tab
+    │
+    └─► All tabs show data from wizard (no re-entry required)
+```
+
+#### 3.7.3 Device Naming Convention
+
+**Use actual device names, not firmware names:**
+
+| ✅ Correct | ❌ Incorrect |
+|-----------|-------------|
+| TRMNL Display (OG) | CC E-Ink Display OG |
+| TRMNL Display (Mini) | CC E-Ink Display Mini |
+| Kindle Paperwhite 3 | Kindle PW3 Firmware |
+
+**Firmware Disclaimer Required:** When displaying device information, always include:
+> ⚠️ Custom Firmware Required: Your device must be flashed with Commute Compute firmware to connect to this dashboard. Stock firmware will not work.
+
+#### 3.7.4 Tab Responsibilities
+
+| Tab | Data Source | Purpose |
+|-----|-------------|---------|
+| Setup & Journey | `cc-config`, `cc-device`, `cc-webhook-url` | Summary view + edit link to wizard |
+| API Settings | `cc-transit-api-key`, `cc-google-places-key`, `cc-api-mode` | Status display + key editing |
+| Live Data | `cc-config` for config banner; server for departures | Real-time transit display |
+| Configuration | `cc-config` | Journey profiles, advanced settings |
 
 ---
 
