@@ -50,17 +50,43 @@ import fs from 'fs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Try to load custom fonts
-try {
-  const fontsDir = path.join(__dirname, '../../fonts');
-  if (fs.existsSync(fontsDir)) {
-    GlobalFonts.registerFromPath(path.join(fontsDir, 'Inter-Bold.ttf'), 'Inter Bold');
-    GlobalFonts.registerFromPath(path.join(fontsDir, 'Inter-Regular.ttf'), 'Inter');
-    console.log('✅ Custom fonts loaded');
+// Font loading flag
+let fontsLoaded = false;
+
+// Try to load custom fonts from multiple possible locations
+function loadFonts() {
+  if (fontsLoaded) return;
+  
+  const possiblePaths = [
+    path.join(process.cwd(), 'fonts'),           // Vercel serverless standard
+    path.join(__dirname, '../../fonts'),          // Relative to src/services
+    path.join(__dirname, '../../../fonts'),       // Relative to deeper path
+    '/var/task/fonts'                              // Vercel absolute path
+  ];
+  
+  for (const fontsDir of possiblePaths) {
+    try {
+      const boldPath = path.join(fontsDir, 'Inter-Bold.ttf');
+      const regularPath = path.join(fontsDir, 'Inter-Regular.ttf');
+      
+      if (fs.existsSync(boldPath) && fs.existsSync(regularPath)) {
+        GlobalFonts.registerFromPath(boldPath, 'Inter Bold');
+        GlobalFonts.registerFromPath(regularPath, 'Inter');
+        GlobalFonts.registerFromPath(boldPath, 'Inter');  // Also register bold as 'Inter' fallback
+        console.log(`✅ Custom fonts loaded from: ${fontsDir}`);
+        fontsLoaded = true;
+        return;
+      }
+    } catch (e) {
+      // Continue to next path
+    }
   }
-} catch (e) {
-  console.log('ℹ️  Using system fonts');
+  
+  console.log('⚠️ Custom fonts not found, using system fonts');
 }
+
+// Load fonts on module init
+loadFonts();
 
 // =============================================================================
 // TYPE CONSTANTS (merged from v11-journey-renderer.js)
@@ -349,7 +375,7 @@ function renderLegZone(ctx, leg, zone, isHighlighted = false) {
   // Mode icon area (left side, 48px wide)
   const iconX = x + 8;
   const iconY = y + h / 2;
-  ctx.font = '24px sans-serif';
+  ctx.font = '24px Inter, sans-serif';
   ctx.textBaseline = 'middle';
   
   const icon = MODE_ICONS[leg.type] || MODE_ICONS.transit;
@@ -359,13 +385,13 @@ function renderLegZone(ctx, leg, zone, isHighlighted = false) {
   const textX = x + 56;
   
   // Title (bold)
-  ctx.font = 'bold 18px sans-serif';
+  ctx.font = 'bold 18px Inter, sans-serif';
   ctx.textBaseline = 'top';
   const title = leg.title || getLegTitle(leg);
   ctx.fillText(title, textX, y + 8);
   
   // Subtitle (smaller)
-  ctx.font = '13px sans-serif';
+  ctx.font = '13px Inter, sans-serif';
   const subtitle = leg.subtitle || getLegSubtitle(leg);
   ctx.fillText(subtitle, textX, y + 30);
   
@@ -381,14 +407,14 @@ function renderLegZone(ctx, leg, zone, isHighlighted = false) {
   
   // Time text
   ctx.fillStyle = isHighlighted ? '#000' : '#FFF';
-  ctx.font = 'bold 22px sans-serif';
+  ctx.font = 'bold 22px Inter, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   
   const minutes = leg.minutes ?? leg.durationMinutes ?? '--';
   ctx.fillText(minutes.toString(), timeBoxX + timeBoxW / 2, timeBoxY + timeBoxH / 2 - 8);
   
-  ctx.font = '10px sans-serif';
+  ctx.font = '10px Inter, sans-serif';
   const timeLabel = leg.type === 'walk' ? 'MIN WALK' : 'MIN';
   ctx.fillText(timeLabel, timeBoxX + timeBoxW / 2, timeBoxY + timeBoxH / 2 + 12);
   
@@ -458,7 +484,7 @@ function renderHeaderLocation(data, prefs) {
   ctx.fillRect(0, 0, zone.w, zone.h);
   
   ctx.fillStyle = '#000';
-  ctx.font = 'bold 16px sans-serif';
+  ctx.font = 'bold 16px Inter, sans-serif';
   ctx.textBaseline = 'top';
   
   const location = (data.location || data.origin || 'HOME').toUpperCase();
@@ -479,7 +505,7 @@ function renderHeaderTime(data, prefs) {
   ctx.fillRect(0, 0, zone.w, zone.h);
   
   ctx.fillStyle = '#000';
-  ctx.font = 'bold 48px sans-serif';
+  ctx.font = 'bold 48px Inter, sans-serif';
   ctx.textBaseline = 'top';
   
   const time = data.current_time || data.time || '--:--';
@@ -502,12 +528,12 @@ function renderHeaderDayDate(data, prefs) {
   ctx.fillStyle = '#000';
   
   // Day of week
-  ctx.font = 'bold 20px sans-serif';
+  ctx.font = 'bold 20px Inter, sans-serif';
   ctx.textBaseline = 'top';
   ctx.fillText(data.day || '', 0, 8);
   
   // Date
-  ctx.font = '16px sans-serif';
+  ctx.font = '16px Inter, sans-serif';
   ctx.fillText(data.date || '', 0, 36);
   
   return canvasToBMP(canvas);
@@ -532,17 +558,17 @@ function renderHeaderWeather(data, prefs) {
   ctx.fillStyle = '#000';
   
   // Temperature
-  ctx.font = 'bold 32px sans-serif';
+  ctx.font = 'bold 32px Inter, sans-serif';
   ctx.textBaseline = 'top';
   const temp = data.temp ?? data.temperature ?? '--';
   ctx.fillText(`${temp}°`, 12, 12);
   
   // Condition
-  ctx.font = '12px sans-serif';
+  ctx.font = '12px Inter, sans-serif';
   ctx.fillText(data.condition || data.weather || '', 12, 52);
   
   // Weather icon (right side)
-  ctx.font = '28px sans-serif';
+  ctx.font = '28px Inter, sans-serif';
   ctx.textAlign = 'right';
   const weatherIcon = data.weather_icon || '☀️';
   ctx.fillText(weatherIcon, zone.w - 12, 24);
@@ -563,7 +589,7 @@ function renderStatus(data, prefs) {
   ctx.fillRect(0, 0, zone.w, zone.h);
   
   ctx.fillStyle = '#FFF';
-  ctx.font = 'bold 16px sans-serif';
+  ctx.font = 'bold 16px Inter, sans-serif';
   ctx.textBaseline = 'middle';
   
   // Determine status type and message
@@ -589,11 +615,11 @@ function renderStatus(data, prefs) {
   }
   
   // Icon
-  ctx.font = '18px sans-serif';
+  ctx.font = '18px Inter, sans-serif';
   ctx.fillText(leftIcon, 16, zone.h / 2);
   
   // Text
-  ctx.font = 'bold 14px sans-serif';
+  ctx.font = 'bold 14px Inter, sans-serif';
   ctx.fillText(statusText, 48, zone.h / 2);
   
   return canvasToBMP(canvas);
@@ -638,7 +664,7 @@ function renderFooter(data, prefs) {
   ctx.fillRect(0, 0, zone.w, zone.h);
   
   ctx.fillStyle = '#FFF';
-  ctx.font = 'bold 14px sans-serif';
+  ctx.font = 'bold 14px Inter, sans-serif';
   ctx.textBaseline = 'middle';
   
   // Destination
@@ -768,6 +794,9 @@ export function clearCache() {
  * Render full screen image (for debugging/preview)
  */
 export function renderFullScreen(data, prefs = {}) {
+  // Ensure fonts are loaded
+  loadFonts();
+  
   const canvas = createCanvas(800, 480);
   const ctx = canvas.getContext('2d');
   
@@ -793,30 +822,30 @@ export function renderFullScreen(data, prefs = {}) {
   // Re-render zones directly to main canvas for preview
   // Header
   ctx.fillStyle = '#000';
-  ctx.font = 'bold 16px sans-serif';
+  ctx.font = 'bold 16px Inter, sans-serif';
   ctx.textBaseline = 'top';
   ctx.fillText((data.location || 'HOME').toUpperCase(), 16, 16);
   
-  ctx.font = 'bold 48px sans-serif';
+  ctx.font = 'bold 48px Inter, sans-serif';
   ctx.fillText(data.current_time || '--:--', 16, 40);
   
-  ctx.font = 'bold 20px sans-serif';
+  ctx.font = 'bold 20px Inter, sans-serif';
   ctx.fillText(data.day || '', 240, 24);
-  ctx.font = '16px sans-serif';
+  ctx.font = '16px Inter, sans-serif';
   ctx.fillText(data.date || '', 240, 52);
   
   // Weather box
   ctx.strokeRect(600, 8, 184, 86);
-  ctx.font = 'bold 32px sans-serif';
+  ctx.font = 'bold 32px Inter, sans-serif';
   ctx.fillText(`${data.temp || '--'}°`, 612, 20);
-  ctx.font = '12px sans-serif';
+  ctx.font = '12px Inter, sans-serif';
   ctx.fillText(data.condition || '', 612, 60);
   
   // Status bar
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 96, 800, 32);
   ctx.fillStyle = '#FFF';
-  ctx.font = 'bold 14px sans-serif';
+  ctx.font = 'bold 14px Inter, sans-serif';
   ctx.textBaseline = 'middle';
   const statusText = data.coffee_decision?.decision || 'LEAVE NOW';
   ctx.fillText(`${statusText} → Arrive ${data.arrive_by || '--:--'}`, 16, 112);
@@ -832,16 +861,16 @@ export function renderFullScreen(data, prefs = {}) {
     ctx.strokeRect(zone.x + 1, zone.y + 1, zone.w - 2, zone.h - 2);
     
     ctx.fillStyle = '#000';
-    ctx.font = '24px sans-serif';
+    ctx.font = '24px Inter, sans-serif';
     ctx.textBaseline = 'middle';
     const icon = MODE_ICONS[leg.type] || '🚇';
     ctx.fillText(icon, zone.x + 8, zone.y + zone.h / 2);
     
-    ctx.font = 'bold 18px sans-serif';
+    ctx.font = 'bold 18px Inter, sans-serif';
     ctx.textBaseline = 'top';
     ctx.fillText(getLegTitle(leg), zone.x + 56, zone.y + 8);
     
-    ctx.font = '13px sans-serif';
+    ctx.font = '13px Inter, sans-serif';
     ctx.fillText(getLegSubtitle(leg), zone.x + 56, zone.y + 30);
     
     // Time box
@@ -849,11 +878,11 @@ export function renderFullScreen(data, prefs = {}) {
     const timeBoxX = zone.x + zone.w - timeBoxW - 8;
     ctx.fillRect(timeBoxX, zone.y + 4, timeBoxW, zone.h - 8);
     ctx.fillStyle = '#FFF';
-    ctx.font = 'bold 22px sans-serif';
+    ctx.font = 'bold 22px Inter, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText((leg.minutes || leg.durationMinutes || '--').toString(), timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 - 6);
-    ctx.font = '10px sans-serif';
+    ctx.font = '10px Inter, sans-serif';
     ctx.fillText(leg.type === 'walk' ? 'MIN WALK' : 'MIN', timeBoxX + timeBoxW / 2, zone.y + zone.h / 2 + 14);
     ctx.textAlign = 'left';
     ctx.fillStyle = '#000';
@@ -863,7 +892,7 @@ export function renderFullScreen(data, prefs = {}) {
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 448, 800, 32);
   ctx.fillStyle = '#FFF';
-  ctx.font = 'bold 14px sans-serif';
+  ctx.font = 'bold 14px Inter, sans-serif';
   ctx.textBaseline = 'middle';
   ctx.fillText(`ARRIVE at ${(data.destination || 'WORK').toUpperCase()}`, 16, 464);
   ctx.textAlign = 'right';
@@ -909,11 +938,11 @@ export function renderTestPattern() {
   
   // Center text
   ctx.fillStyle = '#000';
-  ctx.font = 'bold 24px sans-serif';
+  ctx.font = 'bold 24px Inter, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText('CCDash Test Pattern', 400, 240);
-  ctx.font = '16px sans-serif';
+  ctx.font = '16px Inter, sans-serif';
   ctx.fillText('800 × 480', 400, 280);
   
   return canvasToBMP(canvas);
