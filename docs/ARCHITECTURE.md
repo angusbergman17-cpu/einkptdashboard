@@ -1,6 +1,6 @@
 # Commute Compute System™ Architecture
 
-**Version:** 5.1  
+**Version:** 5.2  
 **Last Updated:** 2026-01-31  
 **Status:** Active  
 **Specification:** CCDash™ V10 (LOCKED)  
@@ -134,8 +134,112 @@ Complete mapping of each trademark to its constituent files in the codebase.
 
 ---
 
+## Simplified System Architecture
+
+The Commute Compute System™ is composed of four core trademark families working together:
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                      COMMUTE COMPUTE SYSTEM™ ARCHITECTURE                     │
+│                                                                               │
+│  ┌─────────────────────────────────────────────────────────────────────────┐ │
+│  │                        EXTERNAL DATA SOURCES                             │ │
+│  │   ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐         │ │
+│  │   │ Transport VIC   │  │ Bureau of       │  │ Google Places   │         │ │
+│  │   │ OpenData (GTFS) │  │ Meteorology     │  │ (Optional)      │         │ │
+│  │   └────────┬────────┘  └────────┬────────┘  └────────┬────────┘         │ │
+│  └────────────┼─────────────────────┼─────────────────────┼─────────────────┘ │
+│               │                     │                     │                   │
+│               ▼                     ▼                     ▼                   │
+│  ┌─────────────────────────────────────────────────────────────────────────┐ │
+│  │                         SmartCommute™ ENGINE                             │ │
+│  │                                                                          │ │
+│  │   ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐      │ │
+│  │   │  Route Planner   │  │ CoffeeDecision   │  │  GTFS-RT Client  │      │ │
+│  │   │  & Recommender   │  │     Engine       │  │  (Live Data)     │      │ │
+│  │   └────────┬─────────┘  └────────┬─────────┘  └────────┬─────────┘      │ │
+│  │            └──────────────────────┴──────────────────────┘               │ │
+│  │                                   │                                      │ │
+│  │                           Journey Data Model                             │ │
+│  └───────────────────────────────────┬──────────────────────────────────────┘ │
+│                                      │                                        │
+│               ┌──────────────────────┴──────────────────────┐                │
+│               │                                              │                │
+│               ▼                                              ▼                │
+│  ┌────────────────────────────────┐     ┌────────────────────────────────┐   │
+│  │         CCDash™ RENDERER       │     │    CC LiveDash™ RENDERER       │   │
+│  │                                │     │                                │   │
+│  │  • 800×480 1-bit BMP zones     │     │  • Multi-device support        │   │
+│  │  • V10 Dashboard Spec          │     │  • TRMNL, Kindle, Inkplate     │   │
+│  │  • Partial refresh             │     │  • PNG/BMP output              │   │
+│  │  • 60-second cycle             │     │  • Scaled layouts              │   │
+│  │                                │     │                                │   │
+│  │  APIs:                         │     │  APIs:                         │   │
+│  │  • /api/zones                  │     │  • /api/livedash               │   │
+│  │  • /api/screen                 │     │  • /api/livedash?device=X      │   │
+│  └────────────────┬───────────────┘     └────────────────┬───────────────┘   │
+│                   │                                       │                   │
+│                   └───────────────────┬───────────────────┘                   │
+│                                       │                                       │
+│                                       ▼                                       │
+│  ┌─────────────────────────────────────────────────────────────────────────┐ │
+│  │                          CCFirm™ FIRMWARE                                │ │
+│  │                                                                          │ │
+│  │   ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐      │ │
+│  │   │  CCFirmTRMNL     │  │  CCFirmKindle    │  │  CCFirmESP32     │      │ │
+│  │   │  (TRMNL devices) │  │  (Jailbroken)    │  │  (Generic)       │      │ │
+│  │   └──────────────────┘  └──────────────────┘  └──────────────────┘      │ │
+│  │                                                                          │ │
+│  │   • Fetches BMP zones from CCDash™ API                                  │ │
+│  │   • Renders to e-ink display                                            │ │
+│  │   • 60-second partial refresh cycle                                     │ │
+│  │   • Deep sleep power management                                         │ │
+│  └─────────────────────────────────────────────────────────────────────────┘ │
+│                                                                               │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Trademark Family Relationships
+
+```
+┌───────────────────────────────────────────────────────────────────────────┐
+│                                                                            │
+│                        Commute Compute System™                             │
+│                              (Parent Brand)                                │
+│                                                                            │
+│    ┌─────────────────┬──────────────────┬─────────────────────────────┐   │
+│    │                 │                  │                             │   │
+│    ▼                 ▼                  ▼                             ▼   │
+│ ┌──────────┐   ┌──────────┐      ┌──────────┐                  ┌──────────┐
+│ │SmartComm-│   │ CCDash™  │      │CC Live-  │                  │ CCFirm™  │
+│ │  ute™    │   │          │      │  Dash™   │                  │          │
+│ └────┬─────┘   └────┬─────┘      └────┬─────┘                  └────┬─────┘
+│      │              │                 │                              │     │
+│ Journey        Zone-based        Multi-device               Custom        │
+│ Intelligence   Rendering         Preview                    Firmware      │
+│                                                                            │
+│ Contains:      Contains:         Contains:                  Contains:     │
+│ • Route        • V10 Spec        • Device configs           • CCFirmTRMNL │
+│   Planner      • Zone APIs       • Scaled layouts           • CCFirmKindle│
+│ • Coffee       • BMP render      • HTML preview             • CCFirmESP32 │
+│   Decision     • Partial                                                  │
+│ • GTFS-RT        refresh                                                  │
+│                                                                            │
+└───────────────────────────────────────────────────────────────────────────┘
+```
+
+### Data Flow Summary
+
+```
+External APIs → SmartCommute™ → CCDash™/CC LiveDash™ → CCFirm™ → E-ink Display
+    (input)      (processing)       (rendering)        (device)    (output)
+```
+
+---
+
 ## Table of Contents
 
+0. [Simplified System Architecture](#simplified-system-architecture) *(New in v5.2)*
 1. [Overview](#1-overview)
 2. [Distribution Model](#2-distribution-model)
 3. [System Components](#3-system-components)
@@ -205,10 +309,10 @@ Commute Compute is a **fully self-hosted smart transit display system** for Aust
 │                                                         │                │
 │                                                         ▼                │
 │   ┌─────────────────────────────────────────────────────────────────┐   │
-│   │                     USER'S SERVER                                │   │
+│   │                     USER'S VERCEL INSTANCE                       │   │
 │   │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │   │
-│   │  │ SmartCommute│  │  CC LiveDash│  │     Config Token        │  │   │
-│   │  │   Engine    │──│  Renderer   │──│   (embedded API keys)   │  │   │
+│   │  │SmartCommute™│  │  CCDash™    │  │  CC LiveDash™           │  │   │
+│   │  │   Engine    │──│  Renderer   │──│  Multi-Device Renderer  │  │   │
 │   │  └─────────────┘  └─────────────┘  └─────────────────────────┘  │   │
 │   └────────────────────────────┬────────────────────────────────────┘   │
 │                                │                                         │
@@ -217,7 +321,7 @@ Commute Compute is a **fully self-hosted smart transit display system** for Aust
 │   │                     USER'S DEVICE                                │   │
 │   │  ┌─────────────────────────────────────────────────────────┐    │   │
 │   │  │  CCFirm™ Custom Firmware (NOT usetrmnl firmware)        │    │   │
-│   │  │  - Fetches from user's Vercel URL only                  │    │   │
+│   │  │  - Fetches CCDash™ zones from user's Vercel URL         │    │   │
 │   │  │  - Receives 1-bit BMP zones                             │    │   │
 │   │  │  - 60-second partial refresh cycle                      │    │   │
 │   │  └─────────────────────────────────────────────────────────┘    │   │
@@ -226,7 +330,7 @@ Commute Compute is a **fully self-hosted smart transit display system** for Aust
 │   ✅ Complete data isolation — no shared infrastructure                  │
 │   ✅ User owns API keys — embedded in config token                       │
 │   ✅ No central server — each deployment is independent                  │
-│   ❌ NO usetrmnl.com dependency — custom firmware required               │
+│   ❌ NO usetrmnl.com dependency — CCFirm™ required                       │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -345,37 +449,45 @@ einkptdashboard/
 └── DEVELOPMENT-RULES.md          # Development rules (v1.6)
 ```
 
-### 3.2 Layer Architecture
+### 3.2 Layer Architecture (by Trademark Family)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                           PRESENTATION LAYER                             │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐    │
-│  │ Setup Wizard│  │  Simulator  │  │   Preview   │  │    Help     │    │
-│  │  (admin.html)│  │             │  │             │  │             │    │
+│  │ Setup Wizard│  │  Simulator  │  │CC LiveDash™ │  │    Help     │    │
+│  │  (admin.html)│  │             │  │   Preview   │  │             │    │
 │  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘    │
 ├─────────────────────────────────────────────────────────────────────────┤
-│                             API LAYER                                    │
+│                         API LAYER (CCDash™ / CC LiveDash™)               │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐    │
-│  │  /api/zones │  │/api/livedash│  │ /api/screen │  │ /api/admin/*│    │
+│  │  CCDash™    │  │CC LiveDash™ │  │  CCDash™    │  │ /api/admin/*│    │
+│  │ /api/zones  │  │/api/livedash│  │ /api/screen │  │             │    │
 │  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘    │
 ├─────────────────────────────────────────────────────────────────────────┤
-│                           SERVICE LAYER                                  │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐    │
-│  │ SmartCommute│  │  CC LiveDash│  │ Zone Render │  │   Weather   │    │
-│  │   Engine    │  │  Renderer   │  │             │  │    (BOM)    │    │
-│  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘    │
+│                        SERVICE LAYER (Renderers)                         │
+│  ┌─────────────────────────────────┐  ┌─────────────────────────────┐  │
+│  │           CCDash™               │  │      CC LiveDash™           │  │
+│  │  • ccdash-renderer.js           │  │  • livedash.js              │  │
+│  │  • Zone-based BMP output        │  │  • Multi-device PNG/BMP     │  │
+│  └─────────────────────────────────┘  └─────────────────────────────┘  │
 ├─────────────────────────────────────────────────────────────────────────┤
-│                            CORE LAYER                                    │
+│                       CORE LAYER (SmartCommute™)                         │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐    │
-│  │   Coffee    │  │    Route    │  │   Journey   │  │  Decision   │    │
-│  │  Decision   │  │   Planner   │  │   Engine    │  │   Logger    │    │
+│  │SmartCommute™│  │ Coffee      │  │   Route     │  │  GTFS-RT    │    │
+│  │   Engine    │  │ Decision    │  │  Planner    │  │   Client    │    │
 │  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘    │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                            DATA LAYER                                    │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐    │
-│  │   OpenData  │  │    GTFS     │  │ Preferences │  │  Fallback   │    │
-│  │   Client    │  │   Static    │  │   Manager   │  │ Timetables  │    │
+│  │  Transport  │  │    GTFS     │  │ Preferences │  │  Fallback   │    │
+│  │  VIC API    │  │   Static    │  │   Manager   │  │ Timetables  │    │
+│  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘    │
+├─────────────────────────────────────────────────────────────────────────┤
+│                        DEVICE LAYER (CCFirm™)                            │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐    │
+│  │ CCFirmTRMNL │  │CCFirmKindle │  │ CCFirmESP32 │  │(Future      │    │
+│  │  (TRMNL OG) │  │(Jailbroken) │  │  (Generic)  │  │ Variants)   │    │
 │  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘    │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
@@ -384,11 +496,11 @@ einkptdashboard/
 
 ## 4. Data Flow
 
-### 4.1 Complete Data Flow
+### 4.1 Complete Data Flow (by Trademark Family)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                           DATA FLOW                                      │
+│                    DATA FLOW — TRADEMARK FAMILIES                        │
 └─────────────────────────────────────────────────────────────────────────┘
 
                     ┌─────────────────────┐
@@ -398,57 +510,61 @@ einkptdashboard/
                     └──────────┬──────────┘
                                │
                                ▼ 30s cache
-                    ┌─────────────────────┐
-                    │    opendata.js      │
-                    │  - Trip Updates     │
-                    │  - Service Alerts   │
-                    │  - Vehicle Positions│
-                    └──────────┬──────────┘
-                               │
-          ┌────────────────────┼────────────────────┐
-          │                    │                    │
-          ▼                    ▼                    ▼
-┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
-│  weather-bom.js │  │  smart-commute  │  │ coffee-decision │
-│  (5min cache)   │  │      .js        │  │     .js         │
-└────────┬────────┘  └────────┬────────┘  └────────┬────────┘
-         │                    │                    │
-         └────────────────────┼────────────────────┘
-                              │
-                              ▼
-                    ┌─────────────────────┐
-                    │  Dashboard Service  │
-                    │  (data aggregation) │
-                    └──────────┬──────────┘
-                               │
-              ┌────────────────┼────────────────┐
-              │                │                │
-              ▼                ▼                ▼
-    ┌─────────────────┐ ┌───────────────┐ ┌─────────────────┐
-    │   zone-renderer │ │   livedash    │ │ journey-display │
-    │   (1-bit BMP)   │ │ (multi-device)│ │   (web view)    │
-    └────────┬────────┘ └───────┬───────┘ └────────┬────────┘
-             │                  │                  │
-             ▼                  ▼                  ▼
-    ┌─────────────────┐ ┌───────────────┐ ┌─────────────────┐
-    │  /api/zones     │ │ /api/livedash │ │ /api/screen     │
-    │  (TRMNL BMP)    │ │ (All devices) │ │ (Full PNG)      │
-    └─────────────────┘ └───────────────┘ └─────────────────┘
+┌──────────────────────────────────────────────────────────────────────────┐
+│                         SmartCommute™ ENGINE                              │
+│                                                                           │
+│   ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐          │
+│   │  GTFS-RT Client │  │  Route Planner  │  │ CoffeeDecision  │          │
+│   │  (opendata.js)  │  │  & Recommender  │  │     Engine      │          │
+│   └────────┬────────┘  └────────┬────────┘  └────────┬────────┘          │
+│            │                    │                    │                    │
+│            └────────────────────┴────────────────────┘                    │
+│                                 │                                         │
+│                          Journey Data Model                               │
+└─────────────────────────────────┬─────────────────────────────────────────┘
+                                  │
+               ┌──────────────────┴──────────────────┐
+               │                                      │
+               ▼                                      ▼
+┌───────────────────────────────┐   ┌───────────────────────────────┐
+│        CCDash™ RENDERER       │   │    CC LiveDash™ RENDERER      │
+│                               │   │                               │
+│  • ccdash-renderer.js         │   │  • livedash.js                │
+│  • Zone-based 1-bit BMP       │   │  • Multi-device PNG/BMP       │
+│  • V10 Dashboard Spec         │   │  • Device-scaled layouts      │
+└───────────────┬───────────────┘   └───────────────┬───────────────┘
+                │                                    │
+                ▼                                    ▼
+┌───────────────────────────────┐   ┌───────────────────────────────┐
+│  CCDash™ APIs:                │   │  CC LiveDash™ APIs:           │
+│  • /api/zones (BMP zones)     │   │  • /api/livedash (all devices)│
+│  • /api/screen (full PNG)     │   │  • /api/livedash?device=X     │
+│  • /api/zone/[id]             │   │                               │
+└───────────────┬───────────────┘   └───────────────┬───────────────┘
+                │                                    │
+                └──────────────────┬─────────────────┘
+                                   │
+                                   ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                           CCFirm™ DEVICE                                 │
+│                                                                          │
+│   Fetches CCDash™ zones → Renders to e-ink → Deep sleep (60s)           │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 4.2 Request Flow (Device → Server)
+### 4.2 Request Flow (CCFirm™ → CCDash™)
 
 ```
 ┌─────────────┐    ┌──────────────────────────────────────────────────────┐
-│   Device    │    │                    SERVER                            │
-│  (CCFirm™)  │    │                                                      │
+│  CCFirm™    │    │                 VERCEL INSTANCE                      │
+│   Device    │    │                                                      │
 └──────┬──────┘    │  ┌────────────┐    ┌────────────┐    ┌───────────┐  │
-       │           │  │ Decode     │    │ Fetch      │    │  Render   │  │
-       │ GET /api/zones?token=xxx  │    │ Transit    │    │  Zones    │  │
-       │──────────▶│  │ Config     │───▶│ Data       │───▶│  (BMP)    │  │
+       │           │  │ Decode     │    │SmartComm-  │    │ CCDash™   │  │
+       │ GET /api/zones?token=xxx  │    │  ute™      │    │ Renderer  │  │
+       │──────────▶│  │ Config     │───▶│ Engine     │───▶│ (BMP)     │  │
        │           │  │ Token      │    │            │    │           │  │
        │◀──────────│  └────────────┘    └────────────┘    └───────────┘  │
-       │  JSON + BMP data (base64)                                       │
+       │  JSON + BMP zones (base64)                                      │
 └──────────────────┴──────────────────────────────────────────────────────┘
 ```
 
@@ -656,16 +772,16 @@ einkptdashboard/
 }
 ```
 
-### 7.3 Renderer Versions
+### 7.3 Renderer Versions (by Trademark)
 
-| Renderer | Purpose | Status |
-|----------|---------|--------|
-| `zone-renderer.js` | Original zone renderer | Active |
-| `zone-renderer-v12.js` | Improved zone handling | Active |
-| `ccdash-renderer-v13.js` | Latest improvements | Active |
-| `v11-dashboard-renderer.js` | Full dashboard | Active |
-| `v11-journey-renderer.js` | Journey-focused | Active |
-| `livedash.js` | Multi-device | Active |
+| Renderer | Trademark | Purpose | Status |
+|----------|-----------|---------|--------|
+| `ccdash-renderer.js` | **CCDash™** | Consolidated zone renderer (v2.0) | ✅ Primary |
+| `livedash.js` | **CC LiveDash™** | Multi-device renderer | ✅ Primary |
+| `zone-renderer.js` | CCDash™ | Legacy zone renderer | Deprecated |
+| `zone-renderer-v12.js` | CCDash™ | Legacy zone handling | Deprecated |
+| `v11-dashboard-renderer.js` | CCDash™ | Legacy full dashboard | Deprecated |
+| `v11-journey-renderer.js` | CCDash™ | Legacy journey-focused | Deprecated |
 
 ### 7.4 Font Requirements (Serverless)
 
@@ -1520,17 +1636,18 @@ grep -rn "Clara\|Toorak\|Norman" src/ api/ --include="*.js" \
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 5.2 | 2026-01-31 | **Simplified System Architecture Diagrams**: Added high-level trademark-based architecture diagram. Updated all diagrams (Distribution Model, Layer Architecture, Data Flow, Request Flow) to use trademark family names consistently. Deprecated legacy renderers in favor of consolidated CCDash™ and CC LiveDash™. |
 | 5.1 | 2026-01-31 | **Trademark Family File Registry**: Added comprehensive mapping of all trademarked components (SmartCommute™, CCDash™, CC LiveDash™, CCFirm™) to their constituent files. Documents CoffeeDecision engine, Journey Display module, and supporting services. |
 | 5.0 | 2026-01-31 | **Alignment with DEVELOPMENT-RULES.md v1.14**: Added Vercel KV Storage (Section 21), GTFS-RT Data Flow (Section 22), Turnkey Compliance (Section 23). Updated references to dev rules. Refresh interval now 60s. |
 | 4.0 | 2026-01-30 | Major update: Added Journey Display Module, Data Layer, Multi-State Support, Device Pairing, Health Monitoring, CCFirm™ Architecture. Updated component structure, API endpoints, and device support. |
 | 3.0 | 2026-01-29 | Added IP notice, Setup Wizard, Free-Tier architecture |
 | 2.2 | 2026-01-28 | Setup Wizard & Free-Tier Architecture |
-| 2.1 | 2026-01-27 | SmartCommute Engine, CC LiveDash, CoffeeDecision |
+| 2.1 | 2026-01-27 | SmartCommute™ Engine, CC LiveDash™, CoffeeDecision |
 | 2.0 | 2026-01-26 | Zone-based refresh, multi-device support |
 | 1.0 | 2026-01-25 | Initial architecture document |
 
 ---
 
-**Document Version:** 5.0  
+**Document Version:** 5.2  
 **Development Rules:** v1.14 (24 sections)  
-**Copyright © 2025-2026 Commute Compute System by Angus Bergman — CC BY-NC 4.0**
+**Copyright © 2026 Commute Compute System™ by Angus Bergman — CC BY-NC 4.0**
