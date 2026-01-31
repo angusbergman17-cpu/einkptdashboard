@@ -25,7 +25,7 @@
 #define ZONE_ID_MAX_LEN 32
 // Legs zone is ~42KB base64. Allocate lazily to save RAM for HTTP response.
 #define ZONE_DATA_MAX_LEN 45000
-#define FIRMWARE_VERSION "6.1-antigoast"
+// FIRMWARE_VERSION defined in config.h
 
 // Default server for pairing API
 #define DEFAULT_SERVER "https://einkptdashboard.vercel.app"
