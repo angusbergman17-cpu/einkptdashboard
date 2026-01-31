@@ -1621,11 +1621,11 @@ export function renderFullScreen(data, prefs = {}) {
     displayTime = displayTime.replace(/\s*(am|pm)/gi, '');
   }
   
-  // v1.32: LARGER clock, right against status bar
-  const clockFontSize = 78;
+  // v1.34: Even LARGER clock, right against status bar
+  const clockFontSize = 82;
   ctx.font = `bold ${clockFontSize}px Inter, sans-serif`;
-  const clockY = 94 - clockFontSize + 2;  // Bottom of clock touches status bar
-  ctx.fillText(displayTime, 10, clockY);
+  const clockY = 94 - clockFontSize - 2;  // Bottom of clock right against status bar
+  ctx.fillText(displayTime, 8, clockY);
   
   // Measure clock width for AM/PM positioning
   const clockWidth = ctx.measureText(displayTime).width;
@@ -1673,8 +1673,8 @@ export function renderFullScreen(data, prefs = {}) {
     ctx.fillText('✓ SERVICES OK', statusBoxX + 6, statusBoxY + statusBoxH / 2);
   }
   
-  // Data source indicator
-  ctx.font = 'bold 8px Inter, sans-serif';
+  // v1.34: Data source indicator - "LIVE DATA" or "TIMETABLE FALLBACK"
+  ctx.font = 'bold 7px Inter, sans-serif';
   if (isLiveData) {
     ctx.fillStyle = '#000';
     ctx.fillRect(statusBoxX, dataBoxY, statusBoxW, dataBoxH);
@@ -1685,7 +1685,7 @@ export function renderFullScreen(data, prefs = {}) {
     ctx.lineWidth = 1;
     ctx.strokeRect(statusBoxX, dataBoxY, statusBoxW, dataBoxH);
     ctx.fillStyle = '#000';
-    ctx.fillText('○ SCHEDULED', statusBoxX + 6, dataBoxY + dataBoxH / 2);
+    ctx.fillText('○ TIMETABLE FALLBACK', statusBoxX + 4, dataBoxY + dataBoxH / 2);
   }
   
   ctx.fillStyle = '#000';
@@ -1921,9 +1921,34 @@ export function renderFullScreen(data, prefs = {}) {
   ctx.fillText(statusText, 16, 110);
   
   // -----------------------------------------------------------------------
+  // v1.34: DELAY indicator box (if there's delay) - between status and time
+  // Only shows if legs have actual delays (not just late arrival)
+  // -----------------------------------------------------------------------
+  const legsForDelay = data.journey_legs || data.legs || [];
+  const totalLegDelay = legsForDelay.reduce((sum, leg) => sum + (leg.delayMinutes || 0), 0);
+  const displayDelay = data.delay_minutes || totalLegDelay;  // Only actual delays, not late arrival
+  
+  if (displayDelay > 0) {
+    // Draw white "DELAY" box on black bar
+    const delayBoxW = 80;
+    const delayBoxH = 18;
+    const delayBoxX = 784 - 70 - delayBoxW - 10;  // Position before total time
+    const delayBoxY = 101;
+    
+    ctx.fillStyle = '#FFF';
+    ctx.fillRect(delayBoxX, delayBoxY, delayBoxW, delayBoxH);
+    ctx.fillStyle = '#000';
+    ctx.font = 'bold 11px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`+${displayDelay} min DELAY`, delayBoxX + delayBoxW / 2, 110);
+    ctx.fillStyle = '#FFF';
+  }
+  
+  // -----------------------------------------------------------------------
   // Right: Total journey time (per ref images: "56 min", "47 min" etc)
   // -----------------------------------------------------------------------
   ctx.textAlign = 'right';
+  ctx.font = 'bold 13px Inter, sans-serif';
   const statusRight = `${totalMinutes} min`;
   ctx.fillText(statusRight, 784, 110);
   ctx.textAlign = 'left';
