@@ -98,6 +98,24 @@ bool jsonGetBool(const String& json, const char* key) {
     return json.substring(start, start + 4) == "true";
 }
 
+// Zone definitions with fixed positions (V10 spec)
+struct ZoneDef {
+    const char* id;
+    int x, y, w, h;
+};
+
+const ZoneDef ZONE_DEFS[] = {
+    {"header",  0,   0, 800,  94},
+    {"divider", 0,  94, 800,   2},
+    {"summary", 0,  96, 800,  28},
+    {"legs",    0, 132, 800, 316},
+    {"footer",  0, 448, 800,  32}
+};
+const int NUM_ZONES = 5;
+
+// Track which zones changed for anti-ghosting
+bool zoneChanged[NUM_ZONES] = {false};
+
 // Function declarations
 void initDisplay();
 void showPairingScreen();
@@ -116,6 +134,7 @@ void loadSettings();
 void saveSettings();
 unsigned long getBackoffDelay();
 void initZoneBuffers();
+int fetchAndRenderZone(const char* baseUrl, const ZoneDef& def, bool forceAll);
 
 void setup() {
     WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
@@ -498,27 +517,6 @@ unsigned long getBackoffDelay() {
     int capped = min(consecutiveErrors, MAX_BACKOFF_ERRORS);
     return (1UL << capped) * 1000UL;
 }
-
-// Forward declaration for immediate zone rendering
-bool decodeAndDrawZone(Zone& zone);
-
-// Zone definitions with fixed positions (V10 spec)
-struct ZoneDef {
-    const char* id;
-    int x, y, w, h;
-};
-
-const ZoneDef ZONE_DEFS[] = {
-    {"header",  0,   0, 800,  94},
-    {"divider", 0,  94, 800,   2},
-    {"summary", 0,  96, 800,  28},
-    {"legs",    0, 132, 800, 316},
-    {"footer",  0, 448, 800,  32}
-};
-const int NUM_ZONES = 5;
-
-// Track which zones changed for anti-ghosting
-bool zoneChanged[NUM_ZONES] = {false};
 
 // Returns: 0 = failed, 1 = unchanged (304), 2 = changed and rendered
 int fetchAndRenderZone(const char* baseUrl, const ZoneDef& def, bool forceAll) {
