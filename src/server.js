@@ -2349,8 +2349,8 @@ async function loadApiConfig() {
 
     return {
       apis: {
-        ptv_opendata: {
-          name: "PTV Open Data API",
+        transport_vic: {
+          name: "Transport Victoria OpenData API",
           api_key: process.env.ODATA_API_KEY || "",
           enabled: true,
           baseUrl: "https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1",
@@ -2373,9 +2373,9 @@ async function saveApiConfig(config) {
   config.lastModified = new Date().toISOString();
   await fs.writeFile(API_CONFIG_FILE, JSON.stringify(config, null, 2));
 
-  // Update environment variables if PTV credentials changed
-  if (config.apis.ptv_opendata?.api_key) {
-    process.env.ODATA_API_KEY = config.apis.ptv_opendata.api_key;
+  // Update environment variables if Transport Victoria credentials changed
+  if (config.apis.transport_vic?.api_key) {
+    process.env.ODATA_API_KEY = config.apis.transport_vic.api_key;
   }
 }
 
@@ -5064,7 +5064,7 @@ function calculateRevisedTime(originalTime, delayMinutes) {
   }
 }
 
-// Get PTV connections for cached route
+// Get transit connections for cached route
 app.get('/admin/route/connections', async (req, res) => {
   try {
     const route = routePlanner.getCachedRoute();
@@ -5076,11 +5076,11 @@ app.get('/admin/route/connections', async (req, res) => {
       });
     }
 
-    // Get current PTV data
+    // Get current Transport Victoria data
     const data = await getData();
 
-    // Find suitable PTV connections
-    const connections = await routePlanner.findPTVConnections(route, data);
+    // Find suitable transit connections
+    const connections = await routePlanner.findTransitConnections(route, data);
 
     res.json({
       success: true,

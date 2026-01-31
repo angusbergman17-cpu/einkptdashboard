@@ -5,7 +5,7 @@
  *
  * DATA ATTRIBUTION:
  * Stop IDs, names, and coordinates compiled from publicly available transit information:
- * - VIC: Transport for Victoria (PTV) - Public transit data
+ * - VIC: Transport Victoria - Public transit data (via OpenData API)
  * - NSW: Transport for NSW - Public transit data
  * - QLD: TransLink Queensland - Public transit data
  * - SA: Adelaide Metro - Public transit data
@@ -29,7 +29,7 @@ const FALLBACK_STOPS = {
   // ========== VICTORIA (VIC) ==========
   VIC: {
     name: 'Victoria',
-    authority: 'Public Transport Victoria (PTV)',
+    authority: 'Transport Victoria',
     modes: {
       train: [
         { id: '1071', name: 'Flinders Street Station', lat: -37.8183, lon: 144.9671 },

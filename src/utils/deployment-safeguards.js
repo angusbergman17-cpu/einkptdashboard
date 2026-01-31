@@ -31,7 +31,7 @@ const LOG_LEVELS = {
 let logStream = null;
 if (process.env.NODE_ENV === 'production') {
   try {
-    logStream = createWriteStream(join('/tmp', 'ptv-server.log'), { flags: 'a' });
+    logStream = createWriteStream(join('/tmp', 'cc-server.log'), { flags: 'a' });
   } catch (err) {
     console.error('Failed to create log stream:', err);
   }

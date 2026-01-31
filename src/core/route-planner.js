@@ -834,10 +834,10 @@ class RoutePlanner {
 
   /**
    * Find which specific trains/trams to take based on route and current time
-   * Overlays real PTV departure data onto the calculated route
+   * Overlays real Transport Victoria departure data onto the calculated route
    */
-  async findPTVConnections(route, ptvData) {
-    console.log('\n=== FINDING PTV CONNECTIONS ===');
+  async findTransitConnections(route, transitData) {
+    console.log('\n=== FINDING TRANSIT CONNECTIONS ===');
 
     const now = new Date();
     const nowMinutes = now.getHours() * 60 + now.getMinutes();
@@ -856,8 +856,8 @@ class RoutePlanner {
     const trainDepParts = trainSegment.departure.split(':');
     const trainDepMinutes = parseInt(trainDepParts[0]) * 60 + parseInt(trainDepParts[1]);
 
-    // Find suitable trains from PTV data
-    const suitableTrains = ptvData.trains
+    // Find suitable trains from Transport Victoria data
+    const suitableTrains = transitData.trains
       .filter(train => {
         const trainTime = nowMinutes + train.minutes;
         // Train must depart after we can get coffee and return to station

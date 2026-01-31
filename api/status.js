@@ -23,7 +23,7 @@ export default async function handler(req, res) {
       configured: false, // Will be true when config is provided
       timestamp: now.toISOString(),
       services: {
-        ptv: { status: 'fallback', message: 'Using timetable data' },
+        transit: { status: 'fallback', message: 'Using timetable data' },
         weather: { status: 'ok' },
         geocoding: { status: 'ok', provider: 'nominatim' }
       },

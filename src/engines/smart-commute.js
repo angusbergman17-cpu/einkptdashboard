@@ -6,7 +6,7 @@
  * transit APIs and weather services.
  * 
  * Supports all Australian states/territories:
- * - VIC: PTV (Public Transport Victoria)
+ * - VIC: Transport Victoria (via OpenData API)
  * - NSW: Transport for NSW
  * - QLD: TransLink Queensland  
  * - SA: Adelaide Metro
@@ -43,8 +43,8 @@ export const STATE_CONFIG = {
   VIC: {
     name: 'Victoria',
     timezone: 'Australia/Melbourne',
-    transitAuthority: 'PTV',
-    transitApiBase: 'https://timetableapi.ptv.vic.gov.au',
+    transitAuthority: 'Transport Victoria',
+    transitApiBase: 'https://api.opendata.transport.vic.gov.au',
     gtfsRealtimeBase: 'https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs',
     weatherZone: 'VIC',
     bomForecastUrl: 'http://www.bom.gov.au/fwo/IDV10753.xml',  // Melbourne
