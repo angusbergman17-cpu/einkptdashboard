@@ -37,8 +37,29 @@
 #include "../include/config.h"
 #include "../include/cc_logo_data.h"
 
-#define SCREEN_W 800
-#define SCREEN_H 480
+// Screen dimensions (configurable per device)
+#ifdef BOARD_TRMNL_MINI
+  #define SCREEN_W 600
+  #define SCREEN_H 448
+  #define LOGO_BOOT CC_LOGO_BOOT_MINI
+  #define LOGO_BOOT_W 192
+  #define LOGO_BOOT_H 280
+  #define LOGO_SMALL CC_LOGO_SMALL_MINI
+  #define LOGO_SMALL_W 128
+  #define LOGO_SMALL_H 130
+  #define PANEL_TYPE EP58_600x448
+#else
+  // TRMNL OG (default)
+  #define SCREEN_W 800
+  #define SCREEN_H 480
+  #define LOGO_BOOT CC_LOGO_BOOT
+  #define LOGO_BOOT_W 256
+  #define LOGO_BOOT_H 380
+  #define LOGO_SMALL CC_LOGO_SMALL
+  #define LOGO_SMALL_W 128
+  #define LOGO_SMALL_H 130
+  #define PANEL_TYPE EP75_800x480
+#endif
 #define MAX_ZONES 6
 #define ZONE_BMP_MAX_SIZE 35000  // Raw BMP (legs zone is ~32KB)
 #define ZONE_ID_MAX_LEN 32
@@ -175,7 +196,7 @@ void setup() {
     Serial.println("NVS initialized");
     
     // Create display object here to avoid static init issues
-    bbep = new BBEPAPER(EP75_800x480);
+    bbep = new BBEPAPER(PANEL_TYPE);
     Serial.println("Display object created");
     
     loadSettings();
@@ -373,8 +394,9 @@ void showPairingScreen() {
     
     // Small CC logo - NO FRAME BARS (96x140)
     // Center: x = (800-96)/2 = 352
-    // Small logo: 128x130 (32-bit aligned), centered horizontally
-    bbep->loadBMP(CC_LOGO_SMALL, 336, 5, BBEP_BLACK, BBEP_WHITE);
+    // Small logo centered horizontally at top
+    int smallX = (SCREEN_W - LOGO_SMALL_W) / 2;
+    bbep->loadBMP(LOGO_SMALL, smallX, 5, BBEP_BLACK, BBEP_WHITE);
     
     // Title centered
     bbep->setCursor(352, 155); bbep->print("DEVICE SETUP");
@@ -452,8 +474,10 @@ void showBootScreen() {
     
     // Draw full CC logo scaled for boot (468x440)
     // Center: x = (800-468)/2 = 166, y = (480-440)/2 = 20
-    // Boot logo: 256x380 (32-bit aligned width), centered at (272, 50)
-    bbep->loadBMP(CC_LOGO_BOOT, 272, 50, BBEP_BLACK, BBEP_WHITE);
+    // Boot logo centered on screen
+    int bootX = (SCREEN_W - LOGO_BOOT_W) / 2;
+    int bootY = (SCREEN_H - LOGO_BOOT_H) / 2;
+    bbep->loadBMP(LOGO_BOOT, bootX, bootY, BBEP_BLACK, BBEP_WHITE);
     
     bbep->refresh(REFRESH_FULL, true);
 }
@@ -467,8 +491,9 @@ void showConnectingScreen() {
     
     // Small CC logo - NO FRAME BARS (96x140)
     // Center: x = (800-96)/2 = 352, y = 30
-    // Small logo: 128x130 (32-bit aligned), centered horizontally
-    bbep->loadBMP(CC_LOGO_SMALL, 336, 30, BBEP_BLACK, BBEP_WHITE);
+    // Small logo centered horizontally
+    int smallX = (SCREEN_W - LOGO_SMALL_W) / 2;
+    bbep->loadBMP(LOGO_SMALL, smallX, 30, BBEP_BLACK, BBEP_WHITE);
     
     // Status text centered
     bbep->setCursor(300, 200); bbep->print("CONNECTING TO WIFI...");
@@ -561,7 +586,7 @@ void connectWiFi() {
 void initDisplay() {
     // Use speed=0 for bit-bang mode - hardware SPI fails on ESP32-C3 with custom pins
     bbep->initIO(EPD_DC_PIN, EPD_RST_PIN, EPD_BUSY_PIN, EPD_CS_PIN, EPD_MOSI_PIN, EPD_SCK_PIN, 0);
-    bbep->setPanelType(EP75_800x480);
+    bbep->setPanelType(PANEL_TYPE);
     bbep->setRotation(0);
     // allocBuffer(false) removed - causes ESP32-C3 SPI issues (commit 02f9f27)
     pinMode(PIN_INTERRUPT, INPUT_PULLUP);
