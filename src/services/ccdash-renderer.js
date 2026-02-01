@@ -1998,41 +1998,76 @@ export function renderFullScreen(data, prefs = {}) {
     ctx.fillRect(zone.x, zone.y, zone.w, zone.h);
     
     // Draw stripe patterns for suspended/diverted
-    // v1.41: Stripes ONLY on time box area (right side) - text area stays clear for legibility
-    // Per Angus 2026-02-01: Keep delay rendering intact, improve diversion legibility
+    // v1.42: Stripes cover entire leg EXCEPT time box, text is "carved out" (knocked out)
+    // Per Angus 2026-02-01: Pattern covers leg, text has white background knockout
     const stripeTimeBoxW = Math.max(56, Math.round(72 * scale));
-    const stripeAreaX = zone.x + zone.w - stripeTimeBoxW;
+    const stripeAreaW = zone.w - stripeTimeBoxW;  // Everything except time box
     
     if (isSuspended) {
-      // Diagonal stripes on time box area only
+      // Diagonal stripes on content area (not time box)
       ctx.save();
       ctx.beginPath();
-      ctx.rect(stripeAreaX, zone.y, stripeTimeBoxW, zone.h);
+      ctx.rect(zone.x, zone.y, stripeAreaW, zone.h);
       ctx.clip();
       ctx.strokeStyle = '#000';
       ctx.lineWidth = 2;
-      for (let i = -zone.h; i < stripeTimeBoxW + zone.h; i += 8) {
+      for (let i = -zone.h; i < stripeAreaW + zone.h; i += 8) {
         ctx.beginPath();
-        ctx.moveTo(stripeAreaX + i, zone.y);
-        ctx.lineTo(stripeAreaX + i + zone.h, zone.y + zone.h);
+        ctx.moveTo(zone.x + i, zone.y);
+        ctx.lineTo(zone.x + i + zone.h, zone.y + zone.h);
         ctx.stroke();
       }
       ctx.restore();
     } else if (isDiverted) {
-      // Vertical stripes on time box area only
+      // Vertical stripes on content area (not time box)
       ctx.save();
       ctx.beginPath();
-      ctx.rect(stripeAreaX, zone.y, stripeTimeBoxW, zone.h);
+      ctx.rect(zone.x, zone.y, stripeAreaW, zone.h);
       ctx.clip();
       ctx.strokeStyle = '#000';
       ctx.lineWidth = 2;
-      for (let i = 0; i < stripeTimeBoxW; i += 6) {
+      for (let i = 0; i < stripeAreaW; i += 6) {
         ctx.beginPath();
-        ctx.moveTo(stripeAreaX + i, zone.y);
-        ctx.lineTo(stripeAreaX + i, zone.y + zone.h);
+        ctx.moveTo(zone.x + i, zone.y);
+        ctx.lineTo(zone.x + i, zone.y + zone.h);
         ctx.stroke();
       }
       ctx.restore();
+    }
+    
+    // v1.42: Knockout white backgrounds for text on striped legs
+    // Carve out space for: leg number, icon, title/subtitle, DEPART column
+    if (isSuspended || isDiverted) {
+      const knockoutPad = 3;
+      const legNumSize = Math.max(16, Math.round(24 * scale));
+      const iconSz = Math.max(20, Math.round(32 * scale));
+      const titleSz = Math.max(12, Math.round(16 * scale));
+      const subtitleSz = Math.max(10, Math.round(12 * scale));
+      
+      // Knockout for leg number circle
+      const numX = zone.x + 6;
+      const numY = zone.y + (zone.h - legNumSize) / 2;
+      ctx.fillStyle = '#FFF';
+      ctx.fillRect(numX - knockoutPad, numY - knockoutPad, legNumSize + knockoutPad * 2, legNumSize + knockoutPad * 2);
+      
+      // Knockout for icon
+      const iconX = numX + legNumSize + 6;
+      const iconY = zone.y + (zone.h - iconSz) / 2;
+      ctx.fillRect(iconX - knockoutPad, iconY - knockoutPad, iconSz + knockoutPad * 2, iconSz + knockoutPad * 2);
+      
+      // Knockout for title and subtitle (combined block)
+      const textX = iconX + iconSz + 8;
+      const textBlockH = titleSz + subtitleSz + 4;
+      const textBlockY = zone.y + (zone.h - textBlockH) / 2;
+      const textBlockW = stripeAreaW - textX + zone.x - 60;  // Leave room for DEPART
+      ctx.fillRect(textX - knockoutPad, textBlockY - knockoutPad, textBlockW + knockoutPad * 2, textBlockH + knockoutPad * 2);
+      
+      // Knockout for DEPART column (if transit leg)
+      if (['train', 'tram', 'bus', 'vline', 'ferry'].includes(leg.type)) {
+        const departW = 55;
+        const departX = zone.x + stripeAreaW - departW - 5;
+        ctx.fillRect(departX - knockoutPad, zone.y + knockoutPad, departW + knockoutPad * 2, zone.h - knockoutPad * 2);
+      }
     }
     
     // -----------------------------------------------------------------------
