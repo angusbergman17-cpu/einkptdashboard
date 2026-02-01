@@ -1,29 +1,62 @@
 /**
  * Device Pairing Endpoint
  * Handles device code pairing flow (like Chromecast/Roku)
- * 
+ *
  * GET /api/pair/[code] - Device polls to check if config is ready
  * POST /api/pair/[code] - Setup wizard sends config for device
- * 
+ *
+ * Uses Vercel KV for persistent storage across serverless invocations.
+ * Fallback to in-memory for local development.
+ *
  * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
  */
 
-// In-memory store for pairing codes (works within single instance)
-// For production, use Vercel KV: https://vercel.com/docs/storage/vercel-kv
-const pairingStore = global.pairingStore || (global.pairingStore = new Map());
+import { kv } from '@vercel/kv';
 
 // Pairing codes expire after 10 minutes
 const CODE_EXPIRY_MS = 10 * 60 * 1000;
 
-// Clean up expired codes periodically
-function cleanupExpiredCodes() {
-  const now = Date.now();
-  for (const [code, data] of pairingStore.entries()) {
-    if (now - data.createdAt > CODE_EXPIRY_MS) {
-      pairingStore.delete(code);
-    }
+// In-memory fallback for local development
+const localStore = global.pairingStore || (global.pairingStore = new Map());
+
+/**
+ * Get pairing data from KV or local store
+ */
+async function getPairingData(code) {
+  try {
+    // Try Vercel KV first
+    const data = await kv.get(`pair:${code}`);
+    if (data) return data;
+  } catch (e) {
+    // KV not available, use local store
   }
+  return localStore.get(code) || null;
+}
+
+/**
+ * Set pairing data in KV and local store
+ */
+async function setPairingData(code, data) {
+  try {
+    // Store in Vercel KV with TTL (10 minutes)
+    await kv.set(`pair:${code}`, data, { ex: 600 });
+  } catch (e) {
+    // KV not available, use local store only
+  }
+  localStore.set(code, data);
+}
+
+/**
+ * Delete pairing data from KV and local store
+ */
+async function deletePairingData(code) {
+  try {
+    await kv.del(`pair:${code}`);
+  } catch (e) {
+    // KV not available
+  }
+  localStore.delete(code);
 }
 
 export default async function handler(req, res) {
@@ -47,13 +80,10 @@ export default async function handler(req, res) {
 
   const normalizedCode = code.toUpperCase();
   
-  // Clean up old codes
-  cleanupExpiredCodes();
-
   // GET - Device polling for config
   if (req.method === 'GET') {
-    const pairingData = pairingStore.get(normalizedCode);
-    
+    const pairingData = await getPairingData(normalizedCode);
+
     if (!pairingData) {
       // Code not registered yet - device should keep polling
       return res.json({
@@ -66,10 +96,12 @@ export default async function handler(req, res) {
     if (pairingData.webhookUrl) {
       // Config is ready! Return it to device
       const webhookUrl = pairingData.webhookUrl;
-      
+
       // Delete the pairing code after successful retrieval
-      pairingStore.delete(normalizedCode);
-      
+      await deletePairingData(normalizedCode);
+
+      console.log(`[pair] Device retrieved config for code ${normalizedCode}`);
+
       return res.json({
         success: true,
         status: 'paired',
@@ -122,12 +154,14 @@ export default async function handler(req, res) {
       finalWebhookUrl = `${baseUrl}/api/device/${token}`;
     }
 
-    // Store the pairing data
-    pairingStore.set(normalizedCode, {
+    // Store the pairing data in KV (with TTL) and local store
+    await setPairingData(normalizedCode, {
       webhookUrl: finalWebhookUrl,
       createdAt: Date.now(),
       paired: true
     });
+
+    console.log(`[pair] Stored config for code ${normalizedCode}`);
 
     return res.json({
       success: true,
