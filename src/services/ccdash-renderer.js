@@ -2072,24 +2072,32 @@ export function renderFullScreen(data, prefs = {}) {
       ctx.fillRect(textX - knockoutPad, textBlockY - knockoutPad, textBlockW + knockoutPad * 2, textBlockH + knockoutPad * 2);
       
       // Knockout for DEPART column (if transit leg with departTime)
-      // v1.44: Tighter fit around DEPART label and time
+      // v1.45: Match EXACT position where DEPART text is rendered (line ~2215)
       if (['train', 'tram', 'bus', 'vline', 'ferry'].includes(leg.type) && leg.departTime) {
-        const departLabelSz = Math.max(7, Math.round(9 * scale));
-        const departTimeSz = Math.max(10, Math.round(14 * scale));
+        // Use same sizes as actual DEPART rendering
+        const deptLabelSz = Math.max(7, Math.round(9 * scale));
+        const deptTimeSz = Math.max(10, Math.round(14 * scale));
+        const deptColW = 55;  // Same as departColW in main render
+        const tBoxW = Math.max(56, Math.round(72 * scale));
         
-        // Measure actual text widths
-        ctx.font = `bold ${departLabelSz}px Inter, sans-serif`;
-        const departLabelW = ctx.measureText('DEPART').width;
-        ctx.font = `bold ${departTimeSz}px Inter, sans-serif`;
-        const departTimeW = ctx.measureText(leg.departTime).width;
+        // EXACT same position calculation as DEPART text render
+        const deptColCenter = zone.x + zone.w - tBoxW - deptColW - 8;
+        const deptBlockY = zone.y + (zone.h - deptLabelSz - deptTimeSz - 1) / 2;
         
-        // Use wider of the two + minimal padding
-        const departW = Math.max(departLabelW, departTimeW) + 2;
-        const departBlockH = departLabelSz + departTimeSz + 3;
-        const departBlockY = zone.y + (zone.h - departBlockH) / 2;
-        const departX = zone.x + stripeAreaW - departW - 10;
+        // Measure text widths for knockout size
+        ctx.font = `bold ${deptLabelSz}px Inter, sans-serif`;
+        const labelW = ctx.measureText('DEPART').width;
+        ctx.font = `bold ${deptTimeSz}px Inter, sans-serif`;
+        const timeW = ctx.measureText(leg.departTime).width;
+        const maxW = Math.max(labelW, timeW);
         
-        ctx.fillRect(departX - 1, departBlockY - 1, departW + 2, departBlockH + 2);
+        // Knockout centered on deptColCenter (text is center-aligned)
+        const knockoutW = maxW + 4;
+        const knockoutH = deptLabelSz + deptTimeSz + 4;
+        const knockoutX = deptColCenter - knockoutW / 2;
+        const knockoutY = deptBlockY - 2;
+        
+        ctx.fillRect(knockoutX, knockoutY, knockoutW, knockoutH);
       }
     }
     
