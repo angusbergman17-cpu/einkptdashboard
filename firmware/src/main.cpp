@@ -373,7 +373,8 @@ void showPairingScreen() {
     
     // Small CC logo - NO FRAME BARS (96x140)
     // Center: x = (800-96)/2 = 352
-    bbep->loadBMP(CC_LOGO_SMALL, 352, 5, BBEP_BLACK, BBEP_WHITE);
+    // Small logo: 82x130, centered horizontally
+    bbep->loadBMP(CC_LOGO_SMALL, 359, 5, BBEP_BLACK, BBEP_WHITE);
     
     // Title centered
     bbep->setCursor(352, 155); bbep->print("DEVICE SETUP");
@@ -451,7 +452,8 @@ void showBootScreen() {
     
     // Draw full CC logo scaled for boot (468x440)
     // Center: x = (800-468)/2 = 166, y = (480-440)/2 = 20
-    bbep->loadBMP(CC_LOGO_BOOT, 166, 20, BBEP_BLACK, BBEP_WHITE);
+    // Boot logo: 239x380, centered at (280, 50)
+    bbep->loadBMP(CC_LOGO_BOOT, 280, 50, BBEP_BLACK, BBEP_WHITE);
     
     bbep->refresh(REFRESH_FULL, true);
 }
@@ -465,7 +467,8 @@ void showConnectingScreen() {
     
     // Small CC logo - NO FRAME BARS (96x140)
     // Center: x = (800-96)/2 = 352, y = 30
-    bbep->loadBMP(CC_LOGO_SMALL, 352, 30, BBEP_BLACK, BBEP_WHITE);
+    // Small logo: 82x130, centered horizontally
+    bbep->loadBMP(CC_LOGO_SMALL, 359, 30, BBEP_BLACK, BBEP_WHITE);
     
     // Status text centered
     bbep->setCursor(300, 200); bbep->print("CONNECTING TO WIFI...");
