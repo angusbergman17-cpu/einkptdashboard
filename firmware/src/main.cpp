@@ -367,41 +367,37 @@ void generatePairingCode() {
 void showPairingScreen() {
     // Stage 2: WiFi Setup Screen (per Section 21.3)
     // Layout: Smaller CC logo at top, setup instructions in middle, copyright at bottom
+    // FONT_8x8 ONLY per Section 1.1 (FONT_12x16 forbidden - rotation bug)
     bbep->fillScreen(BBEP_WHITE);
+    bbep->setFont(FONT_8x8);
+    bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
     
-    // Smaller CC logo at top (centered)
-    bbep->loadBMP(CC_LOGO_SMALL, 350, 20, BBEP_BLACK, BBEP_WHITE);
+    // Smaller CC logo at top (centered: (800-120)/2 = 340)
+    bbep->loadBMP(CC_LOGO_SMALL, 340, 10, BBEP_BLACK, BBEP_WHITE);
     
     // Title
-    bbep->setFont(FONT_12x16);
-    bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
-    bbep->setCursor(300, 130); bbep->print("DEVICE SETUP");
+    bbep->setCursor(340, 135); bbep->print("DEVICE SETUP");
     
-    // Instructions per Section 21.3 (TURNKEY - both hosting options)
-    bbep->setFont(FONT_8x8);
-    bbep->setCursor(120, 170); bbep->print("1. Fork the git repo to your account");
-    bbep->setCursor(120, 195); bbep->print("2. Deploy to Vercel or Render (free tier)");
-    bbep->setCursor(150, 215); bbep->print("Vercel: [your-name].vercel.app");
-    bbep->setCursor(150, 235); bbep->print("Render: [your-name].onrender.app");
-    bbep->setCursor(120, 260); bbep->print("3. Go to your server URL in a browser");
-    bbep->setCursor(120, 285); bbep->print("4. Complete the setup wizard");
-    bbep->setCursor(120, 310); bbep->print("5. Enter this pairing code when prompted:");
+    // Instructions - VERCEL ONLY (turnkey)
+    bbep->setCursor(140, 170); bbep->print("1. Fork the git repo to your GitHub account");
+    bbep->setCursor(140, 195); bbep->print("2. Deploy to Vercel (free tier)");
+    bbep->setCursor(140, 220); bbep->print("3. Go to: [your-name].vercel.app");
+    bbep->setCursor(140, 245); bbep->print("4. Complete the setup wizard");
+    bbep->setCursor(140, 270); bbep->print("5. Enter this pairing code:");
     
     // Large pairing code box (centered)
-    bbep->fillRect(250, 340, 300, 60, BBEP_BLACK);
-    bbep->setFont(FONT_12x16);
+    bbep->fillRect(270, 300, 260, 50, BBEP_BLACK);
     bbep->setTextColor(BBEP_WHITE, BBEP_BLACK);
-    bbep->setCursor(300, 360);
+    bbep->setCursor(320, 320);
     for (int i = 0; i < 6; i++) {
         bbep->print(pairingCode[i]); bbep->print(" ");
     }
     
     // Footer with copyright (per Section 21.3)
-    bbep->setFont(FONT_8x8);
     bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
-    bbep->setCursor(270, 420); bbep->print("Waiting for setup...");
-    bbep->setCursor(240, 450); bbep->print("(c) 2026 Angus Bergman");
-    bbep->setCursor(290, 465); bbep->print("v" FIRMWARE_VERSION);
+    bbep->setCursor(280, 380); bbep->print("Waiting for setup...");
+    bbep->setCursor(250, 410); bbep->print("(c) 2026 Angus Bergman");
+    bbep->setCursor(350, 440); bbep->print("v" FIRMWARE_VERSION);
     
     bbep->refresh(REFRESH_FULL, true);
     lastFullRefresh = millis();
@@ -453,38 +449,29 @@ void showBootScreen() {
     // "No text, just branding" - Duration: 2-3 seconds
     bbep->fillScreen(BBEP_WHITE);
     
-    // Draw embedded BMP logo centered (200x188 at center of 800x480)
-    // Center: x = (800-200)/2 = 300, y = (480-188)/2 = 146
-    bbep->loadBMP(CC_LOGO_LARGE, 300, 146, BBEP_BLACK, BBEP_WHITE);
+    // Draw embedded BMP logo centered (280x263 at center of 800x480)
+    // Center: x = (800-280)/2 = 260, y = (480-263)/2 = 108
+    bbep->loadBMP(CC_LOGO_LARGE, 260, 108, BBEP_BLACK, BBEP_WHITE);
     
     bbep->refresh(REFRESH_FULL, true);
 }
 
 void showConnectingScreen() {
-    // Stage 2a: Connecting to WiFi (per Section 21.3) - TURNKEY
+    // Stage 2a: Connecting to WiFi (per Section 21.3)
+    // FONT_8x8 ONLY per Section 1.1
     bbep->fillScreen(BBEP_WHITE);
-    
-    // Header bar
-    bbep->fillRect(0, 0, 800, 50, BBEP_BLACK);
-    bbep->setFont(FONT_12x16);
-    bbep->setTextColor(BBEP_WHITE, BBEP_BLACK);
-    bbep->setCursor(180, 18); bbep->print("COMMUTE COMPUTE");
     bbep->setFont(FONT_8x8);
-    bbep->setCursor(520, 22); bbep->print("v" FIRMWARE_VERSION);
     
-    // Small CC logo centered
-    bbep->loadBMP(CC_LOGO_SMALL, 350, 80, BBEP_BLACK, BBEP_WHITE);
+    // Small CC logo centered at top ((800-120)/2 = 340)
+    bbep->loadBMP(CC_LOGO_SMALL, 340, 80, BBEP_BLACK, BBEP_WHITE);
     
-    // Status text - LARGER, CENTERED
-    bbep->setFont(FONT_12x16);
+    // Status text centered
     bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
-    bbep->setCursor(240, 220); bbep->print("CONNECTING TO WIFI...");
+    bbep->setCursor(320, 240); bbep->print("CONNECTING TO WIFI...");
     
     // Footer with copyright
-    bbep->fillRect(0, 430, 800, 50, BBEP_BLACK);
-    bbep->setFont(FONT_8x8);
-    bbep->setTextColor(BBEP_WHITE, BBEP_BLACK);
-    bbep->setCursor(270, 450); bbep->print("(c) 2026 Angus Bergman");
+    bbep->setCursor(250, 420); bbep->print("(c) 2026 Angus Bergman");
+    bbep->setCursor(350, 450); bbep->print("v" FIRMWARE_VERSION);
     
     bbep->refresh(REFRESH_FULL, true);
 }
