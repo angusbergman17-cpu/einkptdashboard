@@ -19,7 +19,10 @@
     "monitor:compliance": "node monitor/spec-compliance.mjs",
     "monitor:semantic": "node monitor/semantic-audit.mjs",
     "monitor:docs": "node monitor/documentation-audit.mjs",
-    "monitor:full": "node monitor/monitor.mjs && node monitor/spec-compliance.mjs && node monitor/semantic-audit.mjs && node monitor/documentation-audit.mjs"
+    "monitor:visual": "node monitor/visual-logic-audit.mjs",
+    "monitor:security": "node monitor/security-audit.mjs",
+    "monitor:firmware": "node monitor/firmware-audit.mjs",
+    "monitor:full": "node monitor/monitor.mjs && node monitor/spec-compliance.mjs && node monitor/semantic-audit.mjs && node monitor/documentation-audit.mjs && node monitor/visual-logic-audit.mjs && node monitor/security-audit.mjs"
   },
   "dependencies": {
     "@napi-rs/canvas": "^0.1.88",
