@@ -138,7 +138,7 @@ The system was previously known as "Commute Compute". Update any remaining refer
 - 5.3 Flashing Procedure
 - 5.4 Critical bb_epaper ESP32-C3 Findings (2026-01-29)
 - 5.5 ESP32-C3 Troubleshooting Guide (2026-01-30)
-- 5.6 **Locked Production Firmware: CC-FW-6.1-60s (2026-01-31)** 🔒
+- 5.6 **Production Firmware: CC-FW-6.1-60s** 🔓 UNLOCKED
 </details>
 
 <details>
@@ -1037,16 +1037,16 @@ pio run -e trmnl -t erase && pio run -e trmnl -t upload
 | Display shows garbage | allocBuffer() called | Remove allocBuffer() calls |
 | Text rotated 90° | FONT_12x16 bug | Use FONT_8x8 only |
 
-### 5.6 Locked Production Firmware: CC-FW-6.1-60s (2026-01-31)
+### 5.6 Production Firmware: CC-FW-6.1-60s (2026-01-31)
 
-**🔒 LOCKED FIRMWARE VERSION — Hardware Verified Working**
+**🔓 UNLOCKED FOR DEVELOPMENT — Changes Permitted**
 
 **Official Name:** `CC-FW-6.1-60s`  
 **Version:** 6.1-60s  
 **Commit:** `7336929` (fix: consolidate FIRMWARE_VERSION to config.h)  
 **Previous:** `2f8d6cf` (CC-FW-6.0-STABLE)  
 **Verified On:** TRMNL OG hardware, 2026-01-31 12:45 AEDT  
-**Status:** ✅ PRODUCTION READY
+**Status:** 🔓 UNLOCKED (2026-02-01)
 
 **Changes from 6.0:**
 - Refresh interval: 20s → 60s (reduces API load, battery friendly)
