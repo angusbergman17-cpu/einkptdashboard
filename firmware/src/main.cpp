@@ -365,51 +365,43 @@ void generatePairingCode() {
 }
 
 void showPairingScreen() {
-    // Stage 2b: Pairing screen - TURNKEY (URL agnostic)
+    // Stage 2: WiFi Setup Screen (per Section 21.3)
+    // Layout: Smaller CC logo at top, setup instructions in middle, copyright at bottom
     bbep->fillScreen(BBEP_WHITE);
     
-    // Header bar
-    bbep->fillRect(0, 0, 800, 50, BBEP_BLACK);
-    bbep->setFont(FONT_12x16);
-    bbep->setTextColor(BBEP_WHITE, BBEP_BLACK);
-    bbep->setCursor(180, 18); bbep->print("COMMUTE COMPUTE");
-    bbep->setFont(FONT_8x8);
-    bbep->setCursor(520, 22); bbep->print("v" FIRMWARE_VERSION);
+    // Smaller CC logo at top (centered)
+    bbep->loadBMP(CC_LOGO_SMALL, 350, 20, BBEP_BLACK, BBEP_WHITE);
     
-    // Small CC logo
-    bbep->loadBMP(CC_LOGO_SMALL, 350, 60, BBEP_BLACK, BBEP_WHITE);
-    
-    // Title - LARGER
+    // Title
     bbep->setFont(FONT_12x16);
     bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
-    bbep->setCursor(300, 170); bbep->print("DEVICE SETUP");
+    bbep->setCursor(300, 130); bbep->print("DEVICE SETUP");
     
-    // Instructions - LARGER, CENTERED, TURNKEY
+    // Instructions per Section 21.3 (TURNKEY - both hosting options)
     bbep->setFont(FONT_8x8);
-    bbep->setCursor(180, 210); bbep->print("1. On your phone/computer, go to:");
+    bbep->setCursor(120, 170); bbep->print("1. Fork the git repo to your account");
+    bbep->setCursor(120, 195); bbep->print("2. Deploy to Vercel or Render (free tier)");
+    bbep->setCursor(150, 215); bbep->print("Vercel: [your-name].vercel.app");
+    bbep->setCursor(150, 235); bbep->print("Render: [your-name].onrender.app");
+    bbep->setCursor(120, 260); bbep->print("3. Go to your server URL in a browser");
+    bbep->setCursor(120, 285); bbep->print("4. Complete the setup wizard");
+    bbep->setCursor(120, 310); bbep->print("5. Enter this pairing code when prompted:");
     
-    bbep->setFont(FONT_12x16);
-    bbep->setCursor(140, 240); bbep->print("[your-server].vercel.app");
-    
-    bbep->setFont(FONT_8x8);
-    bbep->setCursor(180, 280); bbep->print("2. The setup wizard will open automatically");
-    bbep->setCursor(180, 310); bbep->print("3. Enter this pairing code:");
-    
-    // Large pairing code box - BIGGER
-    bbep->fillRect(220, 340, 360, 70, BBEP_BLACK);
+    // Large pairing code box (centered)
+    bbep->fillRect(250, 340, 300, 60, BBEP_BLACK);
     bbep->setFont(FONT_12x16);
     bbep->setTextColor(BBEP_WHITE, BBEP_BLACK);
-    bbep->setCursor(280, 365);
-    // Print code with spacing - LARGER
+    bbep->setCursor(300, 360);
     for (int i = 0; i < 6; i++) {
-        bbep->print(pairingCode[i]); bbep->print("  ");
+        bbep->print(pairingCode[i]); bbep->print(" ");
     }
     
-    // Footer
-    bbep->fillRect(0, 430, 800, 50, BBEP_BLACK);
+    // Footer with copyright (per Section 21.3)
     bbep->setFont(FONT_8x8);
-    bbep->setCursor(220, 445); bbep->print("Waiting for setup to complete...");
-    bbep->setCursor(270, 462); bbep->print("(c) 2026 Angus Bergman");
+    bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
+    bbep->setCursor(270, 420); bbep->print("Waiting for setup...");
+    bbep->setCursor(240, 450); bbep->print("(c) 2026 Angus Bergman");
+    bbep->setCursor(290, 465); bbep->print("v" FIRMWARE_VERSION);
     
     bbep->refresh(REFRESH_FULL, true);
     lastFullRefresh = millis();
@@ -457,23 +449,13 @@ bool pollPairingServer() {
 }
 
 void showBootScreen() {
-    // Stage 1: Large CC logo centered (per Section 21.2)
+    // Stage 1: Large CC logo ONLY - NO TEXT (per Section 21.2)
+    // "No text, just branding" - Duration: 2-3 seconds
     bbep->fillScreen(BBEP_WHITE);
     
     // Draw embedded BMP logo centered (200x188 at center of 800x480)
-    // Center: x = (800-200)/2 = 300, y = (480-188)/2 - 30 = 116
-    bbep->loadBMP(CC_LOGO_LARGE, 300, 100, BBEP_BLACK, BBEP_WHITE);
-    
-    // "COMMUTE COMPUTE" text below logo - LARGER
-    bbep->setFont(FONT_12x16);
-    bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
-    int textW = 15 * 12;  // ~15 chars * 12px
-    bbep->setCursor((800 - textW) / 2, 320); 
-    bbep->print("COMMUTE COMPUTE");
-    
-    bbep->setFont(FONT_8x8);
-    bbep->setCursor(360, 360); 
-    bbep->print("v" FIRMWARE_VERSION);
+    // Center: x = (800-200)/2 = 300, y = (480-188)/2 = 146
+    bbep->loadBMP(CC_LOGO_LARGE, 300, 146, BBEP_BLACK, BBEP_WHITE);
     
     bbep->refresh(REFRESH_FULL, true);
 }
