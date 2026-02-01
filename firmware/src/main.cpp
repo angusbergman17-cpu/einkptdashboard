@@ -371,37 +371,33 @@ void showPairingScreen() {
     bbep->setFont(FONT_8x8);
     bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
     
-    // Small CC logo at top centered (63x100 trimmed)
-    // Center: x = (800-63)/2 = 368
-    bbep->loadBMP(CC_LOGO_SMALL, 368, 5, BBEP_BLACK, BBEP_WHITE);
+    // Small CC logo - NO BARS (118x130)
+    // Center: x = (800-118)/2 = 341
+    bbep->loadBMP(CC_LOGO_SMALL, 341, 5, BBEP_BLACK, BBEP_WHITE);
     
-    // Title centered (12 chars * 8 = 96px, center = 352)
-    bbep->setCursor(352, 115); bbep->print("DEVICE SETUP");
+    // Title centered
+    bbep->setCursor(352, 145); bbep->print("DEVICE SETUP");
     
     // Instructions - VERCEL ONLY (turnkey)
-    bbep->setCursor(120, 150); bbep->print("1. Fork the git repo to your GitHub account");
-    bbep->setCursor(120, 175); bbep->print("2. Deploy to Vercel (free tier)");
-    bbep->setCursor(120, 200); bbep->print("3. Go to: [your-name].vercel.app");
-    bbep->setCursor(120, 225); bbep->print("4. Complete the setup wizard");
-    bbep->setCursor(120, 250); bbep->print("5. Enter this pairing code:");
+    bbep->setCursor(120, 180); bbep->print("1. Fork the git repo to your GitHub account");
+    bbep->setCursor(120, 205); bbep->print("2. Deploy to Vercel (free tier)");
+    bbep->setCursor(120, 230); bbep->print("3. Go to: [your-name].vercel.app");
+    bbep->setCursor(120, 255); bbep->print("4. Complete the setup wizard");
+    bbep->setCursor(120, 280); bbep->print("5. Enter this pairing code:");
     
-    // Large pairing code box centered (260px wide, center = 270)
-    bbep->fillRect(270, 280, 260, 50, BBEP_BLACK);
+    // Large pairing code box centered
+    bbep->fillRect(270, 310, 260, 50, BBEP_BLACK);
     bbep->setTextColor(BBEP_WHITE, BBEP_BLACK);
-    // Code with spaces: 6 chars + 5 spaces = ~88px, center in box = 270 + (260-88)/2 = 356
-    bbep->setCursor(356, 298);
+    bbep->setCursor(330, 328);
     for (int i = 0; i < 6; i++) {
         bbep->print(pairingCode[i]); bbep->print(" ");
     }
     
     // Footer - all centered
     bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
-    // "Waiting for setup..." = 20 chars * 8 = 160px, center = 320
-    bbep->setCursor(320, 360); bbep->print("Waiting for setup...");
-    // "(c) 2026 Angus Bergman" = 22 chars * 8 = 176px, center = 312
-    bbep->setCursor(312, 400); bbep->print("(c) 2026 Angus Bergman");
-    // Version centered
-    bbep->setCursor(360, 430); bbep->print("v" FIRMWARE_VERSION);
+    bbep->setCursor(300, 385); bbep->print("Waiting for setup...");
+    bbep->setCursor(288, 420); bbep->print("(c) 2026 Angus Bergman");
+    bbep->setCursor(352, 450); bbep->print("v" FIRMWARE_VERSION);
     
     bbep->refresh(REFRESH_FULL, true);
     lastFullRefresh = millis();
@@ -453,9 +449,9 @@ void showBootScreen() {
     // "No text, just branding" - Duration: 2-3 seconds
     bbep->fillScreen(BBEP_WHITE);
     
-    // Draw embedded BMP logo centered (201x320 trimmed, no black bars)
-    // Center: x = (800-201)/2 = 299, y = (480-320)/2 = 80
-    bbep->loadBMP(CC_LOGO_LARGE, 299, 80, BBEP_BLACK, BBEP_WHITE);
+    // Draw CC icon only - NO BARS (345x380)
+    // Center: x = (800-345)/2 = 227, y = (480-380)/2 = 50
+    bbep->loadBMP(CC_LOGO_LARGE, 227, 50, BBEP_BLACK, BBEP_WHITE);
     
     bbep->refresh(REFRESH_FULL, true);
 }
@@ -467,17 +463,16 @@ void showConnectingScreen() {
     bbep->setFont(FONT_8x8);
     bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
     
-    // Small CC logo centered (63x100 trimmed)
-    // Center: x = (800-63)/2 = 368, y = 60
-    bbep->loadBMP(CC_LOGO_SMALL, 368, 60, BBEP_BLACK, BBEP_WHITE);
+    // Small CC logo - NO BARS (118x130)
+    // Center: x = (800-118)/2 = 341, y = 40
+    bbep->loadBMP(CC_LOGO_SMALL, 341, 40, BBEP_BLACK, BBEP_WHITE);
     
-    // Status text centered (19 chars * 8 = 152px, center = (800-152)/2 = 324)
-    bbep->setCursor(324, 200); bbep->print("CONNECTING TO WIFI...");
+    // Status text centered
+    bbep->setCursor(300, 200); bbep->print("CONNECTING TO WIFI...");
     
-    // Copyright centered (22 chars * 8 = 176px, center = (800-176)/2 = 312)
-    bbep->setCursor(312, 400); bbep->print("(c) 2026 Angus Bergman");
-    // Version centered (10 chars * 8 = 80px, center = (800-80)/2 = 360)
-    bbep->setCursor(360, 430); bbep->print("v" FIRMWARE_VERSION);
+    // Copyright centered at bottom
+    bbep->setCursor(288, 400); bbep->print("(c) 2026 Angus Bergman");
+    bbep->setCursor(352, 430); bbep->print("v" FIRMWARE_VERSION);
     
     bbep->refresh(REFRESH_FULL, true);
 }
