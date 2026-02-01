@@ -1,35 +1,24 @@
 /**
- * CCFirm™ — Custom Firmware for TRMNL Devices
+ * CCFirm™ v7.0 — BLE Provisioning Firmware
  * Part of the Commute Compute System™
- * 
- * Fetches dashboard zones from CCDash™ API and renders to e-ink display.
- * 
+ *
+ * Boot sequence: Logo → BLE Setup (if needed) → Dashboard
+ * No WiFiManager - uses Bluetooth for WiFi provisioning
+ *
  * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
- * https://creativecommons.org/licenses/by-nc/4.0/
- * 
- * THIRD-PARTY COMPONENTS (excluded from copyright claim):
- * - Arduino/ESP-IDF: Apache 2.0 (Espressif Systems)
- * - bb_epaper: MIT License (Larry Bank)
- * - base64: MIT License
  */
 
 #include <Arduino.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
-// WiFiManager disabled - causes ESP32-C3 crash (0xbaad5678)
-// #include <WiFiManager.h>
 #include <Preferences.h>
+#include <BLEDevice.h>
+#include <BLEServer.h>
+#include <BLEUtils.h>
+#include <BLE2902.h>
 #include <nvs_flash.h>
-
-// WiFi credentials - CONFIGURE BEFORE FLASHING
-// Per DEVELOPMENT-RULES.md Section 17.4: No personal data in source code
-// These MUST be changed by user before flashing their device
-#define WIFI_SSID "Optus_FA6C6E"
-#define WIFI_PASS "gular43572ch"
-// ArduinoJson REMOVED - causes ESP32-C3 stack corruption
-// Using manual JSON parsing instead
 #include <bb_epaper.h>
 #include "base64.hpp"
 #include "soc/soc.h"
@@ -37,7 +26,13 @@
 #include "../include/config.h"
 #include "../include/cc_logo_data.h"
 
-// Screen dimensions (configurable per device)
+// ============================================================================
+// CONFIGURATION
+// ============================================================================
+
+#define FIRMWARE_VERSION "7.0.0"
+
+// Screen dimensions
 #ifdef BOARD_TRMNL_MINI
   #define SCREEN_W 600
   #define SCREEN_H 448
@@ -49,7 +44,6 @@
   #define LOGO_SMALL_H 130
   #define PANEL_TYPE EP583R_600x448
 #else
-  // TRMNL OG (default)
   #define SCREEN_W 800
   #define SCREEN_H 480
   #define LOGO_BOOT CC_LOGO_BOOT
@@ -60,85 +54,22 @@
   #define LOGO_SMALL_H 130
   #define PANEL_TYPE EP75_800x480
 #endif
-#define MAX_ZONES 6
-#define ZONE_BMP_MAX_SIZE 35000  // Raw BMP (legs zone is ~32KB)
-#define ZONE_ID_MAX_LEN 32
-// Legs zone is ~42KB base64. Allocate lazily to save RAM for HTTP response.
-#define ZONE_DATA_MAX_LEN 45000
-// FIRMWARE_VERSION defined in config.h
 
-// Default server for pairing API
+#define ZONE_BMP_MAX_SIZE 35000
 #define DEFAULT_SERVER "https://einkptdashboard.vercel.app"
-#define PAIRING_POLL_INTERVAL 5000  // 5 seconds
-#define PAIRING_TIMEOUT 600000       // 10 minutes
 
-// Use pointer to avoid static init issues
-BBEPAPER* bbep = nullptr;
-Preferences preferences;
-char webhookUrl[256] = "";
-char pairingCode[8] = "";
-unsigned long lastRefresh = 0;
-const unsigned long REFRESH_INTERVAL = 60000;  // 1 minute (was 20s)
-const unsigned long FULL_REFRESH_INTERVAL = 300000;
-unsigned long lastFullRefresh = 0;
-int partialRefreshCount = 0;
-// MAX_PARTIAL_BEFORE_FULL defined in config.h
-bool wifiConnected = false;
-bool devicePaired = false;
-bool initialDrawDone = false;
+// BLE UUIDs
+#define BLE_SERVICE_UUID        "CC000001-0000-1000-8000-00805F9B34FB"
+#define BLE_CHAR_SSID_UUID      "CC000002-0000-1000-8000-00805F9B34FB"
+#define BLE_CHAR_PASSWORD_UUID  "CC000003-0000-1000-8000-00805F9B34FB"
+#define BLE_CHAR_URL_UUID       "CC000004-0000-1000-8000-00805F9B34FB"
+#define BLE_CHAR_STATUS_UUID    "CC000005-0000-1000-8000-00805F9B34FB"
+#define BLE_CHAR_WIFI_LIST_UUID "CC000006-0000-1000-8000-00805F9B34FB"
 
-// Error tracking
-int consecutiveErrors = 0;
-const int MAX_BACKOFF_ERRORS = 5;
-unsigned long lastErrorTime = 0;
+// ============================================================================
+// ZONE DEFINITIONS
+// ============================================================================
 
-// Zone storage
-struct Zone { 
-    char id[ZONE_ID_MAX_LEN]; 
-    int x, y, w, h; 
-    bool changed; 
-    char* data;
-    size_t dataLen;
-};
-Zone zones[MAX_ZONES];
-int zoneCount = 0;
-uint8_t* zoneBmpBuffer = nullptr;
-// Single shared buffer for zone data (reused for each zone)
-char* sharedZoneDataBuffer = nullptr;
-
-// Simple JSON parsing helpers (ArduinoJson causes ESP32-C3 stack corruption)
-String jsonGetString(const String& json, const char* key) {
-    String search = String("\"") + key + "\":\"";
-    int start = json.indexOf(search);
-    if (start < 0) return "";
-    start += search.length();
-    int end = json.indexOf("\"", start);
-    if (end < 0) return "";
-    return json.substring(start, end);
-}
-
-int jsonGetInt(const String& json, const char* key) {
-    String search = String("\"") + key + "\":";
-    int start = json.indexOf(search);
-    if (start < 0) return 0;
-    start += search.length();
-    // Skip whitespace
-    while (start < json.length() && (json[start] == ' ' || json[start] == '\t')) start++;
-    int end = start;
-    while (end < json.length() && (isdigit(json[end]) || json[end] == '-')) end++;
-    return json.substring(start, end).toInt();
-}
-
-bool jsonGetBool(const String& json, const char* key) {
-    String search = String("\"") + key + "\":";
-    int start = json.indexOf(search);
-    if (start < 0) return false;
-    start += search.length();
-    while (start < json.length() && json[start] == ' ') start++;
-    return json.substring(start, start + 4) == "true";
-}
-
-// Zone definitions with fixed positions (V10 spec)
 struct ZoneDef {
     const char* id;
     int x, y, w, h;
@@ -153,227 +84,476 @@ const ZoneDef ZONE_DEFS[] = {
 };
 const int NUM_ZONES = 5;
 
-// Track which zones changed for anti-ghosting
-bool zoneChanged[NUM_ZONES] = {false};
+// ============================================================================
+// STATE MACHINE
+// ============================================================================
 
-// ETag cache for each zone (for 304 Not Modified support)
-#define ETAG_MAX_LEN 24
-char zoneETags[NUM_ZONES][ETAG_MAX_LEN] = {"", "", "", "", ""};
+enum State {
+    STATE_BOOT,
+    STATE_CHECK_WIFI,
+    STATE_BLE_SETUP,
+    STATE_WIFI_CONNECT,
+    STATE_CHECK_PAIRING,
+    STATE_SHOW_PAIRING,
+    STATE_POLL_PAIRING,
+    STATE_FETCH_DASHBOARD,
+    STATE_IDLE,
+    STATE_ERROR
+};
 
-// Function declarations
+// ============================================================================
+// GLOBALS
+// ============================================================================
+
+BBEPAPER* bbep = nullptr;
+Preferences preferences;
+
+// State
+State currentState = STATE_BOOT;
+char wifiSSID[64] = "";
+char wifiPassword[64] = "";
+char webhookUrl[256] = "";
+char pairingCode[8] = "";
+bool wifiConnected = false;
+bool devicePaired = false;
+bool initialDrawDone = false;
+
+// BLE
+BLEServer* pServer = nullptr;
+BLECharacteristic* pCharStatus = nullptr;
+BLECharacteristic* pCharWiFiList = nullptr;
+bool bleDeviceConnected = false;
+bool bleCredentialsReceived = false;
+String wifiNetworkList = "";
+
+// Timing
+unsigned long lastRefresh = 0;
+unsigned long lastFullRefresh = 0;
+unsigned long pairingStartTime = 0;
+unsigned long lastPollTime = 0;
+int partialRefreshCount = 0;
+int consecutiveErrors = 0;
+
+// Buffers
+uint8_t* zoneBmpBuffer = nullptr;
+
+// ============================================================================
+// FUNCTION DECLARATIONS
+// ============================================================================
+
 void initDisplay();
 void showBootScreen();
-void showPairingScreen();
+void showBLESetupScreen();
 void showConnectingScreen();
+void showPairingScreen();
 void showPairedScreen();
-void showErrorScreen(const char* error);
-void connectWiFi();
-void generatePairingCode();
-bool pollPairingServer();
-bool fetchDashboardImage();
-bool fetchZoneUpdates(bool forceAll);
-bool decodeAndDrawZone(Zone& zone);
-void doFullRefresh();
-void flashAndRefreshZone(Zone& zone);
+void showErrorScreen(const char* msg);
 void loadSettings();
 void saveSettings();
-unsigned long getBackoffDelay();
-void initZoneBuffers();
+void initBLE();
+void stopBLE();
+String scanWiFiNetworks();
+bool connectWiFi();
+void generatePairingCode();
+bool pollPairingServer();
+bool fetchZoneUpdates(bool forceAll);
 int fetchAndRenderZone(const char* baseUrl, const ZoneDef& def, bool forceAll);
+void doFullRefresh();
+
+// ============================================================================
+// JSON HELPERS
+// ============================================================================
+
+String jsonGetString(const String& json, const char* key) {
+    String search = String("\"") + key + "\":\"";
+    int start = json.indexOf(search);
+    if (start < 0) return "";
+    start += search.length();
+    int end = json.indexOf("\"", start);
+    if (end < 0) return "";
+    return json.substring(start, end);
+}
+
+// ============================================================================
+// BLE CALLBACKS
+// ============================================================================
+
+String scanWiFiNetworks() {
+    Serial.println("[WiFi] Scanning...");
+    WiFi.mode(WIFI_STA);
+    WiFi.disconnect();
+    delay(100);
+
+    int n = WiFi.scanNetworks();
+    String result = "";
+
+    for (int i = 0; i < n && i < 10; i++) {
+        String ssid = WiFi.SSID(i);
+        if (ssid.length() == 0) continue;
+        if (result.indexOf(ssid + ",") >= 0) continue;
+        if (result.length() > 0) result += ",";
+        result += ssid;
+    }
+
+    WiFi.scanDelete();
+    Serial.printf("[WiFi] Found: %s\n", result.c_str());
+    return result;
+}
+
+class ServerCallbacks : public BLEServerCallbacks {
+    void onConnect(BLEServer* pServer) {
+        bleDeviceConnected = true;
+        Serial.println("[BLE] Connected");
+
+        wifiNetworkList = scanWiFiNetworks();
+        if (pCharWiFiList && wifiNetworkList.length() > 0) {
+            pCharWiFiList->setValue(wifiNetworkList.c_str());
+        }
+
+        if (pCharStatus) {
+            pCharStatus->setValue("connected");
+            pCharStatus->notify();
+        }
+    }
+
+    void onDisconnect(BLEServer* pServer) {
+        bleDeviceConnected = false;
+        Serial.println("[BLE] Disconnected");
+
+        if (!bleCredentialsReceived) {
+            BLEDevice::startAdvertising();
+        }
+    }
+};
+
+class CredentialCallbacks : public BLECharacteristicCallbacks {
+    void onWrite(BLECharacteristic* pChar) {
+        std::string value = pChar->getValue();
+        String uuid = pChar->getUUID().toString().c_str();
+
+        if (value.length() > 0) {
+            if (uuid.indexOf("0002") > 0) {
+                strncpy(wifiSSID, value.c_str(), sizeof(wifiSSID) - 1);
+                Serial.printf("[BLE] SSID: %s\n", wifiSSID);
+            }
+            else if (uuid.indexOf("0003") > 0) {
+                strncpy(wifiPassword, value.c_str(), sizeof(wifiPassword) - 1);
+                Serial.println("[BLE] Password received");
+            }
+            else if (uuid.indexOf("0004") > 0) {
+                strncpy(webhookUrl, value.c_str(), sizeof(webhookUrl) - 1);
+                Serial.printf("[BLE] URL: %s\n", webhookUrl);
+
+                if (strlen(wifiSSID) > 0 && strlen(wifiPassword) > 0) {
+                    bleCredentialsReceived = true;
+                    devicePaired = true;  // URL means setup wizard completed
+                    saveSettings();
+
+                    if (pCharStatus) {
+                        pCharStatus->setValue("credentials_saved");
+                        pCharStatus->notify();
+                    }
+                }
+            }
+        }
+    }
+};
+
+// ============================================================================
+// SETUP
+// ============================================================================
 
 void setup() {
     WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
-    Serial.begin(115200); delay(500);
+
+    Serial.begin(115200);
+    delay(500);
     Serial.println("\n=== Commute Compute v" FIRMWARE_VERSION " ===");
-    
-    // Initialize NVS explicitly before any library uses it
+    Serial.println("BLE Provisioning Firmware");
+
+    // Initialize NVS
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        Serial.println("NVS corrupted, erasing...");
         nvs_flash_erase();
         nvs_flash_init();
     }
-    Serial.println("NVS initialized");
-    
-    // Create display object here to avoid static init issues
+
+    // Create display
     bbep = new BBEPAPER(PANEL_TYPE);
-    Serial.println("Display object created");
-    
+
+    // Load settings
     loadSettings();
-    
+
+    // Allocate buffer
     zoneBmpBuffer = (uint8_t*)malloc(ZONE_BMP_MAX_SIZE);
     if (!zoneBmpBuffer) {
-        Serial.println("ERROR: Failed to allocate BMP buffer");
+        Serial.println("[ERROR] Buffer alloc failed");
     }
-    
-    initZoneBuffers();
+
+    // Init display
     initDisplay();
-    
-    // Stage 1: Boot screen with CC logo (2-3 seconds per Section 21.2)
-    showBootScreen();
-    delay(2500);
-    
-    Serial.println("Setup complete");
+
+    currentState = STATE_BOOT;
 }
 
+// ============================================================================
+// MAIN LOOP
+// ============================================================================
+
 void loop() {
-    // Step 1: Connect to WiFi if not connected
-    if (!wifiConnected) {
-        connectWiFi();
-        if (!wifiConnected) {
-            delay(5000);
-            return;
+    unsigned long now = millis();
+
+    switch (currentState) {
+        // ==== BOOT: Show logo ====
+        case STATE_BOOT: {
+            Serial.println("[STATE] Boot");
+            showBootScreen();
+            delay(2500);
+            currentState = STATE_CHECK_WIFI;
+            break;
         }
-    }
-    
-    if (WiFi.status() != WL_CONNECTED) {
-        Serial.println("WiFi disconnected");
-        wifiConnected = false;
-        return;
-    }
-    
-    // Step 2: If not paired, show pairing screen and poll
-    if (!devicePaired) {
-        static bool pairingScreenShown = false;
-        static unsigned long pairingStartTime = 0;
-        static unsigned long lastPollTime = 0;
-        
-        if (!pairingScreenShown) {
+
+        // ==== CHECK WIFI: Have credentials? ====
+        case STATE_CHECK_WIFI: {
+            Serial.println("[STATE] Check WiFi");
+            if (strlen(wifiSSID) > 0 && strlen(wifiPassword) > 0) {
+                Serial.println("[OK] WiFi credentials found");
+                currentState = STATE_WIFI_CONNECT;
+            } else {
+                Serial.println("[INFO] No WiFi credentials - BLE setup");
+                currentState = STATE_BLE_SETUP;
+            }
+            break;
+        }
+
+        // ==== BLE SETUP ====
+        case STATE_BLE_SETUP: {
+            static bool bleInit = false;
+
+            if (!bleInit) {
+                showBLESetupScreen();
+                initBLE();
+                bleInit = true;
+            }
+
+            if (bleCredentialsReceived) {
+                Serial.println("[BLE] Credentials received!");
+                stopBLE();
+                bleInit = false;
+                currentState = STATE_WIFI_CONNECT;
+            }
+
+            delay(100);
+            break;
+        }
+
+        // ==== WIFI CONNECT ====
+        case STATE_WIFI_CONNECT: {
+            Serial.println("[STATE] WiFi Connect");
+            showConnectingScreen();
+
+            if (connectWiFi()) {
+                wifiConnected = true;
+                Serial.printf("[OK] Connected: %s\n", WiFi.localIP().toString().c_str());
+                consecutiveErrors = 0;
+                currentState = STATE_CHECK_PAIRING;
+            } else {
+                Serial.println("[ERROR] WiFi failed");
+                consecutiveErrors++;
+
+                if (consecutiveErrors >= 3) {
+                    // Clear credentials and go back to BLE
+                    wifiSSID[0] = '\0';
+                    wifiPassword[0] = '\0';
+                    saveSettings();
+                    currentState = STATE_BLE_SETUP;
+                    consecutiveErrors = 0;
+                } else {
+                    delay(5000);
+                }
+            }
+            break;
+        }
+
+        // ==== CHECK PAIRING ====
+        case STATE_CHECK_PAIRING: {
+            Serial.println("[STATE] Check Pairing");
+            if (devicePaired && strlen(webhookUrl) > 0) {
+                Serial.println("[OK] Already paired");
+                currentState = STATE_FETCH_DASHBOARD;
+            } else {
+                Serial.println("[INFO] Not paired - show pairing screen");
+                currentState = STATE_SHOW_PAIRING;
+            }
+            break;
+        }
+
+        // ==== SHOW PAIRING SCREEN ====
+        case STATE_SHOW_PAIRING: {
             generatePairingCode();
             showPairingScreen();
-            pairingScreenShown = true;
             pairingStartTime = millis();
             lastPollTime = 0;
+            currentState = STATE_POLL_PAIRING;
+            break;
         }
-        
-        // Check timeout
-        if (millis() - pairingStartTime > PAIRING_TIMEOUT) {
-            Serial.println("Pairing timeout - regenerating code");
-            pairingScreenShown = false;
-            return;
-        }
-        
-        // Poll every 5 seconds
-        if (millis() - lastPollTime >= PAIRING_POLL_INTERVAL) {
-            lastPollTime = millis();
-            if (pollPairingServer()) {
-                devicePaired = true;
-                saveSettings();
-                showPairedScreen();
-                delay(2000);
-                initialDrawDone = false;
+
+        // ==== POLL PAIRING ====
+        case STATE_POLL_PAIRING: {
+            // Check timeout
+            if (now - pairingStartTime > 600000) {
+                Serial.println("[PAIR] Timeout - regenerating");
+                currentState = STATE_SHOW_PAIRING;
+                break;
             }
+
+            // Poll every 5 seconds
+            if (now - lastPollTime >= 5000) {
+                lastPollTime = now;
+                if (pollPairingServer()) {
+                    devicePaired = true;
+                    saveSettings();
+                    showPairedScreen();
+                    delay(2000);
+                    initialDrawDone = false;
+                    currentState = STATE_FETCH_DASHBOARD;
+                }
+            }
+
+            delay(500);
+            break;
         }
-        
-        delay(500);
-        return;
-    }
-    
-    // Step 3: Normal dashboard operation
-    unsigned long now = millis();
-    
-    if (consecutiveErrors > 0) {
-        unsigned long backoff = getBackoffDelay();
-        if (now - lastErrorTime < backoff) {
-            delay(1000);
-            return;
-        }
-    }
-    
-    bool needsFull = !initialDrawDone || 
-                     (now - lastFullRefresh >= FULL_REFRESH_INTERVAL) || 
-                     (partialRefreshCount >= MAX_PARTIAL_BEFORE_FULL);
-    
-    if (now - lastRefresh >= REFRESH_INTERVAL || !initialDrawDone) {
-        lastRefresh = now;
-        
-        if (fetchZoneUpdates(needsFull)) {
-            consecutiveErrors = 0;
-            
-            // zoneCount is set by fetchZoneUpdates to number of successfully rendered zones
-            Serial.printf("Zones rendered: %d, needsFull: %s\n", zoneCount, needsFull ? "yes" : "no");
-            
-            if (zoneCount > 0) {
+
+        // ==== FETCH DASHBOARD ====
+        case STATE_FETCH_DASHBOARD: {
+            Serial.println("[STATE] Fetch Dashboard");
+
+            bool needsFull = !initialDrawDone ||
+                            (now - lastFullRefresh >= 300000) ||
+                            (partialRefreshCount >= MAX_PARTIAL_BEFORE_FULL);
+
+            if (fetchZoneUpdates(needsFull)) {
                 if (needsFull) {
-                    Serial.println("Doing full refresh...");
                     doFullRefresh();
                     lastFullRefresh = now;
                     partialRefreshCount = 0;
-                    initialDrawDone = true;
-                    Serial.println("Full refresh complete!");
                 } else {
-                    // Anti-ghost ONLY changed zones, leave others untouched
-                    Serial.println("Partial refresh with selective anti-ghost...");
-                    
-                    // Extract base URL
-                    String baseUrl = String(webhookUrl);
-                    int apiIndex = baseUrl.indexOf("/api/device/");
-                    if (apiIndex > 0) baseUrl = baseUrl.substring(0, apiIndex);
-                    
-                    // Count actually changed zones
-                    int changedCount = 0;
-                    for (int i = 0; i < NUM_ZONES; i++) {
-                        if (zoneChanged[i]) {
-                            changedCount++;
-                            Serial.printf("  Zone %d (%s) changed\n", i, ZONE_DEFS[i].id);
-                        }
-                    }
-                    
-                    if (changedCount > 0 && changedCount < NUM_ZONES) {
-                        // Only some zones changed - do selective anti-ghost
-                        Serial.printf("Anti-ghost: %d/%d zones -> BLACK\n", changedCount, NUM_ZONES);
-                        for (int i = 0; i < NUM_ZONES; i++) {
-                            if (zoneChanged[i]) {
-                                bbep->fillRect(ZONE_DEFS[i].x, ZONE_DEFS[i].y, 
-                                              ZONE_DEFS[i].w, ZONE_DEFS[i].h, BBEP_BLACK);
-                            }
-                        }
-                        bbep->refresh(REFRESH_PARTIAL, true);
-                        
-                        Serial.printf("Anti-ghost: %d/%d zones -> WHITE\n", changedCount, NUM_ZONES);
-                        for (int i = 0; i < NUM_ZONES; i++) {
-                            if (zoneChanged[i]) {
-                                bbep->fillRect(ZONE_DEFS[i].x, ZONE_DEFS[i].y, 
-                                              ZONE_DEFS[i].w, ZONE_DEFS[i].h, BBEP_WHITE);
-                            }
-                        }
-                        bbep->refresh(REFRESH_PARTIAL, true);
-                        
-                        // Re-fetch ONLY changed zones (content was overwritten)
-                        Serial.println("Re-rendering changed zones only...");
-                        for (int i = 0; i < NUM_ZONES; i++) {
-                            if (zoneChanged[i]) {
-                                fetchAndRenderZone(baseUrl.c_str(), ZONE_DEFS[i], false);
-                            }
-                            yield();
-                        }
-                        bbep->refresh(REFRESH_PARTIAL, true);
-                    } else if (changedCount == NUM_ZONES) {
-                        // All zones changed - skip anti-ghost, just do full refresh
-                        Serial.println("All zones changed - triggering full refresh");
-                        doFullRefresh();
-                        lastFullRefresh = now;
-                        partialRefreshCount = 0;
-                    } else {
-                        // Nothing changed - just partial refresh what's already rendered
-                        Serial.println("No zones changed, simple partial refresh");
-                        bbep->refresh(REFRESH_PARTIAL, true);
-                    }
+                    bbep->refresh(REFRESH_PARTIAL, true);
                     partialRefreshCount++;
-                    Serial.println("Partial refresh complete!");
+                }
+                lastRefresh = now;
+                initialDrawDone = true;
+                consecutiveErrors = 0;
+                currentState = STATE_IDLE;
+            } else {
+                consecutiveErrors++;
+                if (consecutiveErrors > 5) {
+                    currentState = STATE_ERROR;
+                } else {
+                    delay(5000);
                 }
             }
-            
-            Serial.printf("Refresh: %d zones, full=%s\n", zoneCount, needsFull ? "yes" : "no");
-        } else {
-            consecutiveErrors++;
-            lastErrorTime = now;
-            Serial.printf("Fetch failed (attempt %d)\n", consecutiveErrors);
+            break;
+        }
+
+        // ==== IDLE ====
+        case STATE_IDLE: {
+            if (now - lastRefresh >= 60000) {
+                currentState = STATE_FETCH_DASHBOARD;
+            }
+
+            if (WiFi.status() != WL_CONNECTED) {
+                wifiConnected = false;
+                currentState = STATE_WIFI_CONNECT;
+            }
+
+            delay(1000);
+            break;
+        }
+
+        // ==== ERROR ====
+        case STATE_ERROR: {
+            showErrorScreen("Connection Error");
+            delay(30000);
+            consecutiveErrors = 0;
+            currentState = STATE_WIFI_CONNECT;
+            break;
         }
     }
-    
-    delay(1000);
 }
+
+// ============================================================================
+// BLE FUNCTIONS
+// ============================================================================
+
+void initBLE() {
+    uint8_t mac[6];
+    WiFi.macAddress(mac);
+    char deviceName[32];
+    snprintf(deviceName, sizeof(deviceName), "CommuteCompute-%02X%02X", mac[4], mac[5]);
+
+    BLEDevice::init(deviceName);
+    pServer = BLEDevice::createServer();
+    pServer->setCallbacks(new ServerCallbacks());
+
+    BLEService* pService = pServer->createService(BLE_SERVICE_UUID);
+
+    BLECharacteristic* pCharSSID = pService->createCharacteristic(BLE_CHAR_SSID_UUID, BLECharacteristic::PROPERTY_WRITE);
+    pCharSSID->setCallbacks(new CredentialCallbacks());
+
+    BLECharacteristic* pCharPass = pService->createCharacteristic(BLE_CHAR_PASSWORD_UUID, BLECharacteristic::PROPERTY_WRITE);
+    pCharPass->setCallbacks(new CredentialCallbacks());
+
+    BLECharacteristic* pCharURL = pService->createCharacteristic(BLE_CHAR_URL_UUID, BLECharacteristic::PROPERTY_WRITE);
+    pCharURL->setCallbacks(new CredentialCallbacks());
+
+    pCharStatus = pService->createCharacteristic(BLE_CHAR_STATUS_UUID, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY);
+    pCharStatus->addDescriptor(new BLE2902());
+    pCharStatus->setValue("waiting");
+
+    pCharWiFiList = pService->createCharacteristic(BLE_CHAR_WIFI_LIST_UUID, BLECharacteristic::PROPERTY_READ);
+    pCharWiFiList->setValue("");
+
+    pService->start();
+
+    BLEAdvertising* pAdv = BLEDevice::getAdvertising();
+    pAdv->addServiceUUID(BLE_SERVICE_UUID);
+    pAdv->setScanResponse(true);
+    BLEDevice::startAdvertising();
+
+    Serial.printf("[BLE] Advertising: %s\n", deviceName);
+}
+
+void stopBLE() {
+    if (pServer) {
+        BLEDevice::stopAdvertising();
+        BLEDevice::deinit(true);
+        pServer = nullptr;
+    }
+}
+
+// ============================================================================
+// WIFI
+// ============================================================================
+
+bool connectWiFi() {
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(wifiSSID, wifiPassword);
+
+    int attempts = 0;
+    while (WiFi.status() != WL_CONNECTED && attempts < 30) {
+        delay(500);
+        Serial.print(".");
+        attempts++;
+    }
+    Serial.println();
+
+    return WiFi.status() == WL_CONNECTED;
+}
+
+// ============================================================================
+// PAIRING
+// ============================================================================
 
 void generatePairingCode() {
     const char* chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -382,126 +562,135 @@ void generatePairingCode() {
         pairingCode[i] = chars[random(0, len)];
     }
     pairingCode[6] = '\0';
-    Serial.printf("Generated pairing code: %s\n", pairingCode);
-}
-
-void showPairingScreen() {
-    // Stage 2: WiFi Setup Screen (per Section 21.3)
-    // FONT_8x8 ONLY per Section 1.1
-    bbep->fillScreen(BBEP_WHITE);
-    bbep->setFont(FONT_8x8);
-    bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
-    
-    // Small CC logo - NO FRAME BARS (96x140)
-    // Center: x = (800-96)/2 = 352
-    // Small logo centered horizontally at top
-    int smallX = (SCREEN_W - LOGO_SMALL_W) / 2;
-    bbep->loadBMP(LOGO_SMALL, smallX, 5, BBEP_BLACK, BBEP_WHITE);
-    
-    // Title centered
-    bbep->setCursor(352, 155); bbep->print("DEVICE SETUP");
-    
-    // Instructions - VERCEL ONLY (turnkey)
-    bbep->setCursor(120, 190); bbep->print("1. Fork the git repo to your GitHub account");
-    bbep->setCursor(120, 215); bbep->print("2. Deploy to Vercel (free tier)");
-    bbep->setCursor(120, 240); bbep->print("3. Go to: [your-name].vercel.app");
-    bbep->setCursor(120, 265); bbep->print("4. Complete the setup wizard");
-    bbep->setCursor(120, 290); bbep->print("5. Enter this pairing code:");
-    
-    // Large pairing code box centered
-    bbep->fillRect(270, 320, 260, 50, BBEP_BLACK);
-    bbep->setTextColor(BBEP_WHITE, BBEP_BLACK);
-    bbep->setCursor(330, 338);
-    for (int i = 0; i < 6; i++) {
-        bbep->print(pairingCode[i]); bbep->print(" ");
-    }
-    
-    // Footer - all centered
-    bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
-    bbep->setCursor(300, 395); bbep->print("Waiting for setup...");
-    bbep->setCursor(288, 425); bbep->print("(c) 2026 Angus Bergman");
-    bbep->setCursor(352, 455); bbep->print("v" FIRMWARE_VERSION);
-    
-    bbep->refresh(REFRESH_FULL, true);
-    lastFullRefresh = millis();
+    Serial.printf("[PAIR] Code: %s\n", pairingCode);
 }
 
 bool pollPairingServer() {
-    // Use stack-allocated client like working trmnl-direct code
     WiFiClientSecure client;
     client.setInsecure();
     HTTPClient http;
-    
+
     String url = String(DEFAULT_SERVER) + "/api/pair/" + String(pairingCode);
-    Serial.printf("Polling: %s\n", url.c_str());
-    
+    Serial.printf("[PAIR] Polling: %s\n", url.c_str());
+
     http.setTimeout(10000);
-    if (!http.begin(client, url)) {
-        Serial.println("HTTP begin failed");
-        return false;
-    }
-    
+    if (!http.begin(client, url)) return false;
+
     int code = http.GET();
     if (code != 200) {
-        Serial.printf("HTTP error: %d\n", code);
         http.end();
         return false;
     }
-    
+
     String payload = http.getString();
     http.end();
-    
-    // Simple JSON parsing without ArduinoJson
+
     String status = jsonGetString(payload, "status");
-    Serial.printf("Pairing status: %s\n", status.c_str());
-    
     if (status == "paired") {
         String webhook = jsonGetString(payload, "webhookUrl");
         if (webhook.length() > 0) {
             strncpy(webhookUrl, webhook.c_str(), sizeof(webhookUrl) - 1);
-            Serial.printf("Paired! Webhook: %s\n", webhookUrl);
+            Serial.printf("[PAIR] Success! URL: %s\n", webhookUrl);
             return true;
         }
     }
-    
+
     return false;
 }
 
+// ============================================================================
+// DISPLAY
+// ============================================================================
+
+void initDisplay() {
+    bbep->initIO(EPD_DC_PIN, EPD_RST_PIN, EPD_BUSY_PIN, EPD_CS_PIN, EPD_MOSI_PIN, EPD_SCK_PIN, 0);
+    bbep->setPanelType(PANEL_TYPE);
+    bbep->setRotation(0);
+    pinMode(PIN_INTERRUPT, INPUT_PULLUP);
+    Serial.println("[Display] Ready");
+}
+
 void showBootScreen() {
-    // Stage 1: Full CC logo with COMMUTE COMPUTE text (per Section 21.2)
-    // "No text, just branding" - Duration: 2-3 seconds
     bbep->fillScreen(BBEP_WHITE);
-    
-    // Draw full CC logo scaled for boot (468x440)
-    // Center: x = (800-468)/2 = 166, y = (480-440)/2 = 20
-    // Boot logo centered on screen
     int bootX = (SCREEN_W - LOGO_BOOT_W) / 2;
     int bootY = (SCREEN_H - LOGO_BOOT_H) / 2;
     bbep->loadBMP(LOGO_BOOT, bootX, bootY, BBEP_BLACK, BBEP_WHITE);
-    
+    bbep->refresh(REFRESH_FULL, true);
+    lastFullRefresh = millis();
+}
+
+void showBLESetupScreen() {
+    bbep->fillScreen(BBEP_WHITE);
+    bbep->setFont(FONT_8x8);
+    bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
+
+    int smallX = (SCREEN_W - LOGO_SMALL_W) / 2;
+    bbep->loadBMP(LOGO_SMALL, smallX, 10, BBEP_BLACK, BBEP_WHITE);
+
+    bbep->setCursor(300, 160); bbep->print("BLUETOOTH SETUP");
+
+    bbep->drawRect(80, 185, 640, 200, BBEP_BLACK);
+
+    bbep->setCursor(100, 205); bbep->print("1. Open setup wizard in Chrome/Edge");
+    bbep->setCursor(100, 230); bbep->print("2. Complete steps 1-4 (API keys, addresses)");
+    bbep->setCursor(100, 255); bbep->print("3. Select your TRMNL device");
+    bbep->setCursor(100, 280); bbep->print("4. Enter WiFi credentials");
+    bbep->setCursor(100, 305); bbep->print("5. Click 'Connect to Display via Bluetooth'");
+    bbep->setCursor(100, 330); bbep->print("6. Select this device from the list");
+
+    uint8_t mac[6];
+    WiFi.macAddress(mac);
+    bbep->setCursor(250, 365);
+    bbep->printf("Device: CommuteCompute-%02X%02X", mac[4], mac[5]);
+
+    bbep->drawLine(50, 420, 750, 420, BBEP_BLACK);
+    bbep->setCursor(220, 440); bbep->print("(c) 2026 Angus Bergman - CC BY-NC 4.0");
+    bbep->setCursor(360, 460); bbep->print("v" FIRMWARE_VERSION);
+
     bbep->refresh(REFRESH_FULL, true);
 }
 
 void showConnectingScreen() {
-    // Stage 2a: Connecting to WiFi (per Section 21.3)
-    // FONT_8x8 ONLY per Section 1.1
     bbep->fillScreen(BBEP_WHITE);
     bbep->setFont(FONT_8x8);
     bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
-    
-    // Small CC logo - NO FRAME BARS (96x140)
-    // Center: x = (800-96)/2 = 352, y = 30
-    // Small logo centered horizontally
+
     int smallX = (SCREEN_W - LOGO_SMALL_W) / 2;
-    bbep->loadBMP(LOGO_SMALL, smallX, 30, BBEP_BLACK, BBEP_WHITE);
-    
-    // Status text centered
-    bbep->setCursor(300, 200); bbep->print("CONNECTING TO WIFI...");
-    
-    // Copyright centered at bottom
-    bbep->setCursor(288, 400); bbep->print("(c) 2026 Angus Bergman");
-    bbep->setCursor(352, 430); bbep->print("v" FIRMWARE_VERSION);
-    
+    bbep->loadBMP(LOGO_SMALL, smallX, 100, BBEP_BLACK, BBEP_WHITE);
+
+    bbep->setCursor(300, 280); bbep->print("CONNECTING TO WIFI...");
+    bbep->setCursor(280, 320); bbep->printf("Network: %s", wifiSSID);
+
+    bbep->refresh(REFRESH_FULL, true);
+}
+
+void showPairingScreen() {
+    bbep->fillScreen(BBEP_WHITE);
+    bbep->setFont(FONT_8x8);
+    bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
+
+    int smallX = (SCREEN_W - LOGO_SMALL_W) / 2;
+    bbep->loadBMP(LOGO_SMALL, smallX, 5, BBEP_BLACK, BBEP_WHITE);
+
+    bbep->setCursor(352, 155); bbep->print("DEVICE SETUP");
+
+    bbep->setCursor(120, 190); bbep->print("WiFi connected! Now complete setup:");
+    bbep->setCursor(120, 220); bbep->print("1. Go to: einkptdashboard.vercel.app");
+    bbep->setCursor(120, 245); bbep->print("2. Complete the setup wizard");
+    bbep->setCursor(120, 270); bbep->print("3. Enter this pairing code:");
+
+    bbep->fillRect(270, 300, 260, 50, BBEP_BLACK);
+    bbep->setTextColor(BBEP_WHITE, BBEP_BLACK);
+    bbep->setCursor(330, 318);
+    for (int i = 0; i < 6; i++) {
+        bbep->print(pairingCode[i]); bbep->print(" ");
+    }
+
+    bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
+    bbep->setCursor(300, 375); bbep->print("Waiting for pairing...");
+    bbep->setCursor(288, 420); bbep->print("(c) 2026 Angus Bergman");
+    bbep->setCursor(360, 450); bbep->print("v" FIRMWARE_VERSION);
+
     bbep->refresh(REFRESH_FULL, true);
 }
 
@@ -509,290 +698,120 @@ void showPairedScreen() {
     bbep->fillScreen(BBEP_WHITE);
     bbep->setFont(FONT_8x8);
     bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
-    
+
     bbep->fillRect(0, 0, 800, 50, BBEP_BLACK);
     bbep->setTextColor(BBEP_WHITE, BBEP_BLACK);
     bbep->setCursor(300, 18); bbep->print("COMMUTE COMPUTE");
     bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
-    
-    bbep->setCursor(320, 180); bbep->print("PAIRED!");
-    bbep->setCursor(220, 240); bbep->print("Loading your dashboard...");
-    
+
+    bbep->setCursor(365, 200); bbep->print("PAIRED!");
+    bbep->setCursor(260, 260); bbep->print("Loading your dashboard...");
+
     bbep->refresh(REFRESH_FULL, true);
 }
 
-void showErrorScreen(const char* error) {
+void showErrorScreen(const char* msg) {
     bbep->fillScreen(BBEP_WHITE);
     bbep->setFont(FONT_8x8);
     bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
-    bbep->setCursor(350, 200); bbep->print("ERROR");
-    bbep->setCursor(150, 240); bbep->print(error);
-    bbep->setCursor(280, 300); bbep->print("Retrying...");
+    bbep->setCursor(370, 200); bbep->print("ERROR");
+    bbep->setCursor(200, 250); bbep->print(msg);
+    bbep->setCursor(280, 310); bbep->print("Retrying in 30 seconds...");
     bbep->refresh(REFRESH_FULL, true);
 }
 
+// ============================================================================
+// SETTINGS
+// ============================================================================
+
 void loadSettings() {
-    // Check NVS for pairing status, default to unpaired for setup flow
-    preferences.begin("cc-device", true);  // read-only
+    preferences.begin("cc-device", true);
+
+    String ssid = preferences.getString("wifi_ssid", "");
+    String pass = preferences.getString("wifi_pass", "");
+    String url = preferences.getString("webhookUrl", "");
     devicePaired = preferences.getBool("paired", false);
-    if (preferences.isKey("webhookUrl")) {
-        String stored = preferences.getString("webhookUrl", "");
-        if (stored.length() > 0) {
-            strncpy(webhookUrl, stored.c_str(), sizeof(webhookUrl) - 1);
-        }
-    }
+
+    strncpy(wifiSSID, ssid.c_str(), sizeof(wifiSSID) - 1);
+    strncpy(wifiPassword, pass.c_str(), sizeof(wifiPassword) - 1);
+    strncpy(webhookUrl, url.c_str(), sizeof(webhookUrl) - 1);
+
     preferences.end();
-    
-    // Default webhook if not set
-    if (strlen(webhookUrl) == 0) {
-        strncpy(webhookUrl, "https://einkptdashboard.vercel.app", sizeof(webhookUrl) - 1);
-    }
-    
-    Serial.printf("Webhook: %s (paired: %s)\n", webhookUrl, devicePaired ? "yes" : "no");
+
+    Serial.printf("[Settings] SSID: %s, Paired: %s\n",
+                  strlen(wifiSSID) > 0 ? wifiSSID : "(none)",
+                  devicePaired ? "yes" : "no");
 }
 
 void saveSettings() {
     preferences.begin("cc-device", false);
+    preferences.putString("wifi_ssid", wifiSSID);
+    preferences.putString("wifi_pass", wifiPassword);
     preferences.putString("webhookUrl", webhookUrl);
     preferences.putBool("paired", devicePaired);
     preferences.end();
-    Serial.printf("Settings saved. Webhook: %s, paired: %s\n", webhookUrl, devicePaired ? "yes" : "no");
+    Serial.println("[Settings] Saved");
 }
 
-void connectWiFi() {
-    showConnectingScreen();
-    
-    // Direct WiFi connection (WiFiManager crashes on ESP32-C3)
-    Serial.printf("Connecting to %s...\n", WIFI_SSID);
-    WiFi.begin(WIFI_SSID, WIFI_PASS);
-    
-    int attempts = 0;
-    while (WiFi.status() != WL_CONNECTED && attempts < 30) {
-        delay(500);
-        Serial.print(".");
-        attempts++;
-    }
-    Serial.println();
-    
-    if (WiFi.status() == WL_CONNECTED) {
-        wifiConnected = true;
-        Serial.printf("Connected: %s\n", WiFi.localIP().toString().c_str());
-    } else {
-        wifiConnected = false;
-        Serial.println("WiFi connection failed");
-    }
-}
+// ============================================================================
+// DASHBOARD FETCHING
+// ============================================================================
 
-void initDisplay() {
-    // Use speed=0 for bit-bang mode - hardware SPI fails on ESP32-C3 with custom pins
-    bbep->initIO(EPD_DC_PIN, EPD_RST_PIN, EPD_BUSY_PIN, EPD_CS_PIN, EPD_MOSI_PIN, EPD_SCK_PIN, 0);
-    bbep->setPanelType(PANEL_TYPE);
-    bbep->setRotation(0);
-    // allocBuffer(false) removed - causes ESP32-C3 SPI issues (commit 02f9f27)
-    pinMode(PIN_INTERRUPT, INPUT_PULLUP);
-}
-
-void initZoneBuffers() {
-    // Zone data buffer allocated lazily during fetch to save RAM for HTTP response
-    sharedZoneDataBuffer = nullptr;  // Will be allocated when needed
-    for (int i = 0; i < MAX_ZONES; i++) {
-        zones[i].data = nullptr;
-        zones[i].id[0] = '\0';
-    }
-}
-
-unsigned long getBackoffDelay() {
-    int capped = min(consecutiveErrors, MAX_BACKOFF_ERRORS);
-    return (1UL << capped) * 1000UL;
-}
-
-// Returns: 0 = failed, 1 = unchanged (304), 2 = changed and rendered
 int fetchAndRenderZone(const char* baseUrl, const ZoneDef& def, bool forceAll) {
     WiFiClientSecure client;
     client.setInsecure();
     HTTPClient http;
-    
-    // Find zone index for ETag cache
-    int zoneIdx = -1;
-    for (int i = 0; i < NUM_ZONES; i++) {
-        if (strcmp(ZONE_DEFS[i].id, def.id) == 0) {
-            zoneIdx = i;
-            break;
-        }
-    }
-    
-    // /api/zone/[id] returns raw BMP directly
+
     String url = String(baseUrl) + "/api/zone/" + def.id;
     if (forceAll) url += "?force=true";
-    
-    Serial.printf("Fetch %s: %s\n", def.id, url.c_str());
+
+    Serial.printf("[Fetch] %s\n", def.id);
     http.setTimeout(15000);
-    
-    if (!http.begin(client, url)) {
-        Serial.println("  HTTP begin failed");
-        return 0;
-    }
-    
-    http.addHeader("User-Agent", "CommuteCompute/" FIRMWARE_VERSION);
-    
-    // Send cached ETag for conditional request (unless force=true)
-    if (!forceAll && zoneIdx >= 0 && strlen(zoneETags[zoneIdx]) > 0) {
-        http.addHeader("If-None-Match", zoneETags[zoneIdx]);
-        Serial.printf("  ETag: %s\n", zoneETags[zoneIdx]);
-    }
-    
+
+    if (!http.begin(client, url)) return 0;
+
     int code = http.GET();
-    
-    if (code == 304) {
-        Serial.println("  Not modified (304)");
-        http.end();
-        return 1;  // Zone unchanged, success
-    }
-    
     if (code != 200) {
-        Serial.printf("  HTTP error: %d\n", code);
         http.end();
         return 0;
     }
-    
-    // Store new ETag from response
-    if (zoneIdx >= 0 && http.hasHeader("ETag")) {
-        String newETag = http.header("ETag");
-        strncpy(zoneETags[zoneIdx], newETag.c_str(), ETAG_MAX_LEN - 1);
-        zoneETags[zoneIdx][ETAG_MAX_LEN - 1] = '\0';
-        Serial.printf("  New ETag: %s\n", zoneETags[zoneIdx]);
-    }
-    
-    // Get raw BMP data size
-    int contentLen = http.getSize();
-    Serial.printf("  BMP size: %d bytes, heap: %d\n", contentLen, ESP.getFreeHeap());
-    
-    if (contentLen <= 0 || contentLen > ZONE_BMP_MAX_SIZE) {
-        Serial.printf("  Size issue: %d (max %d)\n", contentLen, ZONE_BMP_MAX_SIZE);
+
+    int len = http.getSize();
+    if (len <= 0 || len > ZONE_BMP_MAX_SIZE) {
         http.end();
         return 0;
     }
-    
-    // Read directly into BMP buffer
+
     WiFiClient* stream = http.getStreamPtr();
-    int bytesRead = stream->readBytes(zoneBmpBuffer, contentLen);
+    int read = stream->readBytes(zoneBmpBuffer, len);
     http.end();
-    
-    if (bytesRead != contentLen) {
-        Serial.printf("  Read incomplete: %d/%d\n", bytesRead, contentLen);
-        return 0;
-    }
-    
-    // Verify BMP header
-    if (zoneBmpBuffer[0] != 'B' || zoneBmpBuffer[1] != 'M') {
-        Serial.println("  Invalid BMP header");
-        return 0;
-    }
-    
-    // Render to display buffer (not refreshed yet)
+
+    if (read != len) return 0;
+    if (zoneBmpBuffer[0] != 'B' || zoneBmpBuffer[1] != 'M') return 0;
+
     int result = bbep->loadBMP(zoneBmpBuffer, def.x, def.y, BBEP_BLACK, BBEP_WHITE);
-    Serial.printf("  Rendered at (%d,%d): %s\n", def.x, def.y, result == BBEP_SUCCESS ? "OK" : "FAILED");
-    
-    return result == BBEP_SUCCESS ? 2 : 0;  // 2 = changed and rendered
+    return result == BBEP_SUCCESS ? 1 : 0;
 }
 
 bool fetchZoneUpdates(bool forceAll) {
     if (strlen(webhookUrl) == 0) return false;
-    
-    // Extract base URL from webhook URL
+
     String baseUrl = String(webhookUrl);
-    int apiIndex = baseUrl.indexOf("/api/device/");
-    if (apiIndex > 0) {
-        baseUrl = baseUrl.substring(0, apiIndex);
-    }
-    
-    Serial.printf("Sequential fetch from %s (force=%d)\n", baseUrl.c_str(), forceAll);
-    Serial.printf("Free heap: %d\n", ESP.getFreeHeap());
-    
-    // Reset change tracking
+    int idx = baseUrl.indexOf("/api/device/");
+    if (idx > 0) baseUrl = baseUrl.substring(0, idx);
+
     int rendered = 0;
-    int changed = 0;
     for (int i = 0; i < NUM_ZONES; i++) {
-        zoneChanged[i] = false;
-        int result = fetchAndRenderZone(baseUrl.c_str(), ZONE_DEFS[i], forceAll);
-        if (result > 0) rendered++;      // 1 or 2 = success
-        if (result == 2) {
-            zoneChanged[i] = true;       // 2 = changed
-            changed++;
+        if (fetchAndRenderZone(baseUrl.c_str(), ZONE_DEFS[i], forceAll)) {
+            rendered++;
         }
-        yield();  // Let WiFi/system tasks run
+        yield();
     }
-    
-    // Store count for refresh logic
-    zoneCount = rendered;
-    
-    Serial.printf("Rendered %d/%d zones, %d changed\n", rendered, NUM_ZONES, changed);
+
+    Serial.printf("[Fetch] Rendered %d/%d zones\n", rendered, NUM_ZONES);
     return rendered > 0;
-}
-
-// Anti-ghosting: flash changed zones black then white before partial refresh
-void doAntiGhostFlash() {
-    int changedCount = 0;
-    for (int i = 0; i < NUM_ZONES; i++) {
-        if (zoneChanged[i]) changedCount++;
-    }
-    
-    if (changedCount == 0) return;
-    
-    Serial.printf("Anti-ghost flash for %d zones\n", changedCount);
-    
-    // Step 1: Fill all changed zones with BLACK
-    for (int i = 0; i < NUM_ZONES; i++) {
-        if (zoneChanged[i]) {
-            bbep->fillRect(ZONE_DEFS[i].x, ZONE_DEFS[i].y, 
-                          ZONE_DEFS[i].w, ZONE_DEFS[i].h, BBEP_BLACK);
-        }
-    }
-    bbep->refresh(REFRESH_PARTIAL, true);
-    delay(100);
-    
-    // Step 2: Fill all changed zones with WHITE
-    for (int i = 0; i < NUM_ZONES; i++) {
-        if (zoneChanged[i]) {
-            bbep->fillRect(ZONE_DEFS[i].x, ZONE_DEFS[i].y, 
-                          ZONE_DEFS[i].w, ZONE_DEFS[i].h, BBEP_WHITE);
-        }
-    }
-    bbep->refresh(REFRESH_PARTIAL, true);
-    delay(100);
-    
-    Serial.println("Anti-ghost complete");
-}
-
-bool decodeAndDrawZone(Zone& zone) {
-    if (!zone.data || !zoneBmpBuffer) return false;
-    
-    size_t len = strlen(zone.data);
-    size_t dec = decode_base64_length((unsigned char*)zone.data, len);
-    
-    if (dec > ZONE_BMP_MAX_SIZE) return false;
-    
-    decode_base64((unsigned char*)zone.data, len, zoneBmpBuffer);
-    
-    if (zoneBmpBuffer[0] != 'B' || zoneBmpBuffer[1] != 'M') return false;
-    
-    int result = bbep->loadBMP(zoneBmpBuffer, zone.x, zone.y, BBEP_BLACK, BBEP_WHITE);
-    return result == BBEP_SUCCESS;
 }
 
 void doFullRefresh() {
     bbep->refresh(REFRESH_FULL, true);
-}
-
-void flashAndRefreshZone(Zone& zone) {
-    bbep->fillRect(zone.x, zone.y, zone.w, zone.h, BBEP_BLACK);
-    bbep->refresh(REFRESH_PARTIAL, true);
-    delay(150);
-    
-    if (!decodeAndDrawZone(zone)) {
-        bbep->fillRect(zone.x, zone.y, zone.w, zone.h, BBEP_WHITE);
-    }
-    
-    bbep->refresh(REFRESH_PARTIAL, true);
-    partialRefreshCount++;
 }
