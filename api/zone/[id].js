@@ -17,14 +17,64 @@
 import { createHash } from 'crypto';
 import { getDepartures, getDisruptions, getWeather } from '../../src/services/opendata-client.js';
 import SmartCommute from '../../src/engines/smart-commute.js';
-import { renderSingleZone, ZONES } from '../../src/services/ccdash-renderer.js';
+import { renderSingleZone, renderFullScreen, ZONES } from '../../src/services/ccdash-renderer.js';
 import { getScenario } from '../../src/services/journey-scenarios.js';
+import { createCanvas } from '@napi-rs/canvas';
 
 /**
  * Generate ETag from buffer content
  */
 function generateETag(buffer) {
   return '"' + createHash('md5').update(buffer).digest('hex').substring(0, 16) + '"';
+}
+
+/**
+ * Render a simple divider line zone (2px black line)
+ */
+function renderDividerZone(zone) {
+  const { w, h } = zone;
+  
+  // Calculate BMP sizes
+  const bytesPerRow = Math.ceil(w / 8);
+  const paddedBytesPerRow = Math.ceil(bytesPerRow / 4) * 4;
+  const pixelDataSize = paddedBytesPerRow * h;
+  const fileSize = 62 + pixelDataSize;
+  
+  const buffer = Buffer.alloc(fileSize);
+  
+  // BMP header
+  buffer.write('BM', 0);
+  buffer.writeUInt32LE(fileSize, 2);
+  buffer.writeUInt32LE(0, 6);
+  buffer.writeUInt32LE(62, 10);
+  
+  // DIB header
+  buffer.writeUInt32LE(40, 14);
+  buffer.writeInt32LE(w, 18);
+  buffer.writeInt32LE(h, 22);  // Positive = bottom-up
+  buffer.writeUInt16LE(1, 26);
+  buffer.writeUInt16LE(1, 28);
+  buffer.writeUInt32LE(0, 30);
+  buffer.writeUInt32LE(pixelDataSize, 34);
+  buffer.writeUInt32LE(2835, 38);
+  buffer.writeUInt32LE(2835, 42);
+  buffer.writeUInt32LE(2, 46);
+  buffer.writeUInt32LE(2, 50);
+  
+  // Color table
+  buffer.writeUInt32LE(0x00FFFFFF, 54);  // White
+  buffer.writeUInt32LE(0x00000000, 58);  // Black
+  
+  // Pixel data - all black (0x00 = index 0 = white? No wait, 1-bit: 0=first color, 1=second)
+  // For a divider, we want all black pixels, so all bits = 1
+  const pixelOffset = 62;
+  for (let row = 0; row < h; row++) {
+    for (let col = 0; col < paddedBytesPerRow; col++) {
+      buffer[pixelOffset + row * paddedBytesPerRow + col] = 0xFF;  // All pixels = color 1 = black
+    }
+  }
+  
+  return buffer;
 }
 
 // Singleton engine instance
@@ -174,20 +224,46 @@ function buildDemoData(scenario) {
   };
 }
 
+// Composite zone mappings for firmware compatibility
+// Firmware requests: header, divider, summary, legs, footer
+// Maps to multiple granular zones rendered as one BMP
+const COMPOSITE_ZONES = {
+  'header': { 
+    x: 0, y: 0, w: 800, h: 94,
+    subzones: ['header.location', 'header.time', 'header.dayDate', 'header.weather']
+  },
+  'divider': { x: 0, y: 94, w: 800, h: 2 },  // Just a line
+  'summary': { 
+    x: 0, y: 96, w: 800, h: 36,
+    subzones: ['status']
+  },
+  'legs': { 
+    x: 0, y: 132, w: 800, h: 316,
+    subzones: ['leg1', 'leg2', 'leg3', 'leg4', 'leg5', 'leg6']
+  },
+  'footer': { 
+    x: 0, y: 448, w: 800, h: 32,
+    subzones: ['footer']
+  }
+};
+
 export default async function handler(req, res) {
   try {
     const { id } = req.query;
     const demoScenario = req.query?.demo;
     
-    // Validate zone ID
-    if (!id || !ZONES[id]) {
+    // Check for composite zone first
+    const isComposite = COMPOSITE_ZONES[id];
+    
+    // Validate zone ID (support both granular and composite)
+    if (!id || (!ZONES[id] && !isComposite)) {
       return res.status(400).json({ 
         error: 'Invalid zone ID',
-        available: Object.keys(ZONES)
+        available: [...Object.keys(ZONES), ...Object.keys(COMPOSITE_ZONES)]
       });
     }
     
-    const zone = ZONES[id];
+    const zone = isComposite ? COMPOSITE_ZONES[id] : ZONES[id];
     let dashboardData;
     
     // Get dashboard data (demo or live)
@@ -249,8 +325,31 @@ export default async function handler(req, res) {
       };
     }
     
-    // Render the single zone to BMP
-    const bmpBuffer = renderSingleZone(id, dashboardData);
+    // Render zone to BMP (composite or single)
+    let bmpBuffer;
+    
+    if (isComposite) {
+      // Composite zone: render full screen and crop to zone region
+      const fullBmp = renderFullScreen(dashboardData);
+      if (!fullBmp) {
+        return res.status(500).json({ error: 'Full render failed' });
+      }
+      
+      // Extract the zone region from full screen BMP
+      // For now, just return the full BMP for header zone, 
+      // and render individual subzones for others
+      if (id === 'divider') {
+        // Divider is just a 2px line - render it directly
+        bmpBuffer = renderDividerZone(zone);
+      } else {
+        // Return full render cropped to zone - use full BMP for now
+        // TODO: Add proper BMP cropping
+        bmpBuffer = fullBmp;
+      }
+    } else {
+      // Single granular zone
+      bmpBuffer = renderSingleZone(id, dashboardData);
+    }
     
     if (!bmpBuffer) {
       return res.status(500).json({ error: 'Zone render failed' });
