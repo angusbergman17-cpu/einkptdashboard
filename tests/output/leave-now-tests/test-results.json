@@ -1,0 +1,177 @@
+[
+  {
+    "name": "01-early-morning-6am",
+    "description": "Very early start - would have shown \"LEAVE IN 45 MIN\" before",
+    "path": "/home/ubuntu/clawd/einkptdashboard/tests/output/leave-now-tests/01-early-morning-6am.png",
+    "size": 54905,
+    "success": true
+  },
+  {
+    "name": "02-buffer-30min",
+    "description": "30 minute buffer - would have shown \"LEAVE IN 30 MIN\"",
+    "path": "/home/ubuntu/clawd/einkptdashboard/tests/output/leave-now-tests/02-buffer-30min.png",
+    "size": 41243,
+    "success": true
+  },
+  {
+    "name": "03-buffer-15min",
+    "description": "15 minute buffer - edge case",
+    "path": "/home/ubuntu/clawd/einkptdashboard/tests/output/leave-now-tests/03-buffer-15min.png",
+    "size": 38832,
+    "success": true
+  },
+  {
+    "name": "04-buffer-10min",
+    "description": "10 minute buffer - just outside threshold",
+    "path": "/home/ubuntu/clawd/einkptdashboard/tests/output/leave-now-tests/04-buffer-10min.png",
+    "size": 44258,
+    "success": true
+  },
+  {
+    "name": "05-exact-timing",
+    "description": "Exact timing - no buffer",
+    "path": "/home/ubuntu/clawd/einkptdashboard/tests/output/leave-now-tests/05-exact-timing.png",
+    "size": 39459,
+    "success": true
+  },
+  {
+    "name": "06-single-delay-5min",
+    "description": "Single 5 minute delay on train",
+    "path": "/home/ubuntu/clawd/einkptdashboard/tests/output/leave-now-tests/06-single-delay-5min.png",
+    "size": 41470,
+    "success": true
+  },
+  {
+    "name": "07-multiple-delays",
+    "description": "Multiple delays on different legs",
+    "path": "/home/ubuntu/clawd/einkptdashboard/tests/output/leave-now-tests/07-multiple-delays.png",
+    "size": 52681,
+    "success": true
+  },
+  {
+    "name": "08-severe-delay-20min",
+    "description": "Severe 20+ minute delay",
+    "path": "/home/ubuntu/clawd/einkptdashboard/tests/output/leave-now-tests/08-severe-delay-20min.png",
+    "size": 40554,
+    "success": true
+  },
+  {
+    "name": "09-disruption-buses-replace",
+    "description": "Buses replacing trains disruption",
+    "path": "/home/ubuntu/clawd/einkptdashboard/tests/output/leave-now-tests/09-disruption-buses-replace.png",
+    "size": 46940,
+    "success": true
+  },
+  {
+    "name": "10-tram-diversion",
+    "description": "Tram route diversion",
+    "path": "/home/ubuntu/clawd/einkptdashboard/tests/output/leave-now-tests/10-tram-diversion.png",
+    "size": 40471,
+    "success": true
+  },
+  {
+    "name": "11-heavy-rain",
+    "description": "Heavy rain - bring umbrella",
+    "path": "/home/ubuntu/clawd/einkptdashboard/tests/output/leave-now-tests/11-heavy-rain.png",
+    "size": 39689,
+    "success": true
+  },
+  {
+    "name": "12-extreme-heat",
+    "description": "Extreme heat warning 40°C",
+    "path": "/home/ubuntu/clawd/einkptdashboard/tests/output/leave-now-tests/12-extreme-heat.png",
+    "size": 39531,
+    "success": true
+  },
+  {
+    "name": "13-freezing-cold",
+    "description": "Freezing cold morning 2°C",
+    "path": "/home/ubuntu/clawd/einkptdashboard/tests/output/leave-now-tests/13-freezing-cold.png",
+    "size": 53588,
+    "success": true
+  },
+  {
+    "name": "14-storm-warning",
+    "description": "Storm warning conditions",
+    "path": "/home/ubuntu/clawd/einkptdashboard/tests/output/leave-now-tests/14-storm-warning.png",
+    "size": 39191,
+    "success": true
+  },
+  {
+    "name": "15-simple-train-only",
+    "description": "Simple direct train journey",
+    "path": "/home/ubuntu/clawd/einkptdashboard/tests/output/leave-now-tests/15-simple-train-only.png",
+    "size": 41140,
+    "success": true
+  },
+  {
+    "name": "16-simple-tram-only",
+    "description": "Simple direct tram journey",
+    "path": "/home/ubuntu/clawd/einkptdashboard/tests/output/leave-now-tests/16-simple-tram-only.png",
+    "size": 40501,
+    "success": true
+  },
+  {
+    "name": "17-coffee-tram-train",
+    "description": "Full multi-modal with coffee",
+    "path": "/home/ubuntu/clawd/einkptdashboard/tests/output/leave-now-tests/17-coffee-tram-train.png",
+    "size": 55941,
+    "success": true
+  },
+  {
+    "name": "18-bus-train-walk",
+    "description": "Bus to train connection",
+    "path": "/home/ubuntu/clawd/einkptdashboard/tests/output/leave-now-tests/18-bus-train-walk.png",
+    "size": 51522,
+    "success": true
+  },
+  {
+    "name": "19-max-legs-6",
+    "description": "Maximum 6 journey legs",
+    "path": "/home/ubuntu/clawd/einkptdashboard/tests/output/leave-now-tests/19-max-legs-6.png",
+    "size": 54320,
+    "success": true
+  },
+  {
+    "name": "20-late-start-11am",
+    "description": "Late start - 11am arrival",
+    "path": "/home/ubuntu/clawd/einkptdashboard/tests/output/leave-now-tests/20-late-start-11am.png",
+    "size": 39120,
+    "success": true
+  },
+  {
+    "name": "21-afternoon-meeting",
+    "description": "Afternoon meeting - 2pm arrival",
+    "path": "/home/ubuntu/clawd/einkptdashboard/tests/output/leave-now-tests/21-afternoon-meeting.png",
+    "size": 39210,
+    "success": true
+  },
+  {
+    "name": "22-evening-6pm",
+    "description": "Evening commute - 6pm arrival",
+    "path": "/home/ubuntu/clawd/einkptdashboard/tests/output/leave-now-tests/22-evening-6pm.png",
+    "size": 39490,
+    "success": true
+  },
+  {
+    "name": "23-minimal-journey",
+    "description": "Minimal 10 minute journey",
+    "path": "/home/ubuntu/clawd/einkptdashboard/tests/output/leave-now-tests/23-minimal-journey.png",
+    "size": 30157,
+    "success": true
+  },
+  {
+    "name": "24-long-journey-90min",
+    "description": "Long 90 minute journey",
+    "path": "/home/ubuntu/clawd/einkptdashboard/tests/output/leave-now-tests/24-long-journey-90min.png",
+    "size": 50309,
+    "success": true
+  },
+  {
+    "name": "25-running-late",
+    "description": "Already running late scenario",
+    "path": "/home/ubuntu/clawd/einkptdashboard/tests/output/leave-now-tests/25-running-late.png",
+    "size": 38883,
+    "success": true
+  }
+]
