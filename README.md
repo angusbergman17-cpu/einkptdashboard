@@ -5,7 +5,7 @@
 ![License](https://img.shields.io/badge/license-CC%20BY--NC%204.0-blue)
 ![Version](https://img.shields.io/badge/version-3.0.0-green)
 ![Platform](https://img.shields.io/badge/platform-TRMNL%20%7C%20Kindle-orange)
-![Spec](https://img.shields.io/badge/spec-CCDash%20V11-purple)
+![Spec](https://img.shields.io/badge/spec-CCDash%20V12-purple)
 ![Firmware](https://img.shields.io/badge/firmware-CCFirm%20v6.1-blue)
 ![Anti-Brick](https://img.shields.io/badge/Anti--Brick-12%2F12%20✓-brightgreen)
 ![States](https://img.shields.io/badge/states-VIC%20%7C%20NSW%20%7C%20QLD-yellow)
@@ -251,7 +251,7 @@ The dashboard displays your complete journey at a glance:
 └────────────────────────────────────────────────────────────┘
 ```
 
-**Design Specification:** [specs/CCDashDesignV11.md](specs/CCDashDesignV11.md) (🔒 LOCKED 2026-01-31)
+**Design Specification:** [specs/CCDashDesignV12.md](specs/CCDashDesignV12.md) (🔒 LOCKED 2026-02-01)
 
 ---
 
@@ -309,7 +309,7 @@ The dashboard displays your complete journey at a glance:
 |----------|-------------|
 | **[DEVELOPMENT-RULES.md](DEVELOPMENT-RULES.md)** | 🚨 **MANDATORY** — All development rules (v1.15, 25 sections) |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture (v5.3) |
-| [specs/CCDashDesignV11.md](specs/CCDashDesignV11.md) | Dashboard design spec (🔒 LOCKED 2026-01-31) |
+| [specs/CCDashDesignV12.md](specs/CCDashDesignV12.md) | Dashboard design spec (🔒 LOCKED 2026-02-01) |
 
 ### Setup & Installation
 

@@ -3,7 +3,7 @@
 **Version:** 5.4
 **Last Updated:** 2026-02-01
 **Status:** Active
-**Specification:** CCDash™ V11 (LOCKED 2026-01-31)
+**Specification:** CCDash™ V12 (LOCKED 2026-01-31)
 **Development Rules:** v1.18 (24 sections)
 **Metro Tunnel Compliance:** ✅ Effective 2026-02-01
 **Copyright:** © 2026 Angus Bergman — CC BY-NC 4.0

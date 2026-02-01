@@ -17,8 +17,8 @@ These rules govern all development on Commute Compute. Compliance is mandatory.
 |-----------|-----------|------------|-------|
 | **System** | Commute Compute System | Commute Compute / CC | General references |
 | **Repository** | CommuteCompute | — | GitHub repo (will be renamed) |
-| **Dashboard Design** | CCDashDesignV10 | CCDash | Dashboard specification (LOCKED) |
-| **Dashboard Renderer** | CCDashRendererV13 | CCDash | Renders CCDashDesignV10 to PNG/BMP |
+| **Dashboard Design** | CCDashDesignV12 | CCDash | Dashboard specification (LOCKED) |
+| **Dashboard Renderer** | CCDashRendererV14 | CCDash | Renders CCDashDesignV12 to PNG/BMP |
 | **Multi-Device Renderer** | CC LiveDash | LiveDash | LiveDash endpoint/service |
 | **Journey Engine** | SmartCommute | SmartCommute | KEEP as-is (journey + coffee calculations) |
 
@@ -41,9 +41,9 @@ The system was previously known as "Commute Compute". Update any remaining refer
 | commute-compute | commute-compute |
 | commutecompute | commutecompute |
 | commute-compute-config | cc-config |
-| V10 Dashboard | CCDashDesignV10 |
-| V10 spec | CCDashDesignV10 spec |
-| v13 renderer | CCDashRendererV13 |
+| V10 Dashboard | CCDashDesignV12 |
+| V10 spec | CCDashDesignV12 spec |
+| v13 renderer | CCDashRendererV14 |
 | zone-renderer-v13.js | CCDashZoneRendererV13.js |
 | LiveDash (standalone) | CC LiveDash |
 
@@ -352,7 +352,7 @@ The system was previously known as "Commute Compute". Update any remaining refer
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.20 | 2026-02-01 | Angus Bergman | **HYBRID BLE + PAIRING PROVISIONING**: Added Section 21.7 — Mandatory hybrid provisioning architecture. Phase 1: BLE sends WiFi credentials only (SSID + password). Phase 2: Device connects to WiFi, displays pairing code, polls `/api/pair/[code]` for server config. Documents: why WiFiManager/captive portal crashes ESP32-C3 (0xbaad5678), two-phase flow diagram, firmware state machine, BLE characteristics (URL removed), pairing screen display, setup wizard flow, re-configuration scenarios, factory reset behavior. |
-| 1.19 | 2026-02-01 | Angus Bergman | **DEVICE PAIRING WITH VERCEL KV**: Added Section 21.6 — Device pairing system with mandatory Vercel KV persistence. Documents 6-character pairing code flow, KV storage patterns (`pair:{CODE}` with 10min TTL), device polling behavior, setup wizard integration. Fixes serverless stateless issue where in-memory stores fail across invocations. Updated version refs to CCDash V11, Architecture v5.3. |
+| 1.19 | 2026-02-01 | Angus Bergman | **DEVICE PAIRING WITH VERCEL KV**: Added Section 21.6 — Device pairing system with mandatory Vercel KV persistence. Documents 6-character pairing code flow, KV storage patterns (`pair:{CODE}` with 10min TTL), device polling behavior, setup wizard integration. Fixes serverless stateless issue where in-memory stores fail across invocations. Updated version refs to CCDash V12, Architecture v5.3. |
 | 1.18 | 2026-01-31 | Angus Bergman | **MULTI-MODAL JOURNEY SUPPORT + CCDASH V10.2-V10.3**: (1) Rewrote Section 23.7 — Multi-modal journey leg construction supporting N transit legs with interchange walks (Tram→Train, Bus→Train, etc.). (2) Added Section 23.9 — Alternative route detection (MANDATORY). Route discovery, scoring weights, multi-modal selection triggers. (3) Added delay accumulation across multiple transit legs. (4) Prohibition on hardcoded routes reinforced. Engine-only adaptation per Section 17.4. **CCDash Spec Amendments:** v10.2 DEPART time column (Section 5.6.2), actual location names (Section 5.5.1); v10.3 cafe closed detection (Section 7.2.1), FRIDAY TREAT status. |
 | 1.15 | 2026-01-31 | Angus Bergman | **SERVERLESS RENDERING & ADMIN PANEL FIXES**: (1) Added Section 10.4 — Font loading in Vercel serverless (try multiple paths: process.cwd, __dirname, /var/task). (2) Added Section 13.6 — Admin Panel JavaScript patterns (Image preload pattern to avoid onerror on empty src; KV sync before server requests). (3) Screen API now reads journey config from KV storage with random fallback when unconfigured. |
 | 1.14 | 2026-01-31 | Angus Bergman | **SYSTEM ARCHITECTURE PRINCIPLES**: Added Section 24 — complete architecture principles from ARCHITECTURE.md v4.0. Core principles (self-hosted, zero-config, no TRMNL cloud, server-side rendering, privacy-first, multi-state, free-tier). Distribution model, layer architecture, data flow, Vercel KV storage architecture, security model, free-tier architecture, multi-device support (CC LiveDash™), required endpoints, locked technology stack. |
@@ -363,7 +363,7 @@ The system was previously known as "Commute Compute". Update any remaining refer
 | 1.9 | 2026-01-31 | Angus Bergman | **ADMIN PANEL LOCALSTORAGE ARCHITECTURE**: (1) Admin panel tabs rebuilt to read from localStorage (Setup Wizard saves here). (2) Device naming: Use "TRMNL Display (OG)" not "CC E-Ink Display". (3) Firmware disclaimer required for all device references. (4) API Settings auto-populates from wizard data. (5) Added Section 3.7 (Admin Panel localStorage Keys). |
 | 1.8 | 2026-01-31 | Angus Bergman | **FIRMWARE UPDATE + ZERO-CONFIG KV STORAGE**: (1) Updated locked firmware to CC-FW-6.1-60s (commit 7336929) — 60s refresh. (2) Implemented Vercel KV storage for API keys (Section 11.8) — direct endpoints now Zero-Config compliant, no env vars required. (3) Added `src/data/kv-preferences.js` for persistent KV storage. |
 | 1.7 | 2026-01-31 | Angus Bergman | **LOCKED FIRMWARE**: Added Section 5.6 — CC-FW-6.0-STABLE locked production firmware. Hardware-verified working on TRMNL OG (commit 2f8d6cf). Documents exact flashing procedure, ESP32-C3 workarounds, modification policy. |
-| 1.6 | 2026-01-30 | Angus Bergman | **REBRAND**: Commute Compute → Commute Compute System. Added Section 0 (Naming Conventions). Updated all references: CCDashDesignV10, CC LiveDash. SmartCommute engine name retained. |
+| 1.6 | 2026-01-30 | Angus Bergman | **REBRAND**: Commute Compute → Commute Compute System. Added Section 0 (Naming Conventions). Updated all references: CCDashDesignV12, CC LiveDash. SmartCommute engine name retained. |
 | 1.5 | 2026-01-29 | Angus Bergman | Added: API Key Validation requirements (17.2) — mandatory validation for all API keys entered via admin panel including format checks, live testing, and user feedback requirements |
 | 1.4 | 2026-01-29 | Angus Bergman | Added: console.log forbidden term (1.1), 12-hour time code pattern (12.2), file naming consistency (13.5), forbidden terms grep verification (14.1.1) |
 | 1.3 | 2025-01-29 | Angus Bergman | Added full document index with version control |
@@ -1220,7 +1220,7 @@ IMAGE_URL="https://your-deployment.vercel.app/api/kindle/image"
 ## 🔒 Section 7: Spec Integrity
 
 ### 7.1 V10 Spec is Immutable
-The locked specification in `specs/CCDashDesignV10.md` cannot be modified without explicit approval from the project owner. Any changes require a new version number and formal review.
+The locked specification in `specs/CCDashDesignV12.md` cannot be modified without explicit approval from the project owner. Any changes require a new version number and formal review.
 
 ### 7.2 Zone Boundaries are Sacred
 Zone pixel coordinates defined in the spec are fixed. Never modify the x, y, width, or height of any zone. The entire system depends on these boundaries for partial refresh.
@@ -1230,7 +1230,7 @@ Each zone has exact dimensions per the specification. Content must fit within th
 
 ### 7.4 Spec-Renderer Parity (MANDATORY) 🔴
 
-**CRITICAL RULE: The CCDashRenderer MUST implement ALL elements defined in CCDashDesignV10.**
+**CRITICAL RULE: The CCDashRenderer MUST implement ALL elements defined in CCDashDesignV12.**
 
 Every visual element, state, icon, or behavior specified in `specs/CCDASH-SPEC-V10.md` MUST have a corresponding implementation in the renderer files. No exceptions.
 
@@ -1644,7 +1644,7 @@ const apiOptions = transitApiKey ? { apiKey: transitApiKey } : {};
 ## ⚙️ Section 12: Business Logic
 
 ### 12.1 CoffeeDecision is Sacred
-The CoffeeDecision engine logic is specified exactly in the CCDashDesignV10 spec. Implement it precisely as documented. No "improvements" or "optimisations" that alter the decision logic.
+The CoffeeDecision engine logic is specified exactly in the CCDashDesignV12 spec. Implement it precisely as documented. No "improvements" or "optimisations" that alter the decision logic.
 
 ### 12.2 12-hour Time Format
 All times displayed to users must be in 12-hour format with am/pm. No 24-hour time, ever. This is a deliberate UX decision.
@@ -2286,12 +2286,12 @@ The following require **explicit approval** before modification:
 
 | Element | Document | Reason |
 |---------|----------|--------|
-| Zone layout positions | CCDashDesignV10.md | UI consistency |
-| Status bar variants | CCDashDesignV10.md | User expectations |
-| Leg states | CCDashDesignV10.md | Visual language |
-| Color palette | CCDashDesignV10.md | E-ink optimization |
-| Mode icons | CCDashDesignV10.md | Brand consistency |
-| CoffeeDecision logic | CCDashDesignV10.md | Core feature |
+| Zone layout positions | CCDashDesignV12.md | UI consistency |
+| Status bar variants | CCDashDesignV12.md | User expectations |
+| Leg states | CCDashDesignV12.md | Visual language |
+| Color palette | CCDashDesignV12.md | E-ink optimization |
+| Mode icons | CCDashDesignV12.md | Brand consistency |
+| CoffeeDecision logic | CCDashDesignV12.md | Core feature |
 | Anti-brick rules | This document | Device safety |
 
 ### 18.2 Modification Process
@@ -3732,7 +3732,7 @@ git push origin v3.0.0        # Push tag
 
 | Topic | Document |
 |-------|----------|
-| Dashboard Specification | `specs/CCDashDesignV10.md` |
+| Dashboard Specification | `specs/CCDashDesignV12.md` |
 | System Architecture | `docs/SYSTEM-ARCHITECTURE.md` |
 | Distribution Guide | `DISTRIBUTION.md` |
 | Firmware Anti-Brick | `firmware/ANTI-BRICK-REQUIREMENTS.md` |
