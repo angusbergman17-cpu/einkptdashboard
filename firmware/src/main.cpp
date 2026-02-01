@@ -143,9 +143,8 @@ uint8_t* zoneBmpBuffer = nullptr;
 
 void initDisplay();
 void showBootScreen();
-void showBLESetupScreen();
+void showSetupScreen();
 void showConnectingScreen();
-void showPairingScreen();
 void showPairedScreen();
 void showErrorScreen(const char* msg);
 void loadSettings();
@@ -329,17 +328,25 @@ void loop() {
         // ==== BLE SETUP ====
         case STATE_BLE_SETUP: {
             static bool bleInit = false;
+            static bool screenShown = false;
 
             if (!bleInit) {
-                showBLESetupScreen();
+                // Generate pairing code early (will show blank until WiFi connects)
+                generatePairingCode();
                 initBLE();
                 bleInit = true;
+            }
+
+            if (!screenShown) {
+                showSetupScreen();
+                screenShown = true;
             }
 
             if (bleCredentialsReceived) {
                 Serial.println("[BLE] Credentials received!");
                 stopBLE();
                 bleInit = false;
+                screenShown = false;
                 currentState = STATE_WIFI_CONNECT;
             }
 
@@ -356,7 +363,14 @@ void loop() {
                 wifiConnected = true;
                 Serial.printf("[OK] Connected: %s\n", WiFi.localIP().toString().c_str());
                 consecutiveErrors = 0;
-                currentState = STATE_CHECK_PAIRING;
+
+                // If credentials came from BLE and include webhookUrl, go straight to dashboard
+                if (devicePaired && strlen(webhookUrl) > 0) {
+                    currentState = STATE_FETCH_DASHBOARD;
+                } else {
+                    // WiFi connected but not paired - show unified setup screen with pairing code
+                    currentState = STATE_SHOW_PAIRING;
+                }
             } else {
                 Serial.println("[ERROR] WiFi failed");
                 consecutiveErrors++;
@@ -388,10 +402,12 @@ void loop() {
             break;
         }
 
-        // ==== SHOW PAIRING SCREEN ====
+        // ==== SHOW UNIFIED SETUP SCREEN (WiFi connected, awaiting pairing) ====
         case STATE_SHOW_PAIRING: {
-            generatePairingCode();
-            showPairingScreen();
+            if (strlen(pairingCode) == 0) {
+                generatePairingCode();
+            }
+            showSetupScreen();  // Unified screen with both BLE and pairing code
             pairingStartTime = millis();
             lastPollTime = 0;
             currentState = STATE_POLL_PAIRING;
@@ -619,33 +635,69 @@ void showBootScreen() {
     lastFullRefresh = millis();
 }
 
-void showBLESetupScreen() {
+void showSetupScreen() {
+    // Unified setup screen - shows BOTH BLE and pairing code options
     bbep->fillScreen(BBEP_WHITE);
     bbep->setFont(FONT_8x8);
     bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
 
+    // Logo at top
     int smallX = (SCREEN_W - LOGO_SMALL_W) / 2;
-    bbep->loadBMP(LOGO_SMALL, smallX, 10, BBEP_BLACK, BBEP_WHITE);
+    bbep->loadBMP(LOGO_SMALL, smallX, 5, BBEP_BLACK, BBEP_WHITE);
 
-    bbep->setCursor(300, 160); bbep->print("BLUETOOTH SETUP");
+    // Title
+    bbep->setCursor(340, 145); bbep->print("DEVICE SETUP");
 
-    bbep->drawRect(80, 185, 640, 200, BBEP_BLACK);
+    // Instructions box
+    bbep->drawRect(60, 165, 680, 120, BBEP_BLACK);
+    bbep->setCursor(80, 180); bbep->print("1. Go to: einkptdashboard.vercel.app/setup-wizard.html");
+    bbep->setCursor(80, 200); bbep->print("2. Complete setup steps 1-4");
+    bbep->setCursor(80, 220); bbep->print("3. In Step 5, select TRMNL Display (OG)");
+    bbep->setCursor(80, 240); bbep->print("4. Choose your preferred connection method below:");
 
-    bbep->setCursor(100, 205); bbep->print("1. Open setup wizard in Chrome/Edge");
-    bbep->setCursor(100, 230); bbep->print("2. Complete steps 1-4 (API keys, addresses)");
-    bbep->setCursor(100, 255); bbep->print("3. Select your TRMNL device");
-    bbep->setCursor(100, 280); bbep->print("4. Enter WiFi credentials");
-    bbep->setCursor(100, 305); bbep->print("5. Click 'Connect to Display via Bluetooth'");
-    bbep->setCursor(100, 330); bbep->print("6. Select this device from the list");
+    // Two-column layout for BLE and Pairing Code
 
+    // Left column: Bluetooth
+    bbep->fillRect(60, 295, 330, 100, BBEP_BLACK);
+    bbep->setTextColor(BBEP_WHITE, BBEP_BLACK);
+    bbep->setCursor(140, 305); bbep->print("OPTION A: BLUETOOTH");
+    bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
+    bbep->drawRect(70, 320, 310, 65, BBEP_BLACK);
     uint8_t mac[6];
     WiFi.macAddress(mac);
-    bbep->setCursor(250, 365);
-    bbep->printf("Device: CommuteCompute-%02X%02X", mac[4], mac[5]);
+    bbep->setCursor(110, 335); bbep->print("Click 'Connect via Bluetooth'");
+    bbep->setCursor(110, 355); bbep->printf("Select: CommuteCompute-%02X%02X", mac[4], mac[5]);
+    bbep->setCursor(110, 375); bbep->print("(Chrome/Edge only)");
 
-    bbep->drawLine(50, 420, 750, 420, BBEP_BLACK);
-    bbep->setCursor(220, 440); bbep->print("(c) 2026 Angus Bergman - CC BY-NC 4.0");
-    bbep->setCursor(360, 460); bbep->print("v" FIRMWARE_VERSION);
+    // Right column: Pairing Code
+    bbep->fillRect(410, 295, 330, 100, BBEP_BLACK);
+    bbep->setTextColor(BBEP_WHITE, BBEP_BLACK);
+    bbep->setCursor(480, 305); bbep->print("OPTION B: PAIRING CODE");
+    bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
+
+    // Pairing code display (if generated)
+    if (strlen(pairingCode) > 0) {
+        bbep->fillRect(430, 325, 290, 45, BBEP_BLACK);
+        bbep->setTextColor(BBEP_WHITE, BBEP_BLACK);
+        bbep->setCursor(500, 340);
+        for (int i = 0; i < 6; i++) {
+            bbep->print(pairingCode[i]); bbep->print(" ");
+        }
+        bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
+        bbep->setCursor(460, 380); bbep->print("Enter code in wizard");
+    } else {
+        bbep->drawRect(420, 320, 310, 65, BBEP_BLACK);
+        bbep->setCursor(450, 345); bbep->print("Waiting for WiFi...");
+        bbep->setCursor(450, 365); bbep->print("Code appears after connect");
+    }
+
+    // Status line
+    bbep->setCursor(280, 420); bbep->print("Waiting for configuration...");
+
+    // Footer
+    bbep->drawLine(50, 440, 750, 440, BBEP_BLACK);
+    bbep->setCursor(220, 455); bbep->print("(c) 2026 Angus Bergman - CC BY-NC 4.0");
+    bbep->setCursor(360, 470); bbep->print("v" FIRMWARE_VERSION);
 
     bbep->refresh(REFRESH_FULL, true);
 }
@@ -664,35 +716,7 @@ void showConnectingScreen() {
     bbep->refresh(REFRESH_FULL, true);
 }
 
-void showPairingScreen() {
-    bbep->fillScreen(BBEP_WHITE);
-    bbep->setFont(FONT_8x8);
-    bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
-
-    int smallX = (SCREEN_W - LOGO_SMALL_W) / 2;
-    bbep->loadBMP(LOGO_SMALL, smallX, 5, BBEP_BLACK, BBEP_WHITE);
-
-    bbep->setCursor(352, 155); bbep->print("DEVICE SETUP");
-
-    bbep->setCursor(120, 190); bbep->print("WiFi connected! Now complete setup:");
-    bbep->setCursor(120, 220); bbep->print("1. Go to: einkptdashboard.vercel.app");
-    bbep->setCursor(120, 245); bbep->print("2. Complete the setup wizard");
-    bbep->setCursor(120, 270); bbep->print("3. Enter this pairing code:");
-
-    bbep->fillRect(270, 300, 260, 50, BBEP_BLACK);
-    bbep->setTextColor(BBEP_WHITE, BBEP_BLACK);
-    bbep->setCursor(330, 318);
-    for (int i = 0; i < 6; i++) {
-        bbep->print(pairingCode[i]); bbep->print(" ");
-    }
-
-    bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
-    bbep->setCursor(300, 375); bbep->print("Waiting for pairing...");
-    bbep->setCursor(288, 420); bbep->print("(c) 2026 Angus Bergman");
-    bbep->setCursor(360, 450); bbep->print("v" FIRMWARE_VERSION);
-
-    bbep->refresh(REFRESH_FULL, true);
-}
+// showPairingScreen removed - unified into showSetupScreen()
 
 void showPairedScreen() {
     bbep->fillScreen(BBEP_WHITE);

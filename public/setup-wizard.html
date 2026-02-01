@@ -363,16 +363,162 @@
                 <div class="step" id="step-5-indicator">5</div>
             </div>
 
-            <!-- Step 1: Google Places API Key -->
+            <!-- Step 1: Device Setup + WiFi + Factory Reset -->
             <div class="step-content active" id="step-1">
-                <h2 style="margin-bottom: 20px;"><svg class="icon"><use href="#icon-key"/></svg> Step 1: Google Places API Key (Recommended)</h2>
-                <p style="color: #718096; margin-bottom: 25px;">
-                    For accurate address geocoding, we recommend adding your <strong>Google Places API (new)</strong> key. This will be saved and tested before proceeding.
+                <h2 style="margin-bottom: 20px;"><svg class="icon"><use href="#icon-tv"/></svg> Step 1: Connect Your Display</h2>
+                <p style="color: #94a3b8; margin-bottom: 20px;">
+                    Set up your e-ink display with WiFi credentials. If you don't have a display, you can skip this step and use the web dashboard only.
+                </p>
+
+                <!-- Device Selection -->
+                <div class="form-group">
+                    <label class="form-label">Select Your Device</label>
+                    <select id="device-select" class="form-input" onchange="updateDeviceSection()">
+                        <option value="">No e-ink device (web dashboard only)</option>
+                        <option value="trmnl-og">TRMNL Display (OG) - 7.5" 800x480</option>
+                        <option value="trmnl-mini" disabled>TRMNL Display (Mini) - Coming Soon</option>
+                        <optgroup label="Kindle Devices (Jailbreak Required)">
+                            <option value="kindle-pw3">Kindle Paperwhite 3 (6" - 1072x1448)</option>
+                            <option value="kindle-pw4">Kindle Paperwhite 4 (6" - 1072x1448)</option>
+                            <option value="kindle-pw5">Kindle Paperwhite 5 (6.8" - 1236x1648)</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <!-- Device Info (shows when TRMNL selected) -->
+                <div id="device-info-panel" style="display: none; margin-top: 15px; padding: 15px; background: rgba(79, 178, 142, 0.1); border-radius: 8px; border-left: 3px solid #4fb28e;">
+                    <div style="font-size: 11px; color: #fbbf24; margin-bottom: 10px;">
+                        <svg class="icon-sm"><use href="#icon-warning"/></svg> Requires flashing with Commute Compute custom firmware (CCFirm)
+                    </div>
+                </div>
+
+                <!-- WiFi + BLE Provisioning Section (shows when TRMNL selected) -->
+                <div id="wifi-provision-section" style="display: none; margin-top: 20px;">
+                    <h3 style="font-size: 16px; margin-bottom: 15px; color: #f1f5f9;">WiFi Configuration</h3>
+
+                    <!-- BLE Provisioning (Primary Method) -->
+                    <div style="padding: 18px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(168, 85, 247, 0.15) 100%); border: 2px solid #667eea; border-radius: 10px; margin-bottom: 15px;">
+                        <div style="font-weight: 600; margin-bottom: 12px; font-size: 15px; color: #667eea; display: flex; align-items: center; gap: 8px;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M6.5 6.5l11 11L12 23V1l5.5 5.5-11 11"/>
+                            </svg>
+                            Option A: Connect via Bluetooth (Recommended)
+                        </div>
+                        <p style="color: #f1f5f9; font-size: 13px; margin-bottom: 15px; line-height: 1.5;">
+                            Send WiFi credentials directly to your display via Bluetooth. No captive portal needed.
+                        </p>
+
+                        <!-- WiFi Credentials -->
+                        <div style="display: grid; gap: 12px; margin-bottom: 15px;">
+                            <div>
+                                <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">WiFi Network</label>
+                                <div style="position: relative;">
+                                    <select id="ble-wifi-ssid-select"
+                                        style="display: none; width: 100%; padding: 12px; font-size: 14px; background: rgba(0,0,0,0.3); border: 1px solid rgba(102, 126, 234, 0.5); border-radius: 6px; color: #f1f5f9; cursor: pointer;"
+                                        onchange="document.getElementById('ble-wifi-ssid').value = this.value;">
+                                        <option value="">Select a network...</option>
+                                    </select>
+                                    <input type="text" id="ble-wifi-ssid"
+                                        placeholder="Your WiFi network name"
+                                        style="width: 100%; padding: 12px; font-size: 14px; background: rgba(0,0,0,0.3); border: 1px solid rgba(102, 126, 234, 0.5); border-radius: 6px; color: #f1f5f9;">
+                                    <div id="ble-wifi-scan-hint" style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
+                                        Network list will appear after connecting to device
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">WiFi Password</label>
+                                <input type="password" id="ble-wifi-password"
+                                    placeholder="Your WiFi password"
+                                    style="width: 100%; padding: 12px; font-size: 14px; background: rgba(0,0,0,0.3); border: 1px solid rgba(102, 126, 234, 0.5); border-radius: 6px; color: #f1f5f9;">
+                            </div>
+                        </div>
+
+                        <!-- Connect Button -->
+                        <button type="button" id="ble-connect-btn" onclick="connectViaBluetooth()"
+                            style="width: 100%; padding: 14px; font-size: 15px; font-weight: 600; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 8px; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M6.5 6.5l11 11L12 23V1l5.5 5.5-11 11"/>
+                            </svg>
+                            Connect to Display via Bluetooth
+                        </button>
+
+                        <!-- Status -->
+                        <div id="ble-status" style="margin-top: 12px; text-align: center; font-size: 13px;"></div>
+
+                        <p style="color: #94a3b8; font-size: 11px; margin-top: 12px; text-align: center;">
+                            Requires Chrome or Edge browser. Your display must show "DEVICE SETUP" screen.
+                        </p>
+                    </div>
+
+                    <!-- Pairing Code (Fallback Method) -->
+                    <div style="text-align: center; position: relative; margin: 20px 0;">
+                        <span style="background: #2a3d5f; padding: 0 12px; color: #94a3b8; font-size: 12px; position: relative; z-index: 1;">OR use pairing code</span>
+                        <div style="position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: rgba(255,255,255,0.1);"></div>
+                    </div>
+
+                    <div style="padding: 18px; background: linear-gradient(135deg, rgba(79, 178, 142, 0.15) 0%, rgba(34, 197, 94, 0.1) 100%); border: 1px solid rgba(79, 178, 142, 0.3); border-radius: 10px;">
+                        <div style="font-weight: 600; margin-bottom: 12px; font-size: 14px; color: #4fb28e; display: flex; align-items: center; gap: 8px;">
+                            <svg class="icon"><use href="#icon-link"/></svg>
+                            Option B: Enter Display Pairing Code
+                        </div>
+                        <p style="color: #94a3b8; font-size: 12px; margin-bottom: 12px; line-height: 1.5;">
+                            If Bluetooth isn't available, enter the <strong>6-character code</strong> shown on your display (requires WiFi already configured on device).
+                        </p>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <input type="text" id="device-pairing-code"
+                                placeholder="A7X9K2"
+                                maxlength="6"
+                                style="flex: 1; padding: 12px; font-size: 20px; font-family: monospace; text-transform: uppercase; letter-spacing: 4px; text-align: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(79, 178, 142, 0.5); border-radius: 8px; color: #f1f5f9; font-weight: bold;"
+                                oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 6); validatePairingCode();">
+                            <span id="pairing-code-status" style="font-size: 20px;"></span>
+                        </div>
+                        <p style="color: #64748b; font-size: 10px; margin-top: 8px;">
+                            Code expires after 10 minutes.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Factory Reset Section -->
+                <div id="factory-reset-section" style="display: none; margin-top: 25px; padding: 15px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px;">
+                    <div style="font-weight: 600; margin-bottom: 10px; font-size: 14px; color: #ef4444; display: flex; align-items: center; gap: 8px;">
+                        <svg class="icon"><use href="#icon-refresh"/></svg>
+                        Factory Reset Device
+                    </div>
+                    <p style="color: #94a3b8; font-size: 12px; margin-bottom: 12px;">
+                        Clear all stored WiFi credentials and pairing data from your device. Use this if you need to reconfigure or move to a new network.
+                    </p>
+                    <button type="button" onclick="factoryResetDevice()"
+                        style="padding: 10px 20px; font-size: 13px; font-weight: 600; background: #ef4444; border: none; border-radius: 6px; color: white; cursor: pointer;">
+                        Reset Device Settings
+                    </button>
+                    <div id="reset-status" style="margin-top: 10px; font-size: 12px;"></div>
+                </div>
+
+                <!-- Skip info for web-only users -->
+                <div id="web-only-info" style="margin-top: 20px; padding: 15px; background: rgba(79, 178, 142, 0.1); border-radius: 8px; border-left: 3px solid #4fb28e;">
+                    <p style="color: #f1f5f9; font-size: 13px; margin: 0;">
+                        <strong>No device?</strong> No problem! You can still use the web dashboard to view your commute information on any browser.
+                    </p>
+                </div>
+
+                <div class="btn-row" style="margin-top: 25px;">
+                    <button type="button" class="btn" onclick="nextStep(1)" id="step-1-next-btn">
+                        Next: Google Places API →
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 2: Google Places API Key -->
+            <div class="step-content" id="step-2">
+                <h2 style="margin-bottom: 20px;"><svg class="icon"><use href="#icon-key"/></svg> Step 2: Google Places API Key (Recommended)</h2>
+                <p style="color: #94a3b8; margin-bottom: 25px;">
+                    For accurate address geocoding, we recommend adding your <strong>Google Places API (new)</strong> key.
                 </p>
 
                 <div class="info-box">
                     <strong>Why is this recommended?</strong><br>
-                    Google Places provides highly accurate address autocomplete. However, you can <strong>skip this</strong> — we'll use free OpenStreetMap geocoding instead, which works great for Australian addresses.
+                    Google Places provides highly accurate address autocomplete. However, you can <strong>skip this</strong> — we'll use free OpenStreetMap geocoding instead.
                 </div>
 
                 <div class="form-group" style="margin-top: 25px;">
@@ -381,9 +527,6 @@
                     <a href="https://console.cloud.google.com/apis/library/places-backend.googleapis.com" target="_blank" style="font-size: 13px; color: #4fb28e; display: block; margin-top: 8px;">
                         Get Google Places API key (has free tier) →
                     </a>
-                    <small style="font-size: 12px; color: #a0aec0; display: block; margin-top: 5px;">
-                        Note: Use the modern "Places API (new)", not the legacy version
-                    </small>
                 </div>
 
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
@@ -396,48 +539,22 @@
                 </div>
 
                 <div id="api-key-status" style="margin-top: 15px; display: none;"></div>
-
-                <!-- Warning box for skipping -->
-                <div id="skip-warning" style="display: none; margin-top: 20px; padding: 15px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px;">
-                    <strong style="color: #856404;"><svg class="icon-sm"><use href="#icon-warning"/></svg> Limited Features Without API Key</strong>
-                    <p style="color: #856404; font-size: 13px; margin-top: 8px; margin-bottom: 0;">
-                        Without the Google Places API key:
-                    </p>
-                    <ul style="color: #856404; font-size: 13px; margin: 10px 0 0 20px;">
-                        <li>Address lookups may fail or be inaccurate</li>
-                        <li><strong>Smart Journey Planner will not work</strong></li>
-                        <li>You'll need to manually configure your entire route</li>
-                    </ul>
-                    <p style="color: #856404; font-size: 13px; margin-top: 10px; margin-bottom: 0;">
-                        <strong><svg class="icon-sm" style="color: #22c55e;"><use href="#icon-check-circle"/></svg> Still works:</strong> Intelligent transit mode communication and real-time service updates
+                <div id="skip-warning" style="display: none; margin-top: 20px; padding: 15px; background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 8px;">
+                    <strong style="color: #fbbf24;"><svg class="icon-sm"><use href="#icon-warning"/></svg> Using OpenStreetMap</strong>
+                    <p style="color: #94a3b8; font-size: 13px; margin-top: 8px; margin-bottom: 0;">
+                        Address autocomplete will use OpenStreetMap. This works well for Australian addresses.
                     </p>
                 </div>
 
-                <button type="button" class="btn" onclick="nextStep(1)" id="step-1-next-btn" style="margin-top: 20px; display: none;">
-                    Next: Your Addresses →
-                </button>
-
-                <!-- Factory Reset Section -->
-                <details style="margin-top: 40px; border-top: 1px solid #3d5278; padding-top: 20px;">
-                    <summary style="cursor: pointer; color: #94a3b8; font-size: 13px; user-select: none;">
-                        <svg class="icon-sm" style="vertical-align: middle;"><use href="#icon-settings"/></svg>
-                        Advanced: Factory Reset
-                    </summary>
-                    <div style="margin-top: 15px; padding: 15px; background: #1a2744; border: 1px solid #3d5278; border-radius: 4px;">
-                        <p style="color: #f87171; font-size: 13px; margin-bottom: 15px;">
-                            <strong>⚠️ Warning:</strong> This will permanently delete all configuration, API keys, device pairings, and cached data. Use only if you need a completely fresh start.
-                        </p>
-                        <button type="button" class="btn" onclick="performFactoryReset()" id="factory-reset-btn" style="background: #dc2626; width: auto; padding: 10px 20px;">
-                            <svg class="icon-sm"><use href="#icon-trash"/></svg> Factory Reset
-                        </button>
-                        <div id="factory-reset-status" style="margin-top: 10px; display: none;"></div>
-                    </div>
-                </details>
+                <div class="btn-row" style="margin-top: 20px;">
+                    <button type="button" class="btn btn-secondary" onclick="previousStep(2)">← Back</button>
+                    <button type="button" class="btn" onclick="nextStep(2)" id="step-2-next-btn" style="display: none;">Next: Your Addresses →</button>
+                </div>
             </div>
 
-            <!-- Step 2: Addresses -->
-            <div class="step-content" id="step-2">
-                <h2 style="margin-bottom: 20px;"><svg class="icon"><use href="#icon-pin"/></svg> Step 2: Your Addresses</h2>
+            <!-- Step 3: Addresses -->
+            <div class="step-content" id="step-3">
+                <h2 style="margin-bottom: 20px;"><svg class="icon"><use href="#icon-pin"/></svg> Step 3: Your Addresses</h2>
                 <p style="color: #718096; margin-bottom: 25px;">
                     Enter your home and work addresses. We'll automatically detect your state and suggest the right transit authority.
                 </p>
@@ -465,62 +582,60 @@
                 </div>
 
                 <div class="btn-row">
-                    <button type="button" class="btn btn-secondary" onclick="previousStep(2)">← Back</button>
-                    <button type="button" class="btn" onclick="nextStep(2)">Next: Transit Authority →</button>
+                    <button type="button" class="btn btn-secondary" onclick="previousStep(3)">← Back</button>
+                    <button type="button" class="btn" onclick="nextStep(3)">Next: Transit Authority →</button>
                 </div>
             </div>
 
-            <!-- Step 3: Transit Authority -->
-            <div class="step-content" id="step-3">
-                <h2 style="margin-bottom: 20px;"><svg class="icon"><use href="#icon-train"/></svg> Step 3: Transit Authority</h2>
-                <p style="color: #718096; margin-bottom: 25px;">
+            <!-- Step 4: Transit Authority -->
+            <div class="step-content" id="step-4">
+                <h2 style="margin-bottom: 20px;"><svg class="icon"><use href="#icon-train"/></svg> Step 4: Transit Authority</h2>
+                <p style="color: #94a3b8; margin-bottom: 25px;">
                     We've detected your location. Please confirm or choose your transit authority.
                 </p>
 
                 <div id="authority-list"></div>
 
                 <div class="btn-row">
-                    <button type="button" class="btn btn-secondary" onclick="previousStep(3)">← Back</button>
-                    <button type="button" class="btn" onclick="nextStep(3)">Next: Transit API Credentials →</button>
-                </div>
-            </div>
-
-            <!-- Step 4: Transit API Credentials -->
-            <div class="step-content" id="step-4">
-                <h2 style="margin-bottom: 20px;"><svg class="icon"><use href="#icon-key"/></svg> Step 4: Transit API Key (Optional)</h2>
-                <p style="color: #a0aec0; margin-bottom: 15px;">
-                    For <strong>real-time</strong> transit data, enter your API key. Without it, we'll use <strong>timetable data</strong> as a fallback.
-                </p>
-
-                <div class="info-box" style="background: rgba(79, 178, 142, 0.1); border-left: 3px solid #4fb28e; padding: 12px 15px; margin-bottom: 20px; border-radius: 6px;">
-                    <strong style="color: #a0aec0;">Why get an API key?</strong><br>
-                    <span style="color: #718096; font-size: 13px;">Real-time data shows live delays, cancellations, and accurate arrival times. Timetable fallback uses scheduled times only.</span>
-                </div>
-
-                <div id="api-info" class="info-box"></div>
-
-                <div id="api-credentials-form"></div>
-
-                <div id="transit-api-status" style="margin: 15px 0; display: none;"></div>
-
-                <div class="btn-row" style="gap: 10px;">
                     <button type="button" class="btn btn-secondary" onclick="previousStep(4)">← Back</button>
-                    <button type="button" class="btn" id="save-transit-key-btn" onclick="saveAndTestTransitKey()" style="background: #48bb78;"><svg class="icon-sm"><use href="#icon-save"/></svg> Save & Test</button>
-                    <button type="button" class="btn" id="skip-transit-btn" onclick="skipTransitKey()" style="background: #718096;">Skip for Now</button>
-                </div>
-                <div id="step-4-next-btn" style="display: none; margin-top: 15px;">
-                    <button type="button" class="btn" onclick="nextStep(4)" style="width: 100%;">Next: Journey Settings →</button>
+                    <button type="button" class="btn" onclick="nextStep(4)">Next: Journey Settings →</button>
                 </div>
             </div>
 
-            <!-- Step 5: Journey Settings -->
+            <!-- Step 5: Journey Settings + Transit API + Complete -->
             <div class="step-content" id="step-5">
                 <form novalidate onsubmit="return false;">
-                    <h2 style="margin-bottom: 20px;"><svg class="icon"><use href="#icon-clock"/></svg> Step 5: Journey Preferences</h2>
-                    <p style="color: #718096; margin-bottom: 25px;">
-                        When do you need to arrive at work?
+                    <h2 style="margin-bottom: 20px;"><svg class="icon"><use href="#icon-clock"/></svg> Step 5: Journey Settings</h2>
+                    <p style="color: #94a3b8; margin-bottom: 25px;">
+                        Configure your commute preferences and optional real-time transit API.
                     </p>
 
+                    <!-- Transit API Key Section -->
+                    <div style="padding: 18px; background: rgba(79, 178, 142, 0.1); border: 1px solid rgba(79, 178, 142, 0.3); border-radius: 10px; margin-bottom: 25px;">
+                        <h3 style="font-size: 15px; margin-bottom: 12px; color: #4fb28e;">
+                            <svg class="icon-sm"><use href="#icon-key"/></svg> Transit API Key (Optional)
+                        </h3>
+                        <p style="color: #94a3b8; font-size: 13px; margin-bottom: 15px;">
+                            For real-time delays and cancellations. Without it, we'll use timetable data.
+                        </p>
+
+                        <div id="api-info" class="info-box" style="margin-bottom: 15px;"></div>
+                        <div id="api-credentials-form"></div>
+                        <div id="transit-api-status" style="margin: 10px 0; display: none;"></div>
+
+                        <div style="display: flex; gap: 10px;">
+                            <button type="button" id="save-transit-key-btn" onclick="saveAndTestTransitKey()"
+                                style="flex: 1; padding: 10px; font-size: 13px; background: #48bb78; border: none; border-radius: 6px; color: white; cursor: pointer;">
+                                <svg class="icon-sm"><use href="#icon-save"/></svg> Save & Test
+                            </button>
+                            <button type="button" id="skip-transit-btn" onclick="skipTransitKey()"
+                                style="flex: 1; padding: 10px; font-size: 13px; background: #64748b; border: none; border-radius: 6px; color: white; cursor: pointer;">
+                                Skip (Timetable Only)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Journey Preferences -->
                     <div class="form-group">
                         <label class="form-label">Arrival Time at Work</label>
                         <input type="text" id="arrival-time" class="form-input" value="09:00" placeholder="e.g. 09:00" autocomplete="off" inputmode="text">
@@ -546,142 +661,6 @@
                                 <input type="radio" name="api-mode" value="live" style="margin-right: 8px;">
                                 <span><strong>Live Mode</strong> — Real-time cafe busy-ness (uses Google API)</span>
                             </label>
-                        </div>
-                        <small style="color: #718096; display: block; margin-top: 10px;">
-                            Free Mode caches all location data during setup. Live Mode fetches real-time cafe status but requires Google Places API credits.
-                        </small>
-                    </div>
-
-                    <!-- Optional: E-Ink Device Selection -->
-                    <div style="margin-top: 25px; border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; overflow: hidden;">
-                        <button type="button" onclick="toggleDeviceSection()" 
-                            style="width: 100%; padding: 15px 20px; background: rgba(102, 126, 234, 0.1); border: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; color: #f1f5f9;">
-                            <span style="display: flex; align-items: center; gap: 10px; font-weight: 600;">
-                                <svg class="icon"><use href="#icon-tv"/></svg>
-                                E-Ink Display Configuration (Optional)
-                            </span>
-                            <span id="device-section-arrow" style="font-size: 18px; transition: transform 0.2s;">▼</span>
-                        </button>
-                        
-                        <div id="device-section-content" style="display: none; padding: 20px; background: rgba(0,0,0,0.1);">
-                            <p style="color: #94a3b8; font-size: 13px; margin-bottom: 15px;">
-                                If you have a CC E-Ink display, select your device model below. Skip this if you just want to use the web dashboard.
-                            </p>
-                            
-                            <div class="form-group">
-                                <label class="form-label">Select Your Device</label>
-                                <select id="device-select" class="form-input" onchange="updateDevicePreview()">
-                                    <option value="">— No e-ink device (web only) —</option>
-                                    <option value="trmnl-og">TRMNL Display (OG) — 7.5" 800×480</option>
-                                    <option value="trmnl-mini" disabled>TRMNL Display (Mini) — Coming Soon</option>
-                                    <optgroup label="Kindle Devices (Jailbreak Required)">
-                                        <option value="kindle-pw3">Kindle Paperwhite 3 (6" - 1072×1448)</option>
-                                        <option value="kindle-pw4">Kindle Paperwhite 4 (6" - 1072×1448)</option>
-                                        <option value="kindle-pw5">Kindle Paperwhite 5 (6.8" - 1236×1648)</option>
-                                    </optgroup>
-                                </select>
-                            </div>
-                            
-                            <!-- Device Model Warning for CC E-Ink -->
-                            <div id="trmnl-model-warning" style="display: none; margin-top: 15px; padding: 12px; background: rgba(234, 88, 12, 0.1); border: 1px solid rgba(234, 88, 12, 0.3); border-radius: 8px;">
-                                <div style="font-size: 12px; color: rgba(255,255,255,0.9); line-height: 1.5;">
-                                    <strong><svg class="icon-sm"><use href="#icon-warning"/></svg> Important:</strong> Check the back of your device for the model number.
-                                    Only CC Display OG is currently supported. Display X firmware coming soon.
-                                </div>
-                            </div>
-                            
-                            <div id="device-preview" style="display: none; margin-top: 15px; padding: 15px; background: rgba(79, 178, 142, 0.1); border-radius: 8px; border-left: 3px solid #4fb28e;">
-                                <div style="font-weight: 600; margin-bottom: 8px; font-size: 14px;" id="device-preview-name">TRMNL Display (OG)</div>
-                                <div style="font-size: 12px; color: #94a3b8; line-height: 1.6;" id="device-preview-specs">
-                                    Resolution: 800×480 pixels • Orientation: Landscape • Chip: ESP32
-                                </div>
-                                <div style="font-size: 11px; color: #fbbf24; margin-top: 8px;">
-                                    <svg class="icon-sm"><use href="#icon-warning"/></svg> Requires flashing with Commute Compute custom firmware
-                                </div>
-                            </div>
-
-                            <!-- BLE Provisioning Section (Recommended) -->
-                            <div id="ble-provision-section" style="display: none; margin-top: 20px; padding: 18px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(168, 85, 247, 0.15) 100%); border: 2px solid #667eea; border-radius: 10px;">
-                                <div style="font-weight: 600; margin-bottom: 12px; font-size: 15px; color: #667eea; display: flex; align-items: center; gap: 8px;">
-                                    <svg class="icon"><use href="#icon-smartphone"/></svg>
-                                    Connect via Bluetooth (Recommended)
-                                </div>
-                                <p style="color: #f1f5f9; font-size: 13px; margin-bottom: 15px; line-height: 1.5;">
-                                    Send WiFi credentials directly to your display via Bluetooth.<br>
-                                    <strong>No captive portal needed</strong> - faster and more reliable.
-                                </p>
-
-                                <!-- WiFi Credentials -->
-                                <div style="display: grid; gap: 12px; margin-bottom: 15px;">
-                                    <div>
-                                        <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">WiFi Network</label>
-                                        <div style="position: relative;">
-                                            <select id="ble-wifi-ssid-select"
-                                                style="display: none; width: 100%; padding: 12px; font-size: 14px; background: rgba(0,0,0,0.3); border: 1px solid rgba(102, 126, 234, 0.5); border-radius: 6px; color: #f1f5f9; cursor: pointer;"
-                                                onchange="document.getElementById('ble-wifi-ssid').value = this.value;">
-                                                <option value="">Select a network...</option>
-                                            </select>
-                                            <input type="text" id="ble-wifi-ssid"
-                                                placeholder="Your WiFi network"
-                                                style="width: 100%; padding: 12px; font-size: 14px; background: rgba(0,0,0,0.3); border: 1px solid rgba(102, 126, 234, 0.5); border-radius: 6px; color: #f1f5f9;">
-                                            <div id="ble-wifi-scan-hint" style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
-                                                Networks will appear after connecting to device
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">WiFi Password</label>
-                                        <input type="password" id="ble-wifi-password"
-                                            placeholder="Your WiFi password"
-                                            style="width: 100%; padding: 12px; font-size: 14px; background: rgba(0,0,0,0.3); border: 1px solid rgba(102, 126, 234, 0.5); border-radius: 6px; color: #f1f5f9;">
-                                    </div>
-                                </div>
-
-                                <!-- Connect Button -->
-                                <button type="button" id="ble-connect-btn" onclick="connectViaBluetooth()"
-                                    style="width: 100%; padding: 14px; font-size: 15px; font-weight: 600; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 8px; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M6.5 6.5l11 11L12 23V1l5.5 5.5-11 11"/>
-                                    </svg>
-                                    Connect to Display via Bluetooth
-                                </button>
-
-                                <!-- Status -->
-                                <div id="ble-status" style="margin-top: 12px; text-align: center; font-size: 13px;"></div>
-
-                                <!-- Browser Compatibility Note -->
-                                <p style="color: #94a3b8; font-size: 11px; margin-top: 12px; text-align: center;">
-                                    Requires Chrome or Edge browser. Your display must show "BLUETOOTH SETUP" screen.
-                                </p>
-                            </div>
-
-                            <!-- Divider -->
-                            <div id="pairing-divider" style="display: none; margin: 20px 0; text-align: center; position: relative;">
-                                <span style="background: #1e293b; padding: 0 12px; color: #94a3b8; font-size: 12px; position: relative; z-index: 1;">OR use pairing code</span>
-                                <div style="position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: rgba(255,255,255,0.1);"></div>
-                            </div>
-
-                            <!-- Device Pairing Code Input (Fallback) -->
-                            <div id="device-pairing-section" style="display: none; padding: 18px; background: linear-gradient(135deg, rgba(79, 178, 142, 0.15) 0%, rgba(34, 197, 94, 0.1) 100%); border: 1px solid rgba(79, 178, 142, 0.3); border-radius: 10px;">
-                                <div style="font-weight: 600; margin-bottom: 12px; font-size: 14px; color: #4fb28e; display: flex; align-items: center; gap: 8px;">
-                                    <svg class="icon"><use href="#icon-link"/></svg>
-                                    Alternative: Enter Display Pairing Code
-                                </div>
-                                <p style="color: #94a3b8; font-size: 12px; margin-bottom: 12px; line-height: 1.5;">
-                                    If Bluetooth isn't available, enter the <strong>6-character code</strong> shown on your display.
-                                </p>
-                                <div style="display: flex; gap: 10px; align-items: center;">
-                                    <input type="text" id="device-pairing-code"
-                                        placeholder="A7X9K2"
-                                        maxlength="6"
-                                        style="flex: 1; padding: 12px; font-size: 20px; font-family: monospace; text-transform: uppercase; letter-spacing: 4px; text-align: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(79, 178, 142, 0.5); border-radius: 8px; color: #f1f5f9; font-weight: bold;"
-                                        oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 6); validatePairingCode();">
-                                    <span id="pairing-code-status" style="font-size: 20px;"></span>
-                                </div>
-                                <p style="color: #64748b; font-size: 10px; margin-top: 8px;">
-                                    Code expires after 10 minutes. Requires WiFiManager firmware.
-                                </p>
-                            </div>
                         </div>
                     </div>
 
@@ -1275,7 +1254,7 @@
             const apiKey = document.getElementById('google-places-api-key').value.trim();
             const btn = document.getElementById('save-api-key-btn');
             const status = document.getElementById('api-key-status');
-            const nextBtn = document.getElementById('step-1-next-btn');
+            const nextBtn = document.getElementById('step-2-next-btn');
 
             if (!apiKey) {
                 status.style.display = 'block';
@@ -1340,29 +1319,102 @@
 
         window.skipGoogleKey = function() {
             const warning = document.getElementById('skip-warning');
-            const nextBtn = document.getElementById('step-1-next-btn');
+            const nextBtn = document.getElementById('step-2-next-btn');
             const status = document.getElementById('api-key-status');
 
             // Show warning
             warning.style.display = 'block';
             status.style.display = 'none';
 
-            // Show the Next button after 2 seconds to ensure user reads warning
-            setTimeout(() => {
-                nextBtn.style.display = 'block';
-                nextBtn.innerHTML = 'I Understand - Continue Without API Key →';
-                nextBtn.style.background = '#f59e0b';  // Warning color
-            }, 2000);
+            // Show the Next button immediately
+            nextBtn.style.display = 'block';
+            nextBtn.innerHTML = 'Continue Without API Key →';
+            nextBtn.style.background = '#f59e0b';
 
             console.log('User chose to skip Google Places API key');
         };
 
+        // Step 1: Device section visibility toggle
+        window.updateDeviceSection = function() {
+            const select = document.getElementById('device-select');
+            const deviceInfo = document.getElementById('device-info-panel');
+            const wifiSection = document.getElementById('wifi-provision-section');
+            const factoryReset = document.getElementById('factory-reset-section');
+            const webOnlyInfo = document.getElementById('web-only-info');
+            const device = select.value;
+
+            if (device && device.startsWith('trmnl')) {
+                // TRMNL device selected - show WiFi provisioning
+                deviceInfo.style.display = 'block';
+                wifiSection.style.display = 'block';
+                factoryReset.style.display = 'block';
+                webOnlyInfo.style.display = 'none';
+                localStorage.setItem('cc-device', device);
+            } else if (device && device.startsWith('kindle')) {
+                // Kindle selected - no WiFi provisioning needed
+                deviceInfo.style.display = 'block';
+                wifiSection.style.display = 'none';
+                factoryReset.style.display = 'none';
+                webOnlyInfo.style.display = 'none';
+                localStorage.setItem('cc-device', device);
+            } else {
+                // No device - web only
+                deviceInfo.style.display = 'none';
+                wifiSection.style.display = 'none';
+                factoryReset.style.display = 'none';
+                webOnlyInfo.style.display = 'block';
+                localStorage.removeItem('cc-device');
+            }
+        };
+
+        // Factory reset via BLE
+        window.factoryResetDevice = async function() {
+            const status = document.getElementById('reset-status');
+            status.innerHTML = '<span style="color: #f59e0b;">Searching for device...</span>';
+
+            if (!navigator.bluetooth) {
+                status.innerHTML = '<span style="color: #ef4444;">Bluetooth not supported. Use Chrome or Edge.</span>';
+                return;
+            }
+
+            try {
+                const device = await navigator.bluetooth.requestDevice({
+                    filters: [{ namePrefix: 'CommuteCompute' }],
+                    optionalServices: [BLE_SERVICE_UUID]
+                });
+
+                status.innerHTML = '<span style="color: #f59e0b;">Connecting...</span>';
+                const server = await device.gatt.connect();
+                const service = await server.getPrimaryService(BLE_SERVICE_UUID);
+
+                // Send empty credentials to trigger reset
+                const charSSID = await service.getCharacteristic(BLE_CHAR_SSID_UUID);
+                const charPassword = await service.getCharacteristic(BLE_CHAR_PASSWORD_UUID);
+                const charURL = await service.getCharacteristic(BLE_CHAR_URL_UUID);
+
+                const encoder = new TextEncoder();
+                await charSSID.writeValue(encoder.encode('__RESET__'));
+                await charPassword.writeValue(encoder.encode(''));
+                await charURL.writeValue(encoder.encode(''));
+
+                status.innerHTML = '<span style="color: #22c55e;">Device reset! It will restart shortly.</span>';
+                server.disconnect();
+            } catch (error) {
+                status.innerHTML = `<span style="color: #ef4444;">Reset failed: ${error.message}</span>`;
+            }
+        };
+
         window.nextStep = function(step) {
             if (step === 1) {
-                // Step 1: Google API Key - already validated by saveAndTestGoogleKey
-                // No additional validation needed, button is only shown after successful save
+                // Step 1: Device Setup - save device selection to localStorage
+                const device = document.getElementById('device-select')?.value || '';
+                if (device) {
+                    localStorage.setItem('cc-device', device);
+                }
             } else if (step === 2) {
-                // Step 2: Addresses
+                // Step 2: Google API Key - show next button after save/skip
+            } else if (step === 3) {
+                // Step 3: Addresses - validate and save
                 const home = document.getElementById('home-address').value;
                 const work = document.getElementById('work-address').value;
 
@@ -1379,16 +1431,13 @@
 
                 // Show authorities
                 showAuthorities();
-            } else if (step === 3) {
-                // Step 3: Transit Authority
+            } else if (step === 4) {
+                // Step 4: Transit Authority - validate selection
                 if (!selectedAuthority) {
                     alert('Please select a transit authority');
                     return;
                 }
                 showAPIForm();
-            } else if (step === 4) {
-                // Step 4: Transit API - validation now optional (handled by save button)
-                // User can skip or save & test
             }
 
             document.getElementById(`step-${step}`).classList.remove('active');
