@@ -2072,16 +2072,24 @@ export function renderFullScreen(data, prefs = {}) {
       ctx.fillRect(textX - knockoutPad, textBlockY - knockoutPad, textBlockW + knockoutPad * 2, textBlockH + knockoutPad * 2);
       
       // Knockout for DEPART column (if transit leg with departTime)
+      // v1.44: Tighter fit around DEPART label and time
       if (['train', 'tram', 'bus', 'vline', 'ferry'].includes(leg.type) && leg.departTime) {
         const departLabelSz = Math.max(7, Math.round(9 * scale));
         const departTimeSz = Math.max(10, Math.round(14 * scale));
-        const departBlockH = departLabelSz + departTimeSz + 2;
-        const departBlockY = zone.y + (zone.h - departBlockH) / 2;
+        
+        // Measure actual text widths
+        ctx.font = `bold ${departLabelSz}px Inter, sans-serif`;
+        const departLabelW = ctx.measureText('DEPART').width;
         ctx.font = `bold ${departTimeSz}px Inter, sans-serif`;
         const departTimeW = ctx.measureText(leg.departTime).width;
-        const departW = Math.max(departTimeW, 40) + 4;
-        const departX = zone.x + stripeAreaW - departW - 8;
-        ctx.fillRect(departX - knockoutPad, departBlockY - knockoutPad, departW + knockoutPad * 2, departBlockH + knockoutPad * 2);
+        
+        // Use wider of the two + minimal padding
+        const departW = Math.max(departLabelW, departTimeW) + 2;
+        const departBlockH = departLabelSz + departTimeSz + 3;
+        const departBlockY = zone.y + (zone.h - departBlockH) / 2;
+        const departX = zone.x + stripeAreaW - departW - 10;
+        
+        ctx.fillRect(departX - 1, departBlockY - 1, departW + 2, departBlockH + 2);
       }
     }
     
