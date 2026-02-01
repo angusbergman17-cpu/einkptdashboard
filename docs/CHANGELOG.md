@@ -15,6 +15,28 @@ All notable changes to this project are documented here.
 
 ---
 
+## [2026-02-01] — Firmware v6.1 Logo Fix
+
+### Fixed
+- **BMP Logo Rendering Artifacts** — Eliminated black vertical bars on boot/setup screens
+- Root cause: BMP row padding. 1-bit BMPs pad rows to 32-bit boundaries; bb_epaper rendered padding bits as black lines
+- Solution: All logo widths must be multiples of 32
+
+### Changed
+- Boot logo: 256×380 (full "COMMUTE COMPUTE" branding, properly centered)
+- Small logo: 128×130 (for connecting/setup screens)
+- Source logos auto-trimmed from original 1056×992 master
+
+### Firmware
+- **v6.1-60s** — LOCKED, tagged as `v6.1-logos-fixed`
+- Clean boot sequence: CC logo → Connecting → Setup/Dashboard
+
+### Documentation
+- ARCHITECTURE.md Section 11 — Added BMP rendering requirements
+- Development Rules — BMP width alignment documented
+
+---
+
 ## [2026-02-01] — Device Pairing with Vercel KV
 
 ### Added

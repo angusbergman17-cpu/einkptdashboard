@@ -1,10 +1,11 @@
-# Commute Compute Custom Firmware
+# CCFirm™ — Commute Compute Custom Firmware
 
 Custom firmware for TRMNL e-ink devices with **partial refresh support** for faster updates.
 
-![Version](https://img.shields.io/badge/version-5.10-blue)
+![Version](https://img.shields.io/badge/version-6.1--60s-blue)
 ![Anti-Brick](https://img.shields.io/badge/Anti--Brick-12%2F12%20✓-brightgreen)
 ![Platform](https://img.shields.io/badge/platform-ESP32--C3-orange)
+![Logo](https://img.shields.io/badge/Logos-32bit%20Aligned%20✓-brightgreen)
 
 ## Features
 
@@ -94,6 +95,29 @@ On first boot (or after reset):
 | EPD_CLK | GPIO 6 |
 | EPD_DIN | GPIO 5 |
 | BATTERY | GPIO 1 |
+
+## Logo Assets (BMP Requirements)
+
+**⚠️ CRITICAL: All BMP widths MUST be multiples of 32 pixels!**
+
+The bb_epaper library renders BMP row padding bits as black pixels. Non-aligned widths cause vertical bar artifacts on e-ink displays.
+
+| Asset | Dimensions | File | Purpose |
+|-------|------------|------|---------|
+| Boot logo | 256×380 | `cc_logo_boot.bmp` | Full COMMUTE COMPUTE branding |
+| Small logo | 128×130 | `cc_logo_small.bmp` | Connecting/setup screens |
+
+**To regenerate logos:**
+```bash
+convert source.png \
+  -resize x<height> \
+  -gravity center -background white \
+  -extent <width_mult_32>x<height> \
+  -threshold 50% -type bilevel \
+  BMP3:output.bmp
+```
+
+**Logo source:** `include/cc_logo.bmp` (1056×992 original)
 
 ## Adjusting Refresh Rates
 

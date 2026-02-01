@@ -772,6 +772,30 @@ einkptdashboard/
 }
 ```
 
+#### 7.2.1 BMP Width Alignment (CRITICAL for bb_epaper)
+
+**All 1-bit BMP widths MUST be multiples of 32 pixels.**
+
+BMP format pads each row to 32-bit (4-byte) boundaries. If width is not aligned, padding bits are interpreted as image data by bb_epaper, causing vertical black bar artifacts on e-ink displays.
+
+| Asset | Width | Height | Notes |
+|-------|-------|--------|-------|
+| Boot logo | 256px | 380px | Full "COMMUTE COMPUTE" branding |
+| Small logo | 128px | 130px | Connecting/setup screens |
+| Zone widths | 800px | varies | Already 32-aligned |
+
+**ImageMagick command for clean BMPs:**
+```bash
+convert source.png \
+  -resize x<height> \
+  -gravity center \
+  -background white \
+  -extent <width_multiple_of_32>x<height> \
+  -threshold 50% \
+  -type bilevel \
+  BMP3:output.bmp
+```
+
 ### 7.3 Renderer Versions (by Trademark)
 
 | Renderer | Trademark | Purpose | Status |
