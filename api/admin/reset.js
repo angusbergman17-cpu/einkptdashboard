@@ -19,20 +19,36 @@ const ALL_KEYS = [
   'cc:api:google_key', 
   'cc:preferences',
   'cc:state',
-  'cc-profiles',
-  'cc:device:*'  // Device pairings
+  'cc-profiles'
 ];
 
 /**
  * Get Upstash client if available
  */
 function getUpstashClient() {
+  // Try direct Upstash env vars first
   if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
     return new Redis({
       url: process.env.UPSTASH_REDIS_REST_URL,
       token: process.env.UPSTASH_REDIS_REST_TOKEN
     });
   }
+  
+  // Try to parse REST URL from REDIS_URL (Upstash format: rediss://default:TOKEN@HOST:PORT)
+  if (process.env.REDIS_URL) {
+    try {
+      const url = new URL(process.env.REDIS_URL);
+      // Upstash REDIS_URL format: rediss://default:TOKEN@region.upstash.io:PORT
+      const restUrl = `https://${url.hostname}`;
+      const token = url.password;
+      if (token && url.hostname.includes('upstash')) {
+        return new Redis({ url: restUrl, token });
+      }
+    } catch (e) {
+      console.log('[reset] Could not parse REDIS_URL for REST client');
+    }
+  }
+  
   return null;
 }
 
@@ -40,9 +56,11 @@ function getUpstashClient() {
  * Get active KV client
  */
 function getClient() {
+  // Check Vercel KV standard vars first
   if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
     return kv;
   }
+  // Fall back to Upstash
   return getUpstashClient();
 }
 
