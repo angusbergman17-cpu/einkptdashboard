@@ -458,7 +458,7 @@ const scenarios = {
     status: JourneyStatus.ON_TIME,
     arrivalTime: '3:28',
     totalDuration: 53,
-    leaveInMinutes: 5,
+    leaveInMinutes: 0,  // Always LEAVE_NOW - per Angus 2026-02-01
     isHomebound: false,
     weather: { temp: 28, condition: 'Hot', umbrella: false },
     steps: [

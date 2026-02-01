@@ -177,14 +177,14 @@ export class JourneyDisplayEngine {
   }
   
   calculateJourneyStatus(journey, now) {
-    const leaveInMinutes = journey.getLeaveInMinutes();
+    // Per Angus 2026-02-01: Engine should only ever show LEAVE_NOW timing
+    // No buffer time ("leave in X min") - always show current departure journey
     const hasCancellation = journey.steps.some(s => s.status === StepStatus.CANCELLED);
     const hasDiversion = journey.steps.some(s => s.status === StepStatus.DIVERTED);
     if (hasCancellation) journey.status = JourneyStatus.DISRUPTION;
     else if (hasDiversion) { journey.status = JourneyStatus.DIVERSION; journey.statusMessage = 'ROUTE DIVERTED'; }
     else if (journey.delayMinutes > 0) journey.status = JourneyStatus.DELAY;
-    else if (leaveInMinutes <= 0) journey.status = JourneyStatus.LEAVE_NOW;
-    else journey.status = JourneyStatus.ON_TIME;
+    else journey.status = JourneyStatus.LEAVE_NOW;  // Always LEAVE_NOW for normal state
   }
 }
 
