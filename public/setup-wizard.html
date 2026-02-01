@@ -576,6 +576,29 @@
                                     <svg class="icon-sm"><use href="#icon-warning"/></svg> Requires flashing with Commute Compute custom firmware
                                 </div>
                             </div>
+
+                            <!-- Device Pairing Code Input -->
+                            <div id="device-pairing-section" style="display: none; margin-top: 20px; padding: 18px; background: linear-gradient(135deg, rgba(79, 178, 142, 0.2) 0%, rgba(34, 197, 94, 0.15) 100%); border: 2px solid #4fb28e; border-radius: 10px;">
+                                <div style="font-weight: 600; margin-bottom: 12px; font-size: 15px; color: #22c55e; display: flex; align-items: center; gap: 8px;">
+                                    <svg class="icon"><use href="#icon-link"/></svg>
+                                    Enter Display Pairing Code
+                                </div>
+                                <p style="color: #f1f5f9; font-size: 13px; margin-bottom: 12px; line-height: 1.5;">
+                                    Your display shows a <strong>6-character code</strong> on the setup screen.<br>
+                                    Enter it here to automatically connect your display.
+                                </p>
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <input type="text" id="device-pairing-code"
+                                        placeholder="A7X9K2"
+                                        maxlength="6"
+                                        style="flex: 1; padding: 14px; font-size: 22px; font-family: monospace; text-transform: uppercase; letter-spacing: 5px; text-align: center; background: rgba(0,0,0,0.3); border: 2px solid #4fb28e; border-radius: 8px; color: #f1f5f9; font-weight: bold;"
+                                        oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 6); validatePairingCode();">
+                                    <span id="pairing-code-status" style="font-size: 20px;"></span>
+                                </div>
+                                <p style="color: #94a3b8; font-size: 11px; margin-top: 10px;">
+                                    The code expires after 10 minutes. If expired, restart your display.
+                                </p>
+                            </div>
                         </div>
                     </div>
 
@@ -805,35 +828,62 @@
             const select = document.getElementById('device-select');
             const preview = document.getElementById('device-preview');
             const warning = document.getElementById('trmnl-model-warning');
+            const pairingSection = document.getElementById('device-pairing-section');
             const previewName = document.getElementById('device-preview-name');
             const previewSpecs = document.getElementById('device-preview-specs');
-            
+
             const device = select.value;
-            
+
             if (!device) {
                 preview.style.display = 'none';
                 warning.style.display = 'none';
+                if (pairingSection) pairingSection.style.display = 'none';
                 return;
             }
-            
+
             preview.style.display = 'block';
-            
+
             const deviceInfo = {
-                'trmnl-og': { name: 'TRMNL Display (OG)', specs: 'Resolution: 800×480 pixels • Orientation: Landscape • Chip: ESP32' },
-                'trmnl-mini': { name: 'TRMNL Display (Mini)', specs: 'Resolution: 600×448 pixels • Orientation: Landscape' },
-                'kindle-pw3': { name: 'Kindle Paperwhite 3', specs: 'Resolution: 1072×1448 pixels • Orientation: Portrait • 6" display' },
-                'kindle-pw4': { name: 'Kindle Paperwhite 4', specs: 'Resolution: 1072×1448 pixels • Orientation: Portrait • 6" display' },
-                'kindle-pw5': { name: 'Kindle Paperwhite 5', specs: 'Resolution: 1236×1648 pixels • Orientation: Portrait • 6.8" display' }
+                'trmnl-og': { name: 'TRMNL Display (OG)', specs: 'Resolution: 800×480 pixels • Orientation: Landscape • Chip: ESP32', hasPairing: true },
+                'trmnl-mini': { name: 'TRMNL Display (Mini)', specs: 'Resolution: 600×448 pixels • Orientation: Landscape', hasPairing: true },
+                'kindle-pw3': { name: 'Kindle Paperwhite 3', specs: 'Resolution: 1072×1448 pixels • Orientation: Portrait • 6" display', hasPairing: false },
+                'kindle-pw4': { name: 'Kindle Paperwhite 4', specs: 'Resolution: 1072×1448 pixels • Orientation: Portrait • 6" display', hasPairing: false },
+                'kindle-pw5': { name: 'Kindle Paperwhite 5', specs: 'Resolution: 1236×1648 pixels • Orientation: Portrait • 6.8" display', hasPairing: false }
             };
-            
-            const info = deviceInfo[device] || { name: device, specs: 'Unknown device' };
+
+            const info = deviceInfo[device] || { name: device, specs: 'Unknown device', hasPairing: false };
             previewName.textContent = info.name;
             previewSpecs.textContent = info.specs;
-            
+
             // Show warning for TRMNL devices
             warning.style.display = device.startsWith('trmnl') ? 'block' : 'none';
+
+            // Show pairing section for devices that support it
+            if (pairingSection) {
+                pairingSection.style.display = info.hasPairing ? 'block' : 'none';
+            }
         }
         window.updateDevicePreview = updateDevicePreview;
+
+        // Validate pairing code format
+        function validatePairingCode() {
+            const input = document.getElementById('device-pairing-code');
+            const status = document.getElementById('pairing-code-status');
+            const code = input.value.trim();
+
+            if (code.length === 0) {
+                status.textContent = '';
+            } else if (code.length < 6) {
+                status.textContent = '';
+            } else if (code.length === 6 && /^[A-Z0-9]{6}$/.test(code)) {
+                status.textContent = '✓';
+                status.style.color = '#22c55e';
+            } else {
+                status.textContent = '✗';
+                status.style.color = '#f87171';
+            }
+        }
+        window.validatePairingCode = validatePairingCode;
 
         // Save and Test Google Places API Key (Step 1)
         window.saveAndTestGoogleKey = async function() {
@@ -1288,53 +1338,78 @@
                     // Store webhook URL for device pairing
                     window.generatedWebhookUrl = webhookUrl;
                     window.fullConfig = fullConfig;
-                    
+
+                    // Check if pairing code was entered in device section
+                    const pairingCodeInput = document.getElementById('device-pairing-code');
+                    const pairingCode = pairingCodeInput?.value?.trim()?.toUpperCase() || '';
+                    const hasValidPairingCode = pairingCode.length === 6 && /^[A-Z0-9]{6}$/.test(pairingCode);
+
+                    // Build completion HTML based on whether we have a pairing code
+                    let pairingHtml = '';
+                    if (hasValidPairingCode) {
+                        pairingHtml = `
+                            <div id="auto-pairing-status" style="margin-top: 20px; padding: 20px; background: linear-gradient(135deg, rgba(79, 178, 142, 0.25) 0%, rgba(34, 197, 94, 0.2) 100%); border: 3px solid #4fb28e; border-radius: 12px;">
+                                <div style="display: flex; align-items: center; gap: 12px; justify-content: center;">
+                                    <div class="spinner" style="width: 24px; height: 24px; border: 3px solid rgba(79, 178, 142, 0.3); border-top-color: #4fb28e; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                                    <span style="color: #22c55e; font-weight: 600; font-size: 16px;">Pairing with display ${pairingCode}...</span>
+                                </div>
+                            </div>
+                        `;
+                    } else if (selectedDevice && selectedDevice.startsWith('trmnl')) {
+                        // Device selected but no code - show pairing input
+                        pairingHtml = `
+                            <div style="margin-top: 20px; padding: 20px; background: linear-gradient(135deg, rgba(79, 178, 142, 0.25) 0%, rgba(34, 197, 94, 0.2) 100%); border: 3px solid #4fb28e; border-radius: 12px;">
+                                <h4 style="color: #22c55e; margin-bottom: 12px; font-size: 16px;">Pair Your Display</h4>
+                                <p style="color: #f1f5f9; font-size: 13px; margin-bottom: 12px;">Enter the 6-character code shown on your display:</p>
+                                <div style="display: flex; gap: 10px; align-items: center; max-width: 350px; margin: 0 auto;">
+                                    <input type="text" id="device-code" placeholder="A7X9K2" maxlength="6"
+                                        style="flex: 1; padding: 14px; font-size: 20px; font-family: monospace; text-transform: uppercase; letter-spacing: 5px; text-align: center; background: rgba(0,0,0,0.3); border: 2px solid #4fb28e; border-radius: 8px; color: #f1f5f9; font-weight: bold;"
+                                        oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 6)">
+                                    <button type="button" onclick="pairDevice()" id="pair-btn" style="padding: 14px 24px; background: #4fb28e; border: none; border-radius: 8px; color: #1a2744; font-weight: 700; cursor: pointer;">Pair</button>
+                                </div>
+                                <div id="pairing-status" style="margin-top: 10px; font-size: 13px; text-align: center;"></div>
+                                <p style="color: #94a3b8; font-size: 11px; margin-top: 10px; text-align: center;">
+                                    <a href="#" onclick="skipPairing(); return false;" style="color: #4fb28e;">Skip pairing</a>
+                                </p>
+                            </div>
+                        `;
+                    }
+
                     document.getElementById('setup-status').innerHTML = `
                         <div class="success-box" style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); padding: 20px; border-radius: 12px;">
                             <h3 style="color: #22c55e; margin-bottom: 10px;"><svg class="icon"><use href="#icon-check-circle"/></svg> Setup Complete!</h3>
                             <p style="color: #86efac;">Your intelligent transit display is ready.</p>
-                            
-                            <!-- Device Pairing Section -->
-                            <div style="margin-top: 20px; padding: 15px; background: rgba(79, 178, 142, 0.15); border: 2px solid #4fb28e; border-radius: 8px;">
-                                <h4 style="color: #4fb28e; margin-bottom: 10px;"><svg class="icon-sm"><use href="#icon-tv"/></svg> Pair Your Display</h4>
-                                <p style="color: #94a3b8; font-size: 13px; margin-bottom: 12px;">
-                                    Enter the code shown on your CC Display:
-                                </p>
-                                <div style="display: flex; gap: 10px; align-items: center;">
-                                    <input type="text" id="device-code" 
-                                        placeholder="e.g. A7X9K2" 
-                                        maxlength="8"
-                                        style="flex: 1; padding: 12px; font-size: 18px; font-family: monospace; text-transform: uppercase; letter-spacing: 3px; text-align: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(79, 178, 142, 0.5); border-radius: 6px; color: #f1f5f9;"
-                                        oninput="this.value = this.value.toUpperCase()">
-                                    <button type="button" onclick="pairDevice()" 
-                                        style="padding: 12px 20px; background: #4fb28e; border: none; border-radius: 6px; color: #fff; font-weight: 600; cursor: pointer;">
-                                        Pair
-                                    </button>
-                                </div>
-                                <div id="pairing-status" style="margin-top: 10px; font-size: 13px;"></div>
-                            </div>
-                            
+
+                            ${pairingHtml}
+
                             ${webhookHtml}
-                            
-                            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+
+                            <div id="redirect-section" style="${hasValidPairingCode || !selectedDevice || !selectedDevice.startsWith('trmnl') ? '' : 'display: none;'} margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
                                 <p style="color: #22c55e; font-size: 14px; font-weight: 600; margin-bottom: 8px;">Directing you to your dashboard now...</p>
                                 <p style="color: #a3b8d0; font-size: 13px; margin-bottom: 10px;">Redirecting in <span id="redirect-countdown">5</span> seconds</p>
                                 <button type="button" class="btn" onclick="window.location.href='/admin.html'" style="width: 100%; background: #4fb28e; border: none; color: #1a2744;">Go to Dashboard Now →</button>
                             </div>
                         </div>
+                        <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
                     `;
-                    
-                    // Auto-redirect countdown
-                    let countdown = 5;
-                    const countdownEl = document.getElementById('redirect-countdown');
-                    const countdownInterval = setInterval(() => {
-                        countdown--;
-                        if (countdownEl) countdownEl.textContent = countdown;
-                        if (countdown <= 0) {
-                            clearInterval(countdownInterval);
-                            window.location.href = '/admin.html';
-                        }
-                    }, 1000);
+
+                    // If we have a valid pairing code, automatically pair
+                    if (hasValidPairingCode) {
+                        autoPairDevice(pairingCode, webhookUrl, fullConfig);
+                    } else if (!selectedDevice || !selectedDevice.startsWith('trmnl')) {
+                        // No device or non-pairing device - start redirect
+                        startRedirectCountdown();
+                    } else {
+                        // Device selected but no code - focus on input
+                        setTimeout(() => {
+                            const codeInput = document.getElementById('device-code');
+                            if (codeInput) codeInput.focus();
+                        }, 100);
+                    }
+                    setTimeout(() => {
+                        const codeInput = document.getElementById('device-code');
+                        if (codeInput) codeInput.focus();
+                    }, 100);
                 } else {
                     alert('Setup failed: ' + (result.error || 'Unknown error'));
                 }
@@ -1348,15 +1423,22 @@
         async function pairDevice() {
             const codeInput = document.getElementById('device-code');
             const statusDiv = document.getElementById('pairing-status');
+            const pairBtn = document.getElementById('pair-btn');
             const code = codeInput.value.trim().toUpperCase();
-            
+
             if (!code || code.length < 4) {
-                statusDiv.innerHTML = '<span style="color: #f87171;">Please enter the code from your display</span>';
+                statusDiv.innerHTML = '<span style="color: #f87171;">Please enter the 6-character code from your display</span>';
+                codeInput.focus();
                 return;
             }
-            
-            statusDiv.innerHTML = '<span style="color: #4fb28e;">⏳ Pairing...</span>';
-            
+
+            // Disable button during pairing
+            if (pairBtn) {
+                pairBtn.disabled = true;
+                pairBtn.textContent = '...';
+            }
+            statusDiv.innerHTML = '<span style="color: #4fb28e;">Pairing with your display...</span>';
+
             try {
                 const baseUrl = window.location.origin;
                 const response = await fetch(`${baseUrl}/api/pair/${code}`, {
@@ -1367,28 +1449,127 @@
                         config: window.fullConfig
                     })
                 });
-                
+
                 const result = await response.json();
-                
+
                 if (result.success) {
                     statusDiv.innerHTML = `
-                        <div style="color: #22c55e; font-weight: 600;">
-                            <svg class="icon-sm" style="color: #22c55e;"><use href="#icon-check-circle"/></svg> Device paired successfully!
+                        <div style="color: #22c55e; font-weight: 600; font-size: 16px;">
+                            <svg class="icon" style="color: #22c55e;"><use href="#icon-check-circle"/></svg> Display Paired Successfully!
                         </div>
-                        <p style="color: #94a3b8; font-size: 12px; margin-top: 5px;">
-                            Your display will update within 30 seconds.
+                        <p style="color: #86efac; font-size: 13px; margin-top: 8px;">
+                            Your display will show your commute within 30 seconds.
                         </p>
                     `;
                     codeInput.disabled = true;
+                    if (pairBtn) pairBtn.style.display = 'none';
+
+                    // Show redirect section and start countdown
+                    startRedirectCountdown();
                 } else {
-                    statusDiv.innerHTML = `<span style="color: #f87171;"><svg class="icon-sm" style="color: #f87171;"><use href="#icon-x-circle"/></svg> ${result.error || 'Pairing failed'}</span>`;
+                    statusDiv.innerHTML = `<span style="color: #f87171;"><svg class="icon-sm" style="color: #f87171;"><use href="#icon-x-circle"/></svg> ${result.error || 'Pairing failed. Check the code and try again.'}</span>`;
+                    if (pairBtn) {
+                        pairBtn.disabled = false;
+                        pairBtn.textContent = 'Pair';
+                    }
+                    codeInput.focus();
+                    codeInput.select();
                 }
             } catch (error) {
                 console.error('Pairing error:', error);
-                statusDiv.innerHTML = `<span style="color: #f87171;"><svg class="icon-sm" style="color: #f87171;"><use href="#icon-x-circle"/></svg> Connection error. Try again.</span>`;
+                statusDiv.innerHTML = `<span style="color: #f87171;"><svg class="icon-sm" style="color: #f87171;"><use href="#icon-x-circle"/></svg> Connection error. Check your internet and try again.</span>`;
+                if (pairBtn) {
+                    pairBtn.disabled = false;
+                    pairBtn.textContent = 'Pair';
+                }
             }
         }
+
+        // Skip pairing and go to dashboard
+        function skipPairing() {
+            startRedirectCountdown();
+        }
+
+        // Start redirect countdown
+        function startRedirectCountdown() {
+            const redirectSection = document.getElementById('redirect-section');
+            if (redirectSection) redirectSection.style.display = 'block';
+
+            let countdown = 5;
+            const countdownEl = document.getElementById('redirect-countdown');
+            const countdownInterval = setInterval(() => {
+                countdown--;
+                if (countdownEl) countdownEl.textContent = countdown;
+                if (countdown <= 0) {
+                    clearInterval(countdownInterval);
+                    window.location.href = '/admin.html';
+                }
+            }, 1000);
+        }
+
+        // Auto-pair device (when code entered in device selection step)
+        async function autoPairDevice(code, webhookUrl, config) {
+            const statusDiv = document.getElementById('auto-pairing-status');
+
+            try {
+                const baseUrl = window.location.origin;
+                const response = await fetch(`${baseUrl}/api/pair/${code}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        webhookUrl: webhookUrl,
+                        config: config
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    statusDiv.innerHTML = `
+                        <div style="text-align: center;">
+                            <div style="color: #22c55e; font-weight: 700; font-size: 18px; margin-bottom: 8px;">
+                                <svg class="icon" style="color: #22c55e;"><use href="#icon-check-circle"/></svg> Display Paired!
+                            </div>
+                            <p style="color: #86efac; font-size: 14px;">
+                                Your display will show your commute within 30 seconds.
+                            </p>
+                        </div>
+                    `;
+                    // Start redirect after successful pairing
+                    setTimeout(() => startRedirectCountdown(), 1500);
+                } else {
+                    statusDiv.innerHTML = `
+                        <div style="text-align: center;">
+                            <div style="color: #f87171; font-weight: 600; margin-bottom: 8px;">
+                                <svg class="icon-sm" style="color: #f87171;"><use href="#icon-x-circle"/></svg> Pairing failed: ${result.error || 'Unknown error'}
+                            </div>
+                            <p style="color: #94a3b8; font-size: 13px; margin-bottom: 12px;">
+                                Check the code matches your display and try again.
+                            </p>
+                            <div style="display: flex; gap: 10px; align-items: center; max-width: 300px; margin: 0 auto;">
+                                <input type="text" id="device-code" value="${code}" maxlength="6"
+                                    style="flex: 1; padding: 12px; font-size: 18px; font-family: monospace; text-transform: uppercase; letter-spacing: 4px; text-align: center; background: rgba(0,0,0,0.3); border: 2px solid #f87171; border-radius: 8px; color: #f1f5f9; font-weight: bold;"
+                                    oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 6)">
+                                <button type="button" onclick="pairDevice()" style="padding: 12px 20px; background: #4fb28e; border: none; border-radius: 8px; color: #1a2744; font-weight: 700; cursor: pointer;">Retry</button>
+                            </div>
+                            <div id="pairing-status" style="margin-top: 8px;"></div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Auto-pairing error:', error);
+                statusDiv.innerHTML = `
+                    <div style="text-align: center; color: #f87171;">
+                        <svg class="icon-sm"><use href="#icon-x-circle"/></svg> Connection error. Try manually pairing below.
+                    </div>
+                `;
+                startRedirectCountdown();
+            }
+        }
+
         window.pairDevice = pairDevice;
+        window.skipPairing = skipPairing;
+        window.autoPairDevice = autoPairDevice;
 
         // Load version info
         function loadVersionInfo() {
