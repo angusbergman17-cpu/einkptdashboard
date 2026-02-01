@@ -109,6 +109,60 @@ Commute Compute uses a **fully self-hosted distribution model** — each user de
 
 ---
 
+## 🚇 Melbourne Metro Tunnel Compliance
+
+**Effective: 1 February 2026**
+
+The SmartCommute™ engine is fully compliant with the Melbourne Metro Tunnel network changes. The tunnel transforms Melbourne's rail network by running five lines through new underground stations instead of the City Loop.
+
+### Metro Tunnel Routes
+
+| Line | Previous Route | New Route (Metro Tunnel) |
+|------|----------------|--------------------------|
+| **Sunbury** | City Loop | Arden → Parkville → State Library → Town Hall → Anzac |
+| **Craigieburn** | City Loop | Arden → Parkville → State Library → Town Hall → Anzac |
+| **Upfield** | City Loop | Arden → Parkville → State Library → Town Hall → Anzac |
+| **Pakenham** | City Loop | Anzac → Town Hall → State Library → Parkville → Arden |
+| **Cranbourne** | City Loop | Anzac → Town Hall → State Library → Parkville → Arden |
+
+### New Underground Stations
+
+| Station | Zone | Precinct | Interchange |
+|---------|------|----------|-------------|
+| **Arden** | 1 | North Melbourne | Trams to Docklands |
+| **Parkville** | 1 | Hospital/University | RMH, Melbourne Uni, trams |
+| **State Library** | 1 | CBD | RMIT, Swanston St trams |
+| **Town Hall** | 1 | CBD | Collins St, Bourke St Mall |
+| **Anzac** | 1 | Domain/St Kilda Rd | Shrine, St Kilda Rd trams |
+
+### Discontinued City Loop Services
+
+> ⚠️ **SmartCommute™ automatically handles these routing changes** — no user configuration required.
+
+The following City Loop stations **no longer receive** Sunbury/Craigieburn/Upfield/Pakenham/Cranbourne services:
+
+| Station | Alternative | Walk Time |
+|---------|-------------|-----------|
+| Southern Cross | Arden station | 12 min |
+| Flagstaff | State Library | 5 min |
+| Melbourne Central | State Library | 3 min |
+| Parliament | Town Hall | 8 min |
+
+These stations continue to be served by City Loop lines (Belgrave, Lilydale, Alamein, Glen Waverley, Hurstbridge, Mernda, Frankston, Sandringham, Werribee, Williamstown).
+
+### Data Sources & Attribution
+
+Metro Tunnel network data incorporated in SmartCommute™ is derived from:
+
+- **Big Build Victoria** — [bigbuild.vic.gov.au/projects/metro-tunnel](https://bigbuild.vic.gov.au/projects/metro-tunnel)
+- **Transport Victoria** — [ptv.vic.gov.au](https://ptv.vic.gov.au)
+- **Victorian Government** — [vic.gov.au/metro-tunnel](https://vic.gov.au/metro-tunnel)
+- **Transport Victoria OpenData API** — GTFS and GTFS-RT feeds (route and stop data)
+
+*Metro Tunnel is a Victorian Government project delivered by Rail Projects Victoria.*
+
+---
+
 ## 🚀 Quick Start
 
 ### Step 1: Deploy to Vercel

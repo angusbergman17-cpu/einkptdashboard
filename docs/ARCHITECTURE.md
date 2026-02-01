@@ -1,10 +1,11 @@
 # Commute Compute System™ Architecture
 
-**Version:** 5.3
+**Version:** 5.4
 **Last Updated:** 2026-02-01
 **Status:** Active
 **Specification:** CCDash™ V11 (LOCKED 2026-01-31)
-**Development Rules:** v1.15 (25 sections)  
+**Development Rules:** v1.18 (24 sections)
+**Metro Tunnel Compliance:** ✅ Effective 2026-02-01
 **Copyright:** © 2026 Angus Bergman — CC BY-NC 4.0
 
 ---
@@ -1011,6 +1012,106 @@ const STATE_CONFIG = {
 6. Apply CoffeeDecision if enabled
 7. Return optimal journey with alternatives
 ```
+
+### 11.5 Melbourne Metro Tunnel Compliance
+
+**Effective Date:** 1 February 2026
+
+SmartCommute™ is fully compliant with the Melbourne Metro Tunnel network restructure. This section documents the network changes and how SmartCommute handles them.
+
+#### 11.5.1 Metro Tunnel Overview
+
+The Metro Tunnel is a 9km twin-tunnel rail link running through Melbourne's CBD, featuring five new underground stations. It fundamentally changes how certain train lines traverse the city.
+
+**New Stations (Underground):**
+
+| Station | Zone | Precinct | Interchange |
+|---------|------|----------|-------------|
+| Arden | 1 | North Melbourne | Trams to Docklands, North Melbourne |
+| Parkville | 1 | Hospital/University | Royal Melbourne Hospital, Melbourne Uni |
+| State Library | 1 | CBD | RMIT, State Library, Swanston St trams |
+| Town Hall | 1 | CBD | Collins St, Bourke St Mall, City Square |
+| Anzac | 1 | Domain/St Kilda Rd | Shrine, trams 3/5/6/16/64/67/72 |
+
+#### 11.5.2 Lines Using Metro Tunnel
+
+These lines now run through the Metro Tunnel **instead of the City Loop**:
+
+| Line | Direction | Metro Tunnel Route |
+|------|-----------|-------------------|
+| Sunbury | Citybound | North Melbourne → Arden → Parkville → State Library → Town Hall → Anzac |
+| Craigieburn | Citybound | North Melbourne → Arden → Parkville → State Library → Town Hall → Anzac |
+| Upfield | Citybound | Flemington Bridge → Parkville → State Library → Town Hall → Anzac |
+| Pakenham | Citybound | Caulfield → Anzac → Town Hall → State Library → Parkville → Arden |
+| Cranbourne | Citybound | Caulfield → Anzac → Town Hall → State Library → Parkville → Arden |
+
+#### 11.5.3 Discontinued City Loop Services
+
+**⚠️ CRITICAL:** The following City Loop stations **no longer receive** Sunbury/Craigieburn/Upfield/Pakenham/Cranbourne services:
+
+| Station | Lost Lines | Still Served By | Nearest Metro Tunnel |
+|---------|------------|-----------------|---------------------|
+| Southern Cross | SUN, CBE, UPF, PKM, CBE | Werribee, Williamstown, V/Line | Arden (12 min walk) |
+| Flagstaff | SUN, CBE, UPF, PKM, CBE | All City Loop lines | State Library (5 min walk) |
+| Melbourne Central | SUN, CBE, UPF, PKM, CBE | All City Loop lines | State Library (3 min walk) |
+| Parliament | SUN, CBE, UPF, PKM, CBE | All City Loop lines | Town Hall (8 min walk) |
+
+#### 11.5.4 Lines Still Using City Loop
+
+These lines continue to run through the traditional City Loop:
+
+| Group | Lines |
+|-------|-------|
+| Burnley | Belgrave, Lilydale, Alamein, Glen Waverley |
+| Caulfield | Frankston, Sandringham |
+| Northern | Hurstbridge, Mernda |
+| Cross-City | Werribee, Williamstown |
+
+#### 11.5.5 SmartCommute Implementation
+
+SmartCommute handles Metro Tunnel compliance through the following data structures:
+
+```javascript
+// Lines that use Metro Tunnel (NO LONGER use City Loop)
+export const METRO_TUNNEL_LINES = [
+  'sunbury', 'craigieburn', 'upfield', 'pakenham', 'cranbourne'
+];
+
+// City Loop stations that lost Metro Tunnel line services
+export const METRO_TUNNEL_DISCONTINUED_SERVICES = {
+  southernCross: { lostLines: [...], nearestMetroTunnel: 'arden', walkMinutes: 12 },
+  flagstaff: { lostLines: [...], nearestMetroTunnel: 'stateLibrary', walkMinutes: 5 },
+  melbourneCentral: { lostLines: [...], nearestMetroTunnel: 'stateLibrary', walkMinutes: 3 },
+  parliament: { lostLines: [...], nearestMetroTunnel: 'townHall', walkMinutes: 8 }
+};
+
+// Helper functions
+export function isMetroTunnelLine(lineName) { ... }
+export function getDiscontinuedServiceInfo(station, line) { ... }
+export function getRoutingChangeInfo(stationName) { ... }
+```
+
+#### 11.5.6 Automatic Route Adjustment
+
+SmartCommute automatically:
+
+1. **Detects Metro Tunnel lines** — Uses `isMetroTunnelLine()` to identify affected services
+2. **Routes via Metro Tunnel** — Directs Sunbury/Craigieburn/Upfield/Pakenham/Cranbourne through new stations
+3. **Warns on discontinued services** — If user expects to catch a Metro Tunnel line at a City Loop station, provides alternatives
+4. **Suggests interchange options** — North Melbourne remains the key interchange between Metro Tunnel and City Loop lines
+
+#### 11.5.7 Data Sources & Attribution
+
+Metro Tunnel network data incorporated in SmartCommute™ is derived from official sources:
+
+| Source | URL | Data Type |
+|--------|-----|-----------|
+| Big Build Victoria | [bigbuild.vic.gov.au/projects/metro-tunnel](https://bigbuild.vic.gov.au/projects/metro-tunnel) | Station locations, routes, opening date |
+| Transport Victoria | [ptv.vic.gov.au](https://ptv.vic.gov.au) | Timetables, service patterns |
+| Victorian Government | [vic.gov.au/metro-tunnel](https://vic.gov.au/metro-tunnel) | Official announcements |
+| Transport Victoria OpenData API | [data.vic.gov.au](https://data.vic.gov.au) | GTFS/GTFS-RT feeds, stop IDs |
+
+*The Metro Tunnel Project is delivered by Rail Projects Victoria, a division of the Major Transport Infrastructure Authority.*
 
 ---
 
