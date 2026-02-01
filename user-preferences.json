@@ -1,9 +1,9 @@
 {
   "addresses": {
-    "home": "1 Clara Street, South Yarra VIC",
-    "cafe": "Norman South Yarra",
-    "cafeName": "Norman South Yarra",
-    "work": "80 Collins Street, Melbourne VIC"
+    "home": "",
+    "cafe": "",
+    "cafeName": "",
+    "work": ""
   },
   "manualWalkingTimes": {
     "homeToStation": null,
@@ -13,18 +13,13 @@
     "useManualTimes": false
   },
   "addressFlags": {
-    "homeFound": true,
-    "cafeFound": true,
-    "workFound": true
+    "homeFound": false,
+    "cafeFound": false,
+    "workFound": false
   },
   "journey": {
     "arrivalTime": "09:00",
-    "preferredTransitModes": [
-      0,
-      1,
-      2,
-      3
-    ],
+    "preferredTransitModes": [0, 1, 2, 3],
     "maxWalkingDistance": 1000,
     "coffeeEnabled": true,
     "defaultCafeTime": 3,
@@ -33,76 +28,18 @@
       "numberOfModes": 1,
       "mode1": {
         "type": 0,
-        "originStation": {
-          "name": null,
-          "id": null,
-          "lat": null,
-          "lon": null
-        },
-        "destinationStation": {
-          "name": null,
-          "id": null,
-          "lat": null,
-          "lon": null
-        },
-        "estimatedDuration": null
-      },
-      "mode2": {
-        "type": null,
-        "originStation": {
-          "name": "",
-          "id": null,
-          "lat": null,
-          "lon": null
-        },
-        "destinationStation": {
-          "name": "",
-          "id": null,
-          "lat": null,
-          "lon": null
-        },
-        "estimatedDuration": null
-      },
-      "mode3": {
-        "type": null,
-        "originStation": {
-          "name": "",
-          "id": null,
-          "lat": null,
-          "lon": null
-        },
-        "destinationStation": {
-          "name": "",
-          "id": null,
-          "lat": null,
-          "lon": null
-        },
-        "estimatedDuration": null
-      },
-      "mode4": {
-        "type": null,
-        "originStation": {
-          "name": "",
-          "id": null,
-          "lat": null,
-          "lon": null
-        },
-        "destinationStation": {
-          "name": "",
-          "id": null,
-          "lat": null,
-          "lon": null
-        },
+        "originStation": { "name": null, "id": null, "lat": null, "lon": null },
+        "destinationStation": { "name": null, "id": null, "lat": null, "lon": null },
         "estimatedDuration": null
       }
     }
   },
   "api": {
-    "key": "ce606b90-9ffb-43e8-bcd7-0c2bd0498367",
+    "key": "",
     "baseUrl": ""
   },
   "display": {
-    "use24HourTime": true,
+    "use24HourTime": false,
     "showWalkingTimes": true,
     "showBusyness": true,
     "colorCoding": true
@@ -110,125 +47,13 @@
   "deviceConfig": {
     "selectedDevice": "trmnl-byos",
     "trmnlModel": "trmnl-og",
-    "resolution": {
-      "width": 800,
-      "height": 480
-    },
+    "resolution": { "width": 800, "height": 480 },
     "orientation": "landscape"
-  },
-  "refreshSettings": {
-    "displayRefresh": {
-      "interval": 900000,
-      "minimum": 900000,
-      "unit": "minutes"
-    },
-    "journeyRecalc": {
-      "interval": 120000,
-      "minimum": 60000,
-      "unit": "minutes"
-    },
-    "dataFetch": {
-      "interval": 30000,
-      "minimum": 10000,
-      "unit": "seconds"
-    },
-    "trmnlWebhook": {
-      "interval": 900000,
-      "fixed": true,
-      "note": "TRMNL BYOS platform enforces 15-minute minimum"
-    },
-    "partialRefresh": {
-      "enabled": true,
-      "interval": 20000,
-      "minimum": 20000,
-      "unit": "seconds",
-      "zones": {
-        "header": {
-          "enabled": true,
-          "name": "Header Zone",
-          "description": "Time, date, weather icon",
-          "refreshInterval": 60000,
-          "coordinates": {
-            "x": 0,
-            "y": 0,
-            "width": "100%",
-            "height": "15%"
-          }
-        },
-        "transitInfo": {
-          "enabled": true,
-          "name": "Transit Info Zone",
-          "description": "Next departure times, delays",
-          "refreshInterval": 20000,
-          "coordinates": {
-            "x": 0,
-            "y": "15%",
-            "width": "100%",
-            "height": "50%"
-          }
-        },
-        "coffeeDecision": {
-          "enabled": true,
-          "name": "Coffee Decision Zone",
-          "description": "Coffee recommendation banner",
-          "refreshInterval": 120000,
-          "coordinates": {
-            "x": 0,
-            "y": "65%",
-            "width": "100%",
-            "height": "20%"
-          }
-        },
-        "footer": {
-          "enabled": true,
-          "name": "Footer Zone",
-          "description": "Journey summary, walking times",
-          "refreshInterval": 120000,
-          "coordinates": {
-            "x": 0,
-            "y": "85%",
-            "width": "100%",
-            "height": "15%"
-          }
-        }
-      },
-      "fullRefreshInterval": 600000,
-      "zoneChangeThreshold": 5,
-      "smartCoalescing": true,
-      "fallbackToFull": true
-    }
   },
   "meta": {
     "version": "1.0",
-    "created": "2026-01-30T04:51:05.193Z",
-    "lastModified": "2026-01-30T04:52:07.033Z"
+    "created": null,
+    "lastModified": null
   },
-  "profiles": {
-    "activeProfileId": "default",
-    "profiles": {
-      "default": {
-        "id": "default",
-        "name": "Default Journey",
-        "enabled": true,
-        "schedule": {
-          "type": "all",
-          "days": [
-            0,
-            1,
-            2,
-            3,
-            4,
-            5,
-            6
-          ],
-          "effectiveFrom": null,
-          "effectiveUntil": null
-        },
-        "journeyConfig": null
-      }
-    }
-  },
-  "journeyConfig": {},
-  "transitAPIConfigured": false,
-  "system_configured": true
+  "system_configured": false
 }
