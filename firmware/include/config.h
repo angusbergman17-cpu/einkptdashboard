@@ -12,7 +12,7 @@
 // VERSION
 // =============================================================================
 
-#define FIRMWARE_VERSION "6.1-60s"
+#define FIRMWARE_VERSION "7.1.0"
 
 // =============================================================================
 // SERVER CONFIGURATION
@@ -28,11 +28,15 @@
 #define API_STATUS_ENDPOINT "/api/status"
 
 // =============================================================================
-// WIFI CONFIGURATION (Captive Portal)
+// WIFI CONFIGURATION
 // =============================================================================
+// NOTE: WiFiManager/Captive Portal DISABLED (causes ESP32-C3 crash 0xbaad5678)
+// WiFi credentials now provisioned via BLE (Hybrid Phase 1)
+// See DEVELOPMENT-RULES.md Section 21.7
 
-#define WIFI_AP_NAME "PTV-TRMNL-Setup"
-#define WIFI_AP_PASSWORD "transport123"
+// Legacy AP settings (NOT USED in v7.1+)
+#define WIFI_AP_NAME "CommuteCompute-Setup"
+#define WIFI_AP_PASSWORD ""  // Open network if AP mode ever used
 
 // =============================================================================
 // TIMING (milliseconds) - TIERED REFRESH SYSTEM

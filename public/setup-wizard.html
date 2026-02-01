@@ -2,6 +2,12 @@
 <html lang="en">
 <!--
     Commute Compute Setup Wizard - Intelligent Configuration
+    Version: 2.0 (Hybrid BLE + Pairing Code Provisioning)
+
+    HYBRID PROVISIONING (see DEVELOPMENT-RULES.md Section 21.7):
+      Phase 1 (BLE): WiFi credentials only (SSID + password)
+      Phase 2 (Pairing Code): Server config via 6-character code
+
     Copyright (c) 2026 Angus Bergman
     Licensed under CC BY-NC 4.0
     https://creativecommons.org/licenses/by-nc/4.0/
@@ -393,19 +399,21 @@
                 </div>
 
                 <!-- WiFi + BLE Provisioning Section (shows when TRMNL selected) -->
+                <!-- HYBRID PROVISIONING: Phase 1 (BLE WiFi) + Phase 2 (Pairing Code) -->
                 <div id="wifi-provision-section" style="display: none; margin-top: 20px;">
-                    <h3 style="font-size: 16px; margin-bottom: 15px; color: #f1f5f9;">WiFi Configuration</h3>
+                    <h3 style="font-size: 16px; margin-bottom: 15px; color: #f1f5f9;">Device Provisioning (2 Steps)</h3>
 
-                    <!-- BLE Provisioning (Primary Method) -->
-                    <div style="padding: 18px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(168, 85, 247, 0.15) 100%); border: 2px solid #667eea; border-radius: 10px; margin-bottom: 15px;">
+                    <!-- BLE Provisioning (Phase 1: WiFi Only) -->
+                    <div id="ble-provision-section" style="padding: 18px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(168, 85, 247, 0.15) 100%); border: 2px solid #667eea; border-radius: 10px; margin-bottom: 15px;">
                         <div style="font-weight: 600; margin-bottom: 12px; font-size: 15px; color: #667eea; display: flex; align-items: center; gap: 8px;">
+                            <span style="background: #667eea; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">STEP 1</span>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M6.5 6.5l11 11L12 23V1l5.5 5.5-11 11"/>
                             </svg>
-                            Option A: Connect via Bluetooth (Recommended)
+                            WiFi Setup via Bluetooth
                         </div>
                         <p style="color: #f1f5f9; font-size: 13px; margin-bottom: 15px; line-height: 1.5;">
-                            Send WiFi credentials directly to your display via Bluetooth. No captive portal needed.
+                            Send WiFi credentials to your display via Bluetooth. After WiFi connects, your display will show a pairing code.
                         </p>
 
                         <!-- WiFi Credentials -->
@@ -451,19 +459,20 @@
                         </p>
                     </div>
 
-                    <!-- Pairing Code (Fallback Method) -->
-                    <div style="text-align: center; position: relative; margin: 20px 0;">
-                        <span style="background: #2a3d5f; padding: 0 12px; color: #94a3b8; font-size: 12px; position: relative; z-index: 1;">OR use pairing code</span>
+                    <!-- Pairing Code (Phase 2: Server Config) -->
+                    <div id="pairing-divider" style="text-align: center; position: relative; margin: 20px 0;">
+                        <span style="background: #2a3d5f; padding: 0 12px; color: #94a3b8; font-size: 12px; position: relative; z-index: 1;">THEN enter pairing code</span>
                         <div style="position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: rgba(255,255,255,0.1);"></div>
                     </div>
 
-                    <div style="padding: 18px; background: linear-gradient(135deg, rgba(79, 178, 142, 0.15) 0%, rgba(34, 197, 94, 0.1) 100%); border: 1px solid rgba(79, 178, 142, 0.3); border-radius: 10px;">
+                    <div id="device-pairing-section" style="padding: 18px; background: linear-gradient(135deg, rgba(79, 178, 142, 0.15) 0%, rgba(34, 197, 94, 0.1) 100%); border: 1px solid rgba(79, 178, 142, 0.3); border-radius: 10px;">
                         <div style="font-weight: 600; margin-bottom: 12px; font-size: 14px; color: #4fb28e; display: flex; align-items: center; gap: 8px;">
+                            <span style="background: #4fb28e; color: #1a2744; padding: 2px 8px; border-radius: 4px; font-size: 12px;">STEP 2</span>
                             <svg class="icon"><use href="#icon-link"/></svg>
-                            Option B: Enter Display Pairing Code
+                            Enter Pairing Code from Display
                         </div>
                         <p style="color: #94a3b8; font-size: 12px; margin-bottom: 12px; line-height: 1.5;">
-                            If Bluetooth isn't available, enter the <strong>6-character code</strong> shown on your display (requires WiFi already configured on device).
+                            After WiFi connects, your display shows a <strong>6-character pairing code</strong>. Enter it below to link your dashboard configuration.
                         </p>
                         <div style="display: flex; gap: 10px; align-items: center;">
                             <input type="text" id="device-pairing-code"
@@ -963,11 +972,12 @@
         // BLE PROVISIONING (Web Bluetooth API)
         // ============================================
 
-        // BLE Service and Characteristic UUIDs (must match firmware)
+        // BLE Service and Characteristic UUIDs (must match firmware v7.1+)
+        // HYBRID PROVISIONING: BLE handles WiFi only, URL comes via pairing code
         const BLE_SERVICE_UUID = 'cc000001-0000-1000-8000-00805f9b34fb';
         const BLE_CHAR_SSID_UUID = 'cc000002-0000-1000-8000-00805f9b34fb';
         const BLE_CHAR_PASSWORD_UUID = 'cc000003-0000-1000-8000-00805f9b34fb';
-        const BLE_CHAR_URL_UUID = 'cc000004-0000-1000-8000-00805f9b34fb';
+        // NOTE: BLE_CHAR_URL_UUID removed in v7.1 - URL now comes via pairing code
         const BLE_CHAR_STATUS_UUID = 'cc000005-0000-1000-8000-00805f9b34fb';
         const BLE_CHAR_WIFI_LIST_UUID = 'cc000006-0000-1000-8000-00805f9b34fb';
 
@@ -1114,6 +1124,8 @@
 
         // Send credentials after network selection
         async function sendBLECredentials(statusDiv, connectBtn) {
+            // HYBRID PROVISIONING Phase 1: Send WiFi credentials only
+            // URL/server config comes via pairing code (Phase 2)
             const ssidInput = document.getElementById('ble-wifi-ssid');
             const ssidSelect = document.getElementById('ble-wifi-ssid-select');
             const passwordInput = document.getElementById('ble-wifi-password');
@@ -1134,15 +1146,14 @@
 
             connectBtn.disabled = true;
             connectBtn.style.opacity = '0.6';
-            statusDiv.innerHTML = '<span style="color: #667eea;">Sending credentials...</span>';
+            statusDiv.innerHTML = '<span style="color: #667eea;">Sending WiFi credentials...</span>';
 
             try {
                 const service = bleService;
 
-                // Get characteristics
+                // Get characteristics (WiFi only - no URL in hybrid mode)
                 const charSSID = await service.getCharacteristic(BLE_CHAR_SSID_UUID);
                 const charPassword = await service.getCharacteristic(BLE_CHAR_PASSWORD_UUID);
-                const charURL = await service.getCharacteristic(BLE_CHAR_URL_UUID);
                 const charStatus = await service.getCharacteristic(BLE_CHAR_STATUS_UUID);
 
                 // Subscribe to status notifications
@@ -1151,56 +1162,88 @@
                     const value = new TextDecoder().decode(event.target.value);
                     console.log('[BLE] Status update:', value);
 
-                    if (value === 'credentials_saved') {
+                    // v7.1+ firmware sends 'wifi_saved' (not 'credentials_saved')
+                    if (value === 'wifi_saved' || value === 'credentials_saved') {
+                        // HYBRID: WiFi saved, now show pairing code prompt
                         statusDiv.innerHTML = `
-                            <div style="color: #22c55e; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                                <svg class="icon-sm"><use href="#icon-check-circle"/></svg>
-                                <strong>Success!</strong> Credentials sent. Your display will now connect to WiFi.
+                            <div style="color: #22c55e; text-align: center;">
+                                <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px;">
+                                    <svg class="icon-sm"><use href="#icon-check-circle"/></svg>
+                                    <strong>WiFi credentials sent!</strong>
+                                </div>
+                                <div style="background: #243352; border: 2px solid #4fb28e; border-radius: 8px; padding: 16px; margin-top: 12px;">
+                                    <p style="color: #f1f5f9; margin-bottom: 8px;"><strong>Step 2: Look at your display</strong></p>
+                                    <p style="color: #94a3b8; font-size: 13px;">Your device will show a <strong>6-character pairing code</strong>.</p>
+                                    <p style="color: #94a3b8; font-size: 13px;">Enter it below to complete setup.</p>
+                                </div>
                             </div>
                         `;
 
-                        // Disconnect after success
+                        // Disconnect BLE after success
                         setTimeout(() => {
                             if (bleServer && bleServer.connected) {
                                 bleServer.disconnect();
                             }
                         }, 2000);
+
+                        // Show and highlight the pairing code section
+                        const pairingSection = document.getElementById('device-pairing-section');
+                        const pairingDivider = document.getElementById('pairing-divider');
+                        if (pairingSection) {
+                            pairingSection.style.display = 'block';
+                            pairingSection.style.border = '2px solid #4fb28e';
+                            pairingSection.style.animation = 'pulse 1s ease-in-out 3';
+                        }
+                        if (pairingDivider) pairingDivider.style.display = 'block';
+
+                        // Focus the pairing code input
+                        setTimeout(() => {
+                            const pairingInput = document.getElementById('device-pairing-code');
+                            if (pairingInput) pairingInput.focus();
+                        }, 500);
                     }
                 });
 
-                // Build webhook URL (same as pairing code method)
-                const webhookUrl = buildWebhookUrl();
-
-                // Send credentials (order matters - URL triggers the save)
+                // HYBRID: Send WiFi credentials only (password triggers save in firmware)
                 const encoder = new TextEncoder();
                 await charSSID.writeValue(encoder.encode(ssid));
-                statusDiv.innerHTML = '<span style="color: #667eea;">Sent WiFi name...</span>';
+                statusDiv.innerHTML = '<span style="color: #667eea;">Sent WiFi network name...</span>';
 
                 await charPassword.writeValue(encoder.encode(password));
-                statusDiv.innerHTML = '<span style="color: #667eea;">Sent WiFi password...</span>';
+                statusDiv.innerHTML = '<span style="color: #667eea;">Sent WiFi password... Device connecting to WiFi...</span>';
 
-                await charURL.writeValue(encoder.encode(webhookUrl));
-                statusDiv.innerHTML = '<span style="color: #667eea;">Sent dashboard URL... Waiting for confirmation...</span>';
-
-                // Wait a moment for the device to process and notify
+                // Wait for device to process and notify
                 setTimeout(() => {
-                    // If no notification received, assume success anyway
-                    if (statusDiv.innerHTML.includes('Waiting for confirmation')) {
+                    // If no notification received, show manual prompt
+                    if (statusDiv.innerHTML.includes('Device connecting')) {
                         statusDiv.innerHTML = `
-                            <div style="color: #22c55e; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                                <svg class="icon-sm"><use href="#icon-check-circle"/></svg>
-                                <strong>Credentials sent!</strong> Your display should connect shortly.
+                            <div style="color: #22c55e; text-align: center;">
+                                <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px;">
+                                    <svg class="icon-sm"><use href="#icon-check-circle"/></svg>
+                                    <strong>WiFi credentials sent!</strong>
+                                </div>
+                                <div style="background: #243352; border: 2px solid #4fb28e; border-radius: 8px; padding: 16px; margin-top: 12px;">
+                                    <p style="color: #f1f5f9; margin-bottom: 8px;"><strong>Step 2: Look at your display</strong></p>
+                                    <p style="color: #94a3b8; font-size: 13px;">Once WiFi connects, your device will show a <strong>6-character pairing code</strong>.</p>
+                                    <p style="color: #94a3b8; font-size: 13px;">Enter it below to complete setup.</p>
+                                </div>
                             </div>
                         `;
+
+                        // Show pairing section
+                        const pairingSection = document.getElementById('device-pairing-section');
+                        const pairingDivider = document.getElementById('pairing-divider');
+                        if (pairingSection) pairingSection.style.display = 'block';
+                        if (pairingDivider) pairingDivider.style.display = 'block';
                     }
-                }, 3000);
+                }, 5000);
 
             } catch (error) {
                 console.error('[BLE] Error:', error);
 
                 let errorMessage = 'Connection failed. ';
                 if (error.name === 'NotFoundError') {
-                    errorMessage = 'No device selected. Make sure your display shows "BLUETOOTH SETUP" screen.';
+                    errorMessage = 'No device selected. Make sure your display shows "DEVICE SETUP" screen.';
                 } else if (error.name === 'SecurityError') {
                     errorMessage = 'Bluetooth access denied. Please allow Bluetooth access and try again.';
                 } else if (error.name === 'NetworkError') {
@@ -1367,7 +1410,7 @@
             }
         };
 
-        // Factory reset via BLE
+        // Factory reset via BLE (HYBRID: clears WiFi credentials, device clears URL on reset)
         window.factoryResetDevice = async function() {
             const status = document.getElementById('reset-status');
             status.innerHTML = '<span style="color: #f59e0b;">Searching for device...</span>';
@@ -1387,17 +1430,16 @@
                 const server = await device.gatt.connect();
                 const service = await server.getPrimaryService(BLE_SERVICE_UUID);
 
-                // Send empty credentials to trigger reset
+                // Send reset command to clear WiFi credentials
+                // NOTE: URL characteristic removed in v7.1 - device firmware clears all settings on __RESET__
                 const charSSID = await service.getCharacteristic(BLE_CHAR_SSID_UUID);
                 const charPassword = await service.getCharacteristic(BLE_CHAR_PASSWORD_UUID);
-                const charURL = await service.getCharacteristic(BLE_CHAR_URL_UUID);
 
                 const encoder = new TextEncoder();
                 await charSSID.writeValue(encoder.encode('__RESET__'));
                 await charPassword.writeValue(encoder.encode(''));
-                await charURL.writeValue(encoder.encode(''));
 
-                status.innerHTML = '<span style="color: #22c55e;">Device reset! It will restart shortly.</span>';
+                status.innerHTML = '<span style="color: #22c55e;">Device reset! It will restart and show BLE setup screen.</span>';
                 server.disconnect();
             } catch (error) {
                 status.innerHTML = `<span style="color: #ef4444;">Reset failed: ${error.message}</span>`;

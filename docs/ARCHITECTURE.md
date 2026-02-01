@@ -1327,41 +1327,82 @@ const BOM_FORECAST_URLS = {
 
 ## 18. Device Pairing System
 
-*New in v4.0, Updated v5.3 with Vercel KV*
+*New in v4.0, Updated v5.3 with Vercel KV, Updated v5.4 with Hybrid BLE + Pairing*
 
 ### 18.1 Overview
 
-Device pairing allows easy setup of TRMNL devices without manual URL entry. Uses a 6-character alphanumeric code (like Chromecast/Roku pairing).
+Device provisioning uses a **hybrid two-phase approach**:
+- **Phase 1 (BLE):** WiFi credentials sent via Bluetooth Low Energy
+- **Phase 2 (Pairing Code):** Server configuration via 6-character code
 
-### 18.2 Pairing Flow
+This architecture avoids WiFiManager/captive portal which crashes ESP32-C3 with Guru Meditation (0xbaad5678).
+
+### 18.2 Why Hybrid?
+
+| Approach | Problem |
+|----------|---------|
+| WiFiManager / Captive Portal | **CRASHES** ESP32-C3 with 0xbaad5678 |
+| BLE sends everything | Works, but couples WiFi and server config |
+| **Hybrid (BLE + Pairing)** | ✅ Clean separation, no crashes, re-configurable |
+
+### 18.3 Two-Phase Provisioning Flow
 
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│  Device boots   │───▶│  Generates 6-   │───▶│  Displays code  │
-│  (CCFirm™)      │    │  char code      │    │  on e-ink       │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                                              │
-         ▼                                              ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│  Device polls   │◀───│  Vercel KV      │◀───│  User enters    │
-│  GET /api/pair  │    │  (persistent)   │    │  code in wizard │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                     │                        │
-         ▼                     │                        ▼
-┌─────────────────┐            │              ┌─────────────────┐
-│  Receives       │            │              │  POST /api/pair │
-│  webhookUrl     │            │              │  with config    │
-└─────────────────┘            │              └─────────────────┘
-         │                     ▼
-         ▼              ┌─────────────────┐
-┌─────────────────┐     │  KV stores:     │
-│  Device saves   │     │  pair:{CODE}    │
-│  & fetches      │     │  with 10min TTL │
-│  dashboard      │     └─────────────────┘
-└─────────────────┘
+┌─────────────────────────────────────────────────────────────────────────┐
+│                                                                         │
+│  PHASE 1: BLE WiFi Provisioning                                        │
+│                                                                         │
+│  ┌─────────────┐         BLE          ┌─────────────┐                  │
+│  │   Phone     │ ───────────────────► │   Device    │                  │
+│  │   Browser   │   SSID + Password    │   ESP32     │                  │
+│  │  (Chrome)   │      ONLY            │  (CCFirm)   │                  │
+│  └─────────────┘                      └─────────────┘                  │
+│                                              │                          │
+│                                              ▼                          │
+│                                        Saves WiFi creds                 │
+│                                        Connects to WiFi                 │
+│                                              │                          │
+├──────────────────────────────────────────────┼──────────────────────────┤
+│                                              │                          │
+│  PHASE 2: Pairing Code Server Config         ▼                          │
+│                                     ┌─────────────────┐                 │
+│                                     │  Device shows:  │                 │
+│                                     │  Code: A7X9K2   │                 │
+│  ┌─────────────┐                    └────────┬────────┘                 │
+│  │   Phone     │                             │                          │
+│  │   Browser   │                             │ Polls GET /api/pair/CODE │
+│  │  (any)      │                             │ every 5 seconds          │
+│  └──────┬──────┘                             │                          │
+│         │                                    ▼                          │
+│         │ User enters code    ┌─────────────────────────┐               │
+│         │ in Setup Wizard     │   Vercel Server         │               │
+│         │                     │   (stores config in KV) │               │
+│         │ POST config         └─────────────────────────┘               │
+│         └─────────────────────────────────►│                            │
+│           to /api/pair/CODE                │                            │
+│           (webhookUrl, prefs)              │ Device polls, receives     │
+│                                            │ webhookUrl                 │
+│                                            ▼                            │
+│                                    ┌─────────────┐                      │
+│                                    │   Device    │                      │
+│                                    │   Ready!    │                      │
+│                                    └─────────────┘                      │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 18.3 Vercel KV Integration
+### 18.4 BLE Characteristics (Phase 1)
+
+| UUID | Name | Direction | Purpose |
+|------|------|-----------|---------|
+| `CC000002-...` | SSID | Write | WiFi network name |
+| `CC000003-...` | Password | Write | WiFi password |
+| `CC000005-...` | Status | Read/Notify | Connection status |
+| `CC000006-...` | WiFiList | Read | Available networks |
+
+**Note:** Server URL is NOT sent via BLE — it comes via pairing code in Phase 2.
+
+### 18.5 Vercel KV Integration (Phase 2)
 
 **Critical for Serverless:** Vercel serverless functions are stateless. Each invocation may run on a different instance. Pairing data MUST be persisted in Vercel KV to survive across function invocations.
 
@@ -1377,30 +1418,59 @@ const data = await kv.get(`pair:${code}`);
 
 **Fallback:** In-memory store for local development when KV is unavailable.
 
-### 18.4 API Endpoints
+### 18.6 API Endpoints
 
 | Endpoint | Method | Purpose | Storage |
 |----------|--------|---------|---------|
 | `/api/pair/[code]` | GET | Device polls for config | Read from KV |
 | `/api/pair/[code]` | POST | Wizard submits config | Write to KV |
 
-### 18.5 Pairing Code Format
+### 18.7 Pairing Code Format
 
 ```
 XXXXXX (6 alphanumeric characters, uppercase)
 Example: A3B7K9
+Characters: A-Z, 0-9 (excluding ambiguous: 0, O, 1, I, L)
 ```
 
-### 18.6 Device Polling Behavior
+### 18.8 Device Polling Behavior (Phase 2)
 
-1. Device generates random 6-character code
-2. Displays: "PAIR CODE: A3B7K9" on e-ink
-3. Polls GET `/api/pair/A3B7K9` every 5 seconds
-4. Timeout after 10 minutes (matches KV TTL)
-5. On success: receives `webhookUrl`, saves to EEPROM
-6. Transitions to normal dashboard fetch loop
+1. Device connects to WiFi (credentials from BLE Phase 1)
+2. Device generates random 6-character code
+3. Displays: "Code: A3B7K9" on e-ink
+4. Polls GET `/api/pair/A3B7K9` every 5 seconds
+5. Timeout after 10 minutes (matches KV TTL)
+6. On success: receives `webhookUrl`, saves to Preferences
+7. Transitions to normal dashboard fetch loop
 
-### 18.7 Security Considerations
+### 18.9 Setup Wizard Flow
+
+**Step 1: WiFi Provisioning (BLE)**
+1. User clicks "Connect Device" in Setup Wizard
+2. Browser requests Bluetooth permission (Chrome/Edge)
+3. User selects "CommuteCompute-XXXX" device
+4. Wizard reads WiFi network list via BLE
+5. User selects network and enters password
+6. Wizard sends SSID + password via BLE
+7. Device saves and connects to WiFi
+
+**Step 2: Server Configuration (Pairing Code)**
+1. Device displays pairing code on e-ink screen
+2. User enters 6-character code in Setup Wizard
+3. User completes journey configuration
+4. Wizard POSTs config to `/api/pair/{CODE}`
+5. Device polls and receives webhookUrl
+6. Device transitions to dashboard mode
+
+### 18.10 Re-Configuration Scenarios
+
+| Scenario | Action |
+|----------|--------|
+| Change WiFi network | Factory reset → Re-provision via BLE |
+| Change server/preferences | New pairing code (no BLE needed) |
+| Move to new home | Factory reset → Full re-provision |
+
+### 18.11 Security Considerations
 
 | Concern | Mitigation |
 |---------|------------|
@@ -1408,6 +1478,7 @@ Example: A3B7K9
 | Replay attacks | Codes deleted from KV after successful retrieval |
 | Timing attacks | 10-minute TTL auto-expires stale codes |
 | Network sniffing | HTTPS required for all communication |
+| BLE sniffing | WiFi password only, not server config |
 
 ---
 
@@ -1463,22 +1534,57 @@ CCFirm™ is the custom firmware family for Commute Compute devices. All devices
 | CCFirmWaveshare | Waveshare e-ink | 🔄 Planned |
 | CCFirmESP32 | Generic ESP32 | 🔄 Planned |
 
-### 20.3 Boot Sequence
+### 20.3 Boot Sequence (Hybrid Provisioning)
 
 ```
 1. setup() [<5 seconds, NO NETWORK]
    ├── Disable brownout detection
    ├── Initialize serial
+   ├── Allocate zone buffer
    ├── Initialize display (bb_epaper)
    ├── Show boot logo
-   └── Set initial state = STATE_WIFI_CONNECT
+   ├── Load settings from Preferences
+   └── Set initial state based on saved credentials
 
-2. loop() [State machine]
-   ├── STATE_WIFI_CONNECT → Connect to WiFi
-   ├── STATE_FETCH_DATA → GET /api/zones
-   ├── STATE_RENDER → Draw zones to display
-   ├── STATE_SLEEP → Deep sleep (20s)
-   └── (repeat)
+2. loop() [State machine - Hybrid Provisioning]
+
+   STATE_INIT
+       │
+       ▼
+   STATE_CHECK_CREDENTIALS ──── Has WiFi? ──── Yes ───► STATE_WIFI_CONNECT
+       │                                                      │
+       No                                                     │
+       ▼                                                      │
+   STATE_BLE_PROVISION                                        │
+       │ Display BLE setup screen                             │
+       │ Advertise as "CommuteCompute-XXXX"                  │
+       │ Wait for SSID + Password via BLE                    │
+       │ (NO URL - that comes via pairing code)              │
+       ▼                                                      │
+   STATE_WIFI_CONNECT ◄───────────────────────────────────────┘
+       │ Connect to saved WiFi network
+       │
+       ▼
+   STATE_CHECK_SERVER_URL ──── Has URL? ──── Yes ───► STATE_FETCH_ZONES
+       │
+       No (first boot or reset)
+       ▼
+   STATE_PAIRING_MODE
+       │ Generate 6-character pairing code
+       │ Display code on e-ink screen
+       │ Poll GET /api/pair/[code] every 5 seconds
+       │ Timeout after 10 minutes
+       │ On success: save webhookUrl to Preferences
+       ▼
+   STATE_FETCH_ZONES
+       │ Fetch zone data from server
+       ▼
+   STATE_RENDER
+       │ Draw zones to display
+       ▼
+   STATE_IDLE
+       │ Wait for refresh interval (60s partial, 300s full)
+       └── (loop back to STATE_FETCH_ZONES)
 ```
 
 ### 20.4 Critical Requirements
@@ -1707,6 +1813,7 @@ grep -rn "Clara\|Toorak\|Norman" src/ api/ --include="*.js" \
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 5.4 | 2026-02-01 | **Hybrid BLE + Pairing Provisioning**: Major update to Section 18 (Device Pairing) and Section 20 (Firmware Architecture). Documents two-phase provisioning: Phase 1 (BLE WiFi only) and Phase 2 (Pairing code for server config). Avoids WiFiManager/captive portal crash. New state machine with STATE_BLE_PROVISION and STATE_PAIRING_MODE. BLE characteristics documented. Setup wizard flow updated. |
 | 5.2 | 2026-01-31 | **Simplified System Architecture Diagrams**: Added high-level trademark-based architecture diagram. Updated all diagrams (Distribution Model, Layer Architecture, Data Flow, Request Flow) to use trademark family names consistently. Deprecated legacy renderers in favor of consolidated CCDash™ and CC LiveDash™. |
 | 5.1 | 2026-01-31 | **Trademark Family File Registry**: Added comprehensive mapping of all trademarked components (SmartCommute™, CCDash™, CC LiveDash™, CCFirm™) to their constituent files. Documents CoffeeDecision engine, Journey Display module, and supporting services. |
 | 5.0 | 2026-01-31 | **Alignment with DEVELOPMENT-RULES.md v1.14**: Added Vercel KV Storage (Section 21), GTFS-RT Data Flow (Section 22), Turnkey Compliance (Section 23). Updated references to dev rules. Refresh interval now 60s. |
@@ -1719,6 +1826,6 @@ grep -rn "Clara\|Toorak\|Norman" src/ api/ --include="*.js" \
 
 ---
 
-**Document Version:** 5.2  
-**Development Rules:** v1.14 (24 sections)  
+**Document Version:** 5.4
+**Development Rules:** v1.20 (25 sections)  
 **Copyright © 2026 Commute Compute System™ by Angus Bergman — CC BY-NC 4.0**

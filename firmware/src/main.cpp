@@ -1,9 +1,12 @@
 /**
- * CCFirm™ v7.0 — BLE Provisioning Firmware
+ * CCFirm™ v7.1 — Hybrid BLE + Pairing Code Firmware
  * Part of the Commute Compute System™
  *
- * Boot sequence: Logo → BLE Setup (if needed) → Dashboard
- * No WiFiManager - uses Bluetooth for WiFi provisioning
+ * HYBRID PROVISIONING (see DEVELOPMENT-RULES.md Section 21.7):
+ *   Phase 1 (BLE): WiFi credentials only (SSID + password)
+ *   Phase 2 (Pairing Code): Server config via 6-character code
+ *
+ * This avoids WiFiManager/captive portal which crashes ESP32-C3.
  *
  * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
@@ -30,7 +33,7 @@
 // CONFIGURATION
 // ============================================================================
 
-#define FIRMWARE_VERSION "7.0.0"
+#define FIRMWARE_VERSION "7.1.0"
 
 // Screen dimensions
 #ifdef BOARD_TRMNL_MINI
@@ -58,11 +61,11 @@
 #define ZONE_BMP_MAX_SIZE 35000
 #define DEFAULT_SERVER "https://einkptdashboard.vercel.app"
 
-// BLE UUIDs
+// BLE UUIDs (Hybrid: WiFi credentials ONLY - URL comes via pairing code)
 #define BLE_SERVICE_UUID        "CC000001-0000-1000-8000-00805F9B34FB"
 #define BLE_CHAR_SSID_UUID      "CC000002-0000-1000-8000-00805F9B34FB"
 #define BLE_CHAR_PASSWORD_UUID  "CC000003-0000-1000-8000-00805F9B34FB"
-#define BLE_CHAR_URL_UUID       "CC000004-0000-1000-8000-00805F9B34FB"
+// NOTE: BLE_CHAR_URL_UUID removed in v7.1 - URL now comes via pairing code only
 #define BLE_CHAR_STATUS_UUID    "CC000005-0000-1000-8000-00805F9B34FB"
 #define BLE_CHAR_WIFI_LIST_UUID "CC000006-0000-1000-8000-00805F9B34FB"
 
@@ -232,28 +235,31 @@ class CredentialCallbacks : public BLECharacteristicCallbacks {
 
         if (value.length() > 0) {
             if (uuid.indexOf("0002") > 0) {
+                // SSID received
                 strncpy(wifiSSID, value.c_str(), sizeof(wifiSSID) - 1);
                 Serial.printf("[BLE] SSID: %s\n", wifiSSID);
             }
             else if (uuid.indexOf("0003") > 0) {
+                // Password received - check if we have both credentials
                 strncpy(wifiPassword, value.c_str(), sizeof(wifiPassword) - 1);
                 Serial.println("[BLE] Password received");
-            }
-            else if (uuid.indexOf("0004") > 0) {
-                strncpy(webhookUrl, value.c_str(), sizeof(webhookUrl) - 1);
-                Serial.printf("[BLE] URL: %s\n", webhookUrl);
 
+                // HYBRID: BLE only provides WiFi credentials
+                // Server URL comes via pairing code in Phase 2
                 if (strlen(wifiSSID) > 0 && strlen(wifiPassword) > 0) {
                     bleCredentialsReceived = true;
-                    devicePaired = true;  // URL means setup wizard completed
+                    // NOTE: devicePaired stays false - must complete pairing code flow
                     saveSettings();
 
                     if (pCharStatus) {
-                        pCharStatus->setValue("credentials_saved");
+                        pCharStatus->setValue("wifi_saved");
                         pCharStatus->notify();
                     }
+                    Serial.println("[BLE] WiFi credentials saved - pairing code required for server config");
                 }
             }
+            // NOTE: URL characteristic (0004) removed in v7.1
+            // URL now comes via pairing code only
         }
     }
 };
@@ -369,11 +375,15 @@ void loop() {
                 Serial.printf("[OK] Connected: %s\n", WiFi.localIP().toString().c_str());
                 consecutiveErrors = 0;
 
-                // If credentials came from BLE and include webhookUrl, go straight to dashboard
+                // HYBRID FLOW: Check if we have a valid webhook URL
+                // If already paired with URL, go straight to dashboard
+                // Otherwise, must complete pairing code flow (Phase 2)
                 if (devicePaired && strlen(webhookUrl) > 0) {
+                    Serial.println("[OK] Already paired with URL - fetching dashboard");
                     currentState = STATE_FETCH_DASHBOARD;
                 } else {
-                    // WiFi connected but not paired - show unified setup screen with pairing code
+                    // WiFi connected but not paired - enter pairing code mode (Phase 2)
+                    Serial.println("[INFO] WiFi OK - entering pairing code mode");
                     currentState = STATE_SHOW_PAIRING;
                 }
             } else {
@@ -519,14 +529,15 @@ void initBLE() {
 
     BLEService* pService = pServer->createService(BLE_SERVICE_UUID);
 
+    // HYBRID: BLE only handles WiFi credentials (SSID + Password)
+    // Server URL comes via pairing code (Phase 2)
     BLECharacteristic* pCharSSID = pService->createCharacteristic(BLE_CHAR_SSID_UUID, BLECharacteristic::PROPERTY_WRITE);
     pCharSSID->setCallbacks(new CredentialCallbacks());
 
     BLECharacteristic* pCharPass = pService->createCharacteristic(BLE_CHAR_PASSWORD_UUID, BLECharacteristic::PROPERTY_WRITE);
     pCharPass->setCallbacks(new CredentialCallbacks());
 
-    BLECharacteristic* pCharURL = pService->createCharacteristic(BLE_CHAR_URL_UUID, BLECharacteristic::PROPERTY_WRITE);
-    pCharURL->setCallbacks(new CredentialCallbacks());
+    // NOTE: URL characteristic removed in v7.1 - URL comes via pairing code only
 
     pCharStatus = pService->createCharacteristic(BLE_CHAR_STATUS_UUID, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY);
     pCharStatus->addDescriptor(new BLE2902());
@@ -644,30 +655,31 @@ void showSetupScreen() {
     Serial.println("[Setup] Rendering setup screen...");
     
     // Unified setup screen - shows BOTH BLE and pairing code options
+    // HYBRID PROVISIONING: Phase 1 (BLE) for WiFi, Phase 2 (Code) for server config
     bbep->fillScreen(BBEP_WHITE);
     bbep->setFont(FONT_8x8);
     bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
 
-    // Logo at top
+    // Logo at top (CC logo centered)
     int smallX = (SCREEN_W - LOGO_SMALL_W) / 2;
     bbep->loadBMP(LOGO_SMALL, smallX, 5, BBEP_BLACK, BBEP_WHITE);
 
     // Title
     bbep->setCursor(340, 145); bbep->print("DEVICE SETUP");
 
-    // Instructions box
+    // Instructions box (turnkey: user's own URL)
     bbep->drawRect(60, 165, 680, 120, BBEP_BLACK);
-    bbep->setCursor(80, 180); bbep->print("1. Go to: einkptdashboard.vercel.app/setup-wizard.html");
+    bbep->setCursor(80, 180); bbep->print("1. Go to: [your-server].vercel.app/setup-wizard.html");
     bbep->setCursor(80, 200); bbep->print("2. Complete setup steps 1-4");
     bbep->setCursor(80, 220); bbep->print("3. In Step 5, select TRMNL Display (OG)");
     bbep->setCursor(80, 240); bbep->print("4. Choose your preferred connection method below:");
 
     // Two-column layout for BLE and Pairing Code
 
-    // Left column: Bluetooth
+    // Left column: Bluetooth (Phase 1 - WiFi only)
     bbep->fillRect(60, 295, 330, 100, BBEP_BLACK);
     bbep->setTextColor(BBEP_WHITE, BBEP_BLACK);
-    bbep->setCursor(140, 305); bbep->print("OPTION A: BLUETOOTH");
+    bbep->setCursor(120, 305); bbep->print("STEP 1: WIFI (BLUETOOTH)");
     bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
     bbep->drawRect(70, 320, 310, 65, BBEP_BLACK);
     uint8_t mac[6];
@@ -676,14 +688,14 @@ void showSetupScreen() {
     bbep->setCursor(110, 355); bbep->printf("Select: CommuteCompute-%02X%02X", mac[4], mac[5]);
     bbep->setCursor(110, 375); bbep->print("(Chrome/Edge only)");
 
-    // Right column: Pairing Code
+    // Right column: Pairing Code (Phase 2 - Server config)
     bbep->fillRect(410, 295, 330, 100, BBEP_BLACK);
     bbep->setTextColor(BBEP_WHITE, BBEP_BLACK);
-    bbep->setCursor(480, 305); bbep->print("OPTION B: PAIRING CODE");
+    bbep->setCursor(470, 305); bbep->print("STEP 2: PAIRING CODE");
     bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
 
-    // Pairing code display (if generated)
-    if (strlen(pairingCode) > 0) {
+    // Pairing code display (if WiFi connected and code generated)
+    if (wifiConnected && strlen(pairingCode) > 0) {
         bbep->fillRect(430, 325, 290, 45, BBEP_BLACK);
         bbep->setTextColor(BBEP_WHITE, BBEP_BLACK);
         bbep->setCursor(500, 340);
@@ -694,14 +706,18 @@ void showSetupScreen() {
         bbep->setCursor(460, 380); bbep->print("Enter code in wizard");
     } else {
         bbep->drawRect(420, 320, 310, 65, BBEP_BLACK);
-        bbep->setCursor(450, 345); bbep->print("Waiting for WiFi...");
-        bbep->setCursor(450, 365); bbep->print("Code appears after connect");
+        bbep->setCursor(450, 345); bbep->print("Complete Step 1 first");
+        bbep->setCursor(450, 365); bbep->print("Code appears after WiFi");
     }
 
     // Status line
-    bbep->setCursor(280, 420); bbep->print("Waiting for configuration...");
+    if (wifiConnected) {
+        bbep->setCursor(250, 420); bbep->print("WiFi connected - enter code above");
+    } else {
+        bbep->setCursor(280, 420); bbep->print("Waiting for WiFi credentials...");
+    }
 
-    // Footer
+    // Footer with logo reference
     bbep->drawLine(50, 440, 750, 440, BBEP_BLACK);
     bbep->setCursor(220, 455); bbep->print("(c) 2026 Angus Bergman - CC BY-NC 4.0");
     bbep->setCursor(360, 470); bbep->print("v" FIRMWARE_VERSION);
@@ -714,11 +730,16 @@ void showConnectingScreen() {
     bbep->setFont(FONT_8x8);
     bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
 
+    // CC logo centered
     int smallX = (SCREEN_W - LOGO_SMALL_W) / 2;
     bbep->loadBMP(LOGO_SMALL, smallX, 100, BBEP_BLACK, BBEP_WHITE);
 
     bbep->setCursor(300, 280); bbep->print("CONNECTING TO WIFI...");
     bbep->setCursor(280, 320); bbep->printf("Network: %s", wifiSSID);
+
+    // Footer
+    bbep->drawLine(50, 440, 750, 440, BBEP_BLACK);
+    bbep->setCursor(360, 455); bbep->print("v" FIRMWARE_VERSION);
 
     bbep->refresh(REFRESH_FULL, true);
 }
@@ -730,13 +751,17 @@ void showPairedScreen() {
     bbep->setFont(FONT_8x8);
     bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
 
-    bbep->fillRect(0, 0, 800, 50, BBEP_BLACK);
-    bbep->setTextColor(BBEP_WHITE, BBEP_BLACK);
-    bbep->setCursor(300, 18); bbep->print("COMMUTE COMPUTE");
-    bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
+    // CC logo centered at top
+    int smallX = (SCREEN_W - LOGO_SMALL_W) / 2;
+    bbep->loadBMP(LOGO_SMALL, smallX, 80, BBEP_BLACK, BBEP_WHITE);
 
-    bbep->setCursor(365, 200); bbep->print("PAIRED!");
-    bbep->setCursor(260, 260); bbep->print("Loading your dashboard...");
+    bbep->setCursor(365, 260); bbep->print("PAIRED!");
+    bbep->setCursor(260, 300); bbep->print("Loading your dashboard...");
+
+    // Footer
+    bbep->drawLine(50, 440, 750, 440, BBEP_BLACK);
+    bbep->setCursor(220, 455); bbep->print("(c) 2026 Angus Bergman - CC BY-NC 4.0");
+    bbep->setCursor(360, 470); bbep->print("v" FIRMWARE_VERSION);
 
     bbep->refresh(REFRESH_FULL, true);
 }
@@ -745,9 +770,19 @@ void showErrorScreen(const char* msg) {
     bbep->fillScreen(BBEP_WHITE);
     bbep->setFont(FONT_8x8);
     bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
-    bbep->setCursor(370, 200); bbep->print("ERROR");
-    bbep->setCursor(200, 250); bbep->print(msg);
-    bbep->setCursor(280, 310); bbep->print("Retrying in 30 seconds...");
+
+    // CC logo centered at top
+    int smallX = (SCREEN_W - LOGO_SMALL_W) / 2;
+    bbep->loadBMP(LOGO_SMALL, smallX, 80, BBEP_BLACK, BBEP_WHITE);
+
+    bbep->setCursor(370, 240); bbep->print("ERROR");
+    bbep->setCursor(200, 280); bbep->print(msg);
+    bbep->setCursor(280, 340); bbep->print("Retrying in 30 seconds...");
+
+    // Footer
+    bbep->drawLine(50, 440, 750, 440, BBEP_BLACK);
+    bbep->setCursor(360, 455); bbep->print("v" FIRMWARE_VERSION);
+
     bbep->refresh(REFRESH_FULL, true);
 }
 

@@ -351,6 +351,7 @@ The system was previously known as "Commute Compute". Update any remaining refer
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.20 | 2026-02-01 | Angus Bergman | **HYBRID BLE + PAIRING PROVISIONING**: Added Section 21.7 — Mandatory hybrid provisioning architecture. Phase 1: BLE sends WiFi credentials only (SSID + password). Phase 2: Device connects to WiFi, displays pairing code, polls `/api/pair/[code]` for server config. Documents: why WiFiManager/captive portal crashes ESP32-C3 (0xbaad5678), two-phase flow diagram, firmware state machine, BLE characteristics (URL removed), pairing screen display, setup wizard flow, re-configuration scenarios, factory reset behavior. |
 | 1.19 | 2026-02-01 | Angus Bergman | **DEVICE PAIRING WITH VERCEL KV**: Added Section 21.6 — Device pairing system with mandatory Vercel KV persistence. Documents 6-character pairing code flow, KV storage patterns (`pair:{CODE}` with 10min TTL), device polling behavior, setup wizard integration. Fixes serverless stateless issue where in-memory stores fail across invocations. Updated version refs to CCDash V11, Architecture v5.3. |
 | 1.18 | 2026-01-31 | Angus Bergman | **MULTI-MODAL JOURNEY SUPPORT + CCDASH V10.2-V10.3**: (1) Rewrote Section 23.7 — Multi-modal journey leg construction supporting N transit legs with interchange walks (Tram→Train, Bus→Train, etc.). (2) Added Section 23.9 — Alternative route detection (MANDATORY). Route discovery, scoring weights, multi-modal selection triggers. (3) Added delay accumulation across multiple transit legs. (4) Prohibition on hardcoded routes reinforced. Engine-only adaptation per Section 17.4. **CCDash Spec Amendments:** v10.2 DEPART time column (Section 5.6.2), actual location names (Section 5.5.1); v10.3 cafe closed detection (Section 7.2.1), FRIDAY TREAT status. |
 | 1.15 | 2026-01-31 | Angus Bergman | **SERVERLESS RENDERING & ADMIN PANEL FIXES**: (1) Added Section 10.4 — Font loading in Vercel serverless (try multiple paths: process.cwd, __dirname, /var/task). (2) Added Section 13.6 — Admin Panel JavaScript patterns (Image preload pattern to avoid onerror on empty src; KV sync before server requests). (3) Screen API now reads journey config from KV storage with random fallback when unconfigured. |
@@ -2516,6 +2517,183 @@ The Setup Wizard MUST:
 2. POST configuration to `/api/pair/{CODE}`
 3. Include generated `webhookUrl` in POST body
 4. Display "Directing you to your dashboard now..." on completion
+
+### 21.7 Hybrid Provisioning Flow: BLE + Pairing Code (v1.20)
+
+**🔴 CRITICAL**: This is the MANDATORY provisioning architecture. It separates WiFi provisioning (BLE) from server configuration (pairing code) to avoid WiFiManager/captive portal crashes.
+
+#### 21.7.1 Why Hybrid?
+
+| Approach | Problem |
+|----------|---------|
+| WiFiManager / Captive Portal | **CRASHES** ESP32-C3 with 0xbaad5678 Guru Meditation |
+| BLE sends everything | Works, but couples WiFi and server config |
+| **Hybrid (BLE + Pairing)** | ✅ Clean separation, no crashes, re-configurable |
+
+**Benefits:**
+- **No captive portal** — avoids crash
+- **Minimal BLE payload** — only WiFi SSID + password
+- **Rich server config** — all preferences via pairing code
+- **Re-configurable** — change server config without re-pairing BLE
+- **Existing infrastructure** — uses existing `/api/pair/[code]` endpoint
+
+#### 21.7.2 Two-Phase Provisioning Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                                                                         │
+│  PHASE 1: BLE WiFi Provisioning                                        │
+│                                                                         │
+│  ┌─────────────┐         BLE          ┌─────────────┐                  │
+│  │   Phone     │ ───────────────────► │   Device    │                  │
+│  │   Browser   │   SSID + Password    │   ESP32     │                  │
+│  │  (Chrome)   │      ONLY            │  (CCFirm)   │                  │
+│  └─────────────┘                      └─────────────┘                  │
+│                                              │                          │
+│                                              ▼                          │
+│                                        Saves WiFi creds                 │
+│                                        Connects to WiFi                 │
+│                                              │                          │
+├──────────────────────────────────────────────┼──────────────────────────┤
+│                                              │                          │
+│  PHASE 2: Pairing Code Server Config         ▼                          │
+│                                     ┌─────────────────┐                 │
+│                                     │  Device shows:  │                 │
+│                                     │  Code: A7X9K2   │                 │
+│  ┌─────────────┐                    └────────┬────────┘                 │
+│  │   Phone     │                             │                          │
+│  │   Browser   │                             │ Polls GET /api/pair/CODE │
+│  │  (any)      │                             │ every 5 seconds          │
+│  └──────┬──────┘                             │                          │
+│         │                                    ▼                          │
+│         │ User enters code    ┌─────────────────────────┐               │
+│         │ in Setup Wizard     │   Vercel Server         │               │
+│         │                     │   (stores config in KV) │               │
+│         │ POST config         └─────────────────────────┘               │
+│         └─────────────────────────────────►│                            │
+│           to /api/pair/CODE                │                            │
+│           (webhookUrl, prefs)              │ Device polls, receives     │
+│                                            │ webhookUrl                 │
+│                                            ▼                            │
+│                                    ┌─────────────┐                      │
+│                                    │   Device    │                      │
+│                                    │   Ready!    │                      │
+│                                    └─────────────┘                      │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+#### 21.7.3 Firmware State Machine (Hybrid)
+
+```
+STATE_INIT
+    │
+    ▼
+STATE_CHECK_CREDENTIALS ──── Has WiFi? ──── Yes ───► STATE_WIFI_CONNECT
+    │                                                      │
+    No                                                     │
+    ▼                                                      │
+STATE_BLE_PROVISION                                        │
+    │                                                      │
+    │ Receives SSID + Password via BLE (NO URL)            │
+    │ Saves to Preferences                                 │
+    ▼                                                      │
+STATE_WIFI_CONNECT ◄───────────────────────────────────────┘
+    │
+    │ Connected to WiFi
+    ▼
+STATE_CHECK_SERVER_URL ──── Has URL? ──── Yes ───► STATE_FETCH_ZONES
+    │
+    No
+    ▼
+STATE_PAIRING_MODE
+    │
+    │ Generate 6-char code
+    │ Display code on screen
+    │ Poll GET /api/pair/[code] every 5 seconds
+    │ Timeout after 10 minutes
+    │
+    │ Receives webhookUrl
+    │ Saves to Preferences
+    ▼
+STATE_FETCH_ZONES
+    │
+    ▼
+STATE_RENDER ◄──► STATE_IDLE
+```
+
+#### 21.7.4 BLE Characteristics (Phase 1 Only)
+
+| UUID | Name | Direction | Purpose |
+|------|------|-----------|---------|
+| `CC000002-...` | SSID | Write | WiFi network name |
+| `CC000003-...` | Password | Write | WiFi password |
+| `CC000005-...` | Status | Read/Notify | Connection status |
+| `CC000006-...` | WiFiList | Read | Available networks |
+
+**🚫 REMOVED**: `CHAR_URL_UUID` — Server URL is NO LONGER sent via BLE
+
+#### 21.7.5 Pairing Screen Display
+
+When device enters `STATE_PAIRING_MODE`, display:
+
+```
+┌─────────────────────────────────────────┐
+│                                         │
+│         COMMUTE COMPUTE                 │
+│                                         │
+│   WiFi Connected: ✓                     │
+│                                         │
+│   Enter this code in Setup Wizard:      │
+│                                         │
+│         ┌─────────────┐                 │
+│         │   A7X9K2    │                 │
+│         └─────────────┘                 │
+│                                         │
+│   [your-url].vercel.app/setup           │
+│                                         │
+│   Waiting for configuration...          │
+│                                         │
+│   © 2026 Angus Bergman                  │
+└─────────────────────────────────────────┘
+```
+
+#### 21.7.6 Setup Wizard Flow (Hybrid)
+
+**Step 1: WiFi Provisioning (BLE)**
+1. User clicks "Connect Device" in Setup Wizard
+2. Browser requests Bluetooth permission
+3. User selects "CommuteCompute-XXXX" device
+4. Wizard scans for WiFi networks via BLE characteristic
+5. User selects network and enters password
+6. Wizard sends SSID + password via BLE
+7. Device connects to WiFi
+
+**Step 2: Server Configuration (Pairing Code)**
+1. Device displays pairing code on e-ink screen
+2. User enters 6-character code in Setup Wizard
+3. User completes journey configuration (addresses, preferences)
+4. Wizard POSTs config to `/api/pair/{CODE}`
+5. Device polls and receives webhookUrl
+6. Device transitions to dashboard mode
+
+#### 21.7.7 Re-Configuration Scenarios
+
+| Scenario | Action |
+|----------|--------|
+| Change WiFi network | Factory reset → Re-provision via BLE |
+| Change server/preferences | New pairing code (no BLE needed) |
+| Move to new home | Factory reset → Full re-provision |
+
+#### 21.7.8 Factory Reset Behavior
+
+Factory reset clears:
+- WiFi SSID
+- WiFi password
+- Server URL
+- All preferences
+
+Device returns to `STATE_BLE_PROVISION` and displays BLE setup screen.
 
 ---
 

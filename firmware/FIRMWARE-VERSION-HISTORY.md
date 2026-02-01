@@ -8,7 +8,58 @@ This document tracks all firmware releases for the Commute Compute System.
 
 ## 🔒 Locked Production Versions
 
-### CC-FW-6.1-60s (Current)
+### CC-FW-7.1.0 (Current)
+
+| Attribute | Value |
+|-----------|-------|
+| **Version** | 7.1.0 |
+| **Official Name** | CC-FW-7.1.0-HYBRID |
+| **Release Date** | 2026-02-01 |
+| **Git Commit** | (pending) |
+| **Previous** | CC-FW-6.1-60s (`7336929`) |
+| **Status** | ✅ PRODUCTION - HYBRID PROVISIONING |
+| **Hardware Verified** | TRMNL OG (ESP32-C3, 7.5" 800×480 e-ink) |
+
+**Description:**
+Implements hybrid two-phase provisioning as mandated by DEVELOPMENT-RULES.md Section 21.7:
+- **Phase 1 (BLE):** WiFi credentials only (SSID + password)
+- **Phase 2 (Pairing Code):** Server config via 6-character code
+
+This architecture avoids WiFiManager/captive portal which crashes ESP32-C3 with Guru Meditation 0xbaad5678.
+
+**Key Changes from 6.1:**
+- Removed BLE URL characteristic (CC000004) — URL now comes via pairing code only
+- Added STATE_PAIRING_MODE to firmware state machine
+- Updated all screens to include CC logo consistently
+- Turnkey compliance: instructions show `[your-server].vercel.app` not hardcoded URL
+- BLE status now reports `wifi_saved` instead of `credentials_saved`
+
+**Provisioning Flow:**
+```
+BLE Setup Screen → WiFi Credentials via BLE → Connect to WiFi →
+Pairing Code Screen → User enters code in wizard →
+Device polls /api/pair/[code] → Receives webhookUrl → Dashboard
+```
+
+**Benefits:**
+- No captive portal crashes
+- Minimal BLE payload (WiFi only)
+- Rich server config via pairing code
+- Re-configurable without re-BLE pairing
+
+**Flashing Command:**
+```bash
+cd firmware
+pio run -e trmnl -t upload
+pio device monitor -b 115200
+```
+
+**Modification Policy:**
+🔴 DO NOT MODIFY without explicit approval. Changes require new version number and hardware verification.
+
+---
+
+### CC-FW-6.1-60s (Superseded by 7.1.0)
 
 | Attribute | Value |
 |-----------|-------|
@@ -17,7 +68,7 @@ This document tracks all firmware releases for the Commute Compute System.
 | **Release Date** | 2026-01-31 |
 | **Git Commit** | `7336929` |
 | **Previous** | CC-FW-6.0-STABLE (`2f8d6cf`) |
-| **Status** | ✅ PRODUCTION - LOCKED |
+| **Status** | ⚠️ SUPERSEDED by CC-FW-7.1.0 |
 | **Hardware Verified** | TRMNL OG (ESP32-C3, 7.5" 800×480 e-ink) |
 
 **Description:**  
@@ -92,7 +143,8 @@ pio device monitor -b 115200
 
 | Version | Date | Commit | Status | Notes |
 |---------|------|--------|--------|-------|
-| **CC-FW-6.1-60s** | 2026-01-31 | `7336929` | 🔒 LOCKED | 60s refresh interval, consolidated version define. |
+| **CC-FW-7.1.0** | 2026-02-01 | (pending) | 🔒 LOCKED | Hybrid BLE + Pairing Code provisioning. |
+| **CC-FW-6.1-60s** | 2026-01-31 | `7336929` | Superseded | 60s refresh interval, consolidated version define. |
 | **CC-FW-6.0-STABLE** | 2026-01-31 | `2f8d6cf` | Superseded | First production release. Hardware verified. |
 | 6.0-dev | 2026-01-30 | Various | Deprecated | Development iterations leading to stable |
 | 5.x | 2026-01-29 | Various | Deprecated | bb_epaper experiments, allocBuffer issues |
