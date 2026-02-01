@@ -228,6 +228,200 @@ export const CITY_LOOP_STATIONS = [
   'parliament'        // Underground
 ];
 
+// =============================================================================
+// METRO TUNNEL IMPACT - DISCONTINUED SERVICES (Effective 2026-02-01)
+// =============================================================================
+
+/**
+ * Stations that LOST direct services when Metro Tunnel opened
+ * 
+ * These City Loop stations NO LONGER receive Sunbury/Craigieburn/Upfield/
+ * Pakenham/Cranbourne line services. Passengers must transfer to access
+ * these lines.
+ * 
+ * CRITICAL: Display warnings when users expect these connections
+ */
+export const METRO_TUNNEL_DISCONTINUED_SERVICES = {
+  // Stations that lost Metro Tunnel line services
+  southernCross: {
+    stopId: '22180',
+    lostLines: ['sunbury', 'craigieburn', 'upfield', 'pakenham', 'cranbourne'],
+    stillServedBy: ['werribee', 'williamstown', 'vline'],
+    alternativeFor: {
+      pakenham: 'Walk to Flinders St or use City Loop to transfer',
+      sunbury: 'Walk to Flinders St or use City Loop to transfer',
+      cranbourne: 'Walk to Flinders St or use City Loop to transfer',
+      craigieburn: 'Walk to Flinders St or use City Loop to transfer',
+      upfield: 'Walk to Flinders St or use City Loop to transfer'
+    },
+    nearestMetroTunnel: 'arden',
+    walkMinutes: 12  // Walk to Arden station
+  },
+  flagstaff: {
+    stopId: '22186',
+    lostLines: ['sunbury', 'craigieburn', 'upfield', 'pakenham', 'cranbourne'],
+    stillServedBy: ['belgrave', 'lilydale', 'alamein', 'glenWaverley', 'hurstbridge', 'mernda', 'frankston', 'sandringham', 'werribee', 'williamstown'],
+    alternativeFor: {
+      pakenham: 'Use City Loop to Flinders St, change to Metro Tunnel',
+      sunbury: 'Walk to State Library (5 min)',
+      cranbourne: 'Use City Loop to Flinders St, change to Metro Tunnel',
+      craigieburn: 'Walk to State Library (5 min)',
+      upfield: 'Walk to State Library (5 min)'
+    },
+    nearestMetroTunnel: 'stateLibrary',
+    walkMinutes: 5
+  },
+  melbourneCentral: {
+    stopId: '22182',
+    lostLines: ['sunbury', 'craigieburn', 'upfield', 'pakenham', 'cranbourne'],
+    stillServedBy: ['belgrave', 'lilydale', 'alamein', 'glenWaverley', 'hurstbridge', 'mernda', 'frankston', 'sandringham', 'werribee', 'williamstown'],
+    alternativeFor: {
+      pakenham: 'Walk to State Library (3 min) - same area, different entrance',
+      sunbury: 'Walk to State Library (3 min) - same area, different entrance',
+      cranbourne: 'Walk to State Library (3 min) - same area, different entrance',
+      craigieburn: 'Walk to State Library (3 min)',
+      upfield: 'Walk to State Library (3 min)'
+    },
+    nearestMetroTunnel: 'stateLibrary',
+    walkMinutes: 3  // Very close - State Library is essentially Melbourne Central's replacement
+  },
+  parliament: {
+    stopId: '22181',
+    lostLines: ['sunbury', 'craigieburn', 'upfield', 'pakenham', 'cranbourne'],
+    stillServedBy: ['belgrave', 'lilydale', 'alamein', 'glenWaverley', 'hurstbridge', 'mernda', 'frankston', 'sandringham', 'werribee', 'williamstown'],
+    alternativeFor: {
+      pakenham: 'Walk to Town Hall (8 min) or Flinders St (5 min)',
+      sunbury: 'Walk to Town Hall (8 min) or State Library (10 min)',
+      cranbourne: 'Walk to Town Hall (8 min) or Flinders St (5 min)',
+      craigieburn: 'Walk to State Library (10 min)',
+      upfield: 'Walk to State Library (10 min)'
+    },
+    nearestMetroTunnel: 'townHall',
+    walkMinutes: 8
+  }
+};
+
+/**
+ * Suburban stations that lost DIRECT city access via their previous routes
+ * These stations previously had trains running through the City Loop,
+ * now their lines run through Metro Tunnel instead
+ */
+export const SUBURBAN_ROUTING_CHANGES = {
+  // South-Eastern corridor - now via Metro Tunnel
+  pakenhamLine: {
+    affectedStations: ['Pakenham', 'Cardinia Road', 'Officer', 'Beaconsfield', 'Berwick', 
+                       'Narre Warren', 'Hallam', 'Dandenong', 'Yarraman', 'Noble Park',
+                       'Sandown Park', 'Springvale', 'Westall', 'Clayton', 'Huntingdale',
+                       'Oakleigh', 'Hughesdale', 'Murrumbeena', 'Carnegie', 'Caulfield'],
+    previousRoute: 'City Loop (Parliament → Melbourne Central → Flagstaff → Southern Cross → Flinders St)',
+    newRoute: 'Metro Tunnel (Anzac → Town Hall → State Library → Parkville → Arden)',
+    lostStations: ['Parliament', 'Melbourne Central', 'Flagstaff', 'Southern Cross'],
+    gainedStations: ['Anzac', 'Town Hall', 'State Library', 'Parkville', 'Arden'],
+    keyChange: 'No longer stops at Southern Cross - use Arden for Docklands access'
+  },
+  cranbourneLine: {
+    affectedStations: ['Cranbourne', 'Merinda Park', 'Lynbrook', 'Dandenong', 'Yarraman', 
+                       'Noble Park', 'Sandown Park', 'Springvale', 'Westall', 'Clayton',
+                       'Huntingdale', 'Oakleigh', 'Hughesdale', 'Murrumbeena', 'Carnegie', 'Caulfield'],
+    previousRoute: 'City Loop (Parliament → Melbourne Central → Flagstaff → Southern Cross → Flinders St)',
+    newRoute: 'Metro Tunnel (Anzac → Town Hall → State Library → Parkville → Arden)',
+    lostStations: ['Parliament', 'Melbourne Central', 'Flagstaff', 'Southern Cross'],
+    gainedStations: ['Anzac', 'Town Hall', 'State Library', 'Parkville', 'Arden'],
+    keyChange: 'No longer stops at Southern Cross - use Arden for Docklands access'
+  },
+  sunburyLine: {
+    affectedStations: ['Sunbury', 'Diggers Rest', 'Watergardens', 'Keilor Plains', 'St Albans',
+                       'Ginifer', 'Albion', 'Sunshine', 'Tottenham', 'West Footscray',
+                       'Middle Footscray', 'Footscray', 'South Kensington', 'North Melbourne'],
+    previousRoute: 'City Loop (Flinders St → Southern Cross → Flagstaff → Melbourne Central → Parliament)',
+    newRoute: 'Metro Tunnel (Arden → Parkville → State Library → Town Hall → Anzac)',
+    lostStations: ['Southern Cross', 'Flagstaff', 'Melbourne Central', 'Parliament'],
+    gainedStations: ['Arden', 'Parkville', 'State Library', 'Town Hall', 'Anzac'],
+    keyChange: 'North Melbourne is the last shared station - change here for City Loop lines'
+  },
+  craigieburnLine: {
+    affectedStations: ['Craigieburn', 'Roxburgh Park', 'Coolaroo', 'Broadmeadows', 'Jacana',
+                       'Glenroy', 'Oak Park', 'Pascoe Vale', 'Strathmore', 'Glenbervie',
+                       'Essendon', 'Moonee Ponds', 'Ascot Vale', 'Newmarket', 'Kensington',
+                       'North Melbourne'],
+    previousRoute: 'City Loop (Flinders St → Southern Cross → Flagstaff → Melbourne Central → Parliament)',
+    newRoute: 'Metro Tunnel (Arden → Parkville → State Library → Town Hall → Anzac)',
+    lostStations: ['Southern Cross', 'Flagstaff', 'Melbourne Central', 'Parliament'],
+    gainedStations: ['Arden', 'Parkville', 'State Library', 'Town Hall', 'Anzac'],
+    keyChange: 'North Melbourne is the last shared station - change here for City Loop lines'
+  },
+  upfieldLine: {
+    affectedStations: ['Upfield', 'Gowrie', 'Fawkner', 'Merlynston', 'Batman', 'Coburg',
+                       'Moreland', 'Anstey', 'Brunswick', 'Jewell', 'Royal Park', 'Flemington Bridge'],
+    previousRoute: 'City Loop (Flinders St → Southern Cross → Flagstaff → Melbourne Central → Parliament)',
+    newRoute: 'Metro Tunnel (Arden → Parkville → State Library → Town Hall → Anzac)',
+    lostStations: ['Southern Cross', 'Flagstaff', 'Melbourne Central', 'Parliament'],
+    gainedStations: ['Arden', 'Parkville', 'State Library', 'Town Hall', 'Anzac'],
+    keyChange: 'Connects to Parkville - direct access to hospitals and university'
+  }
+};
+
+/**
+ * Check if a station lost services from a specific line
+ * @param {string} stationName - Station name (e.g., 'Southern Cross')
+ * @param {string} lineName - Line name (e.g., 'pakenham')
+ * @returns {object|null} - Discontinued service info or null if still served
+ */
+export function getDiscontinuedServiceInfo(stationName, lineName) {
+  if (!stationName || !lineName) return null;
+  
+  const normalized = stationName.toLowerCase().replace(/[^a-z]/g, '');
+  const normalizedLine = lineName.toLowerCase().replace(/[^a-z]/g, '');
+  
+  for (const [key, info] of Object.entries(METRO_TUNNEL_DISCONTINUED_SERVICES)) {
+    const stationNormalized = key.toLowerCase();
+    if (normalized.includes(stationNormalized) || stationNormalized.includes(normalized)) {
+      if (info.lostLines.some(l => normalizedLine.includes(l))) {
+        return {
+          station: key,
+          line: lineName,
+          discontinued: true,
+          alternative: info.alternativeFor[normalizedLine] || info.alternativeFor.pakenham,
+          nearestMetroTunnel: info.nearestMetroTunnel,
+          walkMinutes: info.walkMinutes,
+          stillServedBy: info.stillServedBy
+        };
+      }
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * Get routing change info for a suburban station
+ * @param {string} stationName - Station name
+ * @returns {object|null} - Routing change info or null if no change
+ */
+export function getRoutingChangeInfo(stationName) {
+  if (!stationName) return null;
+  
+  const normalized = stationName.toLowerCase().replace(/[^a-z]/g, '');
+  
+  for (const [lineKey, info] of Object.entries(SUBURBAN_ROUTING_CHANGES)) {
+    for (const station of info.affectedStations) {
+      if (normalized === station.toLowerCase().replace(/[^a-z]/g, '')) {
+        return {
+          station: station,
+          line: lineKey.replace('Line', ''),
+          previousRoute: info.previousRoute,
+          newRoute: info.newRoute,
+          lostStations: info.lostStations,
+          gainedStations: info.gainedStations,
+          keyChange: info.keyChange
+        };
+      }
+    }
+  }
+  
+  return null;
+}
+
 /**
  * Check if a line uses Metro Tunnel
  */
