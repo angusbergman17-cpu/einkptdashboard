@@ -1998,48 +1998,41 @@ export function renderFullScreen(data, prefs = {}) {
     ctx.fillRect(zone.x, zone.y, zone.w, zone.h);
     
     // Draw stripe patterns for suspended/diverted
+    // v1.41: Stripes ONLY on time box area (right side) - text area stays clear for legibility
+    // Per Angus 2026-02-01: Keep delay rendering intact, improve diversion legibility
+    const stripeTimeBoxW = Math.max(56, Math.round(72 * scale));
+    const stripeAreaX = zone.x + zone.w - stripeTimeBoxW;
+    
     if (isSuspended) {
-      // Diagonal stripes (per ref image 6 - Sandringham Line)
+      // Diagonal stripes on time box area only
       ctx.save();
       ctx.beginPath();
-      ctx.rect(zone.x, zone.y, zone.w, zone.h);
+      ctx.rect(stripeAreaX, zone.y, stripeTimeBoxW, zone.h);
       ctx.clip();
       ctx.strokeStyle = '#000';
       ctx.lineWidth = 2;
-      for (let i = -zone.h; i < zone.w + zone.h; i += 8) {
+      for (let i = -zone.h; i < stripeTimeBoxW + zone.h; i += 8) {
         ctx.beginPath();
-        ctx.moveTo(zone.x + i, zone.y);
-        ctx.lineTo(zone.x + i + zone.h, zone.y + zone.h);
+        ctx.moveTo(stripeAreaX + i, zone.y);
+        ctx.lineTo(stripeAreaX + i + zone.h, zone.y + zone.h);
         ctx.stroke();
       }
       ctx.restore();
     } else if (isDiverted) {
-      // Vertical stripes (per ref image 8 - Tram 70 Diverted)
+      // Vertical stripes on time box area only
       ctx.save();
       ctx.beginPath();
-      ctx.rect(zone.x, zone.y, zone.w, zone.h);
+      ctx.rect(stripeAreaX, zone.y, stripeTimeBoxW, zone.h);
       ctx.clip();
       ctx.strokeStyle = '#000';
       ctx.lineWidth = 2;
-      for (let i = 0; i < zone.w; i += 6) {
+      for (let i = 0; i < stripeTimeBoxW; i += 6) {
         ctx.beginPath();
-        ctx.moveTo(zone.x + i, zone.y);
-        ctx.lineTo(zone.x + i, zone.y + zone.h);
+        ctx.moveTo(stripeAreaX + i, zone.y);
+        ctx.lineTo(stripeAreaX + i, zone.y + zone.h);
         ctx.stroke();
       }
       ctx.restore();
-    }
-    
-    // v1.40: White background for text on striped legs (legibility fix)
-    // Per Angus 2026-02-01: Text must be readable on diverted/suspended legs
-    if (isSuspended || isDiverted) {
-      const contentBgX = zone.x + 4;
-      const contentBgY = zone.y + 4;
-      const timeBoxW = Math.max(56, Math.round(72 * scale));
-      const contentBgW = zone.w - timeBoxW - 12;  // Leave space for time box
-      const contentBgH = zone.h - 8;
-      ctx.fillStyle = '#FFF';
-      ctx.fillRect(contentBgX, contentBgY, contentBgW, contentBgH);
     }
     
     // -----------------------------------------------------------------------
