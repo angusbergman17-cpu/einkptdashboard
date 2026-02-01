@@ -35,6 +35,7 @@
 #include "soc/soc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "../include/config.h"
+#include "../include/cc_logo_data.h"
 
 #define SCREEN_W 800
 #define SCREEN_H 480
@@ -364,46 +365,51 @@ void generatePairingCode() {
 }
 
 void showPairingScreen() {
+    // Stage 2b: Pairing screen - TURNKEY (URL agnostic)
     bbep->fillScreen(BBEP_WHITE);
+    
+    // Header bar
+    bbep->fillRect(0, 0, 800, 50, BBEP_BLACK);
+    bbep->setFont(FONT_12x16);
+    bbep->setTextColor(BBEP_WHITE, BBEP_BLACK);
+    bbep->setCursor(180, 18); bbep->print("COMMUTE COMPUTE");
     bbep->setFont(FONT_8x8);
+    bbep->setCursor(520, 22); bbep->print("v" FIRMWARE_VERSION);
+    
+    // Small CC logo
+    bbep->loadBMP(CC_LOGO_SMALL, 350, 60, BBEP_BLACK, BBEP_WHITE);
+    
+    // Title - LARGER
+    bbep->setFont(FONT_12x16);
     bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
+    bbep->setCursor(300, 170); bbep->print("DEVICE SETUP");
     
-    // Header
-    bbep->fillRect(0, 0, 800, 60, BBEP_BLACK);
+    // Instructions - LARGER, CENTERED, TURNKEY
+    bbep->setFont(FONT_8x8);
+    bbep->setCursor(180, 210); bbep->print("1. On your phone/computer, go to:");
+    
+    bbep->setFont(FONT_12x16);
+    bbep->setCursor(140, 240); bbep->print("[your-server].vercel.app");
+    
+    bbep->setFont(FONT_8x8);
+    bbep->setCursor(180, 280); bbep->print("2. The setup wizard will open automatically");
+    bbep->setCursor(180, 310); bbep->print("3. Enter this pairing code:");
+    
+    // Large pairing code box - BIGGER
+    bbep->fillRect(220, 340, 360, 70, BBEP_BLACK);
+    bbep->setFont(FONT_12x16);
     bbep->setTextColor(BBEP_WHITE, BBEP_BLACK);
-    bbep->setCursor(180, 15); bbep->print("COMMUTE COMPUTE SMART DISPLAY");
-    bbep->setCursor(320, 38); bbep->print("v" FIRMWARE_VERSION);
-    bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
-    
-    // Main box
-    bbep->drawRect(100, 90, 600, 260, BBEP_BLACK);
-    bbep->drawRect(101, 91, 598, 258, BBEP_BLACK);
-    
-    // Instructions
-    bbep->setCursor(280, 110); bbep->print("DEVICE SETUP");
-    
-    bbep->setCursor(140, 150); bbep->print("1. On your phone/computer, go to:");
-    bbep->setCursor(180, 180); bbep->print("einkptdashboard.vercel.app/setup-wizard.html");
-    
-    bbep->setCursor(140, 220); bbep->print("2. Complete the setup wizard");
-    
-    bbep->setCursor(140, 260); bbep->print("3. Enter this code when prompted:");
-    
-    // Large pairing code box
-    bbep->fillRect(250, 290, 300, 60, BBEP_BLACK);
-    bbep->setTextColor(BBEP_WHITE, BBEP_BLACK);
-    bbep->setCursor(310, 310);
-    // Print code with spacing
+    bbep->setCursor(280, 365);
+    // Print code with spacing - LARGER
     for (int i = 0; i < 6; i++) {
-        bbep->print(pairingCode[i]); bbep->print(" ");
+        bbep->print(pairingCode[i]); bbep->print("  ");
     }
-    bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
     
     // Footer
-    bbep->fillRect(0, 400, 800, 80, BBEP_BLACK);
-    bbep->setTextColor(BBEP_WHITE, BBEP_BLACK);
-    bbep->setCursor(200, 420); bbep->print("Waiting for setup to complete...");
-    bbep->setCursor(250, 450); bbep->print("(c) 2026 Angus Bergman");
+    bbep->fillRect(0, 430, 800, 50, BBEP_BLACK);
+    bbep->setFont(FONT_8x8);
+    bbep->setCursor(220, 445); bbep->print("Waiting for setup to complete...");
+    bbep->setCursor(270, 462); bbep->print("(c) 2026 Angus Bergman");
     
     bbep->refresh(REFRESH_FULL, true);
     lastFullRefresh = millis();
@@ -453,55 +459,50 @@ bool pollPairingServer() {
 void showBootScreen() {
     // Stage 1: Large CC logo centered (per Section 21.2)
     bbep->fillScreen(BBEP_WHITE);
-    bbep->setFont(FONT_8x8);
+    
+    // Draw embedded BMP logo centered (200x188 at center of 800x480)
+    // Center: x = (800-200)/2 = 300, y = (480-188)/2 - 30 = 116
+    bbep->loadBMP(CC_LOGO_LARGE, 300, 100, BBEP_BLACK, BBEP_WHITE);
+    
+    // "COMMUTE COMPUTE" text below logo - LARGER
+    bbep->setFont(FONT_12x16);
     bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
+    int textW = 15 * 12;  // ~15 chars * 12px
+    bbep->setCursor((800 - textW) / 2, 320); 
+    bbep->print("COMMUTE COMPUTE");
     
-    // Draw large "CC" letters as logo (centered at 400,200)
-    // C letter (left)
-    bbep->fillRect(280, 160, 80, 20, BBEP_BLACK);  // top
-    bbep->fillRect(280, 160, 20, 160, BBEP_BLACK); // left side
-    bbep->fillRect(280, 300, 80, 20, BBEP_BLACK);  // bottom
-    
-    // C letter (right) 
-    bbep->fillRect(420, 160, 80, 20, BBEP_BLACK);  // top
-    bbep->fillRect(420, 160, 20, 160, BBEP_BLACK); // left side
-    bbep->fillRect(420, 300, 80, 20, BBEP_BLACK);  // bottom
-    
-    // "COMMUTE COMPUTE" text below logo
-    bbep->setCursor(270, 360); bbep->print("COMMUTE COMPUTE");
-    bbep->setCursor(320, 390); bbep->print("v" FIRMWARE_VERSION);
+    bbep->setFont(FONT_8x8);
+    bbep->setCursor(360, 360); 
+    bbep->print("v" FIRMWARE_VERSION);
     
     bbep->refresh(REFRESH_FULL, true);
 }
 
 void showConnectingScreen() {
-    // Stage 2a: Connecting to WiFi (per Section 21.3)
+    // Stage 2a: Connecting to WiFi (per Section 21.3) - TURNKEY
     bbep->fillScreen(BBEP_WHITE);
-    bbep->setFont(FONT_8x8);
-    bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
     
-    // Header
-    bbep->fillRect(0, 0, 800, 60, BBEP_BLACK);
+    // Header bar
+    bbep->fillRect(0, 0, 800, 50, BBEP_BLACK);
+    bbep->setFont(FONT_12x16);
     bbep->setTextColor(BBEP_WHITE, BBEP_BLACK);
-    bbep->setCursor(180, 15); bbep->print("COMMUTE COMPUTE SMART DISPLAY");
-    bbep->setCursor(320, 38); bbep->print("v" FIRMWARE_VERSION);
+    bbep->setCursor(180, 18); bbep->print("COMMUTE COMPUTE");
+    bbep->setFont(FONT_8x8);
+    bbep->setCursor(520, 22); bbep->print("v" FIRMWARE_VERSION);
+    
+    // Small CC logo centered
+    bbep->loadBMP(CC_LOGO_SMALL, 350, 80, BBEP_BLACK, BBEP_WHITE);
+    
+    // Status text - LARGER, CENTERED
+    bbep->setFont(FONT_12x16);
     bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
-    
-    // Draw small CC logo (top center below header)
-    bbep->fillRect(360, 80, 30, 8, BBEP_BLACK);
-    bbep->fillRect(360, 80, 8, 50, BBEP_BLACK);
-    bbep->fillRect(360, 122, 30, 8, BBEP_BLACK);
-    bbep->fillRect(410, 80, 30, 8, BBEP_BLACK);
-    bbep->fillRect(410, 80, 8, 50, BBEP_BLACK);
-    bbep->fillRect(410, 122, 30, 8, BBEP_BLACK);
-    
-    // Status
-    bbep->setCursor(300, 180); bbep->print("CONNECTING TO WIFI...");
+    bbep->setCursor(240, 220); bbep->print("CONNECTING TO WIFI...");
     
     // Footer with copyright
     bbep->fillRect(0, 430, 800, 50, BBEP_BLACK);
+    bbep->setFont(FONT_8x8);
     bbep->setTextColor(BBEP_WHITE, BBEP_BLACK);
-    bbep->setCursor(250, 450); bbep->print("(c) 2026 Angus Bergman");
+    bbep->setCursor(270, 450); bbep->print("(c) 2026 Angus Bergman");
     
     bbep->refresh(REFRESH_FULL, true);
 }
