@@ -168,6 +168,152 @@ const ACT_POSTCODES = [
 ];
 
 // =============================================================================
+// MELBOURNE METRO TUNNEL CONFIGURATION (Big Build - February 2026)
+// =============================================================================
+
+/**
+ * Metro Tunnel stations (new underground stations)
+ * These stations are ONLY served by Metro Tunnel lines
+ */
+export const METRO_TUNNEL_STATIONS = {
+  arden: { name: 'Arden', zone: 1, interchange: ['tram'], precinct: 'North Melbourne' },
+  parkville: { name: 'Parkville', zone: 1, interchange: ['tram'], precinct: 'Hospital/University' },
+  stateLibrary: { name: 'State Library', zone: 1, interchange: ['tram', 'bus'], precinct: 'CBD' },
+  townHall: { name: 'Town Hall', zone: 1, interchange: ['tram'], precinct: 'CBD' },
+  anzac: { name: 'Anzac', zone: 1, interchange: ['tram', 'bus'], precinct: 'Domain/St Kilda Rd' }
+};
+
+/**
+ * Lines that use Metro Tunnel (NO LONGER use City Loop)
+ * These lines now run: Western suburbs ↔ Metro Tunnel ↔ South-Eastern suburbs
+ */
+export const METRO_TUNNEL_LINES = [
+  'sunbury',      // Sunbury ↔ Cranbourne/Pakenham via Metro Tunnel
+  'craigieburn',  // Craigieburn ↔ Pakenham via Metro Tunnel
+  'upfield',      // Upfield ↔ Pakenham/Cranbourne via Metro Tunnel
+  'pakenham',     // Pakenham ↔ Sunbury/Craigieburn/Upfield via Metro Tunnel
+  'cranbourne'    // Cranbourne ↔ Sunbury/Craigieburn/Upfield via Metro Tunnel
+];
+
+/**
+ * Lines that STILL use City Loop
+ * These continue to run through Flinders St → Southern Cross → Flagstaff → 
+ * Melbourne Central → Parliament → Flinders St (or reverse)
+ */
+export const CITY_LOOP_LINES = [
+  // Burnley Group
+  'belgrave',
+  'lilydale', 
+  'alamein',
+  'glenWaverley',
+  // Caulfield Group (partial - some terminate Flinders)
+  'frankston',
+  'sandringham',
+  // Northern Group (partial)
+  'hurstbridge',
+  'mernda',
+  // Cross-city
+  'werribee',
+  'williamstown'
+];
+
+/**
+ * City Loop stations (underground CBD stations - NOT Metro Tunnel)
+ */
+export const CITY_LOOP_STATIONS = [
+  'flindersStreet',   // Hub station (above ground)
+  'southernCross',    // Spencer St
+  'flagstaff',        // Underground
+  'melbourneCentral', // Underground
+  'parliament'        // Underground
+];
+
+/**
+ * Check if a line uses Metro Tunnel
+ */
+export function isMetroTunnelLine(lineName) {
+  if (!lineName) return false;
+  const normalized = lineName.toLowerCase().replace(/[^a-z]/g, '');
+  return METRO_TUNNEL_LINES.some(l => normalized.includes(l.toLowerCase()));
+}
+
+/**
+ * Check if a station is a Metro Tunnel station
+ */
+export function isMetroTunnelStation(stationName) {
+  if (!stationName) return false;
+  const normalized = stationName.toLowerCase().replace(/[^a-z]/g, '');
+  return Object.values(METRO_TUNNEL_STATIONS).some(s => 
+    normalized.includes(s.name.toLowerCase().replace(/[^a-z]/g, ''))
+  );
+}
+
+/**
+ * Get recommended CBD station for a line
+ * Metro Tunnel lines → State Library or Town Hall
+ * City Loop lines → Flinders Street or Melbourne Central
+ */
+export function getRecommendedCBDStation(lineName, destination = 'cbd') {
+  if (isMetroTunnelLine(lineName)) {
+    // Metro Tunnel lines stop at State Library and Town Hall in CBD
+    return destination === 'south' ? 'anzac' : 'stateLibrary';
+  } else {
+    // City Loop lines still use traditional stations
+    return 'flindersStreet';
+  }
+}
+
+/**
+ * Check if two stations are connected via Metro Tunnel
+ * Returns true if journey should use Metro Tunnel routing
+ */
+export function shouldUseMetroTunnel(originLine, destinationStation) {
+  // If origin is on a Metro Tunnel line and destination is a Metro Tunnel station
+  if (isMetroTunnelLine(originLine) && isMetroTunnelStation(destinationStation)) {
+    return true;
+  }
+  // If destination is CBD and line is Metro Tunnel line
+  if (isMetroTunnelLine(originLine)) {
+    const cbdKeywords = ['cbd', 'city', 'collins', 'bourke', 'swanston', 'flinders'];
+    const destNorm = (destinationStation || '').toLowerCase();
+    if (cbdKeywords.some(k => destNorm.includes(k))) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Get Metro Tunnel journey info
+ * Returns routing advice for Metro Tunnel journeys
+ */
+export function getMetroTunnelRouting(fromStation, toStation, lineName) {
+  const usesTunnel = isMetroTunnelLine(lineName);
+  
+  if (!usesTunnel) {
+    return {
+      useMetroTunnel: false,
+      route: 'city-loop',
+      note: `${lineName} line uses City Loop (Flinders St, Southern Cross, Flagstaff, Melbourne Central, Parliament)`
+    };
+  }
+  
+  return {
+    useMetroTunnel: true,
+    route: 'metro-tunnel',
+    stations: ['Arden', 'Parkville', 'State Library', 'Town Hall', 'Anzac'],
+    note: `${lineName} line uses Metro Tunnel (faster CBD access via underground stations)`,
+    connections: {
+      arden: 'Trams to Docklands, North Melbourne',
+      parkville: 'Royal Melbourne Hospital, Melbourne University, trams',
+      stateLibrary: 'RMIT, State Library, trams on Swanston St',
+      townHall: 'Collins St, Bourke St Mall, City Square',
+      anzac: 'St Kilda Rd, Domain, Shrine, trams 3/5/6/16/64/67/72'
+    }
+  };
+}
+
+// =============================================================================
 // SMARTCOMMUTE ENGINE
 // =============================================================================
 
