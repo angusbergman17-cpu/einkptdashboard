@@ -452,8 +452,8 @@ void showBootScreen() {
     
     // Draw full CC logo scaled for boot (468x440)
     // Center: x = (800-468)/2 = 166, y = (480-440)/2 = 20
-    // Boot logo: 239x380, centered at (280, 50)
-    bbep->loadBMP(CC_LOGO_BOOT, 280, 50, BBEP_BLACK, BBEP_WHITE);
+    // Boot logo: 256x380 (32-bit aligned width), centered at (272, 50)
+    bbep->loadBMP(CC_LOGO_BOOT, 272, 50, BBEP_BLACK, BBEP_WHITE);
     
     bbep->refresh(REFRESH_FULL, true);
 }
