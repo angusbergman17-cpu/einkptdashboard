@@ -327,19 +327,24 @@ void loop() {
 
         // ==== BLE SETUP ====
         case STATE_BLE_SETUP: {
-            static bool bleInit = false;
             static bool screenShown = false;
+            static bool bleInit = false;
 
-            if (!bleInit) {
-                // Generate pairing code early (will show blank until WiFi connects)
-                generatePairingCode();
-                initBLE();
-                bleInit = true;
-            }
-
+            // STEP 1: Generate pairing code and render screen FIRST (before BLE eats memory)
             if (!screenShown) {
+                generatePairingCode();
+                Serial.println("[Setup] Rendering setup screen before BLE init...");
                 showSetupScreen();
                 screenShown = true;
+                Serial.printf("[Setup] Screen done. Free heap: %d bytes\n", ESP.getFreeHeap());
+            }
+
+            // STEP 2: Start BLE AFTER display is rendered
+            if (!bleInit) {
+                Serial.println("[Setup] Now starting BLE...");
+                initBLE();
+                bleInit = true;
+                Serial.printf("[Setup] BLE started. Free heap: %d bytes\n", ESP.getFreeHeap());
             }
 
             if (bleCredentialsReceived) {
@@ -636,6 +641,8 @@ void showBootScreen() {
 }
 
 void showSetupScreen() {
+    Serial.println("[Setup] Rendering setup screen...");
+    
     // Unified setup screen - shows BOTH BLE and pairing code options
     bbep->fillScreen(BBEP_WHITE);
     bbep->setFont(FONT_8x8);
