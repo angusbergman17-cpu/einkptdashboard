@@ -100,7 +100,7 @@ export class JourneyDisplay {
       case JourneyStatus.DELAY: return `□ DELAY → Arrive ${arrivalStr} (+${this.delayMinutes} min)`;
       case JourneyStatus.DISRUPTION: return `▲ DISRUPTION → Arrive ${arrivalStr} (+${this.delayMinutes} min)`;
       case JourneyStatus.DIVERSION: return `▲ ${this.statusMessage} → Arrive ${arrivalStr} (+${this.delayMinutes} min)`;
-      default: return `LEAVE IN ${this.getLeaveInMinutes()} MIN → Arrive ${arrivalStr}`;
+      default: return `LEAVE NOW → Arrive ${arrivalStr}`;  // Always LEAVE NOW - per Angus 2026-02-01
     }
   }
   

@@ -1364,9 +1364,8 @@ function renderStatus(data, prefs) {
     statusText = delayMin > 0
       ? `⚠ TRAM DIVERSION → Arrive ${arriveBy} (+${delayMin} min)`
       : `⚠ DIVERSION → Arrive ${arriveBy}`;
-  } else if (leaveIn !== undefined && leaveIn > 0) {
-    statusText = `LEAVE IN ${leaveIn} MIN → Arrive ${arriveBy}`;
   } else {
+    // Always show "LEAVE NOW" - per Angus 2026-02-01
     statusText = `LEAVE NOW → Arrive ${arriveBy}`;
   }
   
@@ -1898,12 +1897,9 @@ export function renderFullScreen(data, prefs = {}) {
     const delayWord = delayedLegCount > 1 ? 'DELAYS' : 'DELAY';
     statusText = `⏱ ${delayWord} → Arrive ${calculatedArrival}`;
     if (totalDelayMins > 0) statusText += ` (+${totalDelayMins} min)`;
-  } else if (isEarly && Math.abs(diffMins) > 5) {
-    // Buffer time - "LEAVE IN X MIN" per ref image 4
-    const leaveInMins = Math.abs(diffMins);
-    statusText = `LEAVE IN ${leaveInMins} MIN → Arrive ${calculatedArrival}`;
   } else {
-    // Ready to go
+    // Always show "LEAVE NOW" - per Angus 2026-02-01
+    // Buffer time display ("LEAVE IN X MIN") disabled for cleaner UX
     statusText = `LEAVE NOW → Arrive ${calculatedArrival}`;
     if (!isLate) statusText += ' ✓';
   }
