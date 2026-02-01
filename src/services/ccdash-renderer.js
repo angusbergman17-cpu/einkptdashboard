@@ -2035,69 +2035,64 @@ export function renderFullScreen(data, prefs = {}) {
       ctx.restore();
     }
     
-    // v1.43: Tight knockout white backgrounds for text on striped legs
-    // Per Angus 2026-02-01: Smaller knockouts - only cover actual text, not full bar
+    // v1.46: Unified knockout system - consistent scaling and positioning
+    // Per Angus 2026-02-01: All knockouts scale equally, tight fit around text
     if (isSuspended || isDiverted) {
-      const knockoutPad = 2;  // Minimal padding
-      const legNumSize = Math.max(16, Math.round(24 * scale));
-      const iconSz = Math.max(20, Math.round(32 * scale));
-      const titleSz = Math.max(12, Math.round(16 * scale));
-      const subtitleSz = Math.max(10, Math.round(12 * scale));
+      const pad = Math.max(2, Math.round(2 * scale));  // Consistent scaled padding
+      
+      // Use EXACT same sizes as actual element rendering
+      const numSize = Math.max(16, Math.round(24 * scale));
+      const iconSize = Math.max(20, Math.round(32 * scale));
+      const titleSize = Math.max(12, Math.round(16 * scale));
+      const subtitleSize = Math.max(10, Math.round(12 * scale));
+      const departLabelSize = Math.max(7, Math.round(9 * scale));
+      const departTimeSize = Math.max(10, Math.round(14 * scale));
+      const timeBoxW = Math.max(56, Math.round(72 * scale));
+      const departColW = ['train', 'tram', 'bus', 'vline', 'ferry'].includes(leg.type) && leg.departTime ? 55 : 0;
       
       ctx.fillStyle = '#FFF';
       
-      // Knockout for leg number circle only
+      // 1. Leg number knockout - exact position match
       const numX = zone.x + 6;
-      const numY = zone.y + (zone.h - legNumSize) / 2;
-      ctx.fillRect(numX - knockoutPad, numY - knockoutPad, legNumSize + knockoutPad * 2, legNumSize + knockoutPad * 2);
+      const numY = zone.y + (zone.h - numSize) / 2;
+      ctx.fillRect(numX - pad, numY - pad, numSize + pad * 2, numSize + pad * 2);
       
-      // Knockout for icon only
-      const iconX = numX + legNumSize + 6;
-      const iconY = zone.y + (zone.h - iconSz) / 2;
-      ctx.fillRect(iconX - knockoutPad, iconY - knockoutPad, iconSz + knockoutPad * 2, iconSz + knockoutPad * 2);
+      // 2. Icon knockout - exact position match  
+      const iconX = numX + numSize + 6;
+      const iconY = zone.y + (zone.h - iconSize) / 2;
+      ctx.fillRect(iconX - pad, iconY - pad, iconSize + pad * 2, iconSize + pad * 2);
       
-      // Knockout for title and subtitle - TIGHT width based on text
-      const textX = iconX + iconSz + 8;
-      const textBlockH = titleSz + subtitleSz + 4;
+      // 3. Title/subtitle knockout - measured text width
+      const textX = iconX + iconSize + 8;
+      const textBlockH = titleSize + subtitleSize + 2;
       const textBlockY = zone.y + (zone.h - textBlockH) / 2;
-      // Estimate text width (will be drawn later, so use approximate)
+      
       const legTitle = leg.title || getLegTitle(leg);
-      ctx.font = `bold ${titleSz}px Inter, sans-serif`;
-      const titleWidth = ctx.measureText(legTitle).width;
+      ctx.font = `bold ${titleSize}px Inter, sans-serif`;
+      const titleW = ctx.measureText(legTitle).width;
+      
       const subtitleText = isSuspended ? `SUSPENDED — ${leg.reason || 'Service disruption'}` : 
                           (leg.divertedStop || 'Diverted route');
-      ctx.font = `${subtitleSz}px Inter, sans-serif`;
-      const subtitleWidth = ctx.measureText(subtitleText).width;
-      const textBlockW = Math.max(titleWidth, subtitleWidth) + 4;  // Tight fit
-      ctx.fillRect(textX - knockoutPad, textBlockY - knockoutPad, textBlockW + knockoutPad * 2, textBlockH + knockoutPad * 2);
+      ctx.font = `${subtitleSize}px Inter, sans-serif`;
+      const subtitleW = ctx.measureText(subtitleText).width;
       
-      // Knockout for DEPART column (if transit leg with departTime)
-      // v1.45: Match EXACT position where DEPART text is rendered (line ~2215)
-      if (['train', 'tram', 'bus', 'vline', 'ferry'].includes(leg.type) && leg.departTime) {
-        // Use same sizes as actual DEPART rendering
-        const deptLabelSz = Math.max(7, Math.round(9 * scale));
-        const deptTimeSz = Math.max(10, Math.round(14 * scale));
-        const deptColW = 55;  // Same as departColW in main render
-        const tBoxW = Math.max(56, Math.round(72 * scale));
+      const textW = Math.max(titleW, subtitleW);
+      ctx.fillRect(textX - pad, textBlockY - pad, textW + pad * 2, textBlockH + pad * 2);
+      
+      // 4. DEPART knockout - exact position match with actual render
+      if (departColW > 0) {
+        const deptColCenter = zone.x + zone.w - timeBoxW - departColW - 8;
+        const deptBlockY = zone.y + (zone.h - departLabelSize - departTimeSize - 1) / 2;
         
-        // EXACT same position calculation as DEPART text render
-        const deptColCenter = zone.x + zone.w - tBoxW - deptColW - 8;
-        const deptBlockY = zone.y + (zone.h - deptLabelSz - deptTimeSz - 1) / 2;
-        
-        // Measure text widths for knockout size
-        ctx.font = `bold ${deptLabelSz}px Inter, sans-serif`;
+        ctx.font = `bold ${departLabelSize}px Inter, sans-serif`;
         const labelW = ctx.measureText('DEPART').width;
-        ctx.font = `bold ${deptTimeSz}px Inter, sans-serif`;
+        ctx.font = `bold ${departTimeSize}px Inter, sans-serif`;
         const timeW = ctx.measureText(leg.departTime).width;
-        const maxW = Math.max(labelW, timeW);
+        const deptW = Math.max(labelW, timeW);
+        const deptH = departLabelSize + departTimeSize + 1;
         
-        // Knockout centered on deptColCenter (text is center-aligned)
-        const knockoutW = maxW + 4;
-        const knockoutH = deptLabelSz + deptTimeSz + 4;
-        const knockoutX = deptColCenter - knockoutW / 2;
-        const knockoutY = deptBlockY - 2;
-        
-        ctx.fillRect(knockoutX, knockoutY, knockoutW, knockoutH);
+        // Center knockout on text center point
+        ctx.fillRect(deptColCenter - deptW / 2 - pad, deptBlockY - pad, deptW + pad * 2, deptH + pad * 2);
       }
     }
     
