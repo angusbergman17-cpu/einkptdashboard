@@ -195,10 +195,10 @@ export function generateRandomJourney() {
   const arriveMins = (mins + totalMinutes) % 60;
   
   return {
-    origin: home.address.toUpperCase(),
-    destination: work.address.toUpperCase(),
+    origin: home.address,
+    destination: work.address,
     currentTime: `${hour}:${mins.toString().padStart(2, '0')}`,
-    ampm: 'AM',
+    amPm: 'AM',
     dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'][Math.floor(Math.random() * 5)],
     date: `${Math.floor(Math.random() * 28) + 1} January`,
     status: legs.some(l => l.state === 'delayed') ? 'DELAY' : 'LEAVE NOW',

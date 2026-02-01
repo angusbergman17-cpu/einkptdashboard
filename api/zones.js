@@ -37,12 +37,21 @@ function getMelbourneTime() {
 }
 
 /**
- * Format time as HH:MM
+ * Format time in 12-hour format per CCDashDesignV11
+ * Returns: "7:24" (no leading zero on hour)
  */
-function formatTime(date) {
-  const h = date.getHours();
-  const m = date.getMinutes();
-  return `${h}:${m.toString().padStart(2, '0')}`;
+function formatTime12h(date) {
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+  const hour12 = hours % 12 || 12;
+  return `${hour12}:${minutes.toString().padStart(2, '0')}`;
+}
+
+/**
+ * Get AM/PM indicator per CCDashDesignV11
+ */
+function getAmPm(date) {
+  return date.getHours() >= 12 ? 'PM' : 'AM';
 }
 
 /**
@@ -330,6 +339,7 @@ function buildDemoData(scenario) {
   return {
     location: scenario.origin || 'Home',
     current_time: scenario.currentTime || '7:45',
+    am_pm: scenario.amPm || 'AM',
     day: scenario.dayOfWeek || 'Tuesday',
     date: scenario.date || '28 January',
     temp: scenario.weather?.temp ?? 22,
@@ -415,8 +425,9 @@ export default async function handler(req, res) {
       const dashboardData = {
         location: journey.origin,
         current_time: journey.currentTime,
-        day: journey.dayOfWeek.toUpperCase(),
-        date: journey.date.toUpperCase(),
+        am_pm: journey.amPm || 'AM',
+        day: journey.dayOfWeek,
+        date: journey.date,
         temp: journey.weather.temp,
         condition: journey.weather.condition,
         umbrella: journey.weather.umbrella,
@@ -467,7 +478,8 @@ export default async function handler(req, res) {
     
     // Get current time
     const now = getMelbourneTime();
-    const currentTime = formatTime(now);
+    const currentTime = formatTime12h(now);
+    const amPm = getAmPm(now);
     const { day, date } = formatDateParts(now);
     
     // Initialize engine and get route
@@ -523,6 +535,7 @@ export default async function handler(req, res) {
     const dashboardData = {
       location: locations.home?.address || process.env.HOME_ADDRESS || 'Home',
       current_time: currentTime,
+      am_pm: amPm,
       day,
       date,
       temp: weather?.temp ?? '--',
