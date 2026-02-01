@@ -6051,7 +6051,12 @@
                         train: scSettings.preferTrain !== false,
                         tram: scSettings.preferTram !== false,
                         bus: scSettings.preferBus || false,
-                        minimizeWalking: scSettings.minimizeWalking !== false
+                        minimizeWalking: scSettings.minimizeWalking !== false,
+                        multiModal: scSettings.multiModal || 'allow'
+                    },
+                    advanced: {
+                        walkingSpeed: parseInt(scSettings.walkingSpeed) || 80,
+                        maxWalkingDistance: parseInt(scSettings.maxWalk) || 600
                     }
                 };
 
@@ -6162,8 +6167,23 @@
             config.smartcommute = settings;
             localStorage.setItem('cc-config', JSON.stringify(config));
 
-            // Show success message
+            // Sync to Vercel KV for server-side access
             const msg = document.getElementById('sc-settings-message');
+            try {
+                fetch(BASE_URL + '/api/sync-config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ preferences: config })
+                }).then(response => response.json()).then(result => {
+                    console.log('[SmartCommute] KV sync result:', result);
+                }).catch(err => {
+                    console.warn('[SmartCommute] KV sync failed (non-critical):', err);
+                });
+            } catch (e) {
+                console.warn('[SmartCommute] KV sync error:', e);
+            }
+
+            // Show success message
             if (msg) {
                 msg.style.display = 'block';
                 msg.style.background = 'rgba(34, 197, 94, 0.2)';

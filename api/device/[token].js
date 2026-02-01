@@ -1,12 +1,16 @@
 /**
  * Device Webhook Endpoint
  * Decodes config token from URL and returns dashboard image/data
- * 
+ *
+ * Also reads SmartCommute settings from KV if available to apply
+ * user's walking times, coffee position, and mode preferences.
+ *
  * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
  */
 
 import LiveDash from '../../src/services/livedash.js';
+import { getPreferences } from '../../src/data/kv-preferences.js';
 
 /**
  * Decode config token back to config object
@@ -64,20 +68,49 @@ export default async function handler(req, res) {
     const format = req.query.format || 'image';
     const device = req.query.device || 'trmnl-og';
 
+    // Try to load SmartCommute settings from KV (user's saved preferences)
+    let kvPrefs = null;
+    try {
+      kvPrefs = await getPreferences();
+    } catch (e) {
+      console.log('[device] KV preferences not available, using defaults');
+    }
+
+    // Extract SmartCommute settings from KV preferences
+    const scSettings = kvPrefs?.smartcommute || {};
+
     // Transform config to SmartCommute preferences format
     const apiKey = config.api?.key;
     console.log(`[device] API key from token: ${apiKey ? apiKey.substring(0,8)+'...' : 'null'}`);
-    
+
     const preferences = {
       homeAddress: config.addresses?.home,
       homeLocation: config.locations?.home,
       workAddress: config.addresses?.work,
       workLocation: config.locations?.work,
       cafeLocation: config.cafe || config.locations?.cafe,
+      coffeeAddress: config.addresses?.cafe,
       targetArrival: config.journey?.arrivalTime,
+      arrivalTime: config.journey?.arrivalTime,
+      coffeeEnabled: config.journey?.coffeeEnabled,
       preferCoffee: config.journey?.coffeeEnabled,
       preferredRoute: config.journey?.transitRoute,
       apiMode: config.apiMode,
+      state: config.state || 'VIC',
+      // SmartCommute settings from KV (or defaults)
+      homeToStop: scSettings.homeToStop || 5,
+      homeToCafe: scSettings.homeToCafe || 5,
+      cafeToTransit: scSettings.cafeToStop || 2,
+      walkToWork: scSettings.stopToWork || 5,
+      cafeDuration: scSettings.coffeeDuration || 5,
+      coffeeBuffer: scSettings.bufferTime || 3,
+      coffeePosition: scSettings.coffeePosition || 'auto',
+      preferTrain: scSettings.preferTrain !== false,
+      preferTram: scSettings.preferTram !== false,
+      preferBus: scSettings.preferBus || false,
+      minimizeWalking: scSettings.minimizeWalking !== false,
+      walkingSpeed: scSettings.walkingSpeed || 80,
+      maxWalkingDistance: scSettings.maxWalk || 600,
       // API keys in format expected by SmartCommute engine
       api: {
         key: apiKey

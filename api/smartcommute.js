@@ -67,6 +67,7 @@ export default async function handler(req, res) {
       preferTram: modes.tram !== false,
       preferBus: modes.bus || false,
       minimizeWalking: modes.minimizeWalking !== false,
+      multiModal: modes.multiModal || 'allow',
       walkingSpeed: advanced.walkingSpeed || 80,
       maxWalkingDistance: advanced.maxWalkingDistance || 600,
       api: { key: apiKey },
@@ -175,29 +176,49 @@ export default async function handler(req, res) {
 /**
  * Build CCDash-compatible journey legs
  * Format: {type, title, subtitle, minutes, state}
+ *
+ * Honors coffeePosition preference:
+ * - 'auto': SmartCommute decides based on timing
+ * - 'before': Always include coffee before transit (if cafe configured)
+ * - 'after': Coffee after transit (not yet implemented - falls back to auto)
+ * - 'never': Never include coffee stop
  */
 function buildCCDashLegs(result, prefs, now) {
   const legs = [];
   const transit = result.transit || {};
   const trains = transit.trains || [];
   const trams = transit.trams || [];
-  
-  const coffeeEnabled = prefs.coffeeEnabled && prefs.coffeeAddress;
-  
+
+  // Honor coffeePosition preference
+  const coffeePosition = prefs.coffeePosition || 'auto';
+  const coffeeNeverEnabled = coffeePosition === 'never';
+  const coffeeAlwaysBefore = coffeePosition === 'before';
+
+  const coffeeEnabled = !coffeeNeverEnabled && prefs.coffeeEnabled && prefs.coffeeAddress;
+
   // Determine if we have time for coffee
   const homeToCafe = prefs.homeToCafe || 5;
   const coffeeDuration = prefs.cafeDuration || 5;
   const cafeToStop = prefs.cafeToTransit || 2;
   const homeToStop = prefs.homeToStop || 5;
+  const coffeeBuffer = prefs.coffeeBuffer || 3;
   const totalCoffeeTime = homeToCafe + coffeeDuration + cafeToStop;
-  
+
   // Find next usable departure
   const allDepartures = [...trains, ...trams].sort((a, b) => a.minutes - b.minutes);
   const directDeparture = allDepartures.find(d => d.minutes >= homeToStop + 1);
-  const coffeeDeparture = allDepartures.find(d => d.minutes >= totalCoffeeTime + 2);
-  
-  const canGetCoffee = coffeeEnabled && coffeeDeparture && 
-    (!directDeparture || (coffeeDeparture.minutes - directDeparture.minutes) <= 10);
+  const coffeeDeparture = allDepartures.find(d => d.minutes >= totalCoffeeTime + coffeeBuffer);
+
+  // Determine if coffee is possible/wanted based on position preference
+  let canGetCoffee = false;
+  if (coffeeAlwaysBefore && coffeeEnabled) {
+    // Force coffee if configured to always have it before transit
+    canGetCoffee = coffeeDeparture != null;
+  } else if (coffeeEnabled) {
+    // Auto mode: check if timing allows
+    canGetCoffee = coffeeDeparture &&
+      (!directDeparture || (coffeeDeparture.minutes - directDeparture.minutes) <= 10);
+  }
   
   if (canGetCoffee && coffeeEnabled) {
     // Route with coffee - V10 Spec Section 5.5
