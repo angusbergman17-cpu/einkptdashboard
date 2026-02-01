@@ -29,6 +29,46 @@ function generateETag(buffer) {
 }
 
 /**
+ * Render an empty white zone
+ */
+function renderEmptyZone(zone) {
+  const { w, h } = zone;
+  
+  const bytesPerRow = Math.ceil(w / 8);
+  const paddedBytesPerRow = Math.ceil(bytesPerRow / 4) * 4;
+  const pixelDataSize = paddedBytesPerRow * h;
+  const fileSize = 62 + pixelDataSize;
+  
+  const buffer = Buffer.alloc(fileSize, 0);
+  
+  // BMP header
+  buffer.write('BM', 0);
+  buffer.writeUInt32LE(fileSize, 2);
+  buffer.writeUInt32LE(62, 10);
+  
+  // DIB header
+  buffer.writeUInt32LE(40, 14);
+  buffer.writeInt32LE(w, 18);
+  buffer.writeInt32LE(h, 22);
+  buffer.writeUInt16LE(1, 26);
+  buffer.writeUInt16LE(1, 28);
+  buffer.writeUInt32LE(pixelDataSize, 34);
+  buffer.writeUInt32LE(2835, 38);
+  buffer.writeUInt32LE(2835, 42);
+  buffer.writeUInt32LE(2, 46);
+  buffer.writeUInt32LE(2, 50);
+  
+  // Color table: white=0, black=1
+  buffer.writeUInt32LE(0x00FFFFFF, 54);
+  buffer.writeUInt32LE(0x00000000, 58);
+  
+  // Pixel data: all white (0x00 = color 0 = white)
+  // Buffer already initialized to 0, so it's all white
+  
+  return buffer;
+}
+
+/**
  * Render a simple divider line zone (2px black line)
  */
 function renderDividerZone(zone) {
@@ -329,22 +369,35 @@ export default async function handler(req, res) {
     let bmpBuffer;
     
     if (isComposite) {
-      // Composite zone: render full screen and crop to zone region
-      const fullBmp = renderFullScreen(dashboardData);
-      if (!fullBmp) {
-        return res.status(500).json({ error: 'Full render failed' });
-      }
-      
-      // Extract the zone region from full screen BMP
-      // For now, just return the full BMP for header zone, 
-      // and render individual subzones for others
       if (id === 'divider') {
-        // Divider is just a 2px line - render it directly
+        // Divider is just a 2px black line
         bmpBuffer = renderDividerZone(zone);
+      } else if (zone.subzones && zone.subzones.length > 0) {
+        // Composite zone: render subzones and combine into single BMP
+        // For now, render the first subzone that matches
+        // This gives us working BMP format
+        const firstSubzone = zone.subzones[0];
+        if (ZONES[firstSubzone]) {
+          bmpBuffer = renderSingleZone(firstSubzone, dashboardData);
+        }
+        
+        // If first subzone failed, try others
+        if (!bmpBuffer) {
+          for (const sz of zone.subzones) {
+            if (ZONES[sz]) {
+              bmpBuffer = renderSingleZone(sz, dashboardData);
+              if (bmpBuffer) break;
+            }
+          }
+        }
+        
+        // Still nothing? Return empty white zone
+        if (!bmpBuffer) {
+          bmpBuffer = renderEmptyZone(zone);
+        }
       } else {
-        // Return full render cropped to zone - use full BMP for now
-        // TODO: Add proper BMP cropping
-        bmpBuffer = fullBmp;
+        // No subzones defined, render empty
+        bmpBuffer = renderEmptyZone(zone);
       }
     } else {
       // Single granular zone
