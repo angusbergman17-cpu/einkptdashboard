@@ -140,6 +140,7 @@ char zoneETags[NUM_ZONES][ETAG_MAX_LEN] = {"", "", "", "", ""};
 
 // Function declarations
 void initDisplay();
+void showBootScreen();
 void showPairingScreen();
 void showConnectingScreen();
 void showPairedScreen();
@@ -185,6 +186,10 @@ void setup() {
     
     initZoneBuffers();
     initDisplay();
+    
+    // Stage 1: Boot screen with CC logo (2-3 seconds per Section 21.2)
+    showBootScreen();
+    delay(2500);
     
     Serial.println("Setup complete");
 }
@@ -445,19 +450,58 @@ bool pollPairingServer() {
     return false;
 }
 
-void showConnectingScreen() {
+void showBootScreen() {
+    // Stage 1: Large CC logo centered (per Section 21.2)
     bbep->fillScreen(BBEP_WHITE);
     bbep->setFont(FONT_8x8);
     bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
     
-    bbep->fillRect(0, 0, 800, 50, BBEP_BLACK);
-    bbep->setTextColor(BBEP_WHITE, BBEP_BLACK);
-    bbep->setCursor(250, 18); bbep->print("COMMUTE COMPUTE");
+    // Draw large "CC" letters as logo (centered at 400,200)
+    // C letter (left)
+    bbep->fillRect(280, 160, 80, 20, BBEP_BLACK);  // top
+    bbep->fillRect(280, 160, 20, 160, BBEP_BLACK); // left side
+    bbep->fillRect(280, 300, 80, 20, BBEP_BLACK);  // bottom
+    
+    // C letter (right) 
+    bbep->fillRect(420, 160, 80, 20, BBEP_BLACK);  // top
+    bbep->fillRect(420, 160, 20, 160, BBEP_BLACK); // left side
+    bbep->fillRect(420, 300, 80, 20, BBEP_BLACK);  // bottom
+    
+    // "COMMUTE COMPUTE" text below logo
+    bbep->setCursor(270, 360); bbep->print("COMMUTE COMPUTE");
+    bbep->setCursor(320, 390); bbep->print("v" FIRMWARE_VERSION);
+    
+    bbep->refresh(REFRESH_FULL, true);
+}
+
+void showConnectingScreen() {
+    // Stage 2a: Connecting to WiFi (per Section 21.3)
+    bbep->fillScreen(BBEP_WHITE);
+    bbep->setFont(FONT_8x8);
     bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
     
-    bbep->drawRect(150, 150, 500, 150, BBEP_BLACK);
-    bbep->setCursor(280, 200); bbep->print("CONNECTING TO WIFI...");
-    bbep->setCursor(200, 250); bbep->print("Network: Connect to CC-Setup");
+    // Header
+    bbep->fillRect(0, 0, 800, 60, BBEP_BLACK);
+    bbep->setTextColor(BBEP_WHITE, BBEP_BLACK);
+    bbep->setCursor(180, 15); bbep->print("COMMUTE COMPUTE SMART DISPLAY");
+    bbep->setCursor(320, 38); bbep->print("v" FIRMWARE_VERSION);
+    bbep->setTextColor(BBEP_BLACK, BBEP_WHITE);
+    
+    // Draw small CC logo (top center below header)
+    bbep->fillRect(360, 80, 30, 8, BBEP_BLACK);
+    bbep->fillRect(360, 80, 8, 50, BBEP_BLACK);
+    bbep->fillRect(360, 122, 30, 8, BBEP_BLACK);
+    bbep->fillRect(410, 80, 30, 8, BBEP_BLACK);
+    bbep->fillRect(410, 80, 8, 50, BBEP_BLACK);
+    bbep->fillRect(410, 122, 30, 8, BBEP_BLACK);
+    
+    // Status
+    bbep->setCursor(300, 180); bbep->print("CONNECTING TO WIFI...");
+    
+    // Footer with copyright
+    bbep->fillRect(0, 430, 800, 50, BBEP_BLACK);
+    bbep->setTextColor(BBEP_WHITE, BBEP_BLACK);
+    bbep->setCursor(250, 450); bbep->print("(c) 2026 Angus Bergman");
     
     bbep->refresh(REFRESH_FULL, true);
 }
@@ -489,17 +533,31 @@ void showErrorScreen(const char* error) {
 }
 
 void loadSettings() {
-    // HARDCODED to bypass NVS corruption
-    strncpy(webhookUrl, "https://einkptdashboard.vercel.app", sizeof(webhookUrl) - 1);
-    devicePaired = true;
-    Serial.printf("Webhook: %s (hardcoded)\n", webhookUrl);
+    // Check NVS for pairing status, default to unpaired for setup flow
+    preferences.begin("cc-device", true);  // read-only
+    devicePaired = preferences.getBool("paired", false);
+    if (preferences.isKey("webhookUrl")) {
+        String stored = preferences.getString("webhookUrl", "");
+        if (stored.length() > 0) {
+            strncpy(webhookUrl, stored.c_str(), sizeof(webhookUrl) - 1);
+        }
+    }
+    preferences.end();
+    
+    // Default webhook if not set
+    if (strlen(webhookUrl) == 0) {
+        strncpy(webhookUrl, "https://einkptdashboard.vercel.app", sizeof(webhookUrl) - 1);
+    }
+    
+    Serial.printf("Webhook: %s (paired: %s)\n", webhookUrl, devicePaired ? "yes" : "no");
 }
 
 void saveSettings() {
     preferences.begin("cc-device", false);
     preferences.putString("webhookUrl", webhookUrl);
+    preferences.putBool("paired", devicePaired);
     preferences.end();
-    Serial.printf("Settings saved. Webhook: %s\n", webhookUrl);
+    Serial.printf("Settings saved. Webhook: %s, paired: %s\n", webhookUrl, devicePaired ? "yes" : "no");
 }
 
 void connectWiFi() {
