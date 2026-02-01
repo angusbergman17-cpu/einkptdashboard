@@ -591,10 +591,20 @@
                                 <!-- WiFi Credentials -->
                                 <div style="display: grid; gap: 12px; margin-bottom: 15px;">
                                     <div>
-                                        <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">WiFi Network Name (SSID)</label>
-                                        <input type="text" id="ble-wifi-ssid"
-                                            placeholder="Your WiFi network"
-                                            style="width: 100%; padding: 12px; font-size: 14px; background: rgba(0,0,0,0.3); border: 1px solid rgba(102, 126, 234, 0.5); border-radius: 6px; color: #f1f5f9;">
+                                        <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">WiFi Network</label>
+                                        <div style="position: relative;">
+                                            <select id="ble-wifi-ssid-select"
+                                                style="display: none; width: 100%; padding: 12px; font-size: 14px; background: rgba(0,0,0,0.3); border: 1px solid rgba(102, 126, 234, 0.5); border-radius: 6px; color: #f1f5f9; cursor: pointer;"
+                                                onchange="document.getElementById('ble-wifi-ssid').value = this.value;">
+                                                <option value="">Select a network...</option>
+                                            </select>
+                                            <input type="text" id="ble-wifi-ssid"
+                                                placeholder="Your WiFi network"
+                                                style="width: 100%; padding: 12px; font-size: 14px; background: rgba(0,0,0,0.3); border: 1px solid rgba(102, 126, 234, 0.5); border-radius: 6px; color: #f1f5f9;">
+                                            <div id="ble-wifi-scan-hint" style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
+                                                Networks will appear after connecting to device
+                                            </div>
+                                        </div>
                                     </div>
                                     <div>
                                         <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">WiFi Password</label>
@@ -957,9 +967,11 @@
         const BLE_CHAR_PASSWORD_UUID = 'cc000003-0000-1000-8000-00805f9b34fb';
         const BLE_CHAR_URL_UUID = 'cc000004-0000-1000-8000-00805f9b34fb';
         const BLE_CHAR_STATUS_UUID = 'cc000005-0000-1000-8000-00805f9b34fb';
+        const BLE_CHAR_WIFI_LIST_UUID = 'cc000006-0000-1000-8000-00805f9b34fb';
 
         let bleDevice = null;
         let bleServer = null;
+        let bleService = null;
 
         async function connectViaBluetooth() {
             const statusDiv = document.getElementById('ble-status');
@@ -1007,10 +1019,123 @@
 
                 // Connect to GATT server
                 bleServer = await bleDevice.gatt.connect();
-                statusDiv.innerHTML = '<span style="color: #667eea;">Connected! Sending credentials...</span>';
+                statusDiv.innerHTML = '<span style="color: #667eea;">Connected! Reading WiFi networks...</span>';
 
                 // Get the provisioning service
-                const service = await bleServer.getPrimaryService(BLE_SERVICE_UUID);
+                bleService = await bleServer.getPrimaryService(BLE_SERVICE_UUID);
+
+                // Read WiFi network list
+                try {
+                    const charWiFiList = await bleService.getCharacteristic(BLE_CHAR_WIFI_LIST_UUID);
+                    const wifiListValue = await charWiFiList.readValue();
+                    const wifiList = new TextDecoder().decode(wifiListValue);
+
+                    if (wifiList && wifiList.length > 0) {
+                        const networks = wifiList.split(',').filter(n => n.length > 0);
+                        const select = document.getElementById('ble-wifi-ssid-select');
+                        const input = document.getElementById('ble-wifi-ssid');
+                        const hint = document.getElementById('ble-wifi-scan-hint');
+
+                        // Populate dropdown
+                        select.innerHTML = '<option value="">Select a network...</option>';
+                        networks.forEach(ssid => {
+                            const option = document.createElement('option');
+                            option.value = ssid;
+                            option.textContent = ssid;
+                            select.appendChild(option);
+                        });
+
+                        // Add "Other..." option
+                        const otherOption = document.createElement('option');
+                        otherOption.value = '__other__';
+                        otherOption.textContent = '-- Enter manually --';
+                        select.appendChild(otherOption);
+
+                        // Show dropdown, hide input initially
+                        select.style.display = 'block';
+                        input.style.display = 'none';
+                        hint.textContent = `Found ${networks.length} network${networks.length !== 1 ? 's' : ''}`;
+
+                        // Handle "Other" selection
+                        select.onchange = function() {
+                            if (this.value === '__other__') {
+                                input.style.display = 'block';
+                                input.focus();
+                            } else {
+                                input.value = this.value;
+                                input.style.display = 'none';
+                            }
+                        };
+
+                        console.log('[BLE] Found networks:', networks);
+                    }
+                } catch (e) {
+                    console.log('[BLE] Could not read WiFi list:', e);
+                }
+
+                statusDiv.innerHTML = '<span style="color: #667eea;">Select your network and enter password, then click Send</span>';
+
+                // Change button to "Send Credentials"
+                connectBtn.innerHTML = `
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                    </svg>
+                    Send Credentials to Display
+                `;
+                connectBtn.onclick = () => sendBLECredentials(statusDiv, connectBtn);
+                connectBtn.disabled = false;
+                connectBtn.style.opacity = '1';
+                return;  // Wait for user to click Send
+
+            } catch (error) {
+                console.error('[BLE] Error:', error);
+
+                let errorMessage = 'Connection failed. ';
+                if (error.name === 'NotFoundError') {
+                    errorMessage = 'No device selected. Make sure your display shows "BLUETOOTH SETUP" screen.';
+                } else if (error.name === 'SecurityError') {
+                    errorMessage = 'Bluetooth access denied. Please allow Bluetooth access and try again.';
+                } else if (error.name === 'NetworkError') {
+                    errorMessage = 'Connection lost. Please try again.';
+                } else {
+                    errorMessage += error.message || 'Please try again.';
+                }
+
+                statusDiv.innerHTML = `<span style="color: #f87171;">${errorMessage}</span>`;
+            } finally {
+                // Re-enable button
+                connectBtn.disabled = false;
+                connectBtn.style.opacity = '1';
+            }
+        }
+        window.connectViaBluetooth = connectViaBluetooth;
+
+        // Send credentials after network selection
+        async function sendBLECredentials(statusDiv, connectBtn) {
+            const ssidInput = document.getElementById('ble-wifi-ssid');
+            const ssidSelect = document.getElementById('ble-wifi-ssid-select');
+            const passwordInput = document.getElementById('ble-wifi-password');
+
+            const ssid = ssidInput.value.trim() || ssidSelect.value;
+            const password = passwordInput.value;
+
+            if (!ssid || ssid === '__other__') {
+                statusDiv.innerHTML = '<span style="color: #f87171;">Please select or enter a WiFi network</span>';
+                return;
+            }
+
+            if (!password) {
+                statusDiv.innerHTML = '<span style="color: #f87171;">Please enter your WiFi password</span>';
+                passwordInput.focus();
+                return;
+            }
+
+            connectBtn.disabled = true;
+            connectBtn.style.opacity = '0.6';
+            statusDiv.innerHTML = '<span style="color: #667eea;">Sending credentials...</span>';
+
+            try {
+                const service = bleService;
 
                 // Get characteristics
                 const charSSID = await service.getCharacteristic(BLE_CHAR_SSID_UUID);
@@ -1089,7 +1214,7 @@
                 connectBtn.style.opacity = '1';
             }
         }
-        window.connectViaBluetooth = connectViaBluetooth;
+        window.sendBLECredentials = sendBLECredentials;
 
         // Build webhook URL from current config
         function buildWebhookUrl() {

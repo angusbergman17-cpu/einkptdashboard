@@ -55,6 +55,7 @@
 #define CHAR_PASSWORD_UUID  "CC000003-0000-1000-8000-00805F9B34FB"
 #define CHAR_URL_UUID       "CC000004-0000-1000-8000-00805F9B34FB"
 #define CHAR_STATUS_UUID    "CC000005-0000-1000-8000-00805F9B34FB"
+#define CHAR_WIFI_LIST_UUID "CC000006-0000-1000-8000-00805F9B34FB"
 
 // ============================================================================
 // ZONE DEFINITIONS (V11 Dashboard Layout)
@@ -110,9 +111,13 @@ BLECharacteristic* pCharSSID = nullptr;
 BLECharacteristic* pCharPassword = nullptr;
 BLECharacteristic* pCharURL = nullptr;
 BLECharacteristic* pCharStatus = nullptr;
+BLECharacteristic* pCharWiFiList = nullptr;
 bool bleDeviceConnected = false;
 bool bleCredentialsReceived = false;
 unsigned long bleStartTime = 0;
+
+// WiFi scan results (cached)
+String wifiNetworkList = "";
 
 // Timing
 unsigned long lastRefresh = 0;
@@ -131,10 +136,49 @@ bool zoneChanged[ZONE_COUNT] = {false};
 // BLE CALLBACKS
 // ============================================================================
 
+// Scan for WiFi networks and return as comma-separated list
+String scanWiFiNetworks() {
+    Serial.println("[WiFi] Scanning for networks...");
+
+    WiFi.mode(WIFI_STA);
+    WiFi.disconnect();
+    delay(100);
+
+    int numNetworks = WiFi.scanNetworks();
+    Serial.printf("[WiFi] Found %d networks\n", numNetworks);
+
+    String result = "";
+
+    // Sort by signal strength and dedupe
+    for (int i = 0; i < numNetworks && i < 10; i++) {  // Max 10 networks
+        String ssid = WiFi.SSID(i);
+        int rssi = WiFi.RSSI(i);
+
+        // Skip empty SSIDs and duplicates
+        if (ssid.length() == 0) continue;
+        if (result.indexOf(ssid + ",") >= 0) continue;
+
+        if (result.length() > 0) result += ",";
+        result += ssid;
+
+        Serial.printf("[WiFi]   %d: %s (%d dBm)\n", i + 1, ssid.c_str(), rssi);
+    }
+
+    WiFi.scanDelete();
+    return result;
+}
+
 class ServerCallbacks : public BLEServerCallbacks {
     void onConnect(BLEServer* pServer) {
         bleDeviceConnected = true;
         Serial.println("[BLE] Device connected");
+
+        // Scan for WiFi networks and update characteristic
+        wifiNetworkList = scanWiFiNetworks();
+        if (pCharWiFiList && wifiNetworkList.length() > 0) {
+            pCharWiFiList->setValue(wifiNetworkList.c_str());
+            Serial.printf("[BLE] WiFi list updated: %s\n", wifiNetworkList.c_str());
+        }
 
         // Update status
         if (pCharStatus) {
@@ -465,6 +509,13 @@ void initBLE() {
     );
     pCharStatus->addDescriptor(new BLE2902());
     pCharStatus->setValue("waiting");
+
+    // WiFi network list (read-only, populated on connect)
+    pCharWiFiList = pService->createCharacteristic(
+        CHAR_WIFI_LIST_UUID,
+        BLECharacteristic::PROPERTY_READ
+    );
+    pCharWiFiList->setValue("");
 
     // Start service
     pService->start();
