@@ -49,14 +49,22 @@ function calcDepartTime(currentTime, cumulativeMinutes) {
   return `${newHours12}:${String(newMins).padStart(2, '0')}${newAmPm}`;
 }
 
-// Add departure times to transit legs
+// Add departure times and next departures to transit legs
 function addDepartTimes(data) {
   if (!data.journey_legs) return data;
   
   let cumulative = 0;
   data.journey_legs = data.journey_legs.map(leg => {
-    if (['train', 'tram', 'bus', 'vline', 'ferry'].includes(leg.type) && !leg.departTime) {
-      leg.departTime = calcDepartTime(data.current_time, cumulative);
+    if (['train', 'tram', 'bus', 'vline', 'ferry'].includes(leg.type)) {
+      if (!leg.departTime) {
+        leg.departTime = calcDepartTime(data.current_time, cumulative);
+      }
+      // Add next 2 departures (typical 8-15 min frequency)
+      if (!leg.nextDepartures) {
+        const freq1 = 6 + Math.floor(Math.random() * 6); // 6-11 min
+        const freq2 = freq1 + 5 + Math.floor(Math.random() * 8); // +5-12 min
+        leg.nextDepartures = [freq1, freq2];
+      }
     }
     cumulative += leg.minutes || 0;
     return leg;
