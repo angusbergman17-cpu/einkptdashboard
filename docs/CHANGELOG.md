@@ -15,6 +15,32 @@ All notable changes to this project are documented here.
 
 ---
 
+## [2026-02-01] — Device Pairing with Vercel KV
+
+### Added
+- **Device Pairing System** — 6-character code pairing (like Chromecast/Roku)
+- **Vercel KV Integration** for pairing — persistent storage across serverless invocations
+- **Visual Logic Audit** — 10-point V11 compliance checking (`npm run monitor:visual`)
+- **Security Audit** — XSS vulnerability scanning, API key validation
+- **Firmware Audit** — 12-point anti-brick compliance checking
+
+### Changed
+- Dashboard spec updated from V10 to **CCDash V11** (LOCKED 2026-01-31)
+- Architecture updated to v5.3
+- Development Rules updated to v1.19
+- Setup Wizard redirect message: "Directing you to your dashboard now..."
+
+### Fixed
+- Pairing API now uses Vercel KV — in-memory stores failed across serverless cold starts
+- Device polling now correctly receives webhookUrl from persistent storage
+
+### Documentation
+- DEVELOPMENT-RULES.md Section 21.6 — Device Pairing System
+- docs/ARCHITECTURE.md Section 18 — Updated with Vercel KV flow
+- README.md — Updated badges and architecture diagram
+
+---
+
 ## [2026-01-29] — UI/UX Redesign + SmartCommute
 
 ### Added

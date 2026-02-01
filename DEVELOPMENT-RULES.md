@@ -1,8 +1,8 @@
 # Commute Compute Development Rules
 
-**MANDATORY COMPLIANCE DOCUMENT**  
-**Version:** 1.18  
-**Last Updated:** 2026-01-31  
+**MANDATORY COMPLIANCE DOCUMENT**
+**Version:** 1.19
+**Last Updated:** 2026-02-01  
 **Copyright (c) 2026 Commute Compute System by Angus Bergman — Licensed under CC BY-NC 4.0**
 
 These rules govern all development on Commute Compute. Compliance is mandatory.
@@ -283,7 +283,12 @@ The system was previously known as "Commute Compute". Update any remaining refer
 <details>
 <summary><strong>Section 21: Device Setup Flow</strong></summary>
 
-- 21.1 Complete Setup Flow
+- 21.1 Boot Sequence
+- 21.2 Boot Screen (Stage 1)
+- 21.3 WiFi Setup Screen (Stage 2)
+- 21.4 Post-Setup (Stage 3)
+- 21.5 Hosting Platform
+- 21.6 Device Pairing System (v1.19) **NEW**
 </details>
 
 <details>
@@ -346,6 +351,7 @@ The system was previously known as "Commute Compute". Update any remaining refer
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 1.19 | 2026-02-01 | Angus Bergman | **DEVICE PAIRING WITH VERCEL KV**: Added Section 21.6 — Device pairing system with mandatory Vercel KV persistence. Documents 6-character pairing code flow, KV storage patterns (`pair:{CODE}` with 10min TTL), device polling behavior, setup wizard integration. Fixes serverless stateless issue where in-memory stores fail across invocations. Updated version refs to CCDash V11, Architecture v5.3. |
 | 1.18 | 2026-01-31 | Angus Bergman | **MULTI-MODAL JOURNEY SUPPORT + CCDASH V10.2-V10.3**: (1) Rewrote Section 23.7 — Multi-modal journey leg construction supporting N transit legs with interchange walks (Tram→Train, Bus→Train, etc.). (2) Added Section 23.9 — Alternative route detection (MANDATORY). Route discovery, scoring weights, multi-modal selection triggers. (3) Added delay accumulation across multiple transit legs. (4) Prohibition on hardcoded routes reinforced. Engine-only adaptation per Section 17.4. **CCDash Spec Amendments:** v10.2 DEPART time column (Section 5.6.2), actual location names (Section 5.5.1); v10.3 cafe closed detection (Section 7.2.1), FRIDAY TREAT status. |
 | 1.15 | 2026-01-31 | Angus Bergman | **SERVERLESS RENDERING & ADMIN PANEL FIXES**: (1) Added Section 10.4 — Font loading in Vercel serverless (try multiple paths: process.cwd, __dirname, /var/task). (2) Added Section 13.6 — Admin Panel JavaScript patterns (Image preload pattern to avoid onerror on empty src; KV sync before server requests). (3) Screen API now reads journey config from KV storage with random fallback when unconfigured. |
 | 1.14 | 2026-01-31 | Angus Bergman | **SYSTEM ARCHITECTURE PRINCIPLES**: Added Section 24 — complete architecture principles from ARCHITECTURE.md v4.0. Core principles (self-hosted, zero-config, no TRMNL cloud, server-side rendering, privacy-first, multi-state, free-tier). Distribution model, layer architecture, data flow, Vercel KV storage architecture, security model, free-tier architecture, multi-device support (CC LiveDash™), required endpoints, locked technology stack. |
@@ -2440,6 +2446,76 @@ After setup wizard is complete:
 2. **Render** - URL format: `https://[custom-name].onrender.app`
 
 Both support zero-config deployment from forked repo. Free tier sufficient for personal use.
+
+### 21.6 Device Pairing System (v1.19)
+
+**🔴 CRITICAL**: Device pairing MUST use Vercel KV for persistent storage. In-memory stores do NOT work across serverless invocations.
+
+#### 21.6.1 Pairing Flow
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│  Device boots   │───▶│  Generates 6-   │───▶│  Displays code  │
+│  (CCFirm™)      │    │  char code      │    │  on e-ink       │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                                              │
+         ▼                                              ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│  Device polls   │◀───│  Vercel KV      │◀───│  User enters    │
+│  GET /api/pair  │    │  (persistent)   │    │  code in wizard │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
+
+#### 21.6.2 Pairing Code Format
+
+| Property | Value |
+|----------|-------|
+| Length | 6 characters |
+| Character set | A-Z, 0-9 (uppercase alphanumeric) |
+| Example | `A3B7K9` |
+| Combinations | 36^6 = 2.1 billion |
+| TTL | 10 minutes (auto-expires) |
+
+#### 21.6.3 Vercel KV Storage (MANDATORY)
+
+```javascript
+import { kv } from '@vercel/kv';
+
+// Store pairing data with 10-minute TTL
+await kv.set(`pair:${code}`, { webhookUrl, createdAt }, { ex: 600 });
+
+// Retrieve pairing data (device polling)
+const data = await kv.get(`pair:${code}`);
+
+// Delete after successful retrieval
+await kv.del(`pair:${code}`);
+```
+
+**Why KV is Required:**
+- Vercel serverless functions are stateless
+- Each invocation may run on a different instance
+- In-memory stores (Map, global variables) do NOT persist
+- Device polls and wizard POST may hit different instances
+
+**Fallback:** In-memory store ONLY for local development testing.
+
+#### 21.6.4 Device Polling Behavior
+
+| Parameter | Value |
+|-----------|-------|
+| Poll interval | 5 seconds |
+| Timeout | 10 minutes |
+| Endpoint | `GET /api/pair/{CODE}` |
+| Success response | `{ success: true, status: "paired", webhookUrl: "..." }` |
+| Waiting response | `{ success: true, status: "waiting" }` |
+
+#### 21.6.5 Setup Wizard Integration
+
+The Setup Wizard MUST:
+1. Accept 6-character pairing code from user
+2. POST configuration to `/api/pair/{CODE}`
+3. Include generated `webhookUrl` in POST body
+4. Display "Directing you to your dashboard now..." on completion
 
 ---
 
