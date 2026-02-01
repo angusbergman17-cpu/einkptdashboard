@@ -3,10 +3,10 @@
 ### Smart Transit Display for Australian Public Transport
 
 ![License](https://img.shields.io/badge/license-CC%20BY--NC%204.0-blue)
-![Version](https://img.shields.io/badge/version-2.0.0-green)
+![Version](https://img.shields.io/badge/version-3.0.0-green)
 ![Platform](https://img.shields.io/badge/platform-TRMNL%20%7C%20Kindle-orange)
-![Spec](https://img.shields.io/badge/spec-CCDash%20V10-purple)
-![Firmware](https://img.shields.io/badge/firmware-CCFirm%20v5.10-blue)
+![Spec](https://img.shields.io/badge/spec-CCDash%20V11-purple)
+![Firmware](https://img.shields.io/badge/firmware-CCFirm%20v6.1-blue)
 ![Anti-Brick](https://img.shields.io/badge/Anti--Brick-12%2F12%20✓-brightgreen)
 ![States](https://img.shields.io/badge/states-VIC%20%7C%20NSW%20%7C%20QLD-yellow)
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/angusbergman17-cpu/einkptdashboard)
@@ -45,12 +45,12 @@ Commute Compute uses a **fully self-hosted distribution model** — each user de
 │   │  of Repo  │ ────────▶  │  (Free)   │ ────────▶  │  Kindle   │      │
 │   └───────────┘            └───────────┘            └───────────┘      │
 │                                  │                        │            │
-│                       Config Token in URL ◄───────────────┘            │
-│                       (API keys embedded)                               │
+│                       Device Pairing ◄────────────────────┘            │
+│                       (Code-based, Vercel KV)                           │
 │                                                                         │
 │   ✅ Complete data isolation between users                              │
 │   ✅ Zero-config — no environment variables to edit                     │
-│   ✅ No central server dependency                                       │
+│   ✅ Device pairing via 6-character code (like Chromecast)              │
 │   ✅ CCFirm™ custom firmware — NO usetrmnl.com                          │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
@@ -173,14 +173,14 @@ See [DEVELOPMENT-RULES.md Section 5](DEVELOPMENT-RULES.md#-section-5-custom-firm
 
 ---
 
-## 🎨 CCDash™ V10 Dashboard Layout
+## 🎨 CCDash™ V11 Dashboard Layout
 
 The dashboard displays your complete journey at a glance:
 
 ```
 ┌────────────────────────────────────────────────────────────┐
 │ HEADER (0-94px)                                            │
-│ [Location] [Time 64px] [AM/PM] [Day] [Weather]             │
+│ [Location] [Time 12hr] [AM/PM] [Day Date] [Weather]        │
 ├────────────────────────────────────────────────────────────┤
 │ SUMMARY BAR (96-124px)                                     │
 │ LEAVE NOW → Arrive 7:25                              65min │
@@ -193,11 +193,11 @@ The dashboard displays your complete journey at a glance:
 │ ③ 🚃 Train to Flinders                              12 MIN │
 ├────────────────────────────────────────────────────────────┤
 │ FOOTER (448-480px)                                         │
-│ 80 COLLINS ST, MELBOURNE                    ARRIVE 8:32    │
+│ 80 COLLINS ST, MELBOURNE                  ARRIVE 8:32 AM   │
 └────────────────────────────────────────────────────────────┘
 ```
 
-**Design Specification:** [specs/CCDashDesignV10.md](specs/CCDashDesignV10.md) (🔒 LOCKED)
+**Design Specification:** [specs/CCDashDesignV11.md](specs/CCDashDesignV11.md) (🔒 LOCKED 2026-01-31)
 
 ---
 
@@ -231,7 +231,7 @@ The dashboard displays your complete journey at a glance:
 |----------|--------|-------------|
 | `/api/health` | GET | Health check |
 | `/api/status` | GET | Server status |
-| `/api/pair/[code]` | GET/POST | Device pairing |
+| `/api/pair/[code]` | GET/POST | Device pairing (Vercel KV persistent) |
 
 ### Pages
 
@@ -253,9 +253,9 @@ The dashboard displays your complete journey at a glance:
 
 | Document | Description |
 |----------|-------------|
-| **[DEVELOPMENT-RULES.md](DEVELOPMENT-RULES.md)** | 🚨 **MANDATORY** — All development rules (v1.6, 21 sections) |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture (v4.0) |
-| [specs/CCDashDesignV10.md](specs/CCDashDesignV10.md) | Dashboard design spec (🔒 LOCKED) |
+| **[DEVELOPMENT-RULES.md](DEVELOPMENT-RULES.md)** | 🚨 **MANDATORY** — All development rules (v1.15, 25 sections) |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture (v5.3) |
+| [specs/CCDashDesignV11.md](specs/CCDashDesignV11.md) | Dashboard design spec (🔒 LOCKED 2026-01-31) |
 
 ### Setup & Installation
 

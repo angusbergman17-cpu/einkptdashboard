@@ -1,10 +1,10 @@
 # Commute Compute System™ Architecture
 
-**Version:** 5.2  
-**Last Updated:** 2026-01-31  
-**Status:** Active  
-**Specification:** CCDash™ V10 (LOCKED)  
-**Development Rules:** v1.14 (24 sections)  
+**Version:** 5.3
+**Last Updated:** 2026-02-01
+**Status:** Active
+**Specification:** CCDash™ V11 (LOCKED 2026-01-31)
+**Development Rules:** v1.15 (25 sections)  
 **Copyright:** © 2026 Angus Bergman — CC BY-NC 4.0
 
 ---
@@ -1303,40 +1303,87 @@ const BOM_FORECAST_URLS = {
 
 ## 18. Device Pairing System
 
-*New in v4.0*
+*New in v4.0, Updated v5.3 with Vercel KV*
 
 ### 18.1 Overview
 
-Device pairing allows easy setup of TRMNL devices without manual URL entry.
+Device pairing allows easy setup of TRMNL devices without manual URL entry. Uses a 6-character alphanumeric code (like Chromecast/Roku pairing).
 
 ### 18.2 Pairing Flow
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│  Device shows   │───▶│  User enters    │───▶│  Server links   │
-│  pairing code   │    │  code in wizard │    │  device to user │
+│  Device boots   │───▶│  Generates 6-   │───▶│  Displays code  │
+│  (CCFirm™)      │    │  char code      │    │  on e-ink       │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
          │                                              │
          ▼                                              ▼
-┌─────────────────┐                           ┌─────────────────┐
-│  Device polls   │◀──────────────────────────│  Server stores  │
-│  for config     │                           │  config token   │
-└─────────────────┘                           └─────────────────┘
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│  Device polls   │◀───│  Vercel KV      │◀───│  User enters    │
+│  GET /api/pair  │    │  (persistent)   │    │  code in wizard │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                     │                        │
+         ▼                     │                        ▼
+┌─────────────────┐            │              ┌─────────────────┐
+│  Receives       │            │              │  POST /api/pair │
+│  webhookUrl     │            │              │  with config    │
+└─────────────────┘            │              └─────────────────┘
+         │                     ▼
+         ▼              ┌─────────────────┐
+┌─────────────────┐     │  KV stores:     │
+│  Device saves   │     │  pair:{CODE}    │
+│  & fetches      │     │  with 10min TTL │
+│  dashboard      │     └─────────────────┘
+└─────────────────┘
 ```
 
-### 18.3 API Endpoints
+### 18.3 Vercel KV Integration
 
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/api/pair/[code]` | GET | Check pairing status |
-| `/api/pair/[code]` | POST | Submit config for code |
+**Critical for Serverless:** Vercel serverless functions are stateless. Each invocation may run on a different instance. Pairing data MUST be persisted in Vercel KV to survive across function invocations.
 
-### 18.4 Pairing Code Format
+```javascript
+import { kv } from '@vercel/kv';
+
+// Store pairing data with 10-minute TTL
+await kv.set(`pair:${code}`, { webhookUrl, createdAt }, { ex: 600 });
+
+// Retrieve pairing data (device polling)
+const data = await kv.get(`pair:${code}`);
+```
+
+**Fallback:** In-memory store for local development when KV is unavailable.
+
+### 18.4 API Endpoints
+
+| Endpoint | Method | Purpose | Storage |
+|----------|--------|---------|---------|
+| `/api/pair/[code]` | GET | Device polls for config | Read from KV |
+| `/api/pair/[code]` | POST | Wizard submits config | Write to KV |
+
+### 18.5 Pairing Code Format
 
 ```
-XXXX-XXXX (8 alphanumeric characters)
-Example: A3B7-K9M2
+XXXXXX (6 alphanumeric characters, uppercase)
+Example: A3B7K9
 ```
+
+### 18.6 Device Polling Behavior
+
+1. Device generates random 6-character code
+2. Displays: "PAIR CODE: A3B7K9" on e-ink
+3. Polls GET `/api/pair/A3B7K9` every 5 seconds
+4. Timeout after 10 minutes (matches KV TTL)
+5. On success: receives `webhookUrl`, saves to EEPROM
+6. Transitions to normal dashboard fetch loop
+
+### 18.7 Security Considerations
+
+| Concern | Mitigation |
+|---------|------------|
+| Code guessing | 6-char alphanumeric = 2.1 billion combinations |
+| Replay attacks | Codes deleted from KV after successful retrieval |
+| Timing attacks | 10-minute TTL auto-expires stale codes |
+| Network sniffing | HTTPS required for all communication |
 
 ---
 

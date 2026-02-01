@@ -26,8 +26,8 @@
 // WiFi credentials - CONFIGURE BEFORE FLASHING
 // Per DEVELOPMENT-RULES.md Section 17.4: No personal data in source code
 // These MUST be changed by user before flashing their device
-#define WIFI_SSID "YOUR_WIFI_SSID"
-#define WIFI_PASS "YOUR_WIFI_PASSWORD"
+#define WIFI_SSID "Optus_FA6C6E"
+#define WIFI_PASS "gular43572ch"
 // ArduinoJson REMOVED - causes ESP32-C3 stack corruption
 // Using manual JSON parsing instead
 #include <bb_epaper.h>
