@@ -577,26 +577,76 @@
                                 </div>
                             </div>
 
-                            <!-- Device Pairing Code Input -->
-                            <div id="device-pairing-section" style="display: none; margin-top: 20px; padding: 18px; background: linear-gradient(135deg, rgba(79, 178, 142, 0.2) 0%, rgba(34, 197, 94, 0.15) 100%); border: 2px solid #4fb28e; border-radius: 10px;">
-                                <div style="font-weight: 600; margin-bottom: 12px; font-size: 15px; color: #22c55e; display: flex; align-items: center; gap: 8px;">
-                                    <svg class="icon"><use href="#icon-link"/></svg>
-                                    Enter Display Pairing Code
+                            <!-- BLE Provisioning Section (Recommended) -->
+                            <div id="ble-provision-section" style="display: none; margin-top: 20px; padding: 18px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(168, 85, 247, 0.15) 100%); border: 2px solid #667eea; border-radius: 10px;">
+                                <div style="font-weight: 600; margin-bottom: 12px; font-size: 15px; color: #667eea; display: flex; align-items: center; gap: 8px;">
+                                    <svg class="icon"><use href="#icon-smartphone"/></svg>
+                                    Connect via Bluetooth (Recommended)
                                 </div>
-                                <p style="color: #f1f5f9; font-size: 13px; margin-bottom: 12px; line-height: 1.5;">
-                                    Your display shows a <strong>6-character code</strong> on the setup screen.<br>
-                                    Enter it here to automatically connect your display.
+                                <p style="color: #f1f5f9; font-size: 13px; margin-bottom: 15px; line-height: 1.5;">
+                                    Send WiFi credentials directly to your display via Bluetooth.<br>
+                                    <strong>No captive portal needed</strong> - faster and more reliable.
+                                </p>
+
+                                <!-- WiFi Credentials -->
+                                <div style="display: grid; gap: 12px; margin-bottom: 15px;">
+                                    <div>
+                                        <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">WiFi Network Name (SSID)</label>
+                                        <input type="text" id="ble-wifi-ssid"
+                                            placeholder="Your WiFi network"
+                                            style="width: 100%; padding: 12px; font-size: 14px; background: rgba(0,0,0,0.3); border: 1px solid rgba(102, 126, 234, 0.5); border-radius: 6px; color: #f1f5f9;">
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px;">WiFi Password</label>
+                                        <input type="password" id="ble-wifi-password"
+                                            placeholder="Your WiFi password"
+                                            style="width: 100%; padding: 12px; font-size: 14px; background: rgba(0,0,0,0.3); border: 1px solid rgba(102, 126, 234, 0.5); border-radius: 6px; color: #f1f5f9;">
+                                    </div>
+                                </div>
+
+                                <!-- Connect Button -->
+                                <button type="button" id="ble-connect-btn" onclick="connectViaBluetooth()"
+                                    style="width: 100%; padding: 14px; font-size: 15px; font-weight: 600; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 8px; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M6.5 6.5l11 11L12 23V1l5.5 5.5-11 11"/>
+                                    </svg>
+                                    Connect to Display via Bluetooth
+                                </button>
+
+                                <!-- Status -->
+                                <div id="ble-status" style="margin-top: 12px; text-align: center; font-size: 13px;"></div>
+
+                                <!-- Browser Compatibility Note -->
+                                <p style="color: #94a3b8; font-size: 11px; margin-top: 12px; text-align: center;">
+                                    Requires Chrome or Edge browser. Your display must show "BLUETOOTH SETUP" screen.
+                                </p>
+                            </div>
+
+                            <!-- Divider -->
+                            <div id="pairing-divider" style="display: none; margin: 20px 0; text-align: center; position: relative;">
+                                <span style="background: #1e293b; padding: 0 12px; color: #94a3b8; font-size: 12px; position: relative; z-index: 1;">OR use pairing code</span>
+                                <div style="position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: rgba(255,255,255,0.1);"></div>
+                            </div>
+
+                            <!-- Device Pairing Code Input (Fallback) -->
+                            <div id="device-pairing-section" style="display: none; padding: 18px; background: linear-gradient(135deg, rgba(79, 178, 142, 0.15) 0%, rgba(34, 197, 94, 0.1) 100%); border: 1px solid rgba(79, 178, 142, 0.3); border-radius: 10px;">
+                                <div style="font-weight: 600; margin-bottom: 12px; font-size: 14px; color: #4fb28e; display: flex; align-items: center; gap: 8px;">
+                                    <svg class="icon"><use href="#icon-link"/></svg>
+                                    Alternative: Enter Display Pairing Code
+                                </div>
+                                <p style="color: #94a3b8; font-size: 12px; margin-bottom: 12px; line-height: 1.5;">
+                                    If Bluetooth isn't available, enter the <strong>6-character code</strong> shown on your display.
                                 </p>
                                 <div style="display: flex; gap: 10px; align-items: center;">
                                     <input type="text" id="device-pairing-code"
                                         placeholder="A7X9K2"
                                         maxlength="6"
-                                        style="flex: 1; padding: 14px; font-size: 22px; font-family: monospace; text-transform: uppercase; letter-spacing: 5px; text-align: center; background: rgba(0,0,0,0.3); border: 2px solid #4fb28e; border-radius: 8px; color: #f1f5f9; font-weight: bold;"
+                                        style="flex: 1; padding: 12px; font-size: 20px; font-family: monospace; text-transform: uppercase; letter-spacing: 4px; text-align: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(79, 178, 142, 0.5); border-radius: 8px; color: #f1f5f9; font-weight: bold;"
                                         oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 6); validatePairingCode();">
                                     <span id="pairing-code-status" style="font-size: 20px;"></span>
                                 </div>
-                                <p style="color: #94a3b8; font-size: 11px; margin-top: 10px;">
-                                    The code expires after 10 minutes. If expired, restart your display.
+                                <p style="color: #64748b; font-size: 10px; margin-top: 8px;">
+                                    Code expires after 10 minutes. Requires WiFiManager firmware.
                                 </p>
                             </div>
                         </div>
@@ -829,6 +879,8 @@
             const preview = document.getElementById('device-preview');
             const warning = document.getElementById('trmnl-model-warning');
             const pairingSection = document.getElementById('device-pairing-section');
+            const bleSection = document.getElementById('ble-provision-section');
+            const pairingDivider = document.getElementById('pairing-divider');
             const previewName = document.getElementById('device-preview-name');
             const previewSpecs = document.getElementById('device-preview-specs');
 
@@ -838,27 +890,37 @@
                 preview.style.display = 'none';
                 warning.style.display = 'none';
                 if (pairingSection) pairingSection.style.display = 'none';
+                if (bleSection) bleSection.style.display = 'none';
+                if (pairingDivider) pairingDivider.style.display = 'none';
                 return;
             }
 
             preview.style.display = 'block';
 
             const deviceInfo = {
-                'trmnl-og': { name: 'TRMNL Display (OG)', specs: 'Resolution: 800×480 pixels • Orientation: Landscape • Chip: ESP32', hasPairing: true },
-                'trmnl-mini': { name: 'TRMNL Display (Mini)', specs: 'Resolution: 600×448 pixels • Orientation: Landscape', hasPairing: true },
-                'kindle-pw3': { name: 'Kindle Paperwhite 3', specs: 'Resolution: 1072×1448 pixels • Orientation: Portrait • 6" display', hasPairing: false },
-                'kindle-pw4': { name: 'Kindle Paperwhite 4', specs: 'Resolution: 1072×1448 pixels • Orientation: Portrait • 6" display', hasPairing: false },
-                'kindle-pw5': { name: 'Kindle Paperwhite 5', specs: 'Resolution: 1236×1648 pixels • Orientation: Portrait • 6.8" display', hasPairing: false }
+                'trmnl-og': { name: 'TRMNL Display (OG)', specs: 'Resolution: 800×480 pixels • Orientation: Landscape • Chip: ESP32-C3', hasPairing: true, hasBLE: true },
+                'trmnl-mini': { name: 'TRMNL Display (Mini)', specs: 'Resolution: 600×448 pixels • Orientation: Landscape', hasPairing: true, hasBLE: true },
+                'kindle-pw3': { name: 'Kindle Paperwhite 3', specs: 'Resolution: 1072×1448 pixels • Orientation: Portrait • 6" display', hasPairing: false, hasBLE: false },
+                'kindle-pw4': { name: 'Kindle Paperwhite 4', specs: 'Resolution: 1072×1448 pixels • Orientation: Portrait • 6" display', hasPairing: false, hasBLE: false },
+                'kindle-pw5': { name: 'Kindle Paperwhite 5', specs: 'Resolution: 1236×1648 pixels • Orientation: Portrait • 6.8" display', hasPairing: false, hasBLE: false }
             };
 
-            const info = deviceInfo[device] || { name: device, specs: 'Unknown device', hasPairing: false };
+            const info = deviceInfo[device] || { name: device, specs: 'Unknown device', hasPairing: false, hasBLE: false };
             previewName.textContent = info.name;
             previewSpecs.textContent = info.specs;
 
             // Show warning for TRMNL devices
             warning.style.display = device.startsWith('trmnl') ? 'block' : 'none';
 
-            // Show pairing section for devices that support it
+            // Show BLE provisioning section for devices that support it (primary method)
+            if (bleSection) {
+                bleSection.style.display = info.hasBLE ? 'block' : 'none';
+            }
+
+            // Show divider and pairing code section as fallback
+            if (pairingDivider) {
+                pairingDivider.style.display = info.hasPairing ? 'block' : 'none';
+            }
             if (pairingSection) {
                 pairingSection.style.display = info.hasPairing ? 'block' : 'none';
             }
@@ -884,6 +946,181 @@
             }
         }
         window.validatePairingCode = validatePairingCode;
+
+        // ============================================
+        // BLE PROVISIONING (Web Bluetooth API)
+        // ============================================
+
+        // BLE Service and Characteristic UUIDs (must match firmware)
+        const BLE_SERVICE_UUID = 'cc000001-0000-1000-8000-00805f9b34fb';
+        const BLE_CHAR_SSID_UUID = 'cc000002-0000-1000-8000-00805f9b34fb';
+        const BLE_CHAR_PASSWORD_UUID = 'cc000003-0000-1000-8000-00805f9b34fb';
+        const BLE_CHAR_URL_UUID = 'cc000004-0000-1000-8000-00805f9b34fb';
+        const BLE_CHAR_STATUS_UUID = 'cc000005-0000-1000-8000-00805f9b34fb';
+
+        let bleDevice = null;
+        let bleServer = null;
+
+        async function connectViaBluetooth() {
+            const statusDiv = document.getElementById('ble-status');
+            const connectBtn = document.getElementById('ble-connect-btn');
+            const ssidInput = document.getElementById('ble-wifi-ssid');
+            const passwordInput = document.getElementById('ble-wifi-password');
+
+            // Validate inputs
+            const ssid = ssidInput.value.trim();
+            const password = passwordInput.value;
+
+            if (!ssid) {
+                statusDiv.innerHTML = '<span style="color: #f87171;">Please enter your WiFi network name</span>';
+                ssidInput.focus();
+                return;
+            }
+
+            if (!password) {
+                statusDiv.innerHTML = '<span style="color: #f87171;">Please enter your WiFi password</span>';
+                passwordInput.focus();
+                return;
+            }
+
+            // Check Web Bluetooth support
+            if (!navigator.bluetooth) {
+                statusDiv.innerHTML = '<span style="color: #f87171;">Web Bluetooth is not supported in this browser. Please use Chrome or Edge.</span>';
+                return;
+            }
+
+            // Disable button during connection
+            connectBtn.disabled = true;
+            connectBtn.style.opacity = '0.6';
+            statusDiv.innerHTML = '<span style="color: #667eea;">Searching for your display...</span>';
+
+            try {
+                // Request Bluetooth device
+                bleDevice = await navigator.bluetooth.requestDevice({
+                    filters: [
+                        { namePrefix: 'CommuteCompute' }
+                    ],
+                    optionalServices: [BLE_SERVICE_UUID]
+                });
+
+                statusDiv.innerHTML = `<span style="color: #667eea;">Connecting to ${bleDevice.name}...</span>`;
+
+                // Connect to GATT server
+                bleServer = await bleDevice.gatt.connect();
+                statusDiv.innerHTML = '<span style="color: #667eea;">Connected! Sending credentials...</span>';
+
+                // Get the provisioning service
+                const service = await bleServer.getPrimaryService(BLE_SERVICE_UUID);
+
+                // Get characteristics
+                const charSSID = await service.getCharacteristic(BLE_CHAR_SSID_UUID);
+                const charPassword = await service.getCharacteristic(BLE_CHAR_PASSWORD_UUID);
+                const charURL = await service.getCharacteristic(BLE_CHAR_URL_UUID);
+                const charStatus = await service.getCharacteristic(BLE_CHAR_STATUS_UUID);
+
+                // Subscribe to status notifications
+                await charStatus.startNotifications();
+                charStatus.addEventListener('characteristicvaluechanged', (event) => {
+                    const value = new TextDecoder().decode(event.target.value);
+                    console.log('[BLE] Status update:', value);
+
+                    if (value === 'credentials_saved') {
+                        statusDiv.innerHTML = `
+                            <div style="color: #22c55e; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                <svg class="icon-sm"><use href="#icon-check-circle"/></svg>
+                                <strong>Success!</strong> Credentials sent. Your display will now connect to WiFi.
+                            </div>
+                        `;
+
+                        // Disconnect after success
+                        setTimeout(() => {
+                            if (bleServer && bleServer.connected) {
+                                bleServer.disconnect();
+                            }
+                        }, 2000);
+                    }
+                });
+
+                // Build webhook URL (same as pairing code method)
+                const webhookUrl = buildWebhookUrl();
+
+                // Send credentials (order matters - URL triggers the save)
+                const encoder = new TextEncoder();
+                await charSSID.writeValue(encoder.encode(ssid));
+                statusDiv.innerHTML = '<span style="color: #667eea;">Sent WiFi name...</span>';
+
+                await charPassword.writeValue(encoder.encode(password));
+                statusDiv.innerHTML = '<span style="color: #667eea;">Sent WiFi password...</span>';
+
+                await charURL.writeValue(encoder.encode(webhookUrl));
+                statusDiv.innerHTML = '<span style="color: #667eea;">Sent dashboard URL... Waiting for confirmation...</span>';
+
+                // Wait a moment for the device to process and notify
+                setTimeout(() => {
+                    // If no notification received, assume success anyway
+                    if (statusDiv.innerHTML.includes('Waiting for confirmation')) {
+                        statusDiv.innerHTML = `
+                            <div style="color: #22c55e; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                <svg class="icon-sm"><use href="#icon-check-circle"/></svg>
+                                <strong>Credentials sent!</strong> Your display should connect shortly.
+                            </div>
+                        `;
+                    }
+                }, 3000);
+
+            } catch (error) {
+                console.error('[BLE] Error:', error);
+
+                let errorMessage = 'Connection failed. ';
+                if (error.name === 'NotFoundError') {
+                    errorMessage = 'No device selected. Make sure your display shows "BLUETOOTH SETUP" screen.';
+                } else if (error.name === 'SecurityError') {
+                    errorMessage = 'Bluetooth access denied. Please allow Bluetooth access and try again.';
+                } else if (error.name === 'NetworkError') {
+                    errorMessage = 'Connection lost. Please try again.';
+                } else {
+                    errorMessage += error.message || 'Please try again.';
+                }
+
+                statusDiv.innerHTML = `<span style="color: #f87171;">${errorMessage}</span>`;
+            } finally {
+                // Re-enable button
+                connectBtn.disabled = false;
+                connectBtn.style.opacity = '1';
+            }
+        }
+        window.connectViaBluetooth = connectViaBluetooth;
+
+        // Build webhook URL from current config
+        function buildWebhookUrl() {
+            // Get values from the form
+            const state = detectedState || document.getElementById('state-select')?.value || 'VIC';
+            const apiKey = document.getElementById('transit-api-key')?.value?.trim() || '';
+            const homeAddress = document.getElementById('home-address')?.value?.trim() || '';
+            const workAddress = document.getElementById('work-address')?.value?.trim() || '';
+            const cafeAddress = document.getElementById('cafe-address')?.value?.trim() || '';
+            const arrivalTime = document.getElementById('arrival-time')?.value || '09:00';
+            const coffeeEnabled = document.getElementById('coffee-toggle')?.checked !== false;
+
+            // Build minified config token
+            const config = {
+                a: { home: homeAddress, work: workAddress, cafe: cafeAddress },
+                t: arrivalTime,
+                c: coffeeEnabled,
+                s: state,
+                k: apiKey
+            };
+
+            // Base64url encode
+            const token = btoa(JSON.stringify(config))
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=+$/, '');
+
+            // Build full webhook URL
+            const baseUrl = window.location.origin;
+            return `${baseUrl}/api/device/${token}`;
+        }
 
         // Save and Test Google Places API Key (Step 1)
         window.saveAndTestGoogleKey = async function() {
