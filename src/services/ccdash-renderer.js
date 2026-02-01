@@ -2035,38 +2035,53 @@ export function renderFullScreen(data, prefs = {}) {
       ctx.restore();
     }
     
-    // v1.42: Knockout white backgrounds for text on striped legs
-    // Carve out space for: leg number, icon, title/subtitle, DEPART column
+    // v1.43: Tight knockout white backgrounds for text on striped legs
+    // Per Angus 2026-02-01: Smaller knockouts - only cover actual text, not full bar
     if (isSuspended || isDiverted) {
-      const knockoutPad = 3;
+      const knockoutPad = 2;  // Minimal padding
       const legNumSize = Math.max(16, Math.round(24 * scale));
       const iconSz = Math.max(20, Math.round(32 * scale));
       const titleSz = Math.max(12, Math.round(16 * scale));
       const subtitleSz = Math.max(10, Math.round(12 * scale));
       
-      // Knockout for leg number circle
+      ctx.fillStyle = '#FFF';
+      
+      // Knockout for leg number circle only
       const numX = zone.x + 6;
       const numY = zone.y + (zone.h - legNumSize) / 2;
-      ctx.fillStyle = '#FFF';
       ctx.fillRect(numX - knockoutPad, numY - knockoutPad, legNumSize + knockoutPad * 2, legNumSize + knockoutPad * 2);
       
-      // Knockout for icon
+      // Knockout for icon only
       const iconX = numX + legNumSize + 6;
       const iconY = zone.y + (zone.h - iconSz) / 2;
       ctx.fillRect(iconX - knockoutPad, iconY - knockoutPad, iconSz + knockoutPad * 2, iconSz + knockoutPad * 2);
       
-      // Knockout for title and subtitle (combined block)
+      // Knockout for title and subtitle - TIGHT width based on text
       const textX = iconX + iconSz + 8;
       const textBlockH = titleSz + subtitleSz + 4;
       const textBlockY = zone.y + (zone.h - textBlockH) / 2;
-      const textBlockW = stripeAreaW - textX + zone.x - 60;  // Leave room for DEPART
+      // Estimate text width (will be drawn later, so use approximate)
+      const legTitle = leg.title || getLegTitle(leg);
+      ctx.font = `bold ${titleSz}px Inter, sans-serif`;
+      const titleWidth = ctx.measureText(legTitle).width;
+      const subtitleText = isSuspended ? `SUSPENDED — ${leg.reason || 'Service disruption'}` : 
+                          (leg.divertedStop || 'Diverted route');
+      ctx.font = `${subtitleSz}px Inter, sans-serif`;
+      const subtitleWidth = ctx.measureText(subtitleText).width;
+      const textBlockW = Math.max(titleWidth, subtitleWidth) + 4;  // Tight fit
       ctx.fillRect(textX - knockoutPad, textBlockY - knockoutPad, textBlockW + knockoutPad * 2, textBlockH + knockoutPad * 2);
       
-      // Knockout for DEPART column (if transit leg)
-      if (['train', 'tram', 'bus', 'vline', 'ferry'].includes(leg.type)) {
-        const departW = 55;
-        const departX = zone.x + stripeAreaW - departW - 5;
-        ctx.fillRect(departX - knockoutPad, zone.y + knockoutPad, departW + knockoutPad * 2, zone.h - knockoutPad * 2);
+      // Knockout for DEPART column (if transit leg with departTime)
+      if (['train', 'tram', 'bus', 'vline', 'ferry'].includes(leg.type) && leg.departTime) {
+        const departLabelSz = Math.max(7, Math.round(9 * scale));
+        const departTimeSz = Math.max(10, Math.round(14 * scale));
+        const departBlockH = departLabelSz + departTimeSz + 2;
+        const departBlockY = zone.y + (zone.h - departBlockH) / 2;
+        ctx.font = `bold ${departTimeSz}px Inter, sans-serif`;
+        const departTimeW = ctx.measureText(leg.departTime).width;
+        const departW = Math.max(departTimeW, 40) + 4;
+        const departX = zone.x + stripeAreaW - departW - 8;
+        ctx.fillRect(departX - knockoutPad, departBlockY - knockoutPad, departW + knockoutPad * 2, departBlockH + knockoutPad * 2);
       }
     }
     
