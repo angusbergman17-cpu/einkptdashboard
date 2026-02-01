@@ -44,34 +44,71 @@ export const DEVICE_CONFIGS = {
   },
   'trmnl-mini': {
     name: 'TRMNL Mini',
-    width: 400,
-    height: 300,
+    width: 600,
+    height: 448,
     orientation: 'landscape',
     dpi: 117,
     colors: '1-bit',
     refreshRate: '20s partial',
     scale: {
-      header: { height: 60, timeSize: 40, dateSize: 12 },
-      summary: { height: 20, fontSize: 10 },
-      legs: { height: 180, titleSize: 12, subtitleSize: 9, durationSize: 20, maxLegs: 4 },
-      footer: { height: 24, fontSize: 11 }
+      header: { height: 70, timeSize: 48, dateSize: 14 },
+      summary: { height: 22, fontSize: 12 },
+      legs: { height: 280, titleSize: 14, subtitleSize: 10, durationSize: 24, maxLegs: 5 },
+      footer: { height: 26, fontSize: 12 }
     }
   },
-  'kindle-pw3': {
-    name: 'Kindle Paperwhite 3/4',
+  // Kindle 4 NT / Kindle Touch (600×800)
+  'kindle-k4': {
+    name: 'Kindle 4 / Touch',
+    width: 600,
+    height: 800,
+    orientation: 'portrait',
+    dpi: 167,
+    colors: '16-grayscale',
+    refreshRate: 'manual',
+    jailbreak: 'WatchThis',
+    scale: {
+      header: { height: 100, timeSize: 56, dateSize: 18 },
+      summary: { height: 32, fontSize: 14 },
+      legs: { height: 520, titleSize: 18, subtitleSize: 12, durationSize: 32, maxLegs: 6 },
+      footer: { height: 40, fontSize: 16 }
+    }
+  },
+  // Kindle Paperwhite 2 (758×1024)
+  'kindle-pw2': {
+    name: 'Kindle Paperwhite 2',
     width: 758,
     height: 1024,
+    orientation: 'portrait',
+    dpi: 212,
+    colors: '16-grayscale',
+    refreshRate: 'manual',
+    jailbreak: 'WatchThis',
+    scale: {
+      header: { height: 130, timeSize: 72, dateSize: 22 },
+      summary: { height: 36, fontSize: 16 },
+      legs: { height: 700, titleSize: 22, subtitleSize: 14, durationSize: 36, maxLegs: 7 },
+      footer: { height: 44, fontSize: 18 }
+    }
+  },
+  // Kindle Paperwhite 3/4 / Kindle Voyage (1072×1448)
+  'kindle-pw3': {
+    name: 'Kindle Paperwhite 3/4 / Voyage',
+    width: 1072,
+    height: 1448,
     orientation: 'portrait',
     dpi: 300,
     colors: '16-grayscale',
     refreshRate: 'manual',
+    jailbreak: 'WatchThis',
     scale: {
-      header: { height: 140, timeSize: 80, dateSize: 24 },
-      summary: { height: 40, fontSize: 18 },
-      legs: { height: 680, titleSize: 24, subtitleSize: 16, durationSize: 40, maxLegs: 7 },
-      footer: { height: 48, fontSize: 20 }
+      header: { height: 180, timeSize: 100, dateSize: 32 },
+      summary: { height: 50, fontSize: 22 },
+      legs: { height: 1000, titleSize: 32, subtitleSize: 20, durationSize: 48, maxLegs: 8 },
+      footer: { height: 60, fontSize: 24 }
     }
   },
+  // Kindle Paperwhite 5 (1236×1648)
   'kindle-pw5': {
     name: 'Kindle Paperwhite 5',
     width: 1236,
@@ -80,6 +117,7 @@ export const DEVICE_CONFIGS = {
     dpi: 300,
     colors: '16-grayscale',
     refreshRate: 'manual',
+    jailbreak: 'WatchThis',
     scale: {
       header: { height: 200, timeSize: 120, dateSize: 36 },
       summary: { height: 60, fontSize: 26 },
@@ -87,21 +125,11 @@ export const DEVICE_CONFIGS = {
       footer: { height: 72, fontSize: 28 }
     }
   },
-  'kindle-basic': {
-    name: 'Kindle Basic',
-    width: 600,
-    height: 800,
-    orientation: 'portrait',
-    dpi: 167,
-    colors: '16-grayscale',
-    refreshRate: 'manual',
-    scale: {
-      header: { height: 100, timeSize: 56, dateSize: 18 },
-      summary: { height: 32, fontSize: 14 },
-      legs: { height: 520, titleSize: 18, subtitleSize: 12, durationSize: 32, maxLegs: 6 },
-      footer: { height: 40, fontSize: 16 }
-    }
-  },
+  // Aliases for compatibility
+  'kindle-pw4': { alias: 'kindle-pw3' },  // PW4 same as PW3
+  'kindle-voyage': { alias: 'kindle-pw3' },  // Voyage same res as PW3/4
+  'kindle-touch': { alias: 'kindle-k4' },  // Touch same as K4
+  'kindle-basic': { alias: 'kindle-k4' },  // Basic same as K4
   'inkplate-6': {
     name: 'Inkplate 6',
     width: 800,
@@ -170,15 +198,23 @@ export class LiveDash {
   }
 
   /**
-   * Set the target device
+   * Set the target device (supports aliases)
    */
   setDevice(deviceId) {
-    if (!DEVICE_CONFIGS[deviceId]) {
-      throw new Error(`Unknown device: ${deviceId}. Valid: ${Object.keys(DEVICE_CONFIGS).join(', ')}`);
+    let config = DEVICE_CONFIGS[deviceId];
+    
+    if (!config) {
+      throw new Error(`Unknown device: ${deviceId}. Valid: ${Object.keys(DEVICE_CONFIGS).filter(k => !DEVICE_CONFIGS[k].alias).join(', ')}`);
+    }
+    
+    // Resolve alias
+    if (config.alias) {
+      deviceId = config.alias;
+      config = DEVICE_CONFIGS[deviceId];
     }
     
     this.currentDevice = deviceId;
-    this.deviceConfig = DEVICE_CONFIGS[deviceId];
+    this.deviceConfig = config;
     
     console.log(`📱 Device set: ${this.deviceConfig.name} (${this.deviceConfig.width}×${this.deviceConfig.height})`);
     return this;
