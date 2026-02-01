@@ -47,7 +47,7 @@
   #define LOGO_SMALL CC_LOGO_SMALL_MINI
   #define LOGO_SMALL_W 128
   #define LOGO_SMALL_H 130
-  #define PANEL_TYPE EP58_600x448
+  #define PANEL_TYPE EP583R_600x448
 #else
   // TRMNL OG (default)
   #define SCREEN_W 800
