@@ -457,7 +457,7 @@ void showConnectingScreen() {
     
     bbep->drawRect(150, 150, 500, 150, BBEP_BLACK);
     bbep->setCursor(280, 200); bbep->print("CONNECTING TO WIFI...");
-    bbep->setCursor(200, 250); bbep->print("Network: Connect to PTV-TRMNL-Setup");
+    bbep->setCursor(200, 250); bbep->print("Network: Connect to CC-Setup");
     
     bbep->refresh(REFRESH_FULL, true);
 }
