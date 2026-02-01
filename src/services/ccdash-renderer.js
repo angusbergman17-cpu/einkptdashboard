@@ -2030,6 +2030,18 @@ export function renderFullScreen(data, prefs = {}) {
       ctx.restore();
     }
     
+    // v1.40: White background for text on striped legs (legibility fix)
+    // Per Angus 2026-02-01: Text must be readable on diverted/suspended legs
+    if (isSuspended || isDiverted) {
+      const contentBgX = zone.x + 4;
+      const contentBgY = zone.y + 4;
+      const timeBoxW = Math.max(56, Math.round(72 * scale));
+      const contentBgW = zone.w - timeBoxW - 12;  // Leave space for time box
+      const contentBgH = zone.h - 8;
+      ctx.fillStyle = '#FFF';
+      ctx.fillRect(contentBgX, contentBgY, contentBgW, contentBgH);
+    }
+    
     // -----------------------------------------------------------------------
     // BORDER - v1.32: Thinner borders for easier glancing
     // - Normal: 1px solid (thinner)

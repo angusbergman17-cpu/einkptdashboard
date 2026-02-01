@@ -3,6 +3,7 @@
  * Tests the "always LEAVE NOW" design decision across all scenarios
  * 
  * Per Angus 2026-02-01: Dashboard should only ever show LEAVE NOW timing
+ * v1.40: Added departure times to transit legs, fixed stripe legibility
  * 
  * Copyright (c) 2026 Angus Bergman
  * Licensed under CC BY-NC 4.0
@@ -19,11 +20,50 @@ if (!fs.existsSync(OUTPUT_DIR)) {
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 }
 
-console.log('🧪 Comprehensive LEAVE NOW Visual Testing Suite');
+console.log('🧪 Comprehensive LEAVE NOW Visual Testing Suite v1.40');
 console.log('=' .repeat(60));
 console.log('Testing: All screens must display "LEAVE NOW" status');
+console.log('Testing: Departure times must show on transit legs');
+console.log('Testing: Diverted/suspended leg text must be legible');
 console.log('Output:', OUTPUT_DIR);
 console.log();
+
+// Helper to calculate departure time from current time + cumulative minutes
+function calcDepartTime(currentTime, cumulativeMinutes) {
+  const match = currentTime.match(/(\d+):(\d+)\s*(am|pm)?/i);
+  if (!match) return null;
+  
+  let hours = parseInt(match[1]);
+  let mins = parseInt(match[2]);
+  const isPM = match[3]?.toLowerCase() === 'pm';
+  
+  if (isPM && hours < 12) hours += 12;
+  if (!isPM && hours === 12) hours = 0;
+  
+  const totalMins = hours * 60 + mins + cumulativeMinutes;
+  const newHours = Math.floor(totalMins / 60) % 24;
+  const newMins = totalMins % 60;
+  const newHours12 = newHours % 12 || 12;
+  const newAmPm = newHours >= 12 ? 'pm' : 'am';
+  
+  return `${newHours12}:${String(newMins).padStart(2, '0')}${newAmPm}`;
+}
+
+// Add departure times to transit legs
+function addDepartTimes(data) {
+  if (!data.journey_legs) return data;
+  
+  let cumulative = 0;
+  data.journey_legs = data.journey_legs.map(leg => {
+    if (['train', 'tram', 'bus', 'vline', 'ferry'].includes(leg.type) && !leg.departTime) {
+      leg.departTime = calcDepartTime(data.current_time, cumulative);
+    }
+    cumulative += leg.minutes || 0;
+    return leg;
+  });
+  
+  return data;
+}
 
 // ============================================================================
 // TEST SCENARIOS
@@ -134,7 +174,7 @@ const scenarios = [
       condition: 'Cloudy',
       journey_legs: [
         { type: 'walk', to: 'station', minutes: 5 },
-        { type: 'train', origin: { name: 'Home' }, destination: { name: 'City' }, minutes: 22, delayMinutes: 5, state: 'delayed' },
+        { type: 'train', origin: { name: 'Home' }, destination: { name: 'City' }, minutes: 22, delayMinutes: 5, status: 'delayed' },
         { type: 'walk', to: 'work', minutes: 3 }
       ]
     }
@@ -150,11 +190,12 @@ const scenarios = [
       delay_minutes: 12,
       temp: 15,
       condition: 'Drizzle',
+      rain_expected: true,
       journey_legs: [
         { type: 'walk', to: 'tram', minutes: 3 },
-        { type: 'tram', routeNumber: '72', origin: { name: 'Home' }, destination: { name: 'Station' }, minutes: 10, delayMinutes: 4, state: 'delayed' },
+        { type: 'tram', routeNumber: '72', origin: { name: 'Home' }, destination: { name: 'Station' }, minutes: 10, delayMinutes: 4, status: 'delayed' },
         { type: 'walk', to: 'platform', minutes: 2 },
-        { type: 'train', origin: { name: 'Station' }, destination: { name: 'City' }, minutes: 18, delayMinutes: 8, state: 'delayed' },
+        { type: 'train', origin: { name: 'Station' }, destination: { name: 'City' }, minutes: 18, delayMinutes: 8, status: 'delayed' },
         { type: 'walk', to: 'work', minutes: 4 }
       ]
     }
@@ -173,14 +214,14 @@ const scenarios = [
       rain_expected: true,
       journey_legs: [
         { type: 'walk', to: 'station', minutes: 8 },
-        { type: 'train', origin: { name: 'Suburb' }, destination: { name: 'Central' }, minutes: 35, delayMinutes: 25, state: 'delayed' },
+        { type: 'train', origin: { name: 'Suburb' }, destination: { name: 'Central' }, minutes: 35, delayMinutes: 25, status: 'delayed' },
         { type: 'walk', to: 'work', minutes: 7 }
       ]
     }
   },
 
   // -------------------------------------------------------------------------
-  // DISRUPTION SCENARIOS
+  // DISRUPTION SCENARIOS - v1.40: legible text on striped backgrounds
   // -------------------------------------------------------------------------
   {
     name: '09-disruption-buses-replace',
@@ -196,7 +237,7 @@ const scenarios = [
       condition: 'Cloudy',
       journey_legs: [
         { type: 'walk', to: 'bus stop', minutes: 5 },
-        { type: 'bus', routeNumber: 'RAIL', origin: { name: 'Station A' }, destination: { name: 'Station B' }, minutes: 45, state: 'diverted' },
+        { type: 'bus', routeNumber: 'RAIL', origin: { name: 'Station A' }, destination: { name: 'Station B' }, minutes: 45, status: 'diverted', divertedStop: 'Buses replacing trains' },
         { type: 'train', origin: { name: 'Station B' }, destination: { name: 'City' }, minutes: 10 },
         { type: 'walk', to: 'work', minutes: 5 }
       ]
@@ -216,7 +257,7 @@ const scenarios = [
       condition: 'Sunny',
       journey_legs: [
         { type: 'walk', to: 'tram', minutes: 4 },
-        { type: 'tram', routeNumber: '96', origin: { name: 'Home' }, destination: { name: 'City' }, minutes: 25, state: 'diverted', delayMinutes: 8 },
+        { type: 'tram', routeNumber: '96', origin: { name: 'Home' }, destination: { name: 'City' }, minutes: 25, status: 'diverted', delayMinutes: 8, divertedStop: 'Via St Kilda Rd' },
         { type: 'walk', to: 'work', minutes: 4 }
       ]
     }
@@ -508,8 +549,11 @@ async function runTests() {
     console.log(`   ${scenario.description}`);
     
     try {
+      // Add departure times to transit legs
+      const dataWithDepart = addDepartTimes(scenario.data);
+      
       // Render the full dashboard
-      const png = await renderFullDashboard(scenario.data);
+      const png = await renderFullDashboard(dataWithDepart);
       
       // Save to file
       const outputPath = path.join(OUTPUT_DIR, `${scenario.name}.png`);
