@@ -445,13 +445,13 @@ bool pollPairingServer() {
 }
 
 void showBootScreen() {
-    // Stage 1: Large CC logo ONLY - NO TEXT (per Section 21.2)
+    // Stage 1: Full CC logo - NO TEXT (per Section 21.2)
     // "No text, just branding" - Duration: 2-3 seconds
     bbep->fillScreen(BBEP_WHITE);
     
-    // Draw CC icon only - NO FRAME BARS (274x400)
-    // Center: x = (800-274)/2 = 263, y = (480-400)/2 = 40
-    bbep->loadBMP(CC_LOGO_LARGE, 263, 40, BBEP_BLACK, BBEP_WHITE);
+    // Draw full CC logo scaled for boot (425x400)
+    // Center: x = (800-425)/2 = 187, y = (480-400)/2 = 40
+    bbep->loadBMP(CC_LOGO_BOOT, 187, 40, BBEP_BLACK, BBEP_WHITE);
     
     bbep->refresh(REFRESH_FULL, true);
 }
