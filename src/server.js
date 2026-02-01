@@ -1458,7 +1458,7 @@ app.get('/api/device/:token', async (req, res) => {
       // For firmware parsing (flat structure)
       current_time: melbTime,
       weather: data.weather?.condition || 'Clear',
-      location: (config.addresses?.home || 'South Yarra').split(',')[0],
+      location: (config.addresses?.home || 'Home').split(',')[0],
       setup_addresses: true,
       setup_transit_api: !!apiKey,
       setup_journey: !!transitRoute,

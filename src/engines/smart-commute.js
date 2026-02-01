@@ -1124,10 +1124,10 @@ export class SmartCommute {
     // NEVER use generic "home Station" - use actual station name or suburb-based name
     const nearestTramStop = locations?.cafe?.nearbyStops?.tram?.name || 
                            locations?.home?.nearbyStops?.tram?.name ||
-                           'Toorak Rd';
+                           'Tram Stop';
     const nearestTrainStation = locations?.home?.nearbyStops?.train?.name || 
-                               (homeArea ? `${homeArea} Station` : 'South Yarra Station');
-    const workStation = locations?.work?.nearbyStops?.train?.name || 'Parliament';
+                               (homeArea ? `${homeArea} Station` : 'Station');
+    const workStation = locations?.work?.nearbyStops?.train?.name || 'City Station';
     
     // =========================================================================
     // ROUTE 1: Coffee + Tram + Train (PREFERRED multi-modal pattern)
